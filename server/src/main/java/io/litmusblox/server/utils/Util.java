@@ -17,11 +17,12 @@ import io.litmusblox.server.model.User;
 import io.litmusblox.server.repository.CandidateRepository;
 import io.litmusblox.server.service.MasterDataBean;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang.WordUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.apache.commons.lang.WordUtils;
+
 import java.io.*;
 import java.nio.file.FileSystem;
 import java.nio.file.*;
@@ -32,8 +33,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Class for holding Utility methods to be used across the application
@@ -259,10 +258,12 @@ public class Util {
         //remove all occurences of '
         mobileNo = mobileNo.replaceAll("\'","");
 
-        //check if number contains any prefix like 0 or +
-        //strip all occurences of 0 and +
-        while(mobileNo.charAt(0) == '0' || mobileNo.charAt(0) == '+') {
-            mobileNo = mobileNo.substring(1);
+        if(!Util.isNull(mobileNo)) {
+            //check if number contains any prefix like 0 or +
+            //strip all occurences of 0 and +
+            while (mobileNo.charAt(0) == '0' || mobileNo.charAt(0) == '+') {
+                mobileNo = mobileNo.substring(1);
+            }
         }
 
         //strip all white spaces

@@ -224,7 +224,8 @@ public interface IConstant {
     }
 
     //constants for create candidate if firstName, lastName.
-    String NOT_FIRST_NAME="Not Available";
+    String NOT_FIRST_NAME="Not";
+    String NOT_LAST_NAME="Available";
 
     String DATE_FORMAT = "yyyy-MM-dd";
 }

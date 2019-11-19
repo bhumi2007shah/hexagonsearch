@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controller class for following:
@@ -234,5 +235,13 @@ public class JobCandidateMappingController {
     @ResponseStatus(value = HttpStatus.OK)
     void processRchilliJson(){
         rChilliCvProcessor.processRchilliJson();
+    }
+
+    @GetMapping("/processFailedRchilliJson")
+    @ResponseBody
+    void processFailedRchilli(@RequestBody Map<String, String> json){
+        String filePath = json.get("filePath");
+        String rchilliJson = json.get("rchilliJson");
+        rChilliCvProcessor.processFailedRchilli(rchilliJson, filePath);
     }
 }

@@ -81,7 +81,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             filePathStream.forEach(filePath -> {
                     if (Files.isRegularFile(filePath)) {
                         log.info("Temp folder Cv path : "+filePath.getFileName());
-                        rChilliCvProcessor.processFile(filePath.toString());
+                        rChilliCvProcessor.processFile(filePath.toString(), null);
                         log.info("Completed processing " + filePath.toString());
                     }
                 });
