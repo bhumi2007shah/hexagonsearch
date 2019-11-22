@@ -118,26 +118,8 @@ public class CompanyService implements ICompanyService {
         if(null==company.getCompanyDescription() || company.getCompanyDescription().isEmpty()){
             throw new ValidationException("CompanyDescription " + IErrorMessages.EMPTY_AND_NULL_MESSAGE+ company.getId(), HttpStatus.BAD_REQUEST);
         }
-        //Trim below fields if its length is greater than 245 and save trim string in db
-        if (!Util.isNull(company.getWebsite()) && company.getWebsite().length() > 245){
-            log.error("Company Website field exceeds limit -" +company.getWebsite());
-            company.setWebsite(company.getWebsite().substring(0, 245));
-        }
 
-        if (!Util.isNull(company.getLinkedin()) && company.getLinkedin().length() > 245) {
-            log.error("Company Linkedin field exceeds limit -" +company.getWebsite());
-            company.setLinkedin(company.getLinkedin().substring(0, 245));
-        }
-
-        if (!Util.isNull(company.getTwitter()) && company.getTwitter().length() > 245) {
-            log.error("Company Twitter field exceeds limit -" +company.getWebsite());
-            company.setTwitter(company.getTwitter().substring(0, 245));
-        }
-
-        if (!Util.isNull(company.getFacebook()) && company.getFacebook().length() > 245) {
-            log.error("Company Facebook field exceeds limit -" +company.getWebsite());
-            company.setFacebook(company.getFacebook().substring(0, 245));
-        }
+        company = truncateField(company);
 
         //Store Company logo on repo and save its filepath in to the company logo field if logo in not null
         if(logo != null) {
@@ -163,6 +145,32 @@ public class CompanyService implements ICompanyService {
         companyRepository.save(company);
         saveCompanyHistory(company.getId(), "Update company information", loggedInUser);
         log.info("Company Updated "+company.getId());
+    }
+
+    private Company truncateField(Company company){
+        log.info("inside truncateField");
+
+        //Trim below fields if its length is greater than 245 and save trim string in db
+        if (!Util.isNull(company.getWebsite()) && company.getWebsite().length() > 245){
+            log.error("Company Website field exceeds limit -" +company.getWebsite());
+            company.setWebsite(company.getWebsite().substring(0, 245));
+        }
+
+        if (!Util.isNull(company.getLinkedin()) && company.getLinkedin().length() > 245) {
+            log.error("Company Linkedin field exceeds limit -" +company.getWebsite());
+            company.setLinkedin(company.getLinkedin().substring(0, 245));
+        }
+
+        if (!Util.isNull(company.getTwitter()) && company.getTwitter().length() > 245) {
+            log.error("Company Twitter field exceeds limit -" +company.getWebsite());
+            company.setTwitter(company.getTwitter().substring(0, 245));
+        }
+
+        if (!Util.isNull(company.getFacebook()) && company.getFacebook().length() > 245) {
+            log.error("Company Facebook field exceeds limit -" +company.getWebsite());
+            company.setFacebook(company.getFacebook().substring(0, 245));
+        }
+        return company;
     }
 
     /**
@@ -509,5 +517,29 @@ public class CompanyService implements ICompanyService {
         Hibernate.initialize(company.getCompanyBuList());
         Hibernate.initialize(company.getCompanyAddressList());
         return company;
+    }
+
+    @Transactional
+    public void createCompanyByAgency(Company company) {
+        log.info("inside createCompanyByAgency method");
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Company companyFromDb = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(company.getCompanyName(), company.getRecruitmentAgencyId());
+
+        if(null != companyFromDb)
+            throw new ValidationException("Company "+ company.getCompanyName()+" already present for your agency ", HttpStatus.BAD_REQUEST);
+
+        if(null == company.getRecruitmentAgencyId())
+            throw new ValidationException("Recruitment agency should not be null ", HttpStatus.BAD_REQUEST);
+
+        company.setCreatedOn(new Date());
+        company.setCreatedBy(loggedInUser.getId());
+        company = truncateField(company);
+        companyRepository.save(company);
+    }
+
+    @Override
+    public List<Company> getCompanyListByAgency(Long recruitmentAgencyId) {
+        log.info("Inside getCompanyListByAgency "+companyRepository.findByRecruitmentAgencyId(recruitmentAgencyId).size());
+        return companyRepository.findByRecruitmentAgencyId(recruitmentAgencyId);
     }
 }

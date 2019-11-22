@@ -182,8 +182,8 @@ public class CandidateService implements ICandidateService {
         if(!Util.isNull(candidateDetails.getGender()) && candidateDetails.getGender().length() > IConstant.MAX_FIELD_LENGTHS.GENDER.getValue()) {
             candidateDetails.setGender(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.GENDER.name(), IConstant.MAX_FIELD_LENGTHS.GENDER.getValue(), candidateDetails.getGender()).toUpperCase());
         }
-        if(!Util.isNull(candidateDetails.getGender()) && candidateDetails.getGender().length() > IConstant.MAX_FIELD_LENGTHS.ROLE.getValue()) {
-            candidateDetails.setRole(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.ROLE.name(), IConstant.MAX_FIELD_LENGTHS.ROLE.getValue(), candidateDetails.getGender()).toUpperCase());
+        if(!Util.isNull(candidateDetails.getRole()) && candidateDetails.getRole().length() > IConstant.MAX_FIELD_LENGTHS.ROLE.getValue()) {
+            candidateDetails.setRole(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.ROLE.name(), IConstant.MAX_FIELD_LENGTHS.ROLE.getValue(), candidateDetails.getRole()).toUpperCase());
         }
 
         candidateDetails.setCandidateId(candidate);

@@ -9,7 +9,6 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Company;
 import io.litmusblox.server.model.CompanyAddress;
 import io.litmusblox.server.model.CompanyBu;
-import io.litmusblox.server.model.MasterData;
 import io.litmusblox.server.service.ICompanyService;
 import io.litmusblox.server.service.IScreeningQuestionService;
 import io.litmusblox.server.service.UserWorkspaceBean;
@@ -156,5 +155,29 @@ public class CompanyDataController {
     Company getCompanyDetail(@PathVariable ("companyId") Long companyId){
         log.info("inside getCompanyDetail method");
         return companyService.getCompanyDetail(companyId);
+    }
+
+    /**
+     * Rest api to creating company by agency
+     * @param company
+     */
+    @PostMapping("/createCompany")
+    @ResponseBody
+    @ResponseStatus(HttpStatus.OK)
+    void createCompany(@RequestBody Company company){
+        log.info("inside createCompany method");
+        companyService.createCompanyByAgency(company);
+    }
+
+    /**
+     * Rest api to get Company list depend on the recruitment agency id
+     * @param recruitmentAgencyId
+     */
+    @GetMapping("/getCompanyByAgency/{recruitmentAgencyId}")
+    @ResponseBody
+    @ResponseStatus(HttpStatus.OK)
+    List<Company> getCompanyListByAgency(@PathVariable ("recruitmentAgencyId") Long recruitmentAgencyId){
+        log.info("inside getCompanyListByAgency method");
+        return companyService.getCompanyListByAgency(recruitmentAgencyId);
     }
 }

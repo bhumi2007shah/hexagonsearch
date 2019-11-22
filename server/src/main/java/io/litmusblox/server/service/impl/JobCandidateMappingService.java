@@ -710,10 +710,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null != objFromDb.getCvRating()) {
             List<CvRatingSkillKeywordDetails> cvRatingSkillKeywordDetails = cvRatingSkillKeywordDetailsRepository.findByCvRatingId(objFromDb.getCvRating().getId());
             Map<Integer, List<CvRatingSkillKeywordDetails>> tempMap = cvRatingSkillKeywordDetails.stream().collect(Collectors.groupingBy(CvRatingSkillKeywordDetails::getRating));
-            Map<Integer, List<String>> cvSkillsByRating = new HashMap<>(tempMap.size());
+            Map<Integer, Map<String, Integer>> cvSkillsByRating = new HashMap<>(tempMap.size());
             tempMap.forEach((key, value) -> {
-                List<String> skills = new ArrayList<>(value.size());
-                value.stream().forEach(skillKeywordDetail -> skills.add(skillKeywordDetail.getSkillName()));
+                Map<String, Integer> skills = new HashMap<>(value.size());
+                value.stream().forEach(skillKeywordDetail -> {
+                    skills.put(skillKeywordDetail.getSkillName(), skillKeywordDetail.getOccurrence());
+                });
                 cvSkillsByRating.put(key, skills);
             });
             objFromDb.setCandidateSkillsByRating(cvSkillsByRating);
@@ -722,6 +724,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null != hiringManagerInterestDate)
             objFromDb.setHiringManagerInterestDate(hiringManagerInterestDate);
 
+        List<CandidateInteractionHistory> candidateInteractionHistoryList = jobCandidateMappingRepository.getCandidateInteractionHistoryByCandidateId(objFromDb.getCandidate().getId());
+        if(!candidateInteractionHistoryList.isEmpty()){
+            objFromDb.getCandidate().setCandidateInteractionHistoryList(candidateInteractionHistoryList);
+        }
         return objFromDb;
     }
 

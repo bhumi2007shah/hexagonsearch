@@ -142,7 +142,7 @@ public class JobCandidateMapping implements Serializable, Comparable {
 
     @Transient
     @JsonProperty
-    Map<Integer, List<String>> candidateSkillsByRating;
+    Map<Integer, Map<String, Integer>> candidateSkillsByRating;
 
     @Transient
     @JsonProperty

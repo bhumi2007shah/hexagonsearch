@@ -78,6 +78,13 @@ public class Company implements Serializable {
     private String subscription = IConstant.CompanySubscription.Lite.name();
 
     @NotNull
+    @Column(name="COMPANY_TYPE")
+    private String companyType = "Individual";
+
+    @Column(name="RECRUITMENT_AGENCY_ID")
+    private Long recruitmentAgencyId;
+
+    @NotNull
     @Column(name = "CREATED_ON")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdOn = new Date();

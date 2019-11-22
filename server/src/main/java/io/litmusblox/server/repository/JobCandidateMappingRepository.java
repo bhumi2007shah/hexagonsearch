@@ -5,6 +5,7 @@
 package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.*;
+import io.litmusblox.server.service.CandidateInteractionHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -53,4 +54,13 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     @Transactional
     JobCandidateMapping findByChatbotUuid(UUID uuid) throws Exception;
+
+    @Transactional
+    @Query(value = "select j.id as jobId, j.job_title as jobTitle, (select value from master_data where id = jcm.stage) as currentStatus, \n" +
+            "jcm.created_on as sourcedOn, (select value from master_data where id = jcm.stage) as lastStage, (select CONCAT(first_name, last_name) from users where id=j.hiring_manager) as hiringManager, \n" +
+            "(select CONCAT(first_name, last_name) from users where id=j.recruiter) as recruiter\n" +
+            "from job_candidate_mapping jcm \n" +
+            "inner join job j on j.id = jcm.job_id\n" +
+            "where jcm.candidate_id =:candidateId order by jcm.created_on desc", nativeQuery = true)
+    List<CandidateInteractionHistory> getCandidateInteractionHistoryByCandidateId(Long candidateId);
 }

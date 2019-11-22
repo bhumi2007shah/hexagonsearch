@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.litmusblox.server.constant.IConstant;
+import io.litmusblox.server.service.CandidateInteractionHistory;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -102,6 +103,10 @@ public class Candidate implements Serializable {
     @Transient
     @JsonProperty
     private String techResponseData;
+
+    @Transient
+    @JsonProperty
+    private List<CandidateInteractionHistory> candidateInteractionHistoryList = new ArrayList<>(0);
 
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "candidateId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})

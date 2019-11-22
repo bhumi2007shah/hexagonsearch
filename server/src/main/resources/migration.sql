@@ -953,3 +953,20 @@ ALTER COLUMN DEGREE TYPE VARCHAR(100);
 update cv_parsing_details set cv_rating_api_flag = true where job_candidate_mapping_id in(
 select a.job_candidate_mapping_id from cv_parsing_details a, cv_parsing_details b
 where a.id < b.id and a.job_candidate_mapping_id = b.job_candidate_mapping_id);
+
+--For ticket #234
+ALTER TABLE USERS
+ADD COLUMN USER_TYPE varchar(15) default 'Recruiting';
+
+--For ticket #232
+ALTER TABLE COMPANY
+ADD COLUMN COMPANY_TYPE VARCHAR(15) DEFAULT 'Individual' NOT NULL,
+ADD COLUMN RECRUITMENT_AGENCY_ID INTEGER REFERENCES COMPANY(ID);
+
+--Add Unique constraint in Jcm
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD CONSTRAINT unique_job_candidate UNIQUE(JOB_ID, CANDIDATE_ID);
+
+--https://github.com/hexagonsearch/litmusblox-scheduler/issues/16
+--Clear all timestamps in the jcm_communication_details table if the chat_invite_flag is false
+update jcm_communication_details set chat_invite_timestamp_sms = null, chat_incomplete_reminder_1_timestamp_sms = null, chat_incomplete_reminder_2_timestamp_sms = null, link_not_visited_reminder_1_timestamp_sms = null, link_not_visited_reminder_2_timestamp_sms = null, chat_complete_timestamp_sms = null, chat_invite_timestamp_email = null, chat_incomplete_reminder_1_timestamp_email = null, chat_incomplete_reminder_2_timestamp_email = null, link_not_visited_reminder_1_timestamp_email = null, link_not_visited_reminder_2_timestamp_email = null, chat_complete_timestamp_email = null where chat_invite_flag = false;

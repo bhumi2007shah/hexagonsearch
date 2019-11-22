@@ -94,6 +94,10 @@ public class User implements Serializable, UserDetails {
     private Date resetPasswordEmailTimestamp;
 
     @NotNull
+    @Column(name = "USER_TYPE")
+    private String userType = "Recruiting";
+
+    @NotNull
     @Column(name = "CREATED_ON")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdOn = new Date();

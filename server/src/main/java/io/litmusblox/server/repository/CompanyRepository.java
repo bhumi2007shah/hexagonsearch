@@ -6,6 +6,9 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.Company;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * Repository class for Company
@@ -18,4 +21,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface CompanyRepository extends JpaRepository<Company, Long> {
     Company findByCompanyNameIgnoreCase(String companyName);
+
+    @Transactional
+    Company findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(String companyName, Long recruitmentAgencyId);
+
+    @Transactional
+    List<Company> findByRecruitmentAgencyId(Long recruitmentAgencyId);
 }

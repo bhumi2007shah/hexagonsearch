@@ -4,12 +4,14 @@
 
 package io.litmusblox.server.service;
 
-import io.litmusblox.server.model.*;
+import io.litmusblox.server.model.Company;
+import io.litmusblox.server.model.CompanyAddress;
+import io.litmusblox.server.model.CompanyBu;
+import io.litmusblox.server.model.User;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Service class for various operations to be performed for a company
@@ -72,4 +74,18 @@ public interface ICompanyService {
      * @return Company model
      */
     Company getCompanyDetail(Long companyId);
+
+    /**
+     * Service method to create company by agency
+     * @param company
+     * @return company model
+     */
+    void createCompanyByAgency(Company company);
+
+    /**
+     * Service method to get company list by agency company id
+     * @param recruitmentAgencyId(Company id)
+     * @return List of company
+     */
+    List<Company> getCompanyListByAgency(Long recruitmentAgencyId);
 }

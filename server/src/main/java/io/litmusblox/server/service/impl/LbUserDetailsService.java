@@ -154,14 +154,9 @@ public class LbUserDetailsService implements UserDetailsService {
             companyObjToUse=loggedInUser.getCompany();
         //u.setCompany((companyObjToUse==null)?loggedInUser.getCompany():companyObjToUse);
         u.setCompany(companyObjToUse);
-        u.setRole(IConstant.UserRole.Names.RECRUITER);
         if (null == user.getRole()) {
-            //If a superadmin is creating a user, the role should be set to client admin for the first user, else it should be as set in the request object
-            if (loggedInUser.getRole().equals(IConstant.UserRole.Names.SUPER_ADMIN)) {
-                //find number of users for the company
-                if (0 == userRepository.countByCompanyId(companyObjToUse.getId()))
-                    u.setRole(IConstant.UserRole.Names.CLIENT_ADMIN);
-            }
+            //If user role is null then set default role is Recruiter
+           u.setRole(IConstant.UserRole.Names.RECRUITER);
         }
         else {
             //set role as present in the request
@@ -177,6 +172,11 @@ public class LbUserDetailsService implements UserDetailsService {
             else
                 throw new ValidationException("Invalid role in create user request: " + user.getRole(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
+        if(user.getUserType().equals(IConstant.UserType.BUSINESS) || user.getUserType().equals(IConstant.UserType.RECRUITING))
+            u.setUserType(user.getUserType());
+        else
+            u.setUserType(IConstant.UserType.RECRUITING.getValue());
+
         u.setCountryId(countryRepository.findByCountryCode(user.getCountryCode()));
         u.setMobile(user.getMobile());
         u.setUserUuid(UUID.randomUUID());
