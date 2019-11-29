@@ -201,19 +201,19 @@ public class LbUserDetailsService implements UserDetailsService {
         }
         else {
 
-            if(user.getRole().equals(IConstant.HR_RECRUITER))
+            if(IConstant.HR_RECRUITER.equals(user.getRole()))
                 user.setRole(IConstant.UserRole.Names.RECRUITER);
-            else if(user.getRole().equals(IConstant.HR_HEAD) || user.getRole().equals(IConstant.ADMIN))
+            else if(IConstant.HR_HEAD.equals(user.getRole()) || IConstant.ADMIN.equals(user.getRole()))
                 user.setRole(IConstant.UserRole.Names.CLIENT_ADMIN);
-            else if(user.getRole().equals(IConstant.HIRING_MANAGER) || user.getRole().equals(IConstant.INTERVIEWER))
+            else if(IConstant.HIRING_MANAGER.equals(user.getRole()) || IConstant.INTERVIEWER.equals(user.getRole()))
                 user.setRole(IConstant.UserRole.Names.BUSINESS_USER);
 
             //set role as present in the request
             //check that the role is valid and exists in the system
             if(Arrays.stream(IConstant.UserRole.values()).anyMatch((definedRole) -> definedRole.toString().equalsIgnoreCase(user.getRole()))) {
                 //if logged in user is client admin, a new user with super admin role cannot be created
-                if(loggedInUser.getRole().equals(IConstant.UserRole.Names.CLIENT_ADMIN)) {
-                    if(user.getRole().equals(IConstant.UserRole.Names.SUPER_ADMIN))
+                if(IConstant.UserRole.Names.CLIENT_ADMIN.equals(loggedInUser.getRole())) {
+                    if(IConstant.UserRole.Names.SUPER_ADMIN.equals(user.getRole()))
                         throw new ValidationException("User with Client Admin privilege: " + loggedInUser.getEmail() + " attempted to create a user with Super Admin privilege", HttpStatus.FORBIDDEN);
                 }
                 u.setRole(user.getRole());
@@ -221,7 +221,7 @@ public class LbUserDetailsService implements UserDetailsService {
             else
                 throw new ValidationException("Invalid role in create user request: " + user.getRole(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
-        if(user.getUserType().equals(IConstant.UserType.BUSINESS.getValue()) || user.getUserType().equals(IConstant.UserType.RECRUITING.getValue()))
+        if(IConstant.UserType.BUSINESS.getValue().equals(user.getUserType()) || IConstant.UserType.RECRUITING.getValue().equals(user.getUserType()))
             u.setUserType(user.getUserType());
         else
             u.setUserType(IConstant.UserType.RECRUITING.getValue());
@@ -339,7 +339,7 @@ public class LbUserDetailsService implements UserDetailsService {
             throw new ValidationException("Invalid user", HttpStatus.UNPROCESSABLE_ENTITY);
 
         //if user is client admin, block the company
-        if(objFromDb.getRole().equals(IConstant.UserRole.Names.CLIENT_ADMIN)) {
+        if(IConstant.UserRole.Names.CLIENT_ADMIN.equals(objFromDb.getRole())) {
             if(blockUser) {
                 Company companyToBlock = objFromDb.getCompany();
                 companyToBlock.setActive(false);

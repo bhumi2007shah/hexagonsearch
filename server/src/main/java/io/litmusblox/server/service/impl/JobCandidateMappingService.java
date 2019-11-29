@@ -162,7 +162,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         //verify that the job is live before processing candidates
         Job job = jobRepository.getOne(jobId);
-        if(null == job || !job.getStatus().equals(IConstant.JobStatus.PUBLISHED.getValue())) {
+        if(null == job || !IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus())) {
             StringBuffer info = new StringBuffer("Selected job is not live ").append("JobId :").append(jobId);
             Map<String, String> breadCrumb = new HashMap<>();
             breadCrumb.put("detail", info.toString());
@@ -184,7 +184,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             if(ignoreMobile)
                 processCandidateData(candidates, uploadResponseBean, loggedInUser, jobId, candidateProcessed, ignoreMobile);
             else
-                processCandidateData(candidates, uploadResponseBean, loggedInUser, jobId, candidateProcessed, !loggedInUser.getCountryId().getCountryName().equalsIgnoreCase(IConstant.STR_INDIA));
+                processCandidateData(candidates, uploadResponseBean, loggedInUser, jobId, candidateProcessed, !IConstant.STR_INDIA.equalsIgnoreCase(loggedInUser.getCountryId().getCountryName()));
         } catch (Exception ex) {
             log.error("Error while processing candidates uploaded :: " + ex.getMessage());
             uploadResponseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
@@ -314,7 +314,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         //verify that the job is live before processing candidates
         Job job = getJob(jobId);
-        if(null == job || !job.getStatus().equals(IConstant.JobStatus.PUBLISHED.getValue())) {
+        if(null == job || !IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus())) {
             StringBuffer info = new StringBuffer("Selected job is not live ").append("JobId-").append(jobId);
             Map<String, String> breadCrumb = new HashMap<>();
             breadCrumb.put("Job Id", jobId.toString());
@@ -359,17 +359,17 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         List<Candidate> candidateList = null;
         switch (fileExtension) {
             case "csv":
-                candidateList = new CsvFileProcessorService().process(fileName, responseBean, !user.getCountryId().getCountryName().equalsIgnoreCase(IConstant.STR_INDIA), repoLocation);
+                candidateList = new CsvFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation);
                 break;
             case "xls":
             case "xlsx":
                 switch (IConstant.UPLOAD_FORMATS_SUPPORTED.valueOf(fileSource)) {
                     case LitmusBlox:
-                        candidateList = new ExcelFileProcessorService().process(fileName, responseBean, !user.getCountryId().getCountryName().equalsIgnoreCase(IConstant.STR_INDIA), repoLocation);
+                        candidateList = new ExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation);
                         break;
                     case Naukri:
                         log.info("Reached the naukri parser");
-                        candidateList = new NaukriExcelFileProcessorService().process(fileName, responseBean, !user.getCountryId().getCountryName().equalsIgnoreCase(IConstant.STR_INDIA), repoLocation);
+                        candidateList = new NaukriExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation);
 
                         break;
                 }
@@ -918,9 +918,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             }
             else {
 
-                if(extension.equals(IConstant.FILE_TYPE.zip.toString()))
+                if(IConstant.FILE_TYPE.zip.toString().equals(extension))
                     fileType=IConstant.FILE_TYPE.zip.toString();
-                else if(extension.equals(IConstant.FILE_TYPE.rar.toString()))
+                else if(IConstant.FILE_TYPE.rar.toString().equals(extension))
                     fileType=IConstant.FILE_TYPE.rar.toString();
                 else
                     fileType=IConstant.FILE_TYPE.other.toString();
@@ -935,7 +935,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                     responseBean.getCvUploadMessage().put(fileToProcess.getOriginalFilename(), IErrorMessages.FAILED_TO_SAVE_FILE + extension);
                 }
 
-                if(fileType.equals(IConstant.FILE_TYPE.zip.toString()) || fileType.equals(IConstant.FILE_TYPE.rar.toString())){
+                if(IConstant.FILE_TYPE.zip.toString().equals(fileType) || IConstant.FILE_TYPE.rar.toString().equals(fileType)){
                     successCount--;
                     countArray=ZipFileProcessUtil.extractZipFile(filePath, environment.getProperty(IConstant.TEMP_REPO_LOCATION), loggedInUser.getId(),jobId, responseBean, failureCount,successCount);
                     failureCount=countArray[0];
@@ -975,7 +975,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             objFromDb.getTechResponseData().setTechResponse(requestBean.getTechResponseJson());
         }
         jobCandidateMappingRepository.save(objFromDb);
-        if(requestBean.getChatbotStatus().equals(IConstant.CHATBOT_STATUS.Complete.name())) {
+        if(IConstant.CHATBOT_STATUS.Complete.name().equals(requestBean.getChatbotStatus())) {
             log.info("Updated chatbot status for "  + requestBean.getChatbotUuid() + " with status as " + requestBean.getChatbotStatus() + " score: " + requestBean.getScore());
             jcmCommunicationDetailsRepository.updateByJcmId(objFromDb.getId());
         }
@@ -1100,7 +1100,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     private String validateMobile(String mobile, String countryCode){
         if(Util.isNotNull(mobile)) {
             mobile = Util.indianMobileConvertor(mobile, countryCode);
-            if (!Util.validateMobile(mobile, countryCode) && !countryCode.equals(IConstant.CountryCode.INDIA_CODE.getValue())) {
+            if (!Util.validateMobile(mobile, countryCode) && !IConstant.CountryCode.INDIA_CODE.getValue().equals(countryCode)) {
                 String cleanMobile = mobile.replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_MOBILE, "");
                 log.error("Special characters found, cleaning mobile number \"" + mobile + "\" to " + cleanMobile);
                 if (!Util.validateMobile(cleanMobile, countryCode))
@@ -1421,7 +1421,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         jobStageStepList.stream().forEach(jobStageStep-> {
             if(callForInvite) {
-                if (jobStageStep.getStageStepId().getStage().getStageName().equals(IConstant.Stage.Source.getValue()) || jobStageStep.getStageStepId().getStage().getStageName().equals(IConstant.Stage.Screen.getValue()))
+                if (IConstant.Stage.Source.getValue().equals(jobStageStep.getStageStepId().getStage().getStageName()) || IConstant.Stage.Screen.getValue().equals(jobStageStep.getStageStepId().getStage().getStageName()))
                     stageIdMap.put(jobStageStep.getStageStepId().getStage().getStageName(), jobStageStep.getId());
             }
             else {
@@ -1450,7 +1450,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         List<JcmHistory> jcmHistoryList = new ArrayList<>(jcmList.size());
 
         //check if new stage is rejected stage
-        if (stage.equals(IConstant.Stage.Reject.getValue())) {
+        if (IConstant.Stage.Reject.getValue().equals(stage)) {
             jobCandidateMappingRepository.updateForRejectStage(jcmList, loggedInUser.getId(), new Date());
         }
         else {
@@ -1461,7 +1461,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
         jcmList.stream().forEach(jcm -> {
             JobCandidateMapping mappingObj = jobCandidateMappingRepository.getOne(jcm);
-            jcmHistoryList.add(new JcmHistory(mappingObj, stage.equals(IConstant.Stage.Reject.getValue())?"Candidate Rejected from " + mappingObj.getStage().getStageStepId().getStage().getStageName() + " stage":"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage()));
+            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStageStepId().getStage().getStageName() + " stage":"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage()));
 
         });
         jcmHistoryRepository.saveAll(jcmHistoryList);

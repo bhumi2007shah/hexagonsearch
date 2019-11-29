@@ -133,7 +133,7 @@ public class JobService implements IJobService {
     @Transactional
     public Job addJob(Job job, String pageName) throws Exception {//add job with respective pageName
 
-        if(null != job.getStatus() && job.getStatus().equals(IConstant.JobStatus.ARCHIVED))
+        if(null != job.getStatus() && IConstant.JobStatus.ARCHIVED.equals(job.getStatus()))
             throw new ValidationException("Can't edit job because job in Archived state", HttpStatus.UNPROCESSABLE_ENTITY);
 
         User recruiter = null;
@@ -143,7 +143,7 @@ public class JobService implements IJobService {
         log.info("Received request to add job for page " + pageName + " from user: " + loggedInUser.getEmail());
         long startTime = System.currentTimeMillis();
 
-        if (pageName.equalsIgnoreCase(IConstant.AddJobPages.capabilities.name())) {
+        if (IConstant.AddJobPages.capabilities.name().equalsIgnoreCase(pageName)) {
             //delete all existing records in the job_capability_star_rating_mapping table for the current job
             jobCapabilityStarRatingMappingRepository.deleteByJobId(job.getId());
             jobCapabilityStarRatingMappingRepository.flush();
@@ -369,9 +369,9 @@ public class JobService implements IJobService {
         }
         else {
             User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if(!loggedInUser.getRole().equals(IConstant.UserRole.Names.SUPER_ADMIN) && !job.getCompanyId().getId().equals(loggedInUser.getCompany().getId()))
+            if(!IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && !job.getCompanyId().getId().equals(loggedInUser.getCompany().getId()))
                 throw new WebException(IErrorMessages.JOB_COMPANY_MISMATCH, HttpStatus.UNAUTHORIZED);
-            if(job.getStatus().equals(IConstant.JobStatus.DRAFT.getValue())) {
+            if(IConstant.JobStatus.DRAFT.getValue().equals(job.getStatus())) {
                 StringBuffer info = new StringBuffer(IErrorMessages.JOB_NOT_LIVE).append(job.getStatus());
                 log.info(info.toString());
                 Map<String, String> breadCrumb = new HashMap<>();
@@ -464,7 +464,7 @@ public class JobService implements IJobService {
             jobStageStepRepository.flush();
         }
 
-        if (null != oldJob && !oldJob.getStatus().equals(IConstant.JobStatus.PUBLISHED)) {//only update existing job
+        if (null != oldJob && !IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())) {//only update existing job
             if(null != job.getHiringManager())
                 oldJob.setHiringManager(job.getHiringManager());
             if(null != job.getRecruiter())
@@ -501,7 +501,7 @@ public class JobService implements IJobService {
 
         saveJobHistory(job.getId(), historyMsg + " job overview", loggedInUser);
 
-        if(null != oldJob && !oldJob.getStatus().equals(IConstant.JobStatus.PUBLISHED)){
+        if(null != oldJob && !IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())){
             //make a call to ML api to obtain skills and capabilities
             if(MasterDataBean.getInstance().getConfigSettings().getMlCall()==1) {
                 if(null == job.getSelectedRole())
@@ -561,9 +561,9 @@ public class JobService implements IJobService {
             MLResponseBean responseBean = objectMapper.readValue(mlResponse, MLResponseBean.class);
 
             //if ml status is jdc_jtm_Error
-            if(responseBean.getRolePrediction().getStatus().equalsIgnoreCase(IConstant.MlRolePredictionStatus.JDC_JTM_ERROR.getValue()) ||
-            responseBean.getRolePrediction().getStatus().equalsIgnoreCase(IConstant.MlRolePredictionStatus.JDC_JTN_ERROR.getValue()) ||
-                    responseBean.getRolePrediction().getStatus().equalsIgnoreCase(IConstant.MlRolePredictionStatus.JDB_JTM_ERROR.getValue())){
+            if(IConstant.MlRolePredictionStatus.JDC_JTM_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus()) ||
+                    IConstant.MlRolePredictionStatus.JDC_JTN_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus()) ||
+                    IConstant.MlRolePredictionStatus.JDB_JTM_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus())){
                 log.info("ml response status is " +responseBean.getRolePrediction().getStatus()+" for job id : "+jobId);
                 responseBean.getRolePrediction().getJdRoles().forEach(role -> {
                     roles.add(role.getRoleName());
@@ -573,7 +573,7 @@ public class JobService implements IJobService {
                 });
                 job.setRoles(roles);
                 return;
-            }else if(responseBean.getRolePrediction().getStatus().equalsIgnoreCase(IConstant.MlRolePredictionStatus.NO_ERROR.getValue())){
+            }else if(IConstant.MlRolePredictionStatus.NO_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus())){
                 //if ml status is no_Error
                 log.info("ml response status is no_Error for job id : "+jobId);
                 int numUniqueSkills = handleSkillsFromML(responseBean.getTowerGeneration().getSkills(), jobId);
@@ -586,7 +586,7 @@ public class JobService implements IJobService {
                 handleCapabilitiesFromMl(responseBean.getTowerGeneration().getAdditionalCapabilities(), jobId, false, uniqueCapabilityIds);
             }else{
                 SentryUtil.logWithStaticAPI(null, "ml status is different than expected or suff_error", breadCrumb);
-                if(responseBean.getRolePrediction().getStatus().equalsIgnoreCase(IConstant.MlRolePredictionStatus.SUFF_ERROR.getValue())) {
+                if(IConstant.MlRolePredictionStatus.SUFF_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus())) {
                     //if ml status is suff_Error
                     log.info("ml response status is suff_Error for job id : " + jobId);
                     throw new ValidationException("There was no enough data in JD and JT for this job : " + jobId, HttpStatus.BAD_REQUEST);
@@ -665,7 +665,7 @@ public class JobService implements IJobService {
             throw new ValidationException(IErrorMessages.SCREENING_QUESTIONS_VALIDATION_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
         }
         */
-        if(null != oldJob && oldJob.getStatus().equals(IConstant.JobStatus.PUBLISHED)){
+        if(null != oldJob && IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())){
             return;
         }
         String historyMsg = "Added";
@@ -690,7 +690,7 @@ public class JobService implements IJobService {
     }
 
     private void addJobKeySkills(Job job, Job oldJob, User loggedInUser) throws Exception { //update and add new key skill
-        if(null != oldJob && oldJob.getStatus().equals(IConstant.JobStatus.PUBLISHED))
+        if(null != oldJob && IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus()))
             return;
 
         List<JobKeySkills> mlProvidedKeySkills = jobKeySkillsRepository.findByJobIdAndMlProvided(oldJob.getId(), true);
@@ -777,7 +777,7 @@ public class JobService implements IJobService {
 
     private void addJobCapabilities(Job job, Job oldJob, User loggedInUser) { //add job capabilities
 
-        if(null != oldJob && oldJob.getStatus().equals(IConstant.JobStatus.PUBLISHED))
+        if(null != oldJob && IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus()))
             return;
 
         //if there are capabilities that were returned from ML, and the request for add job - capabilities has a 0 length array, throw an error, otherwise, proceed
@@ -895,7 +895,7 @@ public class JobService implements IJobService {
         oldJob.setMinSalary(job.getMinSalary());
         oldJob.setMaxSalary(job.getMaxSalary());
 
-        if(!oldJob.getStatus().equals(IConstant.JobStatus.PUBLISHED)){
+        if(!IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())){
 
             //Update Education
             if (null == masterDataBean.getEducation().get(job.getEducation().getId())) {
@@ -939,7 +939,7 @@ public class JobService implements IJobService {
 
     private void addJobExpertise(Job job, Job oldJob){
 
-        if(null != oldJob && oldJob.getStatus().equals(IConstant.JobStatus.PUBLISHED))
+        if(null != oldJob && IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus()))
             return;
 
         MasterDataBean masterDataBean = MasterDataBean.getInstance();
