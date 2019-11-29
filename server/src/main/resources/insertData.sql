@@ -748,3 +748,10 @@ INSERT INTO STEPS_PER_STAGE (STAGE_ID, STEP_NAME) VALUES
 (5, 'Make Offer'),
 (6, 'Offer'),
 (7, 'Join');
+
+INSERT INTO public.master_data(type, value, value_to_use) VALUES
+('role', 'HR Recruiter', 'Recruiter'),
+('role', 'HR Head', 'ClientAdmin'),
+('role', 'Admin', 'ClientAdmin'),
+('role', 'Hiring Manager', 'BusinessUser'),
+('role', 'Interviewer', 'BusinessUser');

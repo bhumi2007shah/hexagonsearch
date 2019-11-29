@@ -18,7 +18,6 @@ import io.litmusblox.server.utils.GoogleMapsCoordinates;
 import io.litmusblox.server.utils.StoreFileUtil;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
-import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -533,9 +532,6 @@ public class CompanyService implements ICompanyService {
         Company company = companyRepository.findById(companyId).orElse(null);
         if(null == company)
             throw new ValidationException("Company not found for id : " + companyId, HttpStatus.BAD_REQUEST);
-
-        Hibernate.initialize(company.getCompanyBuList());
-        Hibernate.initialize(company.getCompanyAddressList());
         return company;
     }
 
