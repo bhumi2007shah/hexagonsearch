@@ -210,6 +210,10 @@ public class RChilliCvProcessor {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     private long processCandidate(Candidate candidate, User user, Job job) {
 
+        candidate.setMobile(Util.indianMobileConvertor(candidate.getMobile(), candidate.getCountryCode()));
+        if(null != candidate.getAlternateMobile())
+            candidate.setAlternateMobile(Util.indianMobileConvertor(candidate.getAlternateMobile(), candidate.getCountryCode()));
+
         int candidateProcessed = jobCandidateMappingRepository.getUploadedCandidateCount(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()), user);
 
         if (candidateProcessed >= MasterDataBean.getInstance().getConfigSettings().getCandidatesPerFileLimit()) {
