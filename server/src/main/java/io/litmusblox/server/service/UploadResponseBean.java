@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.service;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.litmusblox.server.model.Candidate;
 import lombok.Data;
@@ -22,9 +23,9 @@ import java.util.List;
  * Project Name : server
  */
 @Data
-public class UploadResponseBean {
+@JsonFilter("UploadResponseBean")
+public class UploadResponseBean extends ResponseBean{
 
-    private String status;
     private int successCount;
     private int failureCount;
     private List<Candidate> failedCandidates = new ArrayList();

@@ -1476,16 +1476,16 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @return List of RChilliErrorResponseBean which have file name, processed date, status, jcmId, candidate name if available
      * @throws Exception
      */
-    public List<RChilliErrorResonseBean> getRchilliError(Long jobId) throws Exception{
-        List<RChilliErrorResonseBean> rChilliErrorResonseBeanList = new ArrayList<>();
+    public List<ResponseBean> getRchilliError(Long jobId) throws Exception{
+        List<ResponseBean> rChilliErrorResonseBeanList = new ArrayList<>();
 
         //fetch records with error from cv parsing details table using jobId
         List<CvParsingDetails> cvParsingDetailsList = cvParsingDetailsRepository.getRchilliErrorResonseBeanList(jobId);
 
         //for each cv parsing record create rchilliResponseBean and push to rChilliResponseBeanList
         cvParsingDetailsList.forEach(cvParsingDetails -> {
-            RChilliErrorResonseBean rChilliErrorResonseBean = new RChilliErrorResonseBean();
-            rChilliErrorResonseBean.setCvFileName(cvParsingDetails.getCvFileName().replaceAll("\\d+_\\d+_",""));
+            ResponseBean rChilliErrorResonseBean = new ResponseBean();
+            rChilliErrorResonseBean.setFileName(cvParsingDetails.getCvFileName().replaceAll("\\d+_\\d+_",""));
             rChilliErrorResonseBean.setProcessedOn(cvParsingDetails.getProcessedOn());
             rChilliErrorResonseBean.setStatus(cvParsingDetails.getProcessingStatus());
             rChilliErrorResonseBeanList.add(rChilliErrorResonseBean);

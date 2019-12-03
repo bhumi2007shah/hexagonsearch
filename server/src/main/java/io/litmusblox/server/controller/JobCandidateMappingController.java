@@ -71,6 +71,7 @@ public class JobCandidateMappingController {
                 new HashMap<String, List<String>>() {{
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
+                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "status", "candidateName"));
                 }});
     }
 
@@ -95,6 +96,7 @@ public class JobCandidateMappingController {
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
                     put("User", Arrays.asList("createdBy","company"));
+                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "status", "candidateName"));
                 }});
     }
 
@@ -120,7 +122,8 @@ public class JobCandidateMappingController {
                 new HashMap<String, List<String>>() {{
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
-                }});
+                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "status", "candidateName"));
+                        }});
     }
 
     /**
@@ -258,10 +261,10 @@ public class JobCandidateMappingController {
 
     @GetMapping("cvuploaderror/{jobId}")
     @ResponseBody
-    List<RChilliErrorResonseBean> getRchilliError(@PathVariable("jobId") @NotNull Long jobId)throws Exception{
+    List<ResponseBean> getRchilliError(@PathVariable("jobId") @NotNull Long jobId)throws Exception{
         log.info("Received request to fetch drag and drop cv error list for jobId: "+jobId);
         long startTime = System.currentTimeMillis();
-        List<RChilliErrorResonseBean> rChilliErrorResonseBeanList=  jobCandidateMappingService.getRchilliError(jobId);
+        List<ResponseBean> rChilliErrorResonseBeanList=  jobCandidateMappingService.getRchilliError(jobId);
         log.info("Completed processing frequest to fetch drag and drop cv error list for jobId: "+ jobId+ " in "+ (System.currentTimeMillis()-startTime) + "ms.");
         return rChilliErrorResonseBeanList;
     }
