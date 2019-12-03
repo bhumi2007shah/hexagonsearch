@@ -69,7 +69,6 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
                     continue;
                 }
                 if (row.getPhysicalNumberOfCells() > 0) {
-                    int index = 0;
                     Candidate candidate = new Candidate();
                     candidate.setCandidateSource(IConstant.CandidateSource.File.getValue());
                     boolean discardRow = true;
@@ -77,7 +76,7 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
                         String cellValue = dataFormatter.formatCellValue(cell);
                         if (Util.isNotNull(cellValue) && discardRow)
                             discardRow = false;
-                        switch (index) {
+                        switch (cell.getAddress().getColumn()) {
                             case 0:
                                 candidate.setFirstName(Util.toSentenceCase(cellValue.trim()));
                                 break;
@@ -90,7 +89,6 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
                             case 3:
                                 candidate.setMobile(cellValue.trim());
                         }
-                        index++;
                     }
                     if (!discardRow)
                         candidateList.add(candidate);
