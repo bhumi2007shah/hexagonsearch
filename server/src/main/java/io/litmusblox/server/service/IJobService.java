@@ -9,6 +9,7 @@ import io.litmusblox.server.model.JobHistory;
 import io.litmusblox.server.model.JobStageStep;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Interface definition for Job Service
@@ -95,4 +96,23 @@ public interface IJobService {
      * @throws Exception
      */
     List<JobStageStep> getJobStageStep(Long jobId) throws Exception;
+
+    /**
+     * Service method to return supported export formats for a company.
+     *
+     * @param jobId the job id for which supported formats to be returned
+     * @return map of format id and name
+     * @throws Exception
+     */
+    Map<Long, String> getSupportedExportFormat(Long jobId) throws Exception;
+
+    /**
+     * Service method to return export json data for a job
+     *
+     * @param jobId the job id for which export data to be returned
+     * @param formatId the format id to format export data
+     * @return formatted json in String format
+     * @throws Exception
+     */
+    String exportData(Long jobId, Long formatId) throws Exception;
 }

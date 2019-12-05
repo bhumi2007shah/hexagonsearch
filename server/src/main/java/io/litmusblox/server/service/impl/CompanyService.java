@@ -88,7 +88,7 @@ public class CompanyService implements ICompanyService {
     public Company saveCompany(Company company, MultipartFile logo) throws Exception {
         User loggedInUser  = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        log.info("Received request to update job from user: " + loggedInUser.getEmail());
+        log.info("Received request to update organisation detail from user: " + loggedInUser.getEmail());
         long startTime = System.currentTimeMillis();
 
         Company companyFromDb=companyRepository.findById(company.getId()).orElse(null);

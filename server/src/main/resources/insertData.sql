@@ -755,3 +755,23 @@ INSERT INTO public.master_data(type, value, value_to_use) VALUES
 ('role', 'Admin', 'ClientAdmin'),
 ('role', 'Hiring Manager', 'BusinessUser'),
 ('role', 'Interviewer', 'BusinessUser');
+
+--Ticket #258
+INSERT INTO export_format_master
+(format, system_supported)
+values
+('default', true)
+
+INSERT INTO export_format_detail
+(format_id, column_name, header,  "position")
+VALUES
+(1, 'candidateName','Candidate Name', 1),
+(1, 'chatbotStatus','Chatbot Status', 2),
+(1, 'keySkillsStrength','Key Skills Strength', 3),
+(1, 'currentCompany','Current Commpany', 4),
+(1, 'currentDesignation','Current Designation', 5),
+(1, 'email','Email', 6),
+(1, 'countryCode','Country Code', 7),
+(1, 'mobile','Mobile', 8),
+(1, 'totalExperience','Total Experience', 9),
+(1, 'createdBy','Created By', 10);
