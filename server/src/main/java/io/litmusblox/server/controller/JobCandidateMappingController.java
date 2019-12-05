@@ -96,7 +96,7 @@ public class JobCandidateMappingController {
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
                     put("User", Arrays.asList("createdBy","company"));
-                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "status", "candidateName"));
+                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
                 }});
     }
 
