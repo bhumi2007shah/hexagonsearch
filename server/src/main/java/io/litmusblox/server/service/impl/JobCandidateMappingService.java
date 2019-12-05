@@ -36,6 +36,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -1000,43 +1001,85 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             if (Util.isNotNull(jobCandidateMapping.getCandidateFirstName())) {
                 jcmFromDb.setCandidateFirstName(Util.validateCandidateName(jobCandidateMapping.getCandidateFirstName()));
             }
-
             //Update candidate lastName
             if (Util.isNotNull(jobCandidateMapping.getCandidateLastName())) {
                 jcmFromDb.setCandidateLastName(Util.validateCandidateName(jobCandidateMapping.getCandidateLastName()));
             }
+            //Update candidate servingNoticePeriod
+            jcmFromDb.setServingNoticePeriod(jobCandidateMapping.isServingNoticePeriod());
+            //Update candidate negotiableNoticePeriod
+            jcmFromDb.setNegotiableNoticePeriod(jobCandidateMapping.isNegotiableNoticePeriod());
+            //Update candidate otherOffers
+            jcmFromDb.setOtherOffers(jobCandidateMapping.isOtherOffers());
+            //Update candidate updateResume
+            jcmFromDb.setUpdateResume(jobCandidateMapping.isUpdateResume());
+
+            //Update candidate Communication Skill Rating
+            if (null != jobCandidateMapping.getCommunicationRating()) {
+                jcmFromDb.setCommunicationRating(jobCandidateMapping.getCommunicationRating());
+            }
+
+            jcmFromDb = updateOrCreateAlternateMobileEmail(jobCandidateMapping, jcmFromDb, loggedInUser);
 
             jobCandidateMappingRepository.save(jcmFromDb);
 
-            //Update Candidate total experience
+            //Update Candidate Details
             CandidateDetails candidateDetails = null;
+            CandidateDetails candidateDetailsByRequest = jobCandidateMapping.getCandidate().getCandidateDetails();
             if (null != jcmFromDb.getCandidate().getCandidateDetails()) {
                 candidateDetails = candidateDetailsRepository.findById(jcmFromDb.getCandidate().getCandidateDetails().getId()).orElse(null);
             }
 
             if (null != candidateDetails) {
-                candidateDetails.setTotalExperience(jobCandidateMapping.getCandidate().getCandidateDetails().getTotalExperience());
+                candidateDetails.setTotalExperience(candidateDetailsByRequest.getTotalExperience());
+                candidateDetails.setRelevantExperience(candidateDetailsByRequest.getRelevantExperience());
+                candidateDetails.setDateOfBirth(candidateDetailsByRequest.getDateOfBirth());
+                candidateDetails.setLocation(candidateDetailsByRequest.getLocation());
                 candidateDetailsRepository.save(candidateDetails);
-            } else if (null != jobCandidateMapping.getCandidate().getCandidateDetails().getTotalExperience()) {
-                candidateDetailsRepository.save(new CandidateDetails(jcmFromDb.getCandidate(), jobCandidateMapping.getCandidate().getCandidateDetails().getTotalExperience()));
+            } else {
+                candidateDetailsRepository.save(new CandidateDetails(candidateDetailsByRequest.getDateOfBirth(), candidateDetailsByRequest.getLocation(), candidateDetailsByRequest.getTotalExperience(), candidateDetailsByRequest.getRelevantExperience()));
             }
 
             //Update candidate education details
-            if (Util.isNotNull(jobCandidateMapping.getCandidate().getCandidateEducationDetails().get(0).getDegree())) {
+            CandidateEducationDetails candidateEducationFromRequest = jobCandidateMapping.getCandidate().getCandidateEducationDetails().get(0);
+            AtomicReference<CandidateEducationDetails> candidateEducationFromDb = new AtomicReference<>(new CandidateEducationDetails());
+            if (Util.isNotNull(candidateEducationFromRequest.getDegree())) {
                 AtomicBoolean isDegreePresent = new AtomicBoolean(false);
-                jcmFromDb.getCandidate().getCandidateEducationDetails().stream().forEach(candidateEducationDetails -> {
-                    if (candidateEducationDetails.getDegree().equalsIgnoreCase(jobCandidateMapping.getCandidate().getCandidateEducationDetails().get(0).getDegree())) {
+                jcmFromDb.getCandidate().getCandidateEducationDetails().forEach(candidateEducationDetails -> {
+                    if (candidateEducationDetails.getDegree().equalsIgnoreCase(candidateEducationFromRequest.getDegree())) {
+                        candidateEducationFromDb.set(candidateEducationDetails);
                         isDegreePresent.set(true);
                     }
                 });
                 if (!isDegreePresent.get() || null == jcmFromDb.getCandidate().getCandidateEducationDetails()) {
-                    if (jobCandidateMapping.getCandidate().getCandidateEducationDetails().get(0).getDegree().length() > IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue())
-                        jobCandidateMapping.getCandidate().getCandidateEducationDetails().get(0).setDegree(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.DEGREE.name(), IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue(), jobCandidateMapping.getCandidate().getCandidateEducationDetails().get(0).getDegree()));
+                    if (candidateEducationFromRequest.getDegree().length() > IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue())
+                        candidateEducationFromRequest.setDegree(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.DEGREE.name(), IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue(), candidateEducationFromRequest.getDegree()));
 
-                    CandidateEducationDetails candidateEducationDetails = new CandidateEducationDetails(jcmFromDb.getCandidate().getId(), jobCandidateMapping.getCandidate().getCandidateEducationDetails().get(0).getDegree(), String.valueOf(Calendar.getInstance().get(Calendar.YEAR)));
+                    if (candidateEducationFromRequest.getInstituteName().length() > IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue())
+                        candidateEducationFromRequest.setInstituteName(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.name(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue(), candidateEducationFromRequest.getInstituteName()));
+
+                    CandidateEducationDetails candidateEducationDetails = new CandidateEducationDetails(jcmFromDb.getCandidate().getId(), candidateEducationFromRequest.getDegree(), Util.isNotNull(candidateEducationFromRequest.getYearOfPassing())?candidateEducationFromRequest.getYearOfPassing():String.valueOf(Calendar.getInstance().get(Calendar.YEAR)), candidateEducationFromRequest.getInstituteName());
                     candidateEducationDetailsRepository.save(candidateEducationDetails);
+                }else {
+                    CandidateEducationDetails candidateEducationDetails1 = candidateEducationFromDb.get();
+                    if (candidateEducationFromRequest.getInstituteName().length() > IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue())
+                        candidateEducationFromRequest.setInstituteName(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.name(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue(), candidateEducationFromRequest.getInstituteName()));
+
+                    candidateEducationDetails1.setInstituteName(candidateEducationFromRequest.getInstituteName());
+                    candidateEducationDetails1.setYearOfPassing(Util.isNotNull(candidateEducationFromRequest.getYearOfPassing())?candidateEducationFromRequest.getYearOfPassing():String.valueOf(Calendar.getInstance().get(Calendar.YEAR)));
+                    candidateEducationDetailsRepository.save(candidateEducationDetails1);
                 }
             }
+
+            //Update KeySkills
+            List<String> candidateSkillsFromDb = new ArrayList<>();
+            jcmFromDb.getCandidate().getCandidateSkillDetails().forEach(candidateSkill->{candidateSkillsFromDb.add(candidateSkill.getSkill().toLowerCase());});
+            Long candidateId = jcmFromDb.getCandidate().getId();
+            jobCandidateMapping.getCandidateKeySkills().forEach(Skill->{
+                if(!candidateSkillsFromDb.contains(Skill.toLowerCase()))
+                    candidateSkillDetailsRepository.save(new CandidateSkillDetails(candidateId, Skill));
+            });
+
 
             //Update candidate company detail
             CandidateCompanyDetails companyDetails = null;
@@ -1094,6 +1137,40 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 companyDetails.setDesignation(companyDetailsByRequest.getDesignation());
         }
         return companyDetails;
+    }
+
+    //Method for update alternate mobile and email in jcm
+    private JobCandidateMapping updateOrCreateAlternateMobileEmail(JobCandidateMapping jcm, JobCandidateMapping jcmFromDb, User loggedInUser){
+        log.info("inside updateOrCreateAlternateMobileEmail");
+        jcm.setAlternateMobile(validateMobile(jcm.getAlternateMobile(), jcmFromDb.getCountryCode()));
+        jcm.setAlternateEmail(validateEmail(jcm.getAlternateEmail()));
+
+        CandidateEmailHistory candidateEmailHistory = null;
+        CandidateMobileHistory candidateMobileHistory = null;
+        if(Util.isNotNull(jcm.getAlternateEmail())) {
+            jcmFromDb.setAlternateEmail(jcm.getAlternateEmail());
+            candidateEmailHistory = candidateEmailHistoryRepository.findByEmail(jcm.getAlternateEmail());
+        }
+
+        if(Util.isNotNull(jcm.getAlternateMobile())) {
+            jcmFromDb.setAlternateMobile(jcm.getAlternateMobile());
+            candidateMobileHistory = candidateMobileHistoryRepository.findByMobileAndCountryCode(jcm.getAlternateMobile(), jcmFromDb.getCountryCode());
+        }
+
+        if(null != candidateEmailHistory && null != candidateMobileHistory){
+            if(!candidateEmailHistory.getCandidate().getId().equals(candidateMobileHistory.getCandidate().getId()))
+                throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY + " - " + jcm.getAlternateMobile() + " "+jcm.getAlternateEmail()+", While add/update alternate email and mobile", HttpStatus.BAD_REQUEST);
+        }else{
+            if(null != candidateEmailHistory && null == candidateMobileHistory){
+                candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jcm.getAlternateMobile(), jcmFromDb.getCountryCode(), new Date(), loggedInUser));
+            }else if(null == candidateEmailHistory && null != candidateMobileHistory){
+                candidateEmailHistoryRepository.save(new CandidateEmailHistory(jcmFromDb.getCandidate(), jcm.getAlternateEmail(), new Date(), loggedInUser));
+            }else{
+                candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jcm.getAlternateMobile(), jcmFromDb.getCountryCode(), new Date(), loggedInUser));
+                candidateEmailHistoryRepository.save(new CandidateEmailHistory(jcmFromDb.getCandidate(), jcm.getAlternateEmail(), new Date(), loggedInUser));
+            }
+        }
+        return jcmFromDb;
     }
 
 

@@ -7,6 +7,7 @@ package io.litmusblox.server.model;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -19,6 +20,7 @@ import java.util.Date;
  * Project Name : server
  */
 @Data
+@NoArgsConstructor
 @Entity
 @Table(name = "CANDIDATE_SKILL_DETAILS")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -46,4 +48,9 @@ public class CandidateSkillDetails {
 
     @Column(name = "VERSION")
     private String version;
+
+    public CandidateSkillDetails(Long candidateId, String skill) {
+        this.candidateId = candidateId;
+        this.skill = skill;
+    }
 }
