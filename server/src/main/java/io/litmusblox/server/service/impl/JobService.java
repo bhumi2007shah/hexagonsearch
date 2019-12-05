@@ -11,6 +11,7 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
+import io.litmusblox.server.exportData.ExportData;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.*;
@@ -30,13 +31,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import javax.naming.OperationNotSupportedException;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Implementation class for JobService
@@ -120,6 +125,15 @@ public class JobService implements IJobService {
 
     @Resource
     JobStageStepRepository jobStageStepRepository;
+
+    @Resource
+    ExportFormatMasterRepository exportFormatMasterRepository;
+
+    @Resource
+    ExportFormatDetailRepository exportFormatDetailRepository;
+
+    @PersistenceContext
+    EntityManager em;
 
     @Value("${mlApiUrl}")
     private String mlUrl;
@@ -1102,5 +1116,113 @@ public class JobService implements IJobService {
         List<JobStageStep> returnList = jobStageStepRepository.findByJobId(jobId);
         log.info("Completed finding stage steps for jobId {} in {} ms", jobId, (System.currentTimeMillis() - startTime));
         return returnList;
+    }
+
+    /**
+     * Service method to return supported export formats for a company.
+     *
+     * @param jobId the job id for which supported formats to be returned
+     * @return map of format id and name
+     * @throws Exception
+     */
+    @Transactional
+    public Map<Long, String> getSupportedExportFormat(Long jobId){
+        log.info("Received Request to fetch supported export formats for jobId: "+jobId);
+        long startTime = System.currentTimeMillis();
+
+        Job job = jobRepository.findById(jobId).orElse(null);
+
+        if(null==job){
+            throw new WebException("Job with id " + jobId + "does not exist ", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        Map<Long, String> exportFomratMapForCompany = new HashMap<>();
+
+        //list of export format data to be returned.
+        List<ExportFormatMaster> exportFormatMasters = new ArrayList<>();
+
+        //add all default export format supported by litmusblox by default
+        exportFormatMasters.addAll(exportFormatMasterRepository.exportDefaultFormatMasterList());
+
+        //add company specific export format.
+        exportFormatMasters.addAll(exportFormatMasterRepository.findByCompanyId(job.getCompanyId().getId()));
+
+        //create map of id and format from above list
+        exportFormatMasters.forEach(exportFormatMaster -> {
+            exportFomratMapForCompany.put(exportFormatMaster.getId(), exportFormatMaster.getFormat());
+        });
+
+        log.info("Finished Request to fetch supported export formats for jobId: "+jobId+" in "+(System.currentTimeMillis()-startTime));
+        return exportFomratMapForCompany;
+    }
+
+    /**
+     * Service method to return export json data for a job
+     *
+     * @param jobId the job id for which export data to be returned
+     * @param formatId the format id to format export data
+     * @return formatted json in String format
+     * @throws Exception
+     */
+    public String exportData(Long jobId, Long formatId) throws Exception {
+        if(formatId!=null) {
+            log.info("Received Request to fetch export data for jobId: " + jobId + " and formatId:" + formatId);
+        }
+        else{
+            log.info("Received Request to fetch export data for default format");
+        }
+        long startTime = System.currentTimeMillis();
+        //get default export format master
+        ExportFormatMaster exportFormatMaster = exportFormatMasterRepository.getOne(formatId!=null?formatId:1L);
+
+        //if default format is not available in db then throw exception
+        if(null==exportFormatMaster){
+            throw new WebException("Default format is missing from database", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        //get list of headers and column names frm  db for default format
+        List<ExportFormatDetail> defaultExportColumns = exportFormatDetailRepository.findByExportFormatMasterOrderByPositionAsc(exportFormatMaster);
+
+        Map<String, String> exportHeaderColumnMap = new LinkedHashMap<>();
+
+
+        defaultExportColumns.forEach(exportColumn->{
+            exportHeaderColumnMap.put(exportColumn.getColumnName(), exportColumn.getHeader());
+        });
+
+        List<String>columnNames = new ArrayList<String>(exportHeaderColumnMap.keySet());
+
+        String columnsToExport = String.join(", ", columnNames);
+
+        //list of objects from db to create export data json
+        List<Object[]> exportDataList = ExportData.exportDataList(jobId, columnsToExport, em);
+        List<LinkedHashMap<String, Object>> exportResponseBean = new ArrayList<>();
+
+        if(exportDataList.size()==0){
+            throw new WebException("No Export data availablle for jobId: "+jobId, HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        exportDataList.forEach(data-> {
+            LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
+            for (int i = 0; i < data.length; ++i) {
+                candidateData.put(exportHeaderColumnMap.get(columnNames.get(i)), data[i] != null ? data[i].toString() : "");
+            }
+            if (exportResponseBean.stream().filter(object -> {
+                return object.get("Email").toString().equalsIgnoreCase(candidateData.get("Email").toString());
+            }).collect(Collectors.toList()).size() == 0){
+                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), em);
+                questionAnswerMapForCandidate = questionAnswerMapForCandidate.entrySet().stream().sorted(comparingByKey())
+                        .collect(toMap(e->e.getKey(), e->e.getValue(), (e1, e2)-> e2, LinkedHashMap::new));
+                if(questionAnswerMapForCandidate.size()!=0){
+                    questionAnswerMapForCandidate.forEach(candidateData::put);
+                }
+                if(!exportResponseBean.contains(candidateData)) {
+                    exportResponseBean.add(candidateData);
+                }
+            }
+        });
+
+        log.info("Completed processing export data in "+(System.currentTimeMillis() - startTime));
+        return new ObjectMapper().writeValueAsString(exportResponseBean);
     }
 }

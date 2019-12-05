@@ -7,10 +7,7 @@ package io.litmusblox.server.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.error.WebException;
-import io.litmusblox.server.model.ConfigurationSettings;
-import io.litmusblox.server.model.MasterData;
-import io.litmusblox.server.model.SkillsMaster;
-import io.litmusblox.server.model.UserScreeningQuestion;
+import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.ConfigSettings;
 import io.litmusblox.server.service.IMasterDataService;
@@ -27,10 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -75,6 +69,9 @@ public class MasterDataService implements IMasterDataService {
 
     @Resource
     StepsPerStageRepository stepsPerStageRepository;
+
+    @Resource
+    ExportFormatMasterRepository exportFormatMasterRepository;
 
     @Autowired
     Environment environment;
@@ -136,6 +133,15 @@ public class MasterDataService implements IMasterDataService {
         configurationSettings.forEach(config-> {
             configFieldAccesor.setPropertyValue(config.getConfigName(), config.getConfigValue());
         });
+
+        //populate default export format supported by litmusblox
+        List<ExportFormatMaster> exportFormatMasters = exportFormatMasterRepository.exportDefaultFormatMasterList();
+        Map<Long, String> exportFormatMasterMap = new HashMap<>();
+        exportFormatMasters.forEach(exportFormatMaster -> {
+            exportFormatMasterMap.put(exportFormatMaster.getId(), exportFormatMaster.getFormat());
+        });
+        MasterDataBean.getInstance().getDefaultExportFormats().putAll(exportFormatMasterMap);
+
         //read the limit from application.properties
         //convert the maxUploadDataLimit from Mb into bytes
         String maxSize = environment.getProperty("spring.http.multipart.max-request-size");
@@ -145,8 +151,6 @@ public class MasterDataService implements IMasterDataService {
 
         // sentryDSN is only read from application.properties file as per profile it is not save in database
         MasterDataBean.getInstance().setSentryDSN(environment.getProperty(IConstant.SENTRY_DSN));
-
-
     }
 
     /**
@@ -230,6 +234,7 @@ public class MasterDataService implements IMasterDataService {
     private static final String ADD_JOB_PAGES = "addJobPages";
     private static final String CURRENCY_LIST = "currencyList";
     private static final String ROLE = "role";
+    private static final String DEFAULT_EXPORT_FORMAT = "defaultExportFormats";
 
 
     /**
@@ -270,6 +275,8 @@ public class MasterDataService implements IMasterDataService {
             case ROLE:
                 master.getRole().addAll(MasterDataBean.getInstance().getRole());
                 break;
+            case DEFAULT_EXPORT_FORMAT:
+                master.getDefaultExportFormats().putAll(MasterDataBean.getInstance().getDefaultExportFormats());
             default: //for all other properties, use reflection
 
                 //handle to the getter method for the field

@@ -1153,3 +1153,78 @@ ADD COLUMN COMMUNICATION_RATING SMALLINT DEFAULT 0 NOT NULL;
 ALTER TABLE CANDIDATE_DETAILS
 ADD COLUMN RELEVANT_EXPERIENCE NUMERIC (4, 2);
 
+
+-- FOR TICKET #258
+DROP TABLE IF EXISTS EXPORT_FORMAT_MASTER;
+CREATE TABLE EXPORT_FORMAT_MASTER(
+ID serial PRIMARY KEY NOT NULL,
+COMPANY_ID integer REFERENCES COMPANY(ID) DEFAULT NULL,
+FORMAT varchar(15) NOT NULL,
+SYSTEM_SUPPORTED BOOL DEFAULT FALSE
+);
+
+
+DROP TABLE IF EXISTS EXPORT_FORMAT_DETAIL;
+CREATE TABLE EXPORT_FORMAT_DETAIL(
+    ID serial PRIMARY KEY NOT NULL,
+    FORMAT_ID integer REFERENCES EXPORT_FORMAT_MASTER(ID) NOT NULL,
+    COLUMN_NAME VARCHAR(20),
+    HEADER VARCHAR(20),
+    POSITION SMALLINT,
+    UNIQUE(FORMAT_ID, POSITION)
+);
+
+INSERT INTO export_format_master
+(format, system_supported)
+values
+('default', true)
+
+INSERT INTO export_format_detail
+(format_id, column_name, header,  "position")
+VALUES
+(1, 'candidateName','Candidate Name', 1),
+(1, 'chatbotStatus','Chatbot Status', 2),
+(1, 'keySkillsStrength','Key Skills Strength', 3),
+(1, 'currentCompany','Current Commpany', 4),
+(1, 'currentDesignation','Current Designation', 5),
+(1, 'email','Email', 6),
+(1, 'countryCode','Country Code', 7),
+(1, 'mobile','Mobile', 8),
+(1, 'totalExperience','Total Experience', 9),
+(1, 'createdBy','Created By', 10);
+
+drop view if exists exportDataView
+create view exportDataView AS
+select
+	jcm.job_id as jobId,
+	concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidateName,
+	jcm.chatbot_status as chatbotStatus,
+	cvr.overall_rating as keySkillsStrength,
+	currentCompany.company_name as currentCompany,
+	currentCompany.designation as currentDesignation,
+	jcm.email,
+	jcm.country_code as countryCode,
+	jcm.mobile,
+	cd.total_experience as totalExperience,
+	concat(users.first_name, ' ', users.last_name) as createdBy,
+	jsq.ScreeningQn as screeningQuestion
+	, csqr.response as candidateResponse
+	from job_candidate_mapping jcm
+	left join cv_rating cvr ON cvr.job_candidate_mapping_id = jcm.id
+	left join (
+		select candidate_id, company_name, designation from candidate_company_details where id in (
+				select min(id) from candidate_company_details
+				group by candidate_id
+			)
+	) as currentCompany on jcm.candidate_id = currentCompany.candidate_id
+	left join candidate_details cd on cd.candidate_id = jcm.candidate_id
+	inner join users ON users.id = jcm.created_by
+	left join (
+		select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
+		union
+		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.company_screening_question_id=usq.id
+		union
+		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
+	) as jsq on jsq.jsqJobId = jcm.job_id
+	left join
+	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId
