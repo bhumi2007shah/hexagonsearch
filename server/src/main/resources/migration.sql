@@ -1148,7 +1148,7 @@ ADD COLUMN SERVING_NOTICE_PERIOD BOOL NOT NULL DEFAULT 'f',
 ADD COLUMN NEGOTIABLE_NOTICE_PERIOD BOOL NOT NULL DEFAULT 'f',
 ADD COLUMN OTHER_OFFERS BOOL NOT NULL DEFAULT 'f',
 ADD COLUMN UPDATE_RESUME BOOL NOT NULL DEFAULT 'f',
-ADD COLUMN COMMUNICATION_RATING SMALLINT DEFAULT 0 NOT NULL;
+ADD COLUMN COMMUNICATION_RATING SMALLINT DEFAULT 0;
 
 ALTER TABLE CANDIDATE_DETAILS
 ADD COLUMN RELEVANT_EXPERIENCE NUMERIC (4, 2);
@@ -1177,7 +1177,7 @@ CREATE TABLE EXPORT_FORMAT_DETAIL(
 INSERT INTO export_format_master
 (format, system_supported)
 values
-('default', true)
+('default', true);
 
 INSERT INTO export_format_detail
 (format_id, column_name, header,  "position")
@@ -1193,7 +1193,7 @@ VALUES
 (1, 'totalExperience','Total Experience', 9),
 (1, 'createdBy','Created By', 10);
 
-drop view if exists exportDataView
+drop view if exists exportDataView;
 create view exportDataView AS
 select
 	jcm.job_id as jobId,
@@ -1227,4 +1227,4 @@ select
 		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
 	) as jsq on jsq.jsqJobId = jcm.job_id
 	left join
-	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId
+	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId;
