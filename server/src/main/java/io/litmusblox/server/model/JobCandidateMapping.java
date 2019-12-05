@@ -116,6 +116,27 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date chatbotUpdatedOn;
 
+    @Column(name="ALTERNATE_EMAIL")
+    private String alternateEmail;
+
+    @Column(name="ALTERNATE_MOBILE")
+    private String alternateMobile;
+
+    @Column(name="SERVING_NOTICE_PERIOD")
+    private boolean servingNoticePeriod;
+
+    @Column(name="NEGOTIABLE_NOTICE_PERIOD")
+    private boolean negotiableNoticePeriod;
+
+    @Column(name="OTHER_OFFERS")
+    private boolean otherOffers;
+
+    @Column(name="UPDATE_RESUME")
+    private boolean updateResume;
+
+    @Column(name="COMMUNICATION_RATING")
+    private Integer communicationRating;
+
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private CandidateTechResponseData techResponseData;
@@ -143,6 +164,10 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Transient
     @JsonProperty
     Map<Integer, Map<String, Integer>> candidateSkillsByRating;
+
+    @Transient
+    @JsonProperty
+    List<String> candidateKeySkills = new ArrayList<>();
 
     @Transient
     @JsonProperty
