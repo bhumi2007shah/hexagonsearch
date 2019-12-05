@@ -71,7 +71,7 @@ public class JobCandidateMappingController {
                 new HashMap<String, List<String>>() {{
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
-                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "status", "candidateName"));
+                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
                 }});
     }
 
@@ -122,7 +122,7 @@ public class JobCandidateMappingController {
                 new HashMap<String, List<String>>() {{
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
-                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "status", "candidateName"));
+                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
                         }});
     }
 
