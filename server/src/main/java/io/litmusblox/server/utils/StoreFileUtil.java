@@ -91,6 +91,8 @@ public class StoreFileUtil {
         try {
             StringBuffer filePath=new StringBuffer();
             String staticRepoPath = null;
+            //Clean file name, remove all other than alphabet, digit, "_"
+            fileName = Util.cleanFileName(fileName);
             if (Util.isNull(repoLocation)) {
                 StringBuffer info = new StringBuffer(fileName).append(" repoLocation is null ");
                 log.info(info.toString());
