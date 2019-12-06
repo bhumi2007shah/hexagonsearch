@@ -1103,4 +1103,15 @@ public class JobService implements IJobService {
         log.info("Completed finding stage steps for jobId {} in {} ms", jobId, (System.currentTimeMillis() - startTime));
         return returnList;
     }
+
+    /**
+     * Method to find a job based on the reference id provided
+     *
+     * @param jobReferenceId
+     * @return
+     */
+    @Transactional(readOnly = true)
+    public Job findByJobReferenceId(UUID jobReferenceId) {
+        return jobRepository.findByJobReferenceId(jobReferenceId);
+    }
 }

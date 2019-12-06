@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.litmusblox.server.utils.DateDeserializer;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -22,6 +24,8 @@ import java.util.Date;
  */
 @Data
 @Entity
+@Builder
+@AllArgsConstructor
 @Table(name = "CANDIDATE_COMPANY_DETAILS")
 @JsonFilter("CandidateCompanyDetails")
 public class CandidateCompanyDetails {

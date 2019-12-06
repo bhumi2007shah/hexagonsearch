@@ -137,7 +137,15 @@
 			<version>2.6</version>
 		</dependency>
 
-		<!-- for unit testing -->
+        <!-- for parsing html data -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.11.3</version>
+        </dependency>
+
+
+        <!-- for unit testing -->
 
 		<!-- Dependencies for embedded postgresql db for tests-->
 		<dependency>
@@ -190,6 +198,11 @@
 			<artifactId>spring-security-test</artifactId>
 			<version>5.2.0.RELEASE</version>
 			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.mail</groupId>
+			<artifactId>javax.mail</artifactId>
+			<version>1.6.2</version>
 		</dependency>
 
 

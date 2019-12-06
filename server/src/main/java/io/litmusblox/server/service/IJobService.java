@@ -9,6 +9,7 @@ import io.litmusblox.server.model.JobHistory;
 import io.litmusblox.server.model.JobStageStep;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Interface definition for Job Service
@@ -95,4 +96,11 @@ public interface IJobService {
      * @throws Exception
      */
     List<JobStageStep> getJobStageStep(Long jobId) throws Exception;
+
+    /**
+     * Method to find a job based on the reference id provided
+     * @param jobReferenceId
+     * @return
+     */
+    Job findByJobReferenceId(UUID jobReferenceId);
 }

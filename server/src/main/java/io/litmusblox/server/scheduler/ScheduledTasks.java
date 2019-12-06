@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.scheduler;
 
+import io.litmusblox.server.service.impl.FetchEmailService;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,13 +27,19 @@ public class ScheduledTasks {
     @Autowired
     IProcessUploadedCV processUploadedCV;
 
-    @Scheduled(fixedRate = 30000, initialDelay = 5000)
+    @Autowired
+    FetchEmailService fetchEmailService;
+
+    //@Scheduled(fixedRate = 30000, initialDelay = 5000)
     public void parseAndProcessCv() {
         processUploadedCV.processCv();
     }
 
-    @Scheduled(fixedRate = 120000, initialDelay = 5000)
+    //@Scheduled(fixedRate = 120000, initialDelay = 5000)
     public void rateAndProcessCv() {
         processUploadedCV.rateCv();
     }
+
+    @Scheduled(fixedRate = 10*60*1000, initialDelay = 2000)
+    public void processEmailApplications() { fetchEmailService.processEmail(); }
 }
