@@ -539,8 +539,9 @@ public class RChilliCvProcessor {
 
     private MultipartFile createMultipartFile(File file) throws IOException {
         log.info("inside createMultipartFile method");
+        InputStream input = null;
         DiskFileItem fileItem = new DiskFileItem("file", "text/plain", false, file.getName(), (int) file.length(), file.getParentFile());
-        InputStream input = new FileInputStream(file);
+        input = new FileInputStream(file);
         OutputStream os = fileItem.getOutputStream();
         int ret = input.read();
         while (ret != -1) {
@@ -548,6 +549,7 @@ public class RChilliCvProcessor {
             ret = input.read();
         }
         os.flush();
+        input.close();
         return new CommonsMultipartFile(fileItem);
     }
 

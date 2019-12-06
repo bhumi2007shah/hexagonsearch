@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -45,11 +46,12 @@ public class StoreFileUtil {
     public static String storeFile(MultipartFile multipartFile, long id, String repoLocation, String uploadType, Candidate candidate, User user) throws Exception {
         File targetFile =  null;
         Boolean isZipFile=false;
+        InputStream is = null;
         try {
             if(uploadType.equals(IConstant.FILE_TYPE.zip.toString()) || uploadType.equals(IConstant.FILE_TYPE.rar.toString())){
                 isZipFile=true;
             }
-            InputStream is = multipartFile.getInputStream();
+            is = multipartFile.getInputStream();
             String filePath = getFileName(multipartFile.getOriginalFilename(), id, repoLocation, uploadType, (null!=candidate)?candidate.getId():(null!=user)?user.getId():null, isZipFile);
             //Util.storeFile(is, filePath,repoLocation);
             if(Util.isNull(filePath)){
@@ -83,6 +85,12 @@ public class StoreFileUtil {
         }
         catch (Exception e) {
             throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,e);
+        }finally {
+            try {
+                is.close();
+            }catch (IOException ex){
+                ex.printStackTrace();
+            }
         }
     }
 
