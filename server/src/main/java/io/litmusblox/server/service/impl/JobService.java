@@ -1142,10 +1142,10 @@ public class JobService implements IJobService {
         List<ExportFormatMaster> exportFormatMasters = new ArrayList<>();
 
         //add all default export format supported by litmusblox by default
-        exportFormatMasters.addAll(exportFormatMasterRepository.exportDefaultFormatMasterList());
+        exportFormatMasters.addAll(MasterDataBean.getInstance().getDefaultExportFormats());
 
         //add company specific export format.
-        exportFormatMasters.addAll(exportFormatMasterRepository.findByCompanyId(job.getCompanyId().getId()));
+        exportFormatMasters.addAll(exportFormatMasterRepository.findByCompanyIdAndSystemSupportedIsTrue(job.getCompanyId().getId()));
 
         //create map of id and format from above list
         exportFormatMasters.forEach(exportFormatMaster -> {

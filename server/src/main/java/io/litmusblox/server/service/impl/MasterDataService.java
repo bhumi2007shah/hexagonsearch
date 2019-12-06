@@ -24,7 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -136,11 +139,7 @@ public class MasterDataService implements IMasterDataService {
 
         //populate default export format supported by litmusblox
         List<ExportFormatMaster> exportFormatMasters = exportFormatMasterRepository.exportDefaultFormatMasterList();
-        Map<Long, String> exportFormatMasterMap = new HashMap<>();
-        exportFormatMasters.forEach(exportFormatMaster -> {
-            exportFormatMasterMap.put(exportFormatMaster.getId(), exportFormatMaster.getFormat());
-        });
-        MasterDataBean.getInstance().getDefaultExportFormats().putAll(exportFormatMasterMap);
+        MasterDataBean.getInstance().getDefaultExportFormats().addAll(exportFormatMasters);
 
         //read the limit from application.properties
         //convert the maxUploadDataLimit from Mb into bytes
@@ -275,8 +274,6 @@ public class MasterDataService implements IMasterDataService {
             case ROLE:
                 master.getRole().addAll(MasterDataBean.getInstance().getRole());
                 break;
-            case DEFAULT_EXPORT_FORMAT:
-                master.getDefaultExportFormats().putAll(MasterDataBean.getInstance().getDefaultExportFormats());
             default: //for all other properties, use reflection
 
                 //handle to the getter method for the field

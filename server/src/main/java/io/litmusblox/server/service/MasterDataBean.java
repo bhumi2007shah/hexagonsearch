@@ -63,7 +63,7 @@ public class MasterDataBean {
 
     private List<StepsPerStage> defaultStepsPerStage = new ArrayList<>();
 
-    private Map<Long, String> defaultExportFormats = new HashMap<>();
+    private List<ExportFormatMaster> defaultExportFormats = new ArrayList<>();
 
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;
