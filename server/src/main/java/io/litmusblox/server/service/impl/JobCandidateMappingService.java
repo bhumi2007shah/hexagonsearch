@@ -1142,31 +1142,36 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     //Method for update alternate mobile and email in jcm
     private JobCandidateMapping updateOrCreateAlternateMobileEmail(JobCandidateMapping jcm, JobCandidateMapping jcmFromDb, User loggedInUser){
         log.info("inside updateOrCreateAlternateMobileEmail");
-        jcm.setAlternateMobile(validateMobile(jcm.getAlternateMobile(), jcmFromDb.getCountryCode()));
-        jcm.setAlternateEmail(validateEmail(jcm.getAlternateEmail()));
+        if(Util.isNotNull(jcm.getAlternateMobile()))
+            jcm.setAlternateMobile(validateMobile(jcm.getAlternateMobile(), jcmFromDb.getCountryCode()));
+
+        if(Util.isNotNull(jcm.getAlternateEmail()))
+            jcm.setAlternateEmail(validateEmail(jcm.getAlternateEmail()));
 
         CandidateEmailHistory candidateEmailHistory = null;
         CandidateMobileHistory candidateMobileHistory = null;
         if(Util.isNotNull(jcm.getAlternateEmail())) {
             jcmFromDb.setAlternateEmail(jcm.getAlternateEmail());
-            candidateEmailHistory = candidateEmailHistoryRepository.findByEmail(jcm.getAlternateEmail());
+            candidateEmailHistory = getEmailHistory(jcm.getAlternateEmail());
         }
 
         if(Util.isNotNull(jcm.getAlternateMobile())) {
             jcmFromDb.setAlternateMobile(jcm.getAlternateMobile());
-            candidateMobileHistory = candidateMobileHistoryRepository.findByMobileAndCountryCode(jcm.getAlternateMobile(), jcmFromDb.getCountryCode());
+            candidateMobileHistory = getMobileHistory(jcm.getAlternateMobile(), jcmFromDb.getCountryCode());
         }
 
         if(null != candidateEmailHistory && null != candidateMobileHistory){
             if(!candidateEmailHistory.getCandidate().getId().equals(candidateMobileHistory.getCandidate().getId()))
                 throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY + " - " + jcm.getAlternateMobile() + " "+jcm.getAlternateEmail()+", While add/update alternate email and mobile", HttpStatus.BAD_REQUEST);
-        }else{
-            if(null != candidateEmailHistory && null == candidateMobileHistory){
+        }else if(null == candidateEmailHistory && null == candidateMobileHistory){
+            if(Util.isNotNull(jcm.getAlternateMobile()))
                 candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jcm.getAlternateMobile(), jcmFromDb.getCountryCode(), new Date(), loggedInUser));
-            }else if(null == candidateEmailHistory && null != candidateMobileHistory){
+            if(Util.isNotNull(jcm.getAlternateEmail()))
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(jcmFromDb.getCandidate(), jcm.getAlternateEmail(), new Date(), loggedInUser));
-            }else{
+        }else{
+            if(null != candidateEmailHistory && null == candidateMobileHistory && Util.isNotNull(jcm.getAlternateMobile())){
                 candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jcm.getAlternateMobile(), jcmFromDb.getCountryCode(), new Date(), loggedInUser));
+            }else if(null != candidateMobileHistory && null == candidateEmailHistory && Util.isNotNull(jcm.getAlternateEmail())){
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(jcmFromDb.getCandidate(), jcm.getAlternateEmail(), new Date(), loggedInUser));
             }
         }
