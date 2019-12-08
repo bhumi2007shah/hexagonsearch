@@ -102,6 +102,7 @@ public class RChilliCvProcessor {
     public void processFile(String filePath, String rchilliJson) {
         log.info("Inside processFile method");
         // remove task steps
+        log.info("Temp file path : "+filePath);
         String fileName = filePath.substring(filePath.lastIndexOf(File.separator) + 1);
         String[] s = fileName.split("_");
 
