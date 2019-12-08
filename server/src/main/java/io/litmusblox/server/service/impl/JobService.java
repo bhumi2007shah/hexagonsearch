@@ -1142,10 +1142,10 @@ public class JobService implements IJobService {
         List<ExportFormatMaster> exportFormatMasters = new ArrayList<>();
 
         //add all default export format supported by litmusblox by default
-        exportFormatMasters.addAll(exportFormatMasterRepository.exportDefaultFormatMasterList());
+        exportFormatMasters.addAll(MasterDataBean.getInstance().getDefaultExportFormats());
 
         //add company specific export format.
-        exportFormatMasters.addAll(exportFormatMasterRepository.findByCompanyId(job.getCompanyId().getId()));
+        exportFormatMasters.addAll(exportFormatMasterRepository.findByCompanyIdAndSystemSupportedIsTrue(job.getCompanyId().getId()));
 
         //create map of id and format from above list
         exportFormatMasters.forEach(exportFormatMaster -> {
@@ -1210,7 +1210,7 @@ public class JobService implements IJobService {
             if (exportResponseBean.stream().filter(object -> {
                 return object.get("Email").toString().equalsIgnoreCase(candidateData.get("Email").toString());
             }).collect(Collectors.toList()).size() == 0){
-                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), em);
+                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), jobId, em);
                 questionAnswerMapForCandidate = questionAnswerMapForCandidate.entrySet().stream().sorted(comparingByKey())
                         .collect(toMap(e->e.getKey(), e->e.getValue(), (e1, e2)-> e2, LinkedHashMap::new));
                 if(questionAnswerMapForCandidate.size()!=0){

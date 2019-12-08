@@ -23,5 +23,5 @@ public interface ExportFormatMasterRepository extends JpaRepository<ExportFormat
     @Query(nativeQuery = true, value = "select * from export_format_master where company_id is null and system_supported=true")
     List<ExportFormatMaster> exportDefaultFormatMasterList();
 
-    List<ExportFormatMaster> findByCompanyId(Long companyId);
+    List<ExportFormatMaster> findByCompanyIdAndSystemSupportedIsTrue(Long companyId);
 }

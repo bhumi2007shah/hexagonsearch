@@ -44,9 +44,9 @@ public class ExportData {
         return exportDataList;
     }
 
-    public static LinkedHashMap<String, String> getQuestionAnswerForCandidate(String email, EntityManager em){
+    public static LinkedHashMap<String, String> getQuestionAnswerForCandidate(String email, Long jobId, EntityManager em){
         LinkedHashMap<String, String> questionAnswerMapForCandidate = new LinkedHashMap<>();
-        String query = "select screeningQuestion, candidateResponse from exportDataView where email='"+email+"'";
+        String query = "select screeningQuestion, candidateResponse from exportDataView where email='"+email+"' and jobId='"+jobId+"'";
 
         List<Object[]> exportDataList= new ArrayList<>();
 
@@ -59,6 +59,7 @@ public class ExportData {
 
         if(exportDataList.size()!=0){
             exportDataList.forEach(exportData->{
+                if(null!=exportData[0])
                 questionAnswerMapForCandidate.put(exportData[0].toString(), exportData[1]!=null?exportData[1].toString():"");
             });
         }
