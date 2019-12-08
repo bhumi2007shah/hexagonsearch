@@ -1040,36 +1040,18 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 candidateDetailsRepository.save(new CandidateDetails(candidateDetailsByRequest.getDateOfBirth(), candidateDetailsByRequest.getLocation(), candidateDetailsByRequest.getTotalExperience(), candidateDetailsByRequest.getRelevantExperience()));
             }
 
-            //Update candidate education details
-            CandidateEducationDetails candidateEducationFromRequest = jobCandidateMapping.getCandidate().getCandidateEducationDetails().get(0);
-            AtomicReference<CandidateEducationDetails> candidateEducationFromDb = new AtomicReference<>(new CandidateEducationDetails());
-            if (Util.isNotNull(candidateEducationFromRequest.getDegree())) {
-                AtomicBoolean isDegreePresent = new AtomicBoolean(false);
-                jcmFromDb.getCandidate().getCandidateEducationDetails().forEach(candidateEducationDetails -> {
-                    if (candidateEducationDetails.getDegree().equalsIgnoreCase(candidateEducationFromRequest.getDegree())) {
-                        candidateEducationFromDb.set(candidateEducationDetails);
-                        isDegreePresent.set(true);
-                    }
-                });
-                if (!isDegreePresent.get() || null == jcmFromDb.getCandidate().getCandidateEducationDetails()) {
-                    if (candidateEducationFromRequest.getDegree().length() > IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue())
-                        candidateEducationFromRequest.setDegree(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.DEGREE.name(), IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue(), candidateEducationFromRequest.getDegree()));
-
-                    if (candidateEducationFromRequest.getInstituteName().length() > IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue())
-                        candidateEducationFromRequest.setInstituteName(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.name(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue(), candidateEducationFromRequest.getInstituteName()));
-
-                    CandidateEducationDetails candidateEducationDetails = new CandidateEducationDetails(jcmFromDb.getCandidate().getId(), candidateEducationFromRequest.getDegree(), Util.isNotNull(candidateEducationFromRequest.getYearOfPassing())?candidateEducationFromRequest.getYearOfPassing():String.valueOf(Calendar.getInstance().get(Calendar.YEAR)), candidateEducationFromRequest.getInstituteName());
-                    candidateEducationDetailsRepository.save(candidateEducationDetails);
-                }else {
-                    CandidateEducationDetails candidateEducationDetails1 = candidateEducationFromDb.get();
-                    if (candidateEducationFromRequest.getInstituteName().length() > IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue())
-                        candidateEducationFromRequest.setInstituteName(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.name(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue(), candidateEducationFromRequest.getInstituteName()));
-
-                    candidateEducationDetails1.setInstituteName(candidateEducationFromRequest.getInstituteName());
-                    candidateEducationDetails1.setYearOfPassing(Util.isNotNull(candidateEducationFromRequest.getYearOfPassing())?candidateEducationFromRequest.getYearOfPassing():String.valueOf(Calendar.getInstance().get(Calendar.YEAR)));
-                    candidateEducationDetailsRepository.save(candidateEducationDetails1);
+            JobCandidateMapping finalJcmFromDb = jcmFromDb;
+            jobCandidateMapping.getCandidate().getCandidateEducationDetails().forEach(candidateEducationFromRequest ->{
+                if (Util.isNotNull(candidateEducationFromRequest.getDegree())) {
+                    AtomicReference<CandidateEducationDetails> tempEducationDetails=new AtomicReference<>();
+                    finalJcmFromDb.getCandidate().getCandidateEducationDetails().forEach(candidateEducationFromDb -> {
+                        if (candidateEducationFromDb.getDegree().equalsIgnoreCase(candidateEducationFromRequest.getDegree())) {
+                            tempEducationDetails.set(candidateEducationFromDb);
+                        }
+                    });
+                    createAndUpdateEducationDetails(candidateEducationFromRequest, finalJcmFromDb, tempEducationDetails.get());
                 }
-            }
+            });
 
             //Update KeySkills
             List<String> candidateSkillsFromDb = new ArrayList<>();
@@ -1137,6 +1119,26 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 companyDetails.setDesignation(companyDetailsByRequest.getDesignation());
         }
         return companyDetails;
+    }
+
+    private void createAndUpdateEducationDetails(CandidateEducationDetails candidateEducationFromRequest, JobCandidateMapping jcmFromDb, CandidateEducationDetails candidateEducationFromDb){
+        if (null == candidateEducationFromDb || jcmFromDb.getCandidate().getCandidateEducationDetails().size()==0) {
+            if (candidateEducationFromRequest.getDegree().length() > IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue())
+                candidateEducationFromRequest.setDegree(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.DEGREE.name(), IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue(), candidateEducationFromRequest.getDegree()));
+
+            if (candidateEducationFromRequest.getInstituteName().length() > IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue())
+                candidateEducationFromRequest.setInstituteName(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.name(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue(), candidateEducationFromRequest.getInstituteName()));
+
+            CandidateEducationDetails candidateEducationDetails = new CandidateEducationDetails(jcmFromDb.getCandidate().getId(), candidateEducationFromRequest.getDegree(), Util.isNotNull(candidateEducationFromRequest.getYearOfPassing())?candidateEducationFromRequest.getYearOfPassing():String.valueOf(Calendar.getInstance().get(Calendar.YEAR)), candidateEducationFromRequest.getInstituteName());
+            candidateEducationDetailsRepository.save(candidateEducationDetails);
+        }else {
+            if (candidateEducationFromRequest.getInstituteName().length() > IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue())
+                candidateEducationFromRequest.setInstituteName(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.name(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue(), candidateEducationFromRequest.getInstituteName()));
+
+            candidateEducationFromDb.setInstituteName(candidateEducationFromRequest.getInstituteName());
+            candidateEducationFromDb.setYearOfPassing(Util.isNotNull(candidateEducationFromRequest.getYearOfPassing())?candidateEducationFromRequest.getYearOfPassing():String.valueOf(Calendar.getInstance().get(Calendar.YEAR)));
+            candidateEducationDetailsRepository.save(candidateEducationFromDb);
+        }
     }
 
     //Method for update alternate mobile and email in jcm
