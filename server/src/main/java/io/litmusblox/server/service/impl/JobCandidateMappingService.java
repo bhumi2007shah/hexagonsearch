@@ -1040,6 +1040,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 candidateDetailsRepository.save(new CandidateDetails(candidateDetailsByRequest.getDateOfBirth(), candidateDetailsByRequest.getLocation(), candidateDetailsByRequest.getTotalExperience(), candidateDetailsByRequest.getRelevantExperience()));
             }
 
+            //Update education details
             JobCandidateMapping finalJcmFromDb = jcmFromDb;
             jobCandidateMapping.getCandidate().getCandidateEducationDetails().forEach(candidateEducationFromRequest ->{
                 if (Util.isNotNull(candidateEducationFromRequest.getDegree())) {
