@@ -118,7 +118,7 @@ public interface IConstant {
     }
 
     enum Stage {
-        Source ("Source"), Screen ("Screen"), ResumeSubmit ("Resume Submit"), Interview ("Interview"), MakeOffer("Make Offer"), Offer ("Offer"), Join ("Join"), Reject ("Reject");
+        Source ("Sourcing"), Screen ("Screening"), ResumeSubmit ("Submitted"), Interview ("Interview"), MakeOffer("Make Offer"), Offer ("Offer"), Join ("Hired"), Reject ("Rejected");
         private String value;
 
         Stage(String val) { this.value = val; }
