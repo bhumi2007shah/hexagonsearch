@@ -1071,6 +1071,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 AtomicBoolean isCompanyPresent = new AtomicBoolean(false);
                 jcmFromDb.getCandidate().getCandidateCompanyDetails().stream().forEach(CompanyDetails -> {
                     if (CompanyDetails.getCompanyName().equalsIgnoreCase(companyDetailsByRequest.getCompanyName())) {
+                        companyDetailsByRequest.setId(CompanyDetails.getId());
                         isCompanyPresent.set(true);
                     }
                 });
@@ -1088,24 +1089,36 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                     companyDetails = new CandidateCompanyDetails(jcmFromDb.getCandidate().getId(), companyDetailsByRequest.getCompanyName(), startDate, endDate);
                     companyDetails = addCompanyDetailsInfo(companyDetails, companyDetailsByRequest);
                     if (null != jcmFromDb.getCandidate().getCandidateCompanyDetails()) {
-                        List<CandidateCompanyDetails> oldCompanyList = jcmFromDb.getCandidate().getCandidateCompanyDetails();
-                        List<CandidateCompanyDetails> newCompanyList = new ArrayList<>(oldCompanyList.size() + 1);
-                        newCompanyList.add(companyDetails);
-                        newCompanyList.addAll(oldCompanyList);
-                        candidateCompanyDetailsRepository.deleteAll(oldCompanyList);
-                        candidateCompanyDetailsRepository.flush();
-                        candidateCompanyDetailsRepository.saveAll(newCompanyList);
+                        reStructureCompanyList(jcmFromDb, companyDetails);
                     }
                 } else {
                     if (null != companyDetailsByRequest.getId()) {
                         companyDetails = candidateCompanyDetailsRepository.findById(companyDetailsByRequest.getId()).orElse(null);
                         companyDetails = addCompanyDetailsInfo(companyDetails, companyDetailsByRequest);
-                        candidateCompanyDetailsRepository.save(companyDetails);
+                        reStructureCompanyList(jcmFromDb, companyDetails);
                     }
                 }
                 log.info("Edit candidate info successfully");
             }
         }
+    }
+
+    private void reStructureCompanyList(JobCandidateMapping jcmFromDb, CandidateCompanyDetails companyDetails){
+        List<CandidateCompanyDetails> oldCompanyList = jcmFromDb.getCandidate().getCandidateCompanyDetails();
+        List<CandidateCompanyDetails> removeCompanyList = new ArrayList<>();
+        CandidateCompanyDetails finalCompanyDetails = companyDetails;
+        oldCompanyList.forEach(oldCompanyDetails->{
+            if(oldCompanyDetails.getId().equals(finalCompanyDetails.getId())){
+                removeCompanyList.add(oldCompanyDetails);
+            }
+        });
+        oldCompanyList.removeAll(removeCompanyList);
+        List<CandidateCompanyDetails> newCompanyList = new ArrayList<>(oldCompanyList.size() + 1);
+        newCompanyList.add(companyDetails);
+        newCompanyList.addAll(oldCompanyList);
+        candidateCompanyDetailsRepository.deleteAll(oldCompanyList);
+        candidateCompanyDetailsRepository.flush();
+        candidateCompanyDetailsRepository.saveAll(newCompanyList);
     }
 
     private CandidateCompanyDetails addCompanyDetailsInfo(CandidateCompanyDetails companyDetails, CandidateCompanyDetails companyDetailsByRequest) {
