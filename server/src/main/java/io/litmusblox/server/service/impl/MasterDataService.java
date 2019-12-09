@@ -97,7 +97,7 @@ public class MasterDataService implements IMasterDataService {
         });
 
         stageMasterRepository.findAll().stream().forEach(stageMaster -> MasterDataBean.getInstance().getStage().add(stageMaster.getStageName()));
-        MasterDataBean.getInstance().getDefaultStepsPerStage().addAll(stepsPerStageRepository.findAll());
+        MasterDataBean.getInstance().getDefaultStepsPerStage().addAll(stepsPerStageRepository.findAllByOrderByIdAsc());
 
         currencyRepository.findAll().stream().forEach(currency -> {
             MasterDataBean.getInstance().getCurrencyList().add(currency.getCurrencyShortName());
