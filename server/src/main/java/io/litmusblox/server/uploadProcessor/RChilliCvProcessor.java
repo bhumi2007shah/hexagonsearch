@@ -84,6 +84,9 @@ public class RChilliCvProcessor {
     @Resource
     CandidateMobileHistoryRepository candidateMobileHistoryRepository;
 
+    @Resource
+    CvRatingRepository cvRatingRepository;
+
     @Transactional(readOnly = true)
     User getUser(long userId) {
         return userRepository.findById(userId).get();
@@ -342,14 +345,20 @@ public class RChilliCvProcessor {
             cvParsingDetails.setParsingResponseJson(rchilliFormattedJson);
             cvParsingDetails.setErrorMessage(errorMessage);
 
-            if (null != errorMessage)
-                cvParsingDetails.setCvRatingApiFlag(true); //to make sure the record doesn't get processed against CV Rating api
-
-
+            CvRating cvRating =null;
             JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByJobIdAndCandidateId(jobId, candidateId);
 
-            if(null != jobCandidateMapping)
+            if(null != jobCandidateMapping){
                 cvParsingDetails.setJobCandidateMappingId(jobCandidateMapping);
+                cvRating = cvRatingRepository.findByJobCandidateMappingId(jobCandidateMapping.getId());
+            }
+
+            if (null != errorMessage){
+                if(IConstant.UPLOAD_STATUS.Success.toString().equals(cvParsingDetails.getProcessingStatus()) && null == cvRating)
+                    cvParsingDetails.setCvRatingApiFlag(false);
+                else
+                    cvParsingDetails.setCvRatingApiFlag(true); //to make sure the record doesn't get processed against CV Rating api
+            }
 
             cvParsingDetailsRepository.save(cvParsingDetails);
             log.info("Save CvParsingDetails");
