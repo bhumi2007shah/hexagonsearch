@@ -1031,18 +1031,20 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             //Update Candidate Details
             CandidateDetails candidateDetails = null;
             CandidateDetails candidateDetailsByRequest = jobCandidateMapping.getCandidate().getCandidateDetails();
-            if (null != jcmFromDb.getCandidate().getCandidateDetails()) {
-                candidateDetails = candidateDetailsRepository.findById(jcmFromDb.getCandidate().getCandidateDetails().getId()).orElse(null);
-            }
+            if(null != candidateDetailsByRequest){
+                if (null != jcmFromDb.getCandidate().getCandidateDetails()) {
+                    candidateDetails = candidateDetailsRepository.findById(jcmFromDb.getCandidate().getCandidateDetails().getId()).orElse(null);
+                }
 
-            if (null != candidateDetails) {
-                candidateDetails.setTotalExperience(candidateDetailsByRequest.getTotalExperience());
-                candidateDetails.setRelevantExperience(candidateDetailsByRequest.getRelevantExperience());
-                candidateDetails.setDateOfBirth(candidateDetailsByRequest.getDateOfBirth());
-                candidateDetails.setLocation(candidateDetailsByRequest.getLocation());
-                candidateDetailsRepository.save(candidateDetails);
-            } else {
-                candidateDetailsRepository.save(new CandidateDetails(candidateDetailsByRequest.getDateOfBirth(), candidateDetailsByRequest.getLocation(), candidateDetailsByRequest.getTotalExperience(), candidateDetailsByRequest.getRelevantExperience()));
+                if (null != candidateDetails) {
+                    candidateDetails.setTotalExperience(candidateDetailsByRequest.getTotalExperience());
+                    candidateDetails.setRelevantExperience(candidateDetailsByRequest.getRelevantExperience());
+                    candidateDetails.setDateOfBirth(candidateDetailsByRequest.getDateOfBirth());
+                    candidateDetails.setLocation(candidateDetailsByRequest.getLocation());
+                    candidateDetailsRepository.save(candidateDetails);
+                } else {
+                    candidateDetailsRepository.save(new CandidateDetails(candidateDetailsByRequest.getDateOfBirth(), candidateDetailsByRequest.getLocation(), candidateDetailsByRequest.getTotalExperience(), candidateDetailsByRequest.getRelevantExperience(), jcmFromDb.getCandidate()));
+                }
             }
 
             //Update education details
