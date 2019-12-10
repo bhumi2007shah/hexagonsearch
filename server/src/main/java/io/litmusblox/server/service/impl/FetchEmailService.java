@@ -20,6 +20,7 @@ import io.litmusblox.server.service.IJobCandidateMappingService;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.uploadProcessor.impl.NaukriHtmlParser;
+import io.litmusblox.server.utils.SentryUtil;
 import io.litmusblox.server.utils.Util;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -35,10 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Log4j2
@@ -97,17 +95,27 @@ public class FetchEmailService {
             for (int i = 0; i < messages.length; i++) {
                 Message message = messages[i];
                 log.info("Subject: {}", message.getSubject());
-                //check if the mail is an application from Naukri
-                if (null != message.getSubject() && message.getSubject().indexOf(naukriSubjectString) != -1) {
-                    MailData mailData = new MailData();
-                    mailData.setJobFromReference(findJobForEmailSubject(message.getSubject()));
+                try {
+                    //check if the mail is an application from Naukri
+                    if (null != message.getSubject() && message.getSubject().indexOf(naukriSubjectString) != -1) {
+                        MailData mailData = new MailData();
+                        mailData.setJobFromReference(findJobForEmailSubject(message.getSubject()));
 
-                    writePart(message, mailData);
-                    message.setFlag(Flags.Flag.SEEN, true);
-                    UploadResponseBean response = jobCandidateMappingService.uploadCandidateFromPlugin(mailData.getCandidateFromMail(), mailData.getJobFromReference().getId(), null, Optional.of(mailData.getJobFromReference().getCreatedBy()));
-                    if (IConstant.UPLOAD_STATUS.Success.name().equals(response.getStatus()))
-                        saveCandidateCv(mailData);
-                    break;
+                        writePart(message, mailData);
+                        message.setFlag(Flags.Flag.SEEN, true);
+                        UploadResponseBean response = jobCandidateMappingService.uploadCandidateFromPlugin(mailData.getCandidateFromMail(), mailData.getJobFromReference().getId(), null, Optional.of(mailData.getJobFromReference().getCreatedBy()));
+                        if (IConstant.UPLOAD_STATUS.Success.name().equals(response.getStatus()))
+                            saveCandidateCv(mailData);
+
+                    }
+                } catch(Exception e) {
+                    e.printStackTrace();
+                    log.error("Error processing mail with subject: {} \n Error message: {}", message.getSubject(), e.getMessage());
+
+                    Map<String, String> breadCrumb = new HashMap<>();
+                    breadCrumb.put("Mail Subject",message.getSubject());
+                    breadCrumb.put("Error", e.getMessage());
+                    SentryUtil.logWithStaticAPI(null,"Error processing Naukri application mail",breadCrumb);
                 }
             }
 
@@ -116,12 +124,13 @@ public class FetchEmailService {
             emailStore.close();
 
         } catch (NoSuchProviderException e) {
+            log.error("Error processing Naukri application mail {}" , e.getMessage());
             e.printStackTrace();
         } catch (MessagingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+            log.error("Error processing Naukri application mail {}" , e.getMessage());
             e.printStackTrace();
         } catch (Exception e) {
+            log.error("Error processing Naukri application mail {}" , e.getMessage());
             e.printStackTrace();
         }
     }
@@ -135,15 +144,17 @@ public class FetchEmailService {
         }
 
         fileLocation.append(File.separator).append(mailData.getCandidateFromMail().getId()).append(".").append(Util.getFileExtension(mailData.getFileName()));
-        Files.write(Paths.get(fileLocation.toString()), mailData.getFileData().getBytes(), StandardOpenOption.CREATE);
+
+        Files.copy(mailData.getFileStream(), Paths.get(fileLocation.toString()));
+        new File(fileLocation.toString());
     }
 
     private Job findJobForEmailSubject(String subject) {
         String jobReferenceId = subject.substring(subject.indexOf(naukriSubjectString) + naukriSubjectString.length());
         log.info("Extracted jobReferenceId: {}", jobReferenceId.substring(0,jobReferenceId.indexOf(',')));
-      //TODO: Uncomment the following
-       // return jobService.findByJobReferenceId(UUID.fromString(jobReferenceId.substring(0,jobReferenceId.indexOf(','))));
-        return jobService.findByJobReferenceId(UUID.fromString("f3469d73-1662-11ea-92f0-74e5f9b964b9"));
+        return jobService.findByJobReferenceId(UUID.fromString(jobReferenceId.substring(0,jobReferenceId.indexOf(','))));
+        //following was for test purpose only
+        //return jobService.findByJobReferenceId(UUID.fromString("f3469d73-1662-11ea-92f0-74e5f9b964b9"));
     }
 
 
@@ -176,17 +187,8 @@ public class FetchEmailService {
                 mailData.setCandidateFromMail(naukriHtmlParser.parseData((String)o, mailData.getJobFromReference().getCreatedBy()));
             } else if (o instanceof InputStream) {
                 log.info("Input stream: File");
-                InputStream is = (InputStream) o;
-                int c;
-
-                StringBuffer fileContents = new StringBuffer();
-                while ((c = is.read()) != -1)
-                    fileContents.append(c);
-
-                is.close();
-
-                mailData.setFileData(fileContents.toString());
                 mailData.setFileName(p.getContentType().substring(p.getContentType().indexOf("name=") + 5).replaceAll("\"",""));
+                mailData.setFileStream((InputStream) o);
             } else {
                 log.info("Unknown type: ");
                 log.info(o.toString());
@@ -201,18 +203,7 @@ public class FetchEmailService {
         Candidate candidateFromMail;
         Job jobFromReference;
         User createdBy;
-        String fileData;
         String fileName;
+        InputStream fileStream;
     }
-
-    /*
-    public static void main(String[] args) {
-
-        String host = "smtp.gmail.com";//change accordingly
-        String mailStoreType = "pop3";
-        final String username= "shital@hexagonsearch.com";
-        final String password= "Hexagon01";//change accordingly
-
-        new FetchEmailService().receiveEmail(host, mailStoreType, username, password);
-    }*/
 }

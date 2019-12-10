@@ -30,16 +30,16 @@ public class ScheduledTasks {
     @Autowired
     FetchEmailService fetchEmailService;
 
-    //@Scheduled(fixedRate = 30000, initialDelay = 5000)
+    @Scheduled(fixedRate = 30000, initialDelay = 5000)
     public void parseAndProcessCv() {
         processUploadedCV.processCv();
     }
 
-    //@Scheduled(fixedRate = 120000, initialDelay = 5000)
+    @Scheduled(fixedRate = 120000, initialDelay = 5000)
     public void rateAndProcessCv() {
         processUploadedCV.rateCv();
     }
 
-    @Scheduled(fixedRate = 10*60*1000, initialDelay = 2000)
+    @Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
     public void processEmailApplications() { fetchEmailService.processEmail(); }
 }

@@ -234,6 +234,7 @@ public class Util {
             }
             else if (name.length > 0) {
                 candidate.setFirstName(toSentenceCase(name[0]));
+                candidate.setLastName("-");
                 return;
             }
         }

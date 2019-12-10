@@ -62,7 +62,7 @@ public class NaukriHtmlParser implements HtmlParser {
         final String[] mobile = new String[1];
         final String[] email = new String[1];
         links.stream().forEach(link-> {
-            if(link.attributes().asList().get(0).getValue().indexOf("tel:") > -1) {
+            if(link.attributes().asList().get(0).getValue().indexOf("tel:") > -1 && candidate.getMobile() == null) {
                 mobile[0] = link.attributes().asList().get(0).getValue().substring(link.attributes().asList().get(0).getValue().indexOf("tel:")+4);
                 candidate.setMobile(mobile[0]);
                 log.info("found mobile: {}", mobile[0]);
@@ -91,7 +91,9 @@ public class NaukriHtmlParser implements HtmlParser {
 
         //set noticePeriod
         String noticePeriod = doc.getElementsContainingOwnText("Notice Period").last().parents().tagName("tbody").get(1).text().replaceAll("Notice Period","").trim();
-        if (noticePeriod.indexOf("Months") != -1)
+        if (noticePeriod.indexOf("Serving") != -1)
+            candidate.getCandidateCompanyDetails().get(0).setNoticePeriod("0");
+        else if (noticePeriod.indexOf("Months") != -1)
             candidate.getCandidateCompanyDetails().get(0).setNoticePeriod(String.valueOf(Integer.parseInt(noticePeriod.substring(0, noticePeriod.indexOf("Months")).trim()) * 30));
         else
             candidate.getCandidateCompanyDetails().get(0).setNoticePeriod(String.valueOf(Integer.parseInt(noticePeriod.substring(0, noticePeriod.indexOf("Days")).trim())));
@@ -102,7 +104,8 @@ public class NaukriHtmlParser implements HtmlParser {
         if (null != pgEduction) {
             if(null == candidate.getCandidateEducationDetails())
                 candidate.setCandidateEducationDetails(new ArrayList<CandidateEducationDetails>());
-            candidate.getCandidateEducationDetails().add(CandidateEducationDetails.builder().degree(pgEduction.substring(0, pgEduction.indexOf("from")).trim()).instituteName(pgEduction.substring(pgEduction.indexOf("from") + 4).trim()).build());
+            if (pgEduction.indexOf("from") != -1)
+                candidate.getCandidateEducationDetails().add(CandidateEducationDetails.builder().degree(pgEduction.substring(0, pgEduction.indexOf("from")).trim()).instituteName(pgEduction.substring(pgEduction.indexOf("from") + 4).trim()).build());
         }
         String ugEducation = education.substring(education.indexOf("UG") + 5, education.indexOf("PG"));
         if (null != ugEducation) {
@@ -112,7 +115,8 @@ public class NaukriHtmlParser implements HtmlParser {
         }
 
         //set location
-        String location = doc.getElementsContainingOwnText("Location").parents().tagName("tr").first().nextElementSibling().nextElementSibling().text();
+        String location = doc.getElementsMatchingOwnText("Location").first().parent().tagName("tr").nextElementSibling().nextElementSibling().text();
+                //parents().tagName("tr").first().nextElementSibling().nextElementSibling().text();
         candidate.getCandidateDetails().setLocation(location.substring(0, location.indexOf("(")).trim());
 
         //set keyskill
