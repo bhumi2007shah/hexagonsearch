@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Controller for REST apis that do not require authentication. For e.g.
@@ -203,7 +204,9 @@ public class NoAuthController {
                     put("CandidateWorkAuthorization", Arrays.asList("id","candidateId"));
                     put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                 }});
-        response.replaceAll("`$companyName`",responseObj.getCreatedBy().getCompany().getCompanyName());
+       // log.info("before call to replace:\n {}",response);
+        response = response.replaceAll(Pattern.quote("$companyName"),responseObj.getCreatedBy().getCompany().getCompanyName());
+       // log.info("after call to replace:\n {}",response);
 
         log.info("Completed processing fetch candidate profile request in " + (System.currentTimeMillis()-startTime) + "ms.");
         return response;
