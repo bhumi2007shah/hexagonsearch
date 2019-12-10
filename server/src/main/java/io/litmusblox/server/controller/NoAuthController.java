@@ -178,7 +178,8 @@ public class NoAuthController {
     String getCandidateProfile(@PathVariable("profileSharingUuid") UUID profileSharingUuid) throws Exception {
         log.info("Received request to fetch candidate profile");
         long startTime = System.currentTimeMillis();
-        String response = Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.getCandidateProfile(profileSharingUuid),
+        JobCandidateMapping responseObj = jobCandidateMappingService.getCandidateProfile(profileSharingUuid);
+        String response = Util.stripExtraInfoFromResponseBean(responseObj,
                 new HashMap<String, List<String>>() {{
                     put("User", Arrays.asList("displayName"));
                     put("ScreeningQuestions", Arrays.asList("id","question","options"));
@@ -202,6 +203,8 @@ public class NoAuthController {
                     put("CandidateWorkAuthorization", Arrays.asList("id","candidateId"));
                     put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                 }});
+        response.replaceAll("`$companyName`",responseObj.getCreatedBy().getCompany().getCompanyName());
+
         log.info("Completed processing fetch candidate profile request in " + (System.currentTimeMillis()-startTime) + "ms.");
         return response;
     }
