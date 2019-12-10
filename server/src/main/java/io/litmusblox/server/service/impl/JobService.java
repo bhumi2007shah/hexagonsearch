@@ -397,7 +397,7 @@ public class JobService implements IJobService {
 
         SingleJobViewResponseBean responseBean = new SingleJobViewResponseBean();
 
-        List<JobCandidateMapping> jcmList = jobCandidateMappingRepository.findByJobAndStage(job, jobStageStepRepository.findStageIdForJob(jobId, stage));
+        List<JobCandidateMapping> jcmList = jobCandidateMappingRepository.findByJobAndStageIn(job, jobStageStepRepository.findStageIdForJob(jobId, stage));
 
         jcmList.forEach(jcmFromDb-> {
             jcmFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(jcmFromDb.getId()));
