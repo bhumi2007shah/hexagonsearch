@@ -200,8 +200,13 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
 
         for (Candidate candidate:candidateList) {
-            if(null!=candidate.getId())
-                saveCandidateSupportiveInfo(candidate, loggedInUser);
+            try {
+                if(null!=candidate.getId())
+                    saveCandidateSupportiveInfo(candidate, loggedInUser);
+            }catch (Exception ex){
+                log.error("Error while processing candidates supportive info :: " + ex.getMessage());
+            }
+
         }
     }
 

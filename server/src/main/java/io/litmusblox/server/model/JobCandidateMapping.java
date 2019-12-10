@@ -135,7 +135,7 @@ public class JobCandidateMapping implements Serializable, Comparable {
     private boolean updateResume;
 
     @Column(name="COMMUNICATION_RATING")
-    private Integer communicationRating;
+    private Integer communicationRating = 0;
 
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
