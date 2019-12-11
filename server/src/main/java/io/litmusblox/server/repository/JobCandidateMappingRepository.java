@@ -28,25 +28,32 @@ import java.util.UUID;
 public interface JobCandidateMappingRepository extends JpaRepository<JobCandidateMapping, Long> {
 
     //find by job and stage id
-    @Transactional
-    List<JobCandidateMapping> findByJobAndStageIn(Job job, List<JobStageStep> stage) throws Exception;
+    @Transactional (readOnly = true)
+    List<JobCandidateMapping> findByJobAndStageInAndRejectedIsFalse(Job job, List<JobStageStep> stage) throws Exception;
+
+    //find all rejected candidates
+    List<JobCandidateMapping> findByJobAndRejectedIsTrue(Job job) throws Exception;
 
     //find count of candidates per stage
-    @Transactional
-    @Query(value = "select stage, count(candidate_id) from job_candidate_mapping where job_id=:jobId group by stage", nativeQuery = true)
+    @Transactional(readOnly = true)
+    @Query(value = "select stage, count(candidate_id) from job_candidate_mapping where job_id=:jobId and rejected is false group by stage", nativeQuery = true)
     List<Object[]> findCandidateCountByStage(Long jobId) throws Exception;
 
+    @Transactional(readOnly = true)
+    @Query(value = "select count(candidate_id) from job_candidate_mapping where job_id=:jobId and rejected is true", nativeQuery = true)
+    int findRejectedCandidateCount(Long jobId) throws Exception;
 
     //find count of candidates per stage
     @Transactional
     @Query(value = "select job_candidate_mapping.job_id, stage_name, count(candidate_id) from job_candidate_mapping, job_stage_step, company_stage_step, stage_master\n" +
             "where job_candidate_mapping.job_id in :jobIds " +
             "and job_candidate_mapping.stage = job_stage_step.id\n" +
+            "and job_candidate_mapping.rejected=:rejected\n" +
             "and job_stage_step.stage_step_id = company_stage_step.id\n" +
             "and company_stage_step.stage = stage_master.id\n" +
             "and job_stage_step.job_id=job_candidate_mapping.job_id\n" +
             "group by job_candidate_mapping.job_id, stage_name order by job_candidate_mapping.job_id", nativeQuery = true)
-    List<Object[]> findCandidateCountByStageJobIds(List<Long> jobIds) throws Exception;
+    List<Object[]> findCandidateCountByStageJobIds(List<Long> jobIds, boolean rejected) throws Exception;
 
     //find by job and Candidate
     @Transactional
