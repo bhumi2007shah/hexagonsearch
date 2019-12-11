@@ -56,6 +56,7 @@ public class MasterDataBean {
     private List<String> jobPageNamesInOrder = new ArrayList<>();
     private List<String> currencyList = new ArrayList<>();
     private List<String> role = new ArrayList<>();
+    private List<String> reasonForChange = new ArrayList<>();
 
     private Map<String, MasterData> noticePeriodMapping = new HashMap<>();
 

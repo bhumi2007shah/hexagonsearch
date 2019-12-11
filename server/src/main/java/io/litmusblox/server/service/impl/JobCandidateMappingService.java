@@ -1010,6 +1010,15 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             if (Util.isNotNull(jobCandidateMapping.getCandidateLastName())) {
                 jcmFromDb.setCandidateLastName(Util.validateCandidateName(jobCandidateMapping.getCandidateLastName()));
             }
+            //Update candidate reason of change
+            if(null != jobCandidateMapping.getReasonForChange()){
+                if (jobCandidateMapping.getReasonForChange().length() > IConstant.MAX_FIELD_LENGTHS.REASON_FOR_CHANGE.getValue())
+                    jobCandidateMapping.setReasonForChange(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.REASON_FOR_CHANGE.name(), IConstant.MAX_FIELD_LENGTHS.REASON_FOR_CHANGE.getValue(), jobCandidateMapping.getReasonForChange()));
+
+                jcmFromDb.setReasonForChange(jobCandidateMapping.getReasonForChange());
+            }
+
+
             //Update candidate servingNoticePeriod
             jcmFromDb.setServingNoticePeriod(jobCandidateMapping.isServingNoticePeriod());
             //Update candidate negotiableNoticePeriod

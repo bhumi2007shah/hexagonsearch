@@ -120,6 +120,8 @@ public class MasterDataService implements IMasterDataService {
 
             if(data.getType().equalsIgnoreCase("role"))
                 MasterDataBean.getInstance().getRole().add(data.getValue());
+            else if(data.getType().equalsIgnoreCase("reasonForChange"))
+                MasterDataBean.getInstance().getReasonForChange().add(data.getValue());
             else
                 ((Map)mapAccessor.getPropertyValue(data.getType())).put(data.getId(), data.getValue());
 
@@ -233,6 +235,7 @@ public class MasterDataService implements IMasterDataService {
     private static final String ADD_JOB_PAGES = "addJobPages";
     private static final String CURRENCY_LIST = "currencyList";
     private static final String ROLE = "role";
+    private static final String REASON_FOR_CHANGE = "reasonForChange";
     private static final String DEFAULT_EXPORT_FORMAT = "defaultExportFormats";
 
 
@@ -273,6 +276,9 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case ROLE:
                 master.getRole().addAll(MasterDataBean.getInstance().getRole());
+                break;
+            case REASON_FOR_CHANGE:
+                master.getReasonForChange().addAll(MasterDataBean.getInstance().getReasonForChange());
                 break;
             default: //for all other properties, use reflection
 
