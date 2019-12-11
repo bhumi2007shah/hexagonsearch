@@ -28,8 +28,11 @@ import java.util.UUID;
 public interface JobCandidateMappingRepository extends JpaRepository<JobCandidateMapping, Long> {
 
     //find by job and stage id
-    @Transactional
-    List<JobCandidateMapping> findByJobAndStageIn(Job job, List<JobStageStep> stage) throws Exception;
+    @Transactional (readOnly = true)
+    List<JobCandidateMapping> findByJobAndStageInAndRejectedIsFalse(Job job, List<JobStageStep> stage) throws Exception;
+
+    //find all rejected candidates
+    List<JobCandidateMapping> findByJobAndRejectedIsTrue(Job job) throws Exception;
 
     //find count of candidates per stage
     @Transactional(readOnly = true)

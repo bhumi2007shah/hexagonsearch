@@ -137,6 +137,9 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Column(name="COMMUNICATION_RATING")
     private Integer communicationRating = 0;
 
+    @Column(name = "REJECTED")
+    private boolean rejected;
+
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private CandidateTechResponseData techResponseData;

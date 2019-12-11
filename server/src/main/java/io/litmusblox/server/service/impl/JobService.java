@@ -400,7 +400,12 @@ public class JobService implements IJobService {
 
         SingleJobViewResponseBean responseBean = new SingleJobViewResponseBean();
 
-        List<JobCandidateMapping> jcmList = jobCandidateMappingRepository.findByJobAndStageIn(job, jobStageStepRepository.findStageIdForJob(jobId, stage));
+        List<JobCandidateMapping> jcmList;
+
+        if(IConstant.Stage.Reject.getValue().equals(stage))
+            jcmList = jobCandidateMappingRepository.findByJobAndRejectedIsTrue(job);
+        else
+            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, jobStageStepRepository.findStageIdForJob(jobId, stage));
 
         jcmList.forEach(jcmFromDb-> {
             jcmFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(jcmFromDb.getId()));
