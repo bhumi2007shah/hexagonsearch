@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
+import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.IJobCandidateMappingService;
@@ -550,17 +551,26 @@ public class RChilliCvProcessor {
     private MultipartFile createMultipartFile(File file) throws IOException {
         log.info("inside createMultipartFile method");
         InputStream input = null;
-        DiskFileItem fileItem = new DiskFileItem("file", "text/plain", false, file.getName(), (int) file.length(), file.getParentFile());
-        input = new FileInputStream(file);
-        OutputStream os = fileItem.getOutputStream();
-        int ret = input.read();
-        while (ret != -1) {
-            os.write(ret);
-            ret = input.read();
+        try {
+            DiskFileItem fileItem = new DiskFileItem("file", "text/plain", false, file.getName(), (int) file.length(), file.getParentFile());
+            input = new FileInputStream(file);
+            OutputStream os = fileItem.getOutputStream();
+            int ret = input.read();
+            while (ret != -1) {
+                os.write(ret);
+                ret = input.read();
+            }
+            os.flush();
+            return new CommonsMultipartFile(fileItem);
+        }catch (Exception e){
+            throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,e);
+        }finally {
+            try {
+                input.close();
+            }catch (IOException ex){
+                ex.printStackTrace();
+            }
         }
-        os.flush();
-        input.close();
-        return new CommonsMultipartFile(fileItem);
     }
 
     private boolean isEmailOrMobilePresent(Candidate candidate){
