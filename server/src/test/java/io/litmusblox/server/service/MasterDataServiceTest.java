@@ -71,4 +71,26 @@ class MasterDataServiceTest extends AbstractTest {
 
         assertThat(testPass).isTrue();
     }
+
+    @org.junit.jupiter.api.Test
+    void addMasterDataTextType() {
+        boolean testPass = true;
+        try {
+            String jsonData = "{\n" +
+                    "\t\"question\":\"What is your preferred city?\",\n" +
+                    "\t\"questionType\":{\n" +
+                    "\t\t\"id\":99\n" +
+                    "\t},\n" +
+                    "\t\"userId\": {\n" +
+                    "\t\t\"id\":1\n" +
+                    "\t}\n" +
+                    "}";
+            masterDataService.addMasterData(jsonData, UserScreeningQuestion.IDENTIFIER);
+        } catch (Exception e) {
+            e.printStackTrace();
+            testPass = false;
+        }
+
+        assertThat(testPass).isTrue();
+    }
 }
