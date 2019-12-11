@@ -339,7 +339,7 @@ public class JobService implements IJobService {
                 List<Long> jobIds = new ArrayList<>();
                 jobIds.addAll(jobsMap.keySet());
                 //get counts by stage for ALL job ids in 1 db call
-                List<Object[]> stageCountList = jobCandidateMappingRepository.findCandidateCountByStageJobIds(jobIds);
+                List<Object[]> stageCountList = jobCandidateMappingRepository.findCandidateCountByStageJobIds(jobIds, false);
                 //Format results in a map<jobId, resultset>
                 Map<Long, List<Object[]>> stageCountMapByJobId = stageCountList.stream().collect(groupingBy(obj -> ((Integer) obj[0]).longValue()));
                 log.info("Got stageCountByJobIds, row count: " + stageCountMapByJobId.size());
@@ -350,6 +350,9 @@ public class JobService implements IJobService {
                         job.getCandidateCountByStage().put(objArray[1].toString(), ((BigInteger) objArray[2]).intValue());
                     });
                 });
+
+                //Additional code for rejected canadidates
+
                 log.info("Got candidate count by stage for " + jobs.size() + " jobs in " + (System.currentTimeMillis() - startTime) + "ms");
             } catch (Exception e) {
                 log.error(e.getMessage());
@@ -444,6 +447,8 @@ public class JobService implements IJobService {
             else //stage exists in response bean, add the count of the other step to existing value
                 responseBean.getCandidateCountByStage().put(key,responseBean.getCandidateCountByStage().get(key)  + ((BigInteger) objArray[1]).intValue());
         });
+        //add count of rejected candidates
+        responseBean.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(),  jobCandidateMappingRepository.findRejectedCandidateCount(jobId));
         log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.", jobId, stage ,(System.currentTimeMillis() - startTime));
 
         return responseBean;
