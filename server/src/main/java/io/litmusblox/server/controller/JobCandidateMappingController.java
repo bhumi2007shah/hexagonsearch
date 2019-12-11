@@ -264,8 +264,8 @@ public class JobCandidateMappingController {
     List<ResponseBean> getRchilliError(@PathVariable("jobId") @NotNull Long jobId)throws Exception{
         log.info("Received request to fetch drag and drop cv error list for jobId: "+jobId);
         long startTime = System.currentTimeMillis();
-        List<ResponseBean> rChilliErrorResonseBeanList=  jobCandidateMappingService.getRchilliError(jobId);
+        List<ResponseBean> rChilliErrorResponseBeanList=  jobCandidateMappingService.getRchilliError(jobId);
         log.info("Completed processing frequest to fetch drag and drop cv error list for jobId: "+ jobId+ " in "+ (System.currentTimeMillis()-startTime) + "ms.");
-        return rChilliErrorResonseBeanList;
+        return rChilliErrorResponseBeanList;
     }
 }

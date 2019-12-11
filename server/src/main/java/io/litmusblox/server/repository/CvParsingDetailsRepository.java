@@ -33,6 +33,6 @@ public interface CvParsingDetailsRepository extends JpaRepository<CvParsingDetai
     void deleteByJobCandidateMappingId(JobCandidateMapping jobCandidateMapping);
 
     @Transactional
-    @Query(nativeQuery = true, value = "select * from cv_parsing_details where processing_status='Failure' and cv_file_name like (concat('%',:jobId,'%'))")
-    List<CvParsingDetails> getRchilliErrorResonseBeanList(Long jobId);
+    @Query(nativeQuery = true, value = "select * from cv_parsing_details where processing_status='Failure' and cv_file_name like (concat('%_',:jobId,'_%'))")
+    List<CvParsingDetails> getRchilliErrorResponseBeanList(Long jobId);
 }
