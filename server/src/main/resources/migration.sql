@@ -1251,3 +1251,7 @@ ALTER COLUMN COMPANY_NAME TYPE VARCHAR(75);
 
 ALTER TABLE CANDIDATE_PROJECT_DETAILS
 ALTER COLUMN COMPANY_NAME TYPE VARCHAR(75);
+
+--For ticket #267
+Update cv_parsing_details set cv_rating_api_flag = false where job_candidate_mapping_id not in (select job_candidate_mapping_id from cv_rating)
+and processing_status = 'Success' and cv_rating_api_flag is true;
