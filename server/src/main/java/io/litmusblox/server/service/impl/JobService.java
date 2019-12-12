@@ -349,9 +349,12 @@ public class JobService implements IJobService {
                     value.stream().forEach(objArray -> {
                         job.getCandidateCountByStage().put(objArray[1].toString(), ((BigInteger) objArray[2]).intValue());
                     });
+                    try {
+                        job.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(), jobCandidateMappingRepository.findRejectedCandidateCount(job.getId()));
+                    } catch (Exception e) {
+                        log.error("Exception while finding rejected candidate count for job with id {}" + job.getId());
+                    }
                 });
-
-                //Additional code for rejected canadidates
 
                 log.info("Got candidate count by stage for " + jobs.size() + " jobs in " + (System.currentTimeMillis() - startTime) + "ms");
             } catch (Exception e) {
