@@ -52,4 +52,9 @@ public class CandidateSkillDetails {
 
     @Column(name = "VERSION")
     private String version;
+
+    public CandidateSkillDetails(Long candidateId, String skill) {
+        this.candidateId = candidateId;
+        this.skill = skill;
+    }
 }

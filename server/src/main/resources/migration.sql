@@ -1140,6 +1140,144 @@ UPDATE CREATE_JOB_PAGE_SEQUENCE SET PAGE_DISPLAY_ORDER = 6, DISPLAY_FLAG = 'true
 UPDATE CREATE_JOB_PAGE_SEQUENCE SET PAGE_DISPLAY_ORDER = 7 WHERE PAGE_NAME = 'preview';
 UPDATE CREATE_JOB_PAGE_SEQUENCE SET PAGE_DISPLAY_ORDER = 8 WHERE PAGE_NAME = 'jobDetail';
 
+--For ticket  #268
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN ALTERNATE_EMAIL VARCHAR (50),
+ADD COLUMN ALTERNATE_MOBILE VARCHAR (15),
+ADD COLUMN SERVING_NOTICE_PERIOD BOOL NOT NULL DEFAULT 'f',
+ADD COLUMN NEGOTIABLE_NOTICE_PERIOD BOOL NOT NULL DEFAULT 'f',
+ADD COLUMN OTHER_OFFERS BOOL NOT NULL DEFAULT 'f',
+ADD COLUMN UPDATE_RESUME BOOL NOT NULL DEFAULT 'f',
+ADD COLUMN COMMUNICATION_RATING SMALLINT DEFAULT 0;
+
+ALTER TABLE CANDIDATE_DETAILS
+ADD COLUMN RELEVANT_EXPERIENCE NUMERIC (4, 2);
+
+
+-- FOR TICKET #258
+DROP TABLE IF EXISTS EXPORT_FORMAT_MASTER;
+CREATE TABLE EXPORT_FORMAT_MASTER(
+ID serial PRIMARY KEY NOT NULL,
+COMPANY_ID integer REFERENCES COMPANY(ID) DEFAULT NULL,
+FORMAT varchar(15) NOT NULL,
+SYSTEM_SUPPORTED BOOL DEFAULT FALSE
+);
+
+
+DROP TABLE IF EXISTS EXPORT_FORMAT_DETAIL;
+CREATE TABLE EXPORT_FORMAT_DETAIL(
+    ID serial PRIMARY KEY NOT NULL,
+    FORMAT_ID integer REFERENCES EXPORT_FORMAT_MASTER(ID) NOT NULL,
+    COLUMN_NAME VARCHAR(20),
+    HEADER VARCHAR(20),
+    POSITION SMALLINT,
+    UNIQUE(FORMAT_ID, POSITION)
+);
+
+INSERT INTO export_format_master
+(format, system_supported)
+values
+('default', true);
+
+INSERT INTO export_format_detail
+(format_id, column_name, header,  "position")
+VALUES
+(1, 'candidateName','Candidate Name', 1),
+(1, 'chatbotStatus','Chatbot Status', 2),
+(1, 'keySkillsStrength','Key Skills Strength', 3),
+(1, 'currentCompany','Current Commpany', 4),
+(1, 'currentDesignation','Current Designation', 5),
+(1, 'email','Email', 6),
+(1, 'countryCode','Country Code', 7),
+(1, 'mobile','Mobile', 8),
+(1, 'totalExperience','Total Experience', 9),
+(1, 'createdBy','Created By', 10);
+
+drop view if exists exportDataView;
+create view exportDataView AS
+select
+	jcm.job_id as jobId,
+	concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidateName,
+	jcm.chatbot_status as chatbotStatus,
+	cvr.overall_rating as keySkillsStrength,
+	currentCompany.company_name as currentCompany,
+	currentCompany.designation as currentDesignation,
+	jcm.email,
+	jcm.country_code as countryCode,
+	jcm.mobile,
+	cd.total_experience as totalExperience,
+	concat(users.first_name, ' ', users.last_name) as createdBy,
+	jsq.ScreeningQn as screeningQuestion
+	, csqr.response as candidateResponse
+	from job_candidate_mapping jcm
+	left join cv_rating cvr ON cvr.job_candidate_mapping_id = jcm.id
+	left join (
+		select candidate_id, company_name, designation from candidate_company_details where id in (
+				select min(id) from candidate_company_details
+				group by candidate_id
+			)
+	) as currentCompany on jcm.candidate_id = currentCompany.candidate_id
+	left join candidate_details cd on cd.candidate_id = jcm.candidate_id
+	inner join users ON users.id = jcm.created_by
+	left join (
+		select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
+		union
+		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.company_screening_question_id=usq.id
+		union
+		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
+	) as jsq on jsq.jsqJobId = jcm.job_id
+	left join
+	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId;
+
+--For ticket #272
+UPDATE STAGE_MASTER SET STAGE_NAME='Sourcing' WHERE STAGE_NAME = 'Source';
+UPDATE STAGE_MASTER SET STAGE_NAME='Screening' WHERE STAGE_NAME = 'Screen';
+UPDATE STAGE_MASTER SET STAGE_NAME='Submitted' WHERE STAGE_NAME = 'Resume Submit';
+UPDATE STAGE_MASTER SET STAGE_NAME='Hired' WHERE STAGE_NAME = 'Join';
+
+UPDATE STEPS_PER_STAGE SET STEP_NAME='Sourcing' WHERE STEP_NAME = 'Source';
+UPDATE STEPS_PER_STAGE SET STEP_NAME='Screening' WHERE STEP_NAME = 'Screen';
+UPDATE STEPS_PER_STAGE SET STEP_NAME='Submitted' WHERE STEP_NAME = 'Resume Submit';
+UPDATE STEPS_PER_STAGE SET STEP_NAME='Hired' WHERE STEP_NAME = 'Join';
+
+UPDATE COMPANY_STAGE_STEP SET STEP='Sourcing' WHERE STEP = 'Source';
+UPDATE COMPANY_STAGE_STEP SET STEP='Screening' WHERE STEP = 'Screen';
+UPDATE COMPANY_STAGE_STEP SET STEP='Submitted' WHERE STEP = 'Resume Submit';
+UPDATE COMPANY_STAGE_STEP SET STEP='Hired' WHERE STEP = 'Join';
+
+--For ticket #276
+ALTER TABLE CANDIDATE_COMPANY_DETAILS
+ALTER COLUMN COMPANY_NAME TYPE VARCHAR(75);
+
+ALTER TABLE CANDIDATE_PROJECT_DETAILS
+ALTER COLUMN COMPANY_NAME TYPE VARCHAR(75);
+
+--For ticket #267
+Update cv_parsing_details set cv_rating_api_flag = false where job_candidate_mapping_id not in (select job_candidate_mapping_id from cv_rating)
+and processing_status = 'Success' and cv_rating_api_flag is true;
+
+--For ticket #268
+Insert into MASTER_DATA (TYPE, VALUE) values
+('reasonForChange','Too much time spent in Commuting to work'),
+('reasonForChange','Too much travelling in the job'),
+('reasonForChange','Have been in same company for too long'),
+('reasonForChange','Company has shutdown'),
+('reasonForChange','Company is downsizing /got a layoff'),
+('reasonForChange','Am a Contract employee, want to shift to permanent employment'),
+('reasonForChange','Want to work in a different domain'),
+('reasonForChange','Want to work in a different project'),
+('reasonForChange','Not getting paid my salary on time'),
+('reasonForChange','Have not been promoted for a long time'),
+('reasonForChange','Want to work with a Larger Size Company'),
+('reasonForChange','Want to work with a Bigger Brand'),
+('reasonForChange','Want to get away from shift working'),
+('reasonForChange','Have been on maternity break'),
+('reasonForChange','Have been on Sabbatical'),
+('reasonForChange','Other');
+
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN REASON_FOR_CHANGE VARCHAR(100);
+
 --For ticket #255
 ALTER TABLE JOB
 ADD COLUMN JOB_REFERENCE_ID UUID NOT NULL DEFAULT uuid_generate_v1();

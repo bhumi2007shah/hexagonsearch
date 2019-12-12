@@ -56,12 +56,15 @@ public class MasterDataBean {
     private List<String> jobPageNamesInOrder = new ArrayList<>();
     private List<String> currencyList = new ArrayList<>();
     private List<String> role = new ArrayList<>();
+    private List<String> reasonForChange = new ArrayList<>();
 
     private Map<String, MasterData> noticePeriodMapping = new HashMap<>();
 
     private ConfigSettings configSettings = new ConfigSettings();
 
     private List<StepsPerStage> defaultStepsPerStage = new ArrayList<>();
+
+    private List<ExportFormatMaster> defaultExportFormats = new ArrayList<>();
 
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;

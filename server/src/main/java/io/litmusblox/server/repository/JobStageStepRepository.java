@@ -27,7 +27,7 @@ public interface JobStageStepRepository extends JpaRepository<JobStageStep, Long
             "and job_id = :jobId\n" +
             "and stage_master.stage_name = :stage")
     @Transactional(readOnly = true)
-    JobStageStep findStageIdForJob(Long jobId, String stage);
+    List<JobStageStep> findStageIdForJob(Long jobId, String stage);
 
     @Transactional(readOnly = true)
     List<JobStageStep> findByJobId(Long jobId) throws Exception;

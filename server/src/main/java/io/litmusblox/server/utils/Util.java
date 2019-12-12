@@ -385,6 +385,14 @@ public class Util {
         return cleanFirstName;
     }
 
+    public static String cleanFileName(String fileName){
+        log.info("Inside cleanFileName");
+        String cleanFileName = fileName.substring(0, fileName.lastIndexOf("."));
+        cleanFileName = cleanFileName.replaceAll("\\W","");
+        cleanFileName = cleanFileName + "."+Util.getFileExtension(fileName);
+        return cleanFileName;
+    }
+
     public static Date getCurrentOrBefore1YearDate(Boolean dateBefore1Year) throws ParseException {
         LocalDateTime ldt = null;
        if(dateBefore1Year)

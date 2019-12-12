@@ -34,7 +34,7 @@ import java.util.*;
  * Class Name : JobCandidateMappingController
  * Project Name : server
  */
-@CrossOrigin(origins = "*", methods = {RequestMethod.POST, RequestMethod.GET, RequestMethod.OPTIONS}, allowedHeaders = {"Content-Type", "Authorization","X-Requested-With", "accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"}, exposedHeaders = {"Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"})
+@CrossOrigin(origins = "*", methods = {RequestMethod.POST, RequestMethod.GET, RequestMethod.PUT, RequestMethod.OPTIONS}, allowedHeaders = {"Content-Type", "Authorization","X-Requested-With", "accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"}, exposedHeaders = {"Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"})
 @RestController
 @RequestMapping("/api/jcm")
 @Log4j2
@@ -71,6 +71,7 @@ public class JobCandidateMappingController {
                 new HashMap<String, List<String>>() {{
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
+                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
                 }});
     }
 
@@ -95,6 +96,7 @@ public class JobCandidateMappingController {
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
                     put("User", Arrays.asList("createdBy","company"));
+                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
                 }});
     }
 
@@ -120,7 +122,8 @@ public class JobCandidateMappingController {
                 new HashMap<String, List<String>>() {{
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
-                }});
+                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
+                        }});
     }
 
     /**
@@ -258,10 +261,10 @@ public class JobCandidateMappingController {
 
     @GetMapping("cvuploaderror/{jobId}")
     @ResponseBody
-    List<RChilliErrorResonseBean> getRchilliError(@PathVariable("jobId") @NotNull Long jobId)throws Exception{
+    List<ResponseBean> getRchilliError(@PathVariable("jobId") @NotNull Long jobId)throws Exception{
         log.info("Received request to fetch drag and drop cv error list for jobId: "+jobId);
         long startTime = System.currentTimeMillis();
-        List<RChilliErrorResonseBean> rChilliErrorResonseBeanList=  jobCandidateMappingService.getRchilliError(jobId);
+        List<ResponseBean> rChilliErrorResonseBeanList=  jobCandidateMappingService.getRchilliError(jobId);
         log.info("Completed processing frequest to fetch drag and drop cv error list for jobId: "+ jobId+ " in "+ (System.currentTimeMillis()-startTime) + "ms.");
         return rChilliErrorResonseBeanList;
     }

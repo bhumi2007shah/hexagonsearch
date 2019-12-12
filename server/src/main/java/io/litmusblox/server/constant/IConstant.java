@@ -118,7 +118,7 @@ public interface IConstant {
     }
 
     enum Stage {
-        Source ("Source"), Screen ("Screen"), ResumeSubmit ("Resume Submit"), Interview ("Interview"), MakeOffer("Make Offer"), Offer ("Offer"), Join ("Join"), Reject ("Reject");
+        Source ("Sourcing"), Screen ("Screening"), ResumeSubmit ("Submitted"), Interview ("Interview"), MakeOffer("Make Offer"), Offer ("Offer"), Join ("Hired"), Reject ("Rejected");
         private String value;
 
         Stage(String val) { this.value = val; }
@@ -187,7 +187,7 @@ public interface IConstant {
 
 
     enum MAX_FIELD_LENGTHS {
-        INSTITUTE_NAME(75), COMPANY_NAME(50), DESIGNATION(50), ADDRESS(255), KEY_SKILLS(255), ONLINE_PROFILE_URL(255), ONLINE_PROFILE_TYPE(20), WORK_SUMMARY(255), GENDER(1), DEGREE(100), SKILL(50), ROLE(40), YEAR_OF_PASSING(4);
+        INSTITUTE_NAME(75), COMPANY_NAME(75), DESIGNATION(50), ADDRESS(255), KEY_SKILLS(255), ONLINE_PROFILE_URL(255), ONLINE_PROFILE_TYPE(20), WORK_SUMMARY(255), GENDER(1), DEGREE(100), SKILL(50), ROLE(40), YEAR_OF_PASSING(4), REASON_FOR_CHANGE(100);
 
         private int value;
 

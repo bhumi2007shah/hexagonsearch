@@ -730,21 +730,66 @@ INSERT INTO public.currency(currency_full_name, currency_short_name, country) VA
 ('US Dollar', 'USD', 'us');
 
 INSERT INTO STAGE_MASTER(ID, STAGE_NAME) VALUES
-(1, 'Source'),
-(2, 'Screen'),
-(3, 'Resume Submit'),
+(1, 'Sourcing'),
+(2, 'Screening'),
+(3, 'Submitted'),
 (4, 'Interview'),
 (5, 'Make Offer'),
 (6, 'Offer'),
-(7, 'Join');
+(7, 'Hired');
 
 INSERT INTO STEPS_PER_STAGE (STAGE_ID, STEP_NAME) VALUES
-(1, 'Source'),
-(2, 'Screen'),
-(3, 'Resume Submit'),
+(1, 'Sourcing'),
+(2, 'Screening'),
+(3, 'Submitted'),
 (4, 'L1'),
 (4, 'L2'),
 (4, 'L3'),
 (5, 'Make Offer'),
 (6, 'Offer'),
-(7, 'Join');
+(7, 'Hired');
+
+INSERT INTO public.master_data(type, value, value_to_use) VALUES
+('role', 'HR Recruiter', 'Recruiter'),
+('role', 'HR Head', 'ClientAdmin'),
+('role', 'Admin', 'ClientAdmin'),
+('role', 'Hiring Manager', 'BusinessUser'),
+('role', 'Interviewer', 'BusinessUser');
+
+--Ticket #258
+INSERT INTO export_format_master
+(format, system_supported)
+values
+('default', true);
+
+INSERT INTO export_format_detail
+(format_id, column_name, header,  "position")
+VALUES
+(1, 'candidateName','Candidate Name', 1),
+(1, 'chatbotStatus','Chatbot Status', 2),
+(1, 'keySkillsStrength','Key Skills Strength', 3),
+(1, 'currentCompany','Current Commpany', 4),
+(1, 'currentDesignation','Current Designation', 5),
+(1, 'email','Email', 6),
+(1, 'countryCode','Country Code', 7),
+(1, 'mobile','Mobile', 8),
+(1, 'totalExperience','Total Experience', 9),
+(1, 'createdBy','Created By', 10);
+
+Insert into MASTER_DATA (TYPE, VALUE) values
+('reasonForChange','Too much time spent in Commuting to work'),
+('reasonForChange','Too much travelling in the job'),
+('reasonForChange','Have been in same company for too long'),
+('reasonForChange','Company has shutdown'),
+('reasonForChange','Company is downsizing /got a layoff'),
+('reasonForChange','Am a Contract employee, want to shift to permanent employment'),
+('reasonForChange','Want to work in a different domain'),
+('reasonForChange','Want to work in a different project'),
+('reasonForChange','Not getting paid my salary on time'),
+('reasonForChange','Have not been promoted for a long time'),
+('reasonForChange','Want to work with a Larger Size Company'),
+('reasonForChange','Want to work with a Bigger Brand'),
+('reasonForChange','Want to get away from shift working'),
+('reasonForChange','Have been on maternity break'),
+('reasonForChange','Have been on Sabbatical'),
+('reasonForChange','Other');

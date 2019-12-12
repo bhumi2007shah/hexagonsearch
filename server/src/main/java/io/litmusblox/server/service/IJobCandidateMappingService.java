@@ -184,5 +184,5 @@ public interface IJobCandidateMappingService {
      * @return List of RChilliErrorResponseBean which have file name, processed date, status, jcmId, candidate name if available
      * @throws Exception
      */
-    List<RChilliErrorResonseBean> getRchilliError(Long jobId) throws Exception;
+    List<ResponseBean> getRchilliError(Long jobId) throws Exception;
 }

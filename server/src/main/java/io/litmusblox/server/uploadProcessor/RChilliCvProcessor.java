@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
+import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.IJobCandidateMappingService;
@@ -84,6 +85,9 @@ public class RChilliCvProcessor {
     @Resource
     CandidateMobileHistoryRepository candidateMobileHistoryRepository;
 
+    @Resource
+    CvRatingRepository cvRatingRepository;
+
     @Transactional(readOnly = true)
     User getUser(long userId) {
         return userRepository.findById(userId).get();
@@ -102,6 +106,7 @@ public class RChilliCvProcessor {
     public void processFile(String filePath, String rchilliJson) {
         log.info("Inside processFile method");
         // remove task steps
+        log.info("Temp file path : "+filePath);
         String fileName = filePath.substring(filePath.lastIndexOf(File.separator) + 1);
         String[] s = fileName.split("_");
 
@@ -209,6 +214,10 @@ public class RChilliCvProcessor {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     private long processCandidate(Candidate candidate, User user, Job job) {
+
+        candidate.setMobile(Util.indianMobileConvertor(candidate.getMobile(), candidate.getCountryCode()));
+        if(null != candidate.getAlternateMobile())
+            candidate.setAlternateMobile(Util.indianMobileConvertor(candidate.getAlternateMobile(), candidate.getCountryCode()));
 
         int candidateProcessed = jobCandidateMappingRepository.getUploadedCandidateCount(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()), user);
 
@@ -337,14 +346,20 @@ public class RChilliCvProcessor {
             cvParsingDetails.setParsingResponseJson(rchilliFormattedJson);
             cvParsingDetails.setErrorMessage(errorMessage);
 
-            if (null != errorMessage)
-                cvParsingDetails.setCvRatingApiFlag(true); //to make sure the record doesn't get processed against CV Rating api
-
-
+            CvRating cvRating =null;
             JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByJobIdAndCandidateId(jobId, candidateId);
 
-            if(null != jobCandidateMapping)
+            if(null != jobCandidateMapping){
                 cvParsingDetails.setJobCandidateMappingId(jobCandidateMapping);
+                cvRating = cvRatingRepository.findByJobCandidateMappingId(jobCandidateMapping.getId());
+            }
+
+            if (null != errorMessage){
+                if(IConstant.UPLOAD_STATUS.Success.toString().equals(cvParsingDetails.getProcessingStatus()) && null == cvRating)
+                    cvParsingDetails.setCvRatingApiFlag(false);
+                else
+                    cvParsingDetails.setCvRatingApiFlag(true); //to make sure the record doesn't get processed against CV Rating api
+            }
 
             cvParsingDetailsRepository.save(cvParsingDetails);
             log.info("Save CvParsingDetails");
@@ -535,16 +550,27 @@ public class RChilliCvProcessor {
 
     private MultipartFile createMultipartFile(File file) throws IOException {
         log.info("inside createMultipartFile method");
-        DiskFileItem fileItem = new DiskFileItem("file", "text/plain", false, file.getName(), (int) file.length(), file.getParentFile());
-        InputStream input = new FileInputStream(file);
-        OutputStream os = fileItem.getOutputStream();
-        int ret = input.read();
-        while (ret != -1) {
-            os.write(ret);
-            ret = input.read();
+        InputStream input = null;
+        try {
+            DiskFileItem fileItem = new DiskFileItem("file", "text/plain", false, file.getName(), (int) file.length(), file.getParentFile());
+            input = new FileInputStream(file);
+            OutputStream os = fileItem.getOutputStream();
+            int ret = input.read();
+            while (ret != -1) {
+                os.write(ret);
+                ret = input.read();
+            }
+            os.flush();
+            return new CommonsMultipartFile(fileItem);
+        }catch (Exception e){
+            throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,e);
+        }finally {
+            try {
+                input.close();
+            }catch (IOException ex){
+                ex.printStackTrace();
+            }
         }
-        os.flush();
-        return new CommonsMultipartFile(fileItem);
     }
 
     private boolean isEmailOrMobilePresent(Candidate candidate){

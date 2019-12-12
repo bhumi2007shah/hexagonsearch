@@ -50,10 +50,11 @@ public class CandidateEducationDetails {
     @Column(name = "YEAR_OF_PASSING")
     private String yearOfPassing;
 
-    public CandidateEducationDetails(Long candidateId, String degree, String yearOfPassing) {
+    public CandidateEducationDetails(Long candidateId, String degree, String yearOfPassing, String instituteName) {
         this.candidateId = candidateId;
         this.degree = degree;
         this.yearOfPassing = yearOfPassing;
+        this.instituteName = instituteName;
     }
 
 }

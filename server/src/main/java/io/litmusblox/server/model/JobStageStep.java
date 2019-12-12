@@ -64,4 +64,9 @@ public class JobStageStep implements Serializable {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UPDATED_BY")
     private User updatedBy;
+
+    public String getStageName() {
+        return stageStepId.getStage().getStageName();
+    }
+
 }

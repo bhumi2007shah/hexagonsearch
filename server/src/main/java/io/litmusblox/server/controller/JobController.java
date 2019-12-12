@@ -102,7 +102,7 @@ public class JobController {
                     put("User",Arrays.asList("displayName"));
                     put("CvRating", Arrays.asList("overallRating"));
                     put("CandidateEducationDetails", Arrays.asList("degree"));
-                    put("JobStageStep", new ArrayList<>(0));
+                    put("JobStageStep", Arrays.asList("stageName"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy"));
@@ -212,5 +212,22 @@ public class JobController {
                     put("JobStageStep", Arrays.asList("jobId","createdOn","createdBy","updatedOn", "updatedBy"));
                     put("StageMaster", Arrays.asList("id"));
         }});
+    }
+
+    @GetMapping(value = "/supportedexportformat/{jobId}")
+    Map<Long, String> supportedExportFormat(@PathVariable("jobId") Long jobId) throws Exception{
+        return jobService.getSupportedExportFormat(jobId);
+    }
+
+    @GetMapping(value = {"/exportdata/{jobId}", "/exportdata/{jobId}/{formatId}"})
+    String exportData(@PathVariable("jobId") Long jobId, @PathVariable(required = false, value = "formatId") Optional<Long>formatId) throws Exception{
+        String data=null;
+        if(!formatId.isPresent()){
+            data = jobService.exportData(jobId, null);
+        }
+        else{
+            data = jobService.exportData(jobId, formatId.get());
+        }
+        return data;
     }
 }
