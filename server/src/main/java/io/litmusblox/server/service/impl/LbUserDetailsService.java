@@ -147,6 +147,7 @@ public class LbUserDetailsService implements UserDetailsService {
             if (null == userCompany) {
                 //create a company
                 companyObjToUse = companyService.addCompany(new Company(user.getCompany().getCompanyName(), true, user.getCompany().getCompanyType(),null, new Date(), loggedInUser.getId()), loggedInUser);
+                user.setRole(IConstant.ADMIN);
             } else {
                 companyObjToUse = userCompany;
             }
