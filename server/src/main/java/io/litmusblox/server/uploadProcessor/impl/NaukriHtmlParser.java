@@ -40,10 +40,25 @@ public class NaukriHtmlParser implements HtmlParser {
         populateCandidateName(candidateFromNaukriEmail, doc);
         populateMobileAndEmail(candidateFromNaukriEmail, doc.select("a"));
 
-        candidateFromNaukriEmail.setCandidateCompanyDetails(new ArrayList<CandidateCompanyDetails>(1));
-        populateCandidateCompanyDetails(candidateFromNaukriEmail, doc.getElementsContainingOwnText(" at ").text());
+        try {
+            candidateFromNaukriEmail.setCandidateCompanyDetails(new ArrayList<CandidateCompanyDetails>(1));
+        } catch (Exception e) {
+            log.error("Error when populating candidate company details {}", e.getMessage());
+            e.printStackTrace();
+        }
+        try {
+            populateCandidateCompanyDetails(candidateFromNaukriEmail, doc.getElementsContainingOwnText(" at ").text());
+        } catch (Exception e) {
+            log.error("Error when populating candidate company details {}", e.getMessage());
+            e.printStackTrace();
+        }
 
-        populateCandidateDetails(candidateFromNaukriEmail, doc);
+        try {
+            populateCandidateDetails(candidateFromNaukriEmail, doc);
+        } catch (Exception e) {
+            log.error("Error when populating candidate company details {}", e.getMessage());
+            e.printStackTrace();
+        }
         //before at is designation, after at is current company
         log.info("Completed processing html");
         return candidateFromNaukriEmail;
@@ -78,7 +93,7 @@ public class NaukriHtmlParser implements HtmlParser {
     }
 
     private void populateCandidateDetails(Candidate candidate, Document doc) {
-        String experienceAndCtc = doc.getElementsContainingOwnText("Total Experience").parents().tagName("tbody").get(1).text().replaceAll("Total Experience CTC ","").replaceAll("&", "");
+        String experienceAndCtc = doc.getElementsMatchingOwnText("Total Experience").parents().tagName("tbody").get(1).text().replaceAll("Total Experience CTC ","").replaceAll("&", "");
 
         //set experience
         String experience = experienceAndCtc.substring(0, experienceAndCtc.indexOf("Months"));
@@ -90,7 +105,7 @@ public class NaukriHtmlParser implements HtmlParser {
         candidate.getCandidateCompanyDetails().get(0).setSalary(experienceAndCtc.substring(experienceAndCtc.indexOf("Months") + 6).trim());
 
         //set noticePeriod
-        String noticePeriod = doc.getElementsContainingOwnText("Notice Period").last().parents().tagName("tbody").get(1).text().replaceAll("Notice Period","").trim();
+        String noticePeriod = doc.getElementsMatchingOwnText("Notice Period").last().parents().tagName("tbody").get(1).text().replaceAll("Notice Period","").trim();
         if (noticePeriod.indexOf("Serving") != -1)
             candidate.getCandidateCompanyDetails().get(0).setNoticePeriod("0");
         else if (noticePeriod.indexOf("Months") != -1)
@@ -99,7 +114,7 @@ public class NaukriHtmlParser implements HtmlParser {
             candidate.getCandidateCompanyDetails().get(0).setNoticePeriod(String.valueOf(Integer.parseInt(noticePeriod.substring(0, noticePeriod.indexOf("Days")).trim())));
 
         //set education
-        String education = doc.getElementsContainingOwnText("UG").parents().tagName("tbody").get(1).text();
+        String education = doc.getElementsMatchingOwnText("UG").parents().tagName("tbody").get(1).text();
         String pgEduction = education.substring(education.indexOf("PG") + 5);
         if (null != pgEduction) {
             if(null == candidate.getCandidateEducationDetails())
@@ -120,7 +135,7 @@ public class NaukriHtmlParser implements HtmlParser {
         candidate.getCandidateDetails().setLocation(location.substring(0, location.indexOf("(")).trim());
 
         //set keyskill
-        String keyskills = doc.getElementsContainingOwnText("Keyskills").parents().tagName("tr").first().nextElementSibling().nextElementSibling().text();
+        String keyskills = doc.getElementsMatchingOwnText("Keyskills").parents().tagName("tr").first().nextElementSibling().nextElementSibling().text();
         if (null != keyskills) {
             String[] allSkills = keyskills.split(",");
             List<CandidateSkillDetails> candidateSkillDetails = new ArrayList<>();
