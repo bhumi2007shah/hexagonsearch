@@ -104,7 +104,7 @@ public class FetchEmailService {
                         writePart(message, mailData);
                         message.setFlag(Flags.Flag.SEEN, true);
                         UploadResponseBean response = jobCandidateMappingService.uploadCandidateFromPlugin(mailData.getCandidateFromMail(), mailData.getJobFromReference().getId(), null, Optional.of(mailData.getJobFromReference().getCreatedBy()));
-                        if (IConstant.UPLOAD_STATUS.Success.name().equals(response.getStatus()))
+                        if (IConstant.UPLOAD_STATUS.Success.name().equals(response.getStatus()) && null != mailData.getFileName())
                             saveCandidateCv(mailData);
 
                     }
