@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -21,6 +22,7 @@ import java.util.Date;
  * Project Name : server
  */
 @Data
+@NoArgsConstructor
 @Entity
 @Table(name = "CANDIDATE_DETAILS")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -101,6 +103,9 @@ public class CandidateDetails implements Serializable {
     @Column(name = "CANDIDATE_TYPE")
     private String candidateType;
 
+    @Column(name = "RELEVANT_EXPERIENCE")
+    private Double relevantExperience;
+
     @Transient
     @JsonProperty
     private String cvLocation;
@@ -109,11 +114,11 @@ public class CandidateDetails implements Serializable {
     @Transient
     private String textCv;
 
-    public CandidateDetails(Candidate candidateId, Double totalExperience) {
-        this.candidateId = candidateId;
+    public CandidateDetails(Date dateOfBirth, String location, Double totalExperience, Double relevantExperience, Candidate candidateId) {
+        this.dateOfBirth = dateOfBirth;
+        this.location = location;
         this.totalExperience = totalExperience;
-    }
-
-    public CandidateDetails() {
+        this.relevantExperience = relevantExperience;
+        this.candidateId = candidateId;
     }
 }

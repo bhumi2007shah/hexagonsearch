@@ -7,10 +7,7 @@ package io.litmusblox.server.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.error.WebException;
-import io.litmusblox.server.model.ConfigurationSettings;
-import io.litmusblox.server.model.MasterData;
-import io.litmusblox.server.model.SkillsMaster;
-import io.litmusblox.server.model.UserScreeningQuestion;
+import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.ConfigSettings;
 import io.litmusblox.server.service.IMasterDataService;
@@ -70,6 +67,15 @@ public class MasterDataService implements IMasterDataService {
     @Resource
     CurrencyRepository currencyRepository;
 
+    @Resource
+    StageMasterRepository stageMasterRepository;
+
+    @Resource
+    StepsPerStageRepository stepsPerStageRepository;
+
+    @Resource
+    ExportFormatMasterRepository exportFormatMasterRepository;
+
     @Autowired
     Environment environment;
 
@@ -90,6 +96,9 @@ public class MasterDataService implements IMasterDataService {
             MasterDataBean.getInstance().getJobPageNamesInOrder().add(page.getPageName());
         });
 
+        stageMasterRepository.findAllByOrderByIdAsc().stream().forEach(stageMaster -> MasterDataBean.getInstance().getStage().add(stageMaster.getStageName()));
+        MasterDataBean.getInstance().getDefaultStepsPerStage().addAll(stepsPerStageRepository.findAllByOrderByIdAsc());
+
         currencyRepository.findAll().stream().forEach(currency -> {
             MasterDataBean.getInstance().getCurrencyList().add(currency.getCurrencyShortName());
         });
@@ -108,11 +117,14 @@ public class MasterDataService implements IMasterDataService {
 
         //For every master data record from database, populate the corresponding map with key-value pairs
         masterDataFromDb.forEach(data -> {
+
+            if(data.getType().equalsIgnoreCase("role"))
+                MasterDataBean.getInstance().getRole().add(data.getValue());
+            else if(data.getType().equalsIgnoreCase("reasonForChange"))
+                MasterDataBean.getInstance().getReasonForChange().add(data.getValue());
+            else
                 ((Map)mapAccessor.getPropertyValue(data.getType())).put(data.getId(), data.getValue());
-                //special handling for Source stage
-                if (data.getType().equalsIgnoreCase("stage") && data.getValue().equalsIgnoreCase(IConstant.STAGE.Source.name())) {
-                    MasterDataBean.getInstance().setSourceStage(data);
-                }
+
                 if(data.getType().equalsIgnoreCase("noticePeriod"))
                     MasterDataBean.getInstance().getNoticePeriodMapping().put(data.getValue(), data);
 
@@ -126,6 +138,11 @@ public class MasterDataService implements IMasterDataService {
         configurationSettings.forEach(config-> {
             configFieldAccesor.setPropertyValue(config.getConfigName(), config.getConfigValue());
         });
+
+        //populate default export format supported by litmusblox
+        List<ExportFormatMaster> exportFormatMasters = exportFormatMasterRepository.exportDefaultFormatMasterList();
+        MasterDataBean.getInstance().getDefaultExportFormats().addAll(exportFormatMasters);
+
         //read the limit from application.properties
         //convert the maxUploadDataLimit from Mb into bytes
         String maxSize = environment.getProperty("spring.http.multipart.max-request-size");
@@ -135,8 +152,6 @@ public class MasterDataService implements IMasterDataService {
 
         // sentryDSN is only read from application.properties file as per profile it is not save in database
         MasterDataBean.getInstance().setSentryDSN(environment.getProperty(IConstant.SENTRY_DSN));
-
-
     }
 
     /**
@@ -216,9 +231,12 @@ public class MasterDataService implements IMasterDataService {
     private static final String CONFIG_SETTINGS = "configSettings";
     private static final String SUPPORTED_FILE_FORMATS = "supportedFileFormats";
     private static final String SUPPORTED_CV_FILE_FORMATS = "supportedCvFileFormats";
-    private static final String ID_FOR_SOURCE_STAGE = "sourceStageId";
+    private static final String STAGE_MASTER_DATA = "stage";
     private static final String ADD_JOB_PAGES = "addJobPages";
     private static final String CURRENCY_LIST = "currencyList";
+    private static final String ROLE = "role";
+    private static final String REASON_FOR_CHANGE = "reasonForChange";
+    private static final String DEFAULT_EXPORT_FORMAT = "defaultExportFormats";
 
 
     /**
@@ -232,6 +250,9 @@ public class MasterDataService implements IMasterDataService {
         switch (input) {
             case COUNTRY_MASTER_DATA:
                 master.getCountries().addAll(MasterDataBean.getInstance().getCountryList());
+                break;
+            case STAGE_MASTER_DATA:
+                master.getStage().addAll(MasterDataBean.getInstance().getStage());
                 break;
             case ADD_JOB_PAGES:
                 master.getAddJobPages().addAll(MasterDataBean.getInstance().getAddJobPages());
@@ -250,11 +271,14 @@ public class MasterDataService implements IMasterDataService {
             case SUPPORTED_CV_FILE_FORMATS:
                 master.setSupportedCvFileFormats(Arrays.asList(IConstant.cvUploadSupportedExtensions));
                 break;
-            case ID_FOR_SOURCE_STAGE:
-                master.setSourceStageId(MasterDataBean.getInstance().getSourceStage().getId());
-                break;
             case CURRENCY_LIST:
                 master.setCurrencyList(MasterDataBean.getInstance().getCurrencyList());
+                break;
+            case ROLE:
+                master.getRole().addAll(MasterDataBean.getInstance().getRole());
+                break;
+            case REASON_FOR_CHANGE:
+                master.getReasonForChange().addAll(MasterDataBean.getInstance().getReasonForChange());
                 break;
             default: //for all other properties, use reflection
 

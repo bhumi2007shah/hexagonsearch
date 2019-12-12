@@ -76,12 +76,12 @@ public class AuthController {
     }
 
     @PostMapping(value="/createUser")
-    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "')")
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.RECRUITMENT_AGENCY + "')")
     String addUser(@RequestBody User user) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
                 userDetailsService.createUser(user),
                 (new HashMap<String, List<String>>(){{
-                    put("User", Arrays.asList("id", "firstName", "lastName", "email","mobile"));
+                    put("User", Arrays.asList("id", "firstName", "lastName", "email","mobile", "companyAddressId","companyBuId"));
                 }}),
                 null
         );

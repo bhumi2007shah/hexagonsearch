@@ -967,6 +967,320 @@ ADD COLUMN RECRUITMENT_AGENCY_ID INTEGER REFERENCES COMPANY(ID);
 ALTER TABLE JOB_CANDIDATE_MAPPING
 ADD CONSTRAINT unique_job_candidate UNIQUE(JOB_ID, CANDIDATE_ID);
 
+--For ticket #230
+ALTER TABLE USERS
+    ALTER COLUMN ROLE TYPE VARCHAR(17);
+
+--For ticket #246
+ALTER TABLE USERS
+ADD COLUMN COMPANY_ADDRESS_ID INTEGER REFERENCES COMPANY_ADDRESS(ID),
+ADD COLUMN COMPANY_BU_ID INTEGER REFERENCES COMPANY_BU(ID);
+
 --https://github.com/hexagonsearch/litmusblox-scheduler/issues/16
 --Clear all timestamps in the jcm_communication_details table if the chat_invite_flag is false
 update jcm_communication_details set chat_invite_timestamp_sms = null, chat_incomplete_reminder_1_timestamp_sms = null, chat_incomplete_reminder_2_timestamp_sms = null, link_not_visited_reminder_1_timestamp_sms = null, link_not_visited_reminder_2_timestamp_sms = null, chat_complete_timestamp_sms = null, chat_invite_timestamp_email = null, chat_incomplete_reminder_1_timestamp_email = null, chat_incomplete_reminder_2_timestamp_email = null, link_not_visited_reminder_1_timestamp_email = null, link_not_visited_reminder_2_timestamp_email = null, chat_complete_timestamp_email = null where chat_invite_flag = false;
+
+-- For ticket #241 - update all candidate source to naukri where candidate source is plugin
+update job_candidate_mapping set candidate_source= 'Naukri' where candidate_source='Plugin';
+
+
+
+--For ticket #224
+DROP TABLE IF EXISTS STAGE_MASTER;
+CREATE TABLE STAGE_MASTER (
+ID serial PRIMARY KEY NOT NULL,
+STAGE_NAME varchar(15) NOT NULL,
+CONSTRAINT UNIQUE_STAGE_NAME UNIQUE(STAGE_NAME)
+);
+
+DROP TABLE IF EXISTS STEPS_PER_STAGE;
+CREATE TABLE STEPS_PER_STAGE(
+ID serial PRIMARY KEY NOT NULL,
+STAGE_ID integer REFERENCES STAGE_MASTER(ID) NOT NULL,
+STEP_NAME varchar(15) NOT NULL,
+CONSTRAINT UNIQUE_STAGE_STEP UNIQUE(STAGE_ID, STEP_NAME)
+);
+
+INSERT INTO STAGE_MASTER(ID, STAGE_NAME) VALUES
+(1, 'Source'),
+(2, 'Screen'),
+(3, 'Resume Submit'),
+(4, 'Interview'),
+(5, 'Make Offer'),
+(6, 'Offer'),
+(7, 'Join');
+
+INSERT INTO STEPS_PER_STAGE (STAGE_ID, STEP_NAME) VALUES
+(1, 'Source'),
+(2, 'Screen'),
+(3, 'Resume Submit'),
+(4, 'L1'),
+(4, 'L2'),
+(4, 'L3'),
+(5, 'Make Offer'),
+(6, 'Offer'),
+(7, 'Join');
+
+ALTER TABLE COMPANY_STAGE_STEP DROP CONSTRAINT company_stage_step_stage_fkey;
+ALTER TABLE COMPANY_STAGE_STEP ADD CONSTRAINT company_stage_step_stage_fkey FOREIGN KEY (STAGE) REFERENCES STAGE_MASTER(ID);
+
+-- populate company stage step for all existing companies
+INSERT INTO COMPANY_STAGE_STEP (COMPANY_ID, STAGE, STEP, CREATED_ON, CREATED_BY)
+ SELECT COMPANY.ID, STAGE_ID, STEP_NAME, COMPANY.CREATED_ON ,COMPANY.CREATED_BY
+ FROM COMPANY, STEPS_PER_STAGE ORDER BY COMPANY.ID;
+
+-- create table to store job specific
+ CREATE TABLE JOB_STAGE_STEP(
+   ID serial PRIMARY KEY NOT NULL,
+    JOB_ID INTEGER REFERENCES JOB(ID) NOT NULL,
+    STAGE_STEP_ID INTEGER REFERENCES COMPANY_STAGE_STEP(ID) NOT NULL,
+    CREATED_ON TIMESTAMP NOT NULL,
+    CREATED_BY INTEGER REFERENCES USERS(ID) NOT NULL,
+    UPDATED_ON TIMESTAMP,
+    UPDATED_BY INTEGER REFERENCES USERS(ID),
+    CONSTRAINT UNIQUE_JOB_STAGE_STEP UNIQUE (JOB_ID, STAGE_STEP_ID)
+ );
+
+-- populate stage step for all existing jobs which are complete
+INSERT INTO JOB_STAGE_STEP(JOB_ID, STAGE_STEP_ID, CREATED_BY, CREATED_ON)
+ SELECT JOB.ID, COMPANY_STAGE_STEP.ID, JOB.CREATED_BY, JOB.DATE_PUBLISHED
+ FROM JOB, COMPANY_STAGE_STEP
+ WHERE JOB.COMPANY_ID = COMPANY_STAGE_STEP.COMPANY_ID
+ AND JOB.DATE_PUBLISHED IS NOT NULL
+ ORDER BY JOB.ID;
+
+ -- add columns to job_candidate_mapping table to hold job_stage_step_id and flag indicating candidate rejection
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN REJECTED BOOL NOT NULL DEFAULT 'f';
+
+ALTER TABLE JOB_CANDIDATE_MAPPING DROP CONSTRAINT job_candidate_mapping_stage_fkey;
+ALTER TABLE JOB_CANDIDATE_MAPPING ALTER COLUMN STAGE DROP NOT NULL;
+ALTER TABLE JOB_CANDIDATE_MAPPING ADD CONSTRAINT job_candidate_mapping_stage_fkey FOREIGN KEY (STAGE) REFERENCES JOB_STAGE_STEP(ID);
+
+--clear old dirty data of jcm related to 'Draft' jobs
+DELETE FROM JCM_COMMUNICATION_DETAILS
+WHERE JCM_ID IN (SELECT ID FROM JOB_CANDIDATE_MAPPING WHERE JOB_ID IN (SELECT ID FROM JOB WHERE STATUS = 'Draft'));
+
+DELETE FROM CANDIDATE_SCREENING_QUESTION_RESPONSE
+WHERE JOB_CANDIDATE_MAPPING_ID IN (SELECT ID FROM JOB_CANDIDATE_MAPPING WHERE JOB_ID IN (SELECT ID FROM JOB WHERE STATUS = 'Draft'));
+
+DELETE FROM CANDIDATE_TECH_RESPONSE_DATA
+WHERE JOB_CANDIDATE_MAPPING_ID IN (SELECT ID FROM JOB_CANDIDATE_MAPPING WHERE JOB_ID IN (SELECT ID FROM JOB WHERE STATUS = 'Draft'));
+
+DELETE FROM JOB_CANDIDATE_MAPPING
+WHERE JOB_ID IN (SELECT ID FROM JOB WHERE STATUS = 'Draft');
+
+-- set rejected flag to false for all existing records
+UPDATE JOB_CANDIDATE_MAPPING
+SET REJECTED = 'F';
+
+-- set the stage to 'Source' for all existing jcm records
+UPDATE JOB_CANDIDATE_MAPPING
+SET STAGE = (
+ SELECT JOB_STAGE_STEP.ID
+ FROM JOB_STAGE_STEP
+ WHERE JOB_STAGE_STEP.JOB_ID = JOB_CANDIDATE_MAPPING.JOB_ID
+ AND STAGE_STEP_ID = (
+  SELECT COMPANY_STAGE_STEP.ID FROM COMPANY_STAGE_STEP, JOB
+  WHERE COMPANY_STAGE_STEP.STEP = 'Source'
+  AND COMPANY_STAGE_STEP.COMPANY_ID = JOB.COMPANY_ID
+  AND JOB.ID = JOB_CANDIDATE_MAPPING.JOB_ID
+ )
+);
+
+ALTER TABLE JOB_CANDIDATE_MAPPING ALTER COLUMN STAGE SET NOT NULL;
+
+-- modify history table
+ALTER TABLE JCM_HISTORY
+ADD COLUMN STAGE INTEGER REFERENCES JOB_STAGE_STEP(ID);
+
+UPDATE JCM_HISTORY
+SET STAGE = (
+  SELECT JOB_STAGE_STEP.ID
+  FROM JOB_STAGE_STEP, JOB_CANDIDATE_MAPPING
+  WHERE JCM_HISTORY.JCM_ID = JOB_CANDIDATE_MAPPING.ID
+  AND JOB_STAGE_STEP.JOB_ID = JOB_CANDIDATE_MAPPING.JOB_ID
+  AND STAGE_STEP_ID = (
+    SELECT COMPANY_STAGE_STEP.ID
+    FROM COMPANY_STAGE_STEP, JOB
+    WHERE COMPANY_STAGE_STEP.STEP = 'Source'
+    AND COMPANY_STAGE_STEP.COMPANY_ID = JOB.COMPANY_ID
+    AND JOB.ID = JOB_CANDIDATE_MAPPING.JOB_ID
+  )
+);
+
+ALTER TABLE JCM_HISTORY ALTER COLUMN STAGE SET NOT NULL;
+
+DELETE FROM MASTER_DATA WHERE TYPE = 'stage';
+
+--For ticket #247
+ALTER TABLE JOB_HIRING_TEAM
+DROP COLUMN STAGE_STEP_ID;
+
+ALTER TABLE JOB_HIRING_TEAM
+ADD COLUMN STAGE_STEP_ID INTEGER REFERENCES JOB_STAGE_STEP(ID) NOT NULL;
+
+--For ticket #257
+ALTER TABLE MASTER_DATA
+ALTER COLUMN VALUE_TO_USE TYPE VARCHAR (20);
+
+INSERT INTO public.master_data(type, value, value_to_use) VALUES
+('role', 'HR Recruiter', 'Recruiter'),
+('role', 'HR Head', 'ClientAdmin'),
+('role', 'Admin', 'ClientAdmin'),
+('role', 'Hiring Manager', 'BusinessUser'),
+('role', 'Interviewer', 'BusinessUser');
+
+--For ticket #262
+UPDATE CREATE_JOB_PAGE_SEQUENCE SET PAGE_DISPLAY_ORDER = 2, PAGE_DISPLAY_NAME = 'Screening' WHERE PAGE_NAME = 'screeningQuestions';
+UPDATE CREATE_JOB_PAGE_SEQUENCE SET PAGE_DISPLAY_ORDER = 3 WHERE PAGE_NAME = 'expertise';
+UPDATE CREATE_JOB_PAGE_SEQUENCE SET PAGE_DISPLAY_ORDER = 4 WHERE PAGE_NAME = 'keySkills';
+UPDATE CREATE_JOB_PAGE_SEQUENCE SET PAGE_DISPLAY_ORDER = 5 WHERE PAGE_NAME = 'capabilities';
+UPDATE CREATE_JOB_PAGE_SEQUENCE SET PAGE_DISPLAY_ORDER = 6, DISPLAY_FLAG = 'true' WHERE PAGE_NAME = 'hiringTeam';
+UPDATE CREATE_JOB_PAGE_SEQUENCE SET PAGE_DISPLAY_ORDER = 7 WHERE PAGE_NAME = 'preview';
+UPDATE CREATE_JOB_PAGE_SEQUENCE SET PAGE_DISPLAY_ORDER = 8 WHERE PAGE_NAME = 'jobDetail';
+
+--For ticket  #268
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN ALTERNATE_EMAIL VARCHAR (50),
+ADD COLUMN ALTERNATE_MOBILE VARCHAR (15),
+ADD COLUMN SERVING_NOTICE_PERIOD BOOL NOT NULL DEFAULT 'f',
+ADD COLUMN NEGOTIABLE_NOTICE_PERIOD BOOL NOT NULL DEFAULT 'f',
+ADD COLUMN OTHER_OFFERS BOOL NOT NULL DEFAULT 'f',
+ADD COLUMN UPDATE_RESUME BOOL NOT NULL DEFAULT 'f',
+ADD COLUMN COMMUNICATION_RATING SMALLINT DEFAULT 0;
+
+ALTER TABLE CANDIDATE_DETAILS
+ADD COLUMN RELEVANT_EXPERIENCE NUMERIC (4, 2);
+
+
+-- FOR TICKET #258
+DROP TABLE IF EXISTS EXPORT_FORMAT_MASTER;
+CREATE TABLE EXPORT_FORMAT_MASTER(
+ID serial PRIMARY KEY NOT NULL,
+COMPANY_ID integer REFERENCES COMPANY(ID) DEFAULT NULL,
+FORMAT varchar(15) NOT NULL,
+SYSTEM_SUPPORTED BOOL DEFAULT FALSE
+);
+
+
+DROP TABLE IF EXISTS EXPORT_FORMAT_DETAIL;
+CREATE TABLE EXPORT_FORMAT_DETAIL(
+    ID serial PRIMARY KEY NOT NULL,
+    FORMAT_ID integer REFERENCES EXPORT_FORMAT_MASTER(ID) NOT NULL,
+    COLUMN_NAME VARCHAR(20),
+    HEADER VARCHAR(20),
+    POSITION SMALLINT,
+    UNIQUE(FORMAT_ID, POSITION)
+);
+
+INSERT INTO export_format_master
+(format, system_supported)
+values
+('default', true);
+
+INSERT INTO export_format_detail
+(format_id, column_name, header,  "position")
+VALUES
+(1, 'candidateName','Candidate Name', 1),
+(1, 'chatbotStatus','Chatbot Status', 2),
+(1, 'keySkillsStrength','Key Skills Strength', 3),
+(1, 'currentCompany','Current Commpany', 4),
+(1, 'currentDesignation','Current Designation', 5),
+(1, 'email','Email', 6),
+(1, 'countryCode','Country Code', 7),
+(1, 'mobile','Mobile', 8),
+(1, 'totalExperience','Total Experience', 9),
+(1, 'createdBy','Created By', 10);
+
+drop view if exists exportDataView;
+create view exportDataView AS
+select
+	jcm.job_id as jobId,
+	concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidateName,
+	jcm.chatbot_status as chatbotStatus,
+	cvr.overall_rating as keySkillsStrength,
+	currentCompany.company_name as currentCompany,
+	currentCompany.designation as currentDesignation,
+	jcm.email,
+	jcm.country_code as countryCode,
+	jcm.mobile,
+	cd.total_experience as totalExperience,
+	concat(users.first_name, ' ', users.last_name) as createdBy,
+	jsq.ScreeningQn as screeningQuestion
+	, csqr.response as candidateResponse
+	from job_candidate_mapping jcm
+	left join cv_rating cvr ON cvr.job_candidate_mapping_id = jcm.id
+	left join (
+		select candidate_id, company_name, designation from candidate_company_details where id in (
+				select min(id) from candidate_company_details
+				group by candidate_id
+			)
+	) as currentCompany on jcm.candidate_id = currentCompany.candidate_id
+	left join candidate_details cd on cd.candidate_id = jcm.candidate_id
+	inner join users ON users.id = jcm.created_by
+	left join (
+		select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
+		union
+		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.company_screening_question_id=usq.id
+		union
+		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
+	) as jsq on jsq.jsqJobId = jcm.job_id
+	left join
+	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId;
+
+--For ticket #272
+UPDATE STAGE_MASTER SET STAGE_NAME='Sourcing' WHERE STAGE_NAME = 'Source';
+UPDATE STAGE_MASTER SET STAGE_NAME='Screening' WHERE STAGE_NAME = 'Screen';
+UPDATE STAGE_MASTER SET STAGE_NAME='Submitted' WHERE STAGE_NAME = 'Resume Submit';
+UPDATE STAGE_MASTER SET STAGE_NAME='Hired' WHERE STAGE_NAME = 'Join';
+
+UPDATE STEPS_PER_STAGE SET STEP_NAME='Sourcing' WHERE STEP_NAME = 'Source';
+UPDATE STEPS_PER_STAGE SET STEP_NAME='Screening' WHERE STEP_NAME = 'Screen';
+UPDATE STEPS_PER_STAGE SET STEP_NAME='Submitted' WHERE STEP_NAME = 'Resume Submit';
+UPDATE STEPS_PER_STAGE SET STEP_NAME='Hired' WHERE STEP_NAME = 'Join';
+
+UPDATE COMPANY_STAGE_STEP SET STEP='Sourcing' WHERE STEP = 'Source';
+UPDATE COMPANY_STAGE_STEP SET STEP='Screening' WHERE STEP = 'Screen';
+UPDATE COMPANY_STAGE_STEP SET STEP='Submitted' WHERE STEP = 'Resume Submit';
+UPDATE COMPANY_STAGE_STEP SET STEP='Hired' WHERE STEP = 'Join';
+
+--For ticket #276
+ALTER TABLE CANDIDATE_COMPANY_DETAILS
+ALTER COLUMN COMPANY_NAME TYPE VARCHAR(75);
+
+ALTER TABLE CANDIDATE_PROJECT_DETAILS
+ALTER COLUMN COMPANY_NAME TYPE VARCHAR(75);
+
+--For ticket #267
+Update cv_parsing_details set cv_rating_api_flag = false where job_candidate_mapping_id not in (select job_candidate_mapping_id from cv_rating)
+and processing_status = 'Success' and cv_rating_api_flag is true;
+
+--For ticket #268
+Insert into MASTER_DATA (TYPE, VALUE) values
+('reasonForChange','Too much time spent in Commuting to work'),
+('reasonForChange','Too much travelling in the job'),
+('reasonForChange','Have been in same company for too long'),
+('reasonForChange','Company has shutdown'),
+('reasonForChange','Company is downsizing /got a layoff'),
+('reasonForChange','Am a Contract employee, want to shift to permanent employment'),
+('reasonForChange','Want to work in a different domain'),
+('reasonForChange','Want to work in a different project'),
+('reasonForChange','Not getting paid my salary on time'),
+('reasonForChange','Have not been promoted for a long time'),
+('reasonForChange','Want to work with a Larger Size Company'),
+('reasonForChange','Want to work with a Bigger Brand'),
+('reasonForChange','Want to get away from shift working'),
+('reasonForChange','Have been on maternity break'),
+('reasonForChange','Have been on Sabbatical'),
+('reasonForChange','Other');
+
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN REASON_FOR_CHANGE VARCHAR(100);
+
+--For ticket #284
+ALTER TABLE COMPANY_ADDRESS
+DROP CONSTRAINT company_address_address_title_key;
+
+ALTER TABLE COMPANY_ADDRESS
+ADD CONSTRAINT UNIQUE_COMPANY_ADDRESS_TITLE UNIQUE(COMPANY_ID, ADDRESS_TITLE);

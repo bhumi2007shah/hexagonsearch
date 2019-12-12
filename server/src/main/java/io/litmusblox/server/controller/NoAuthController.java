@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Controller for REST apis that do not require authentication. For e.g.
@@ -104,6 +105,7 @@ public class NoAuthController {
                 (new HashMap<String, List<String>>(){{
                     put("User", Arrays.asList("displayName"));
                     put("CandidateCompanyDetails", new ArrayList<>(0));
+                    put("JobStageStep", new ArrayList<>(0));
                 }}),
                 new HashMap<String, List<String>>() {{
                     put("Job",Arrays.asList("jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy","companyJobId","noOfPositions","mlDataAvailable","status","createdOn","createdBy","userEnteredKeySkill"));
@@ -177,11 +179,13 @@ public class NoAuthController {
     String getCandidateProfile(@PathVariable("profileSharingUuid") UUID profileSharingUuid) throws Exception {
         log.info("Received request to fetch candidate profile");
         long startTime = System.currentTimeMillis();
-        String response = Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.getCandidateProfile(profileSharingUuid),
+        JobCandidateMapping responseObj = jobCandidateMappingService.getCandidateProfile(profileSharingUuid);
+        String response = Util.stripExtraInfoFromResponseBean(responseObj,
                 new HashMap<String, List<String>>() {{
                     put("User", Arrays.asList("displayName"));
-                    put("ScreeningQuestions", Arrays.asList("id","question"));
+                    put("ScreeningQuestions", Arrays.asList("id","question","options"));
                     put("CvRating", Arrays.asList("overallRating"));
+                    put("JobStageStep", new ArrayList<>(0));
                 }},
                 new HashMap<String, List<String>>() {{
                     put("Job",Arrays.asList("createdBy","createdOn","updatedBy","updatedOn","noOfPositions","jobDescription","mlDataAvailable","datePublished","status","scoringEngineJobAvailable","function","education","expertise","jobKeySkillsList","userEnteredKeySkill"));
@@ -200,6 +204,10 @@ public class NoAuthController {
                     put("CandidateWorkAuthorization", Arrays.asList("id","candidateId"));
                     put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                 }});
+       // log.info("before call to replace:\n {}",response);
+        response = response.replaceAll(Pattern.quote("$companyName"),responseObj.getCreatedBy().getCompany().getCompanyName());
+       // log.info("after call to replace:\n {}",response);
+
         log.info("Completed processing fetch candidate profile request in " + (System.currentTimeMillis()-startTime) + "ms.");
         return response;
     }

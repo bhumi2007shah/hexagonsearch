@@ -26,5 +26,5 @@ import java.util.Map;
 @Data
 public class SingleJobViewResponseBean {
     private List<JobCandidateMapping> candidateList = new ArrayList<>();
-    private Map<Long,Integer> candidateCountByStage = new HashMap<>();
+    private Map<String,Integer> candidateCountByStage = new HashMap<>();
 }

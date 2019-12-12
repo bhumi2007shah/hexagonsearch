@@ -4,8 +4,12 @@
 
 package io.litmusblox.server.model;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -21,8 +25,12 @@ import java.util.Date;
  */
 @Data
 @Entity
+@Builder
 @Table(name = "COMPANY_STAGE_STEP")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonFilter("CompanyStageStep")
 public class CompanyStageStep implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
@@ -42,9 +50,9 @@ public class CompanyStageStep implements Serializable {
     private Company companyId;
 
     @NotNull
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "STAGE")
-    private MasterData stage;
+    private StageMaster stage;
 
     @NotNull
     @Column(name = "CREATED_ON")
@@ -63,16 +71,4 @@ public class CompanyStageStep implements Serializable {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UPDATED_BY")
     private User updatedBy;
-
-    public CompanyStageStep(@NotNull String step, @NotNull Company companyId, @NotNull MasterData stage, @NotNull Date createdOn, @NotNull User createdBy) {
-        this.step = step;
-        this.companyId = companyId;
-        this.stage = stage;
-        this.createdOn = createdOn;
-        this.createdBy = createdBy;
-    }
-
-    public CompanyStageStep() {
-        super();
-    }
 }

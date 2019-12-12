@@ -54,6 +54,9 @@ public class UploadDataProcessService implements IUploadDataProcessService {
     @Resource
     JcmHistoryRepository jcmHistoryRepository;
 
+    @Resource
+    JobStageStepRepository jobStageStepRepository;
+
     @Autowired
     ICandidateService candidateService;
 
@@ -146,6 +149,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
         StringBuffer msg = new  StringBuffer(candidate.getFirstName()).append(" ").append(candidate.getLastName()).append(" ~ ").append(candidate.getEmail());
 
         if(Util.isNotNull(candidate.getMobile())) {
+            candidate.setMobile(Util.indianMobileConvertor(candidate.getMobile(), (null != candidate.getCountryCode())?candidate.getCountryCode():loggedInUser.getCountryId().getCountryCode()));
             if (!Util.validateMobile(candidate.getMobile(), (null != candidate.getCountryCode())?candidate.getCountryCode():loggedInUser.getCountryId().getCountryCode())) {
                 String cleanMobile = candidate.getMobile().replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_MOBILE, "");
                 log.error("Special characters found, cleaning mobile number \"" + candidate.getMobile() + "\" to " + cleanMobile);
@@ -202,11 +206,12 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             candidateObjToUse.setEmail(candidate.getEmail());
             candidateObjToUse.setMobile(candidate.getMobile());
 
-            JobCandidateMapping savedObj = jobCandidateMappingRepository.save(new JobCandidateMapping(job,candidateObjToUse,MasterDataBean.getInstance().getSourceStage(), candidate.getCandidateSource(), new Date(),loggedInUser, UUID.randomUUID(), candidate.getFirstName(), candidate.getLastName()));
+            JobStageStep stageStepForSource = jobStageStepRepository.findStageIdForJob(job.getId(), IConstant.Stage.Source.getValue()).get(0);
+            JobCandidateMapping savedObj = jobCandidateMappingRepository.save(new JobCandidateMapping(job,candidateObjToUse,stageStepForSource, candidate.getCandidateSource(), new Date(),loggedInUser, UUID.randomUUID(), candidate.getFirstName(), candidate.getLastName()));
 
             //string to store detail about jcmHistory
             String candidateDetail = "jcm created for "+msg;
-            jcmHistoryRepository.save(new JcmHistory(savedObj, candidateDetail, new Date(), loggedInUser));
+            jcmHistoryRepository.save(new JcmHistory(savedObj, candidateDetail, new Date(), loggedInUser, savedObj.getStage()));
             savedObj.setTechResponseData(new CandidateTechResponseData(savedObj));
             jobCandidateMappingRepository.save(savedObj);
             //create an empty record in jcm Communication details table

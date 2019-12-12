@@ -42,13 +42,18 @@ public class JcmHistory {
     @JoinColumn(name = "UPDATED_BY")
     private User userId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "STAGE")
+    private JobStageStep stage;
+
     public JcmHistory() {
     }
 
-    public JcmHistory(JobCandidateMapping jcmId, @NotNull String details, Date updatedOn, User userId) {
+    public JcmHistory(JobCandidateMapping jcmId, @NotNull String details, Date updatedOn, User userId, JobStageStep stage) {
         this.jcmId = jcmId;
         this.details = details;
         this.updatedOn = updatedOn;
         this.userId = userId;
+        this.stage = stage;
     }
 }

@@ -5,12 +5,14 @@
 package io.litmusblox.server.model;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
@@ -29,10 +31,13 @@ import java.util.*;
  * Project Name : server
  */
 @Data
+@Builder
 @Entity
 @Table(name = "JOB")
 @JsonFilter("Job")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
+@NoArgsConstructor
+@AllArgsConstructor
 public class Job implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
@@ -67,7 +72,6 @@ public class Job implements Serializable {
     @NotNull
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "COMPANY_ID")
-    @JsonIgnore
     private Company companyId;
 
     @Column(name = "DATE_PUBLISHED")
@@ -182,7 +186,7 @@ public class Job implements Serializable {
     private String mlErrorMessage;
 
     @Transient
-    private Map<Long,Integer> candidateCountByStage = new HashMap<>();
+    private Map<String,Integer> candidateCountByStage = new HashMap<>();
 
     @Transient
     private List<String> roles;
@@ -192,6 +196,9 @@ public class Job implements Serializable {
 
     @Transient
     private String companyDescription;
+
+    @Transient
+    private List<List<Long>> hiringTeamStepMapping = new ArrayList<>();
 
     //Remove minExperience, maxExperience, experienceRange because add masterdata for experience
     //Also add jobdetail model in job

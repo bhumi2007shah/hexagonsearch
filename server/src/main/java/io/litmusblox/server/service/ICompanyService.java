@@ -23,6 +23,17 @@ import java.util.Map;
  * Project Name : server
  */
 public interface ICompanyService {
+
+    /**
+     * Service method to create a new company
+     *
+     * @param company the company object to save
+     * @param loggedInUser the user who created the company object
+     * @return
+     * @throws Exception
+     */
+    Company addCompany(Company company, User loggedInUser) throws Exception;
+
     /**
      * Service method to add / update a company
      *

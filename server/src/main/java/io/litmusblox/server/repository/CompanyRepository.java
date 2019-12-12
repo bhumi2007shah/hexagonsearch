@@ -20,11 +20,16 @@ import java.util.List;
  * Project Name : server
  */
 public interface CompanyRepository extends JpaRepository<Company, Long> {
-    Company findByCompanyNameIgnoreCase(String companyName);
 
     @Transactional
     Company findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(String companyName, Long recruitmentAgencyId);
 
     @Transactional
     List<Company> findByRecruitmentAgencyId(Long recruitmentAgencyId);
+
+    @Transactional
+    Company findByCompanyNameIgnoreCaseAndRecruitmentAgencyIdIsNull(String companyName);
+
+    @Transactional
+    Company findByCompanyNameIgnoreCaseAndCompanyType(String companyName, String companyType);
 }

@@ -6,6 +6,7 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.*;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,4 +70,13 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     //count of all job attached to a company address
     @Transactional
     int countByJobLocationOrInterviewLocation(CompanyAddress jobLocation, CompanyAddress interviewLocation);
+
+
+    @Transactional(readOnly = true)
+    @Query(nativeQuery = true, value = "select job_stage_step.id, stage_master.stage_name\n" +
+            "from job_stage_step, company_stage_step, stage_master\n" +
+            "where job_stage_step.stage_step_id = company_stage_step.id\n" +
+            "and company_stage_step.stage = stage_master.id\n" +
+            "and job_stage_step.job_id = :jobId")
+    List<Object[]> findStagesForJob(Long jobId) throws Exception;
 }

@@ -7,6 +7,7 @@ package io.litmusblox.server.repository;
 import io.litmusblox.server.model.CvRating;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @author : Shital Raval
@@ -18,4 +19,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CvRatingRepository extends JpaRepository<CvRating, Long> {
     CvRating findByJobCandidateMappingId(Long jobCandidateMappingId);
+
+    @Transactional
+    void deleteByJobCandidateMappingId(Long jobCandidateMappingId);
 }

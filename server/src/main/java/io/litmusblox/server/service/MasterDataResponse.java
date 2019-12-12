@@ -28,7 +28,7 @@ public class MasterDataResponse {
     private Map<Long,String> questionType  = new HashMap<>();
     private Map<Long,String> experienceRange  = new HashMap<>();
     private Map<Long,String> addressType  = new HashMap<>();
-    private Map<Long,String> stage = new HashMap<>();
+    private List<String> stage = new ArrayList<>();
     private Map<Long,String> process = new HashMap<>();
     private Map<Long,String> function  = new HashMap<>();
     private Map<Long, MasterData> expertise  = new HashMap<>();
@@ -40,7 +40,9 @@ public class MasterDataResponse {
     private ConfigSettings configSettings;
     private List<String> supportedFileFormats = new ArrayList<>();
     private List<String> supportedCvFileFormats = new ArrayList<>();
-    private long sourceStageId;
     private List<CreateJobPageSequence> addJobPages = new ArrayList<>();
     private List<String> currencyList = new ArrayList<>();
+    private List<String> role = new ArrayList<>();
+    private List<String> reasonForChange = new ArrayList<>();
+    private Map<Long, String> defaultExportFormats = new HashMap<>();
 }

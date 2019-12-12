@@ -1,3 +1,4 @@
+delete from country;
 INSERT INTO COUNTRY (COUNTRY_NAME, COUNTRY_CODE, MAX_MOBILE_LENGTH, COUNTRY_SHORT_CODE)
  VALUES
  ('Australia','+61', 9,'au'),
@@ -7,6 +8,22 @@ INSERT INTO COUNTRY (COUNTRY_NAME, COUNTRY_CODE, MAX_MOBILE_LENGTH, COUNTRY_SHOR
  ('United Kingdom','+44', 10,'gb'),
  ('United States','+1', 10,'us');
 
+-- following inserts are NOT to be run in test and prod environments
+-- these will be used for unit testing purpose only
+ALTER TABLE users DISABLE TRIGGER ALL;
+
+-- password = 123456
+insert into users (id, email, password, first_name, last_name, mobile, company_id, role, country_id, created_on, status)
+values(1, 'test@litmusblox.io', '$2a$10$BwQoXoB2b9A9XE8Xc2KQbOdTGWVXYQ3QiiklqZBi/nYSRzvCPfJo.', 'Lb', 'Test', '9090909090', 2, 'Recruiter', 3, current_date, 'Active');
+
+insert into company (id, company_name, created_on, created_by)
+values(2, 'LB', current_date, 1);
+
+ALTER TABLE users ENABLE TRIGGER ALL;
+-- end of inserts only for unit tests
+
+
+delete from master_data;
 INSERT INTO MASTER_DATA (TYPE, VALUE)
 VALUES
  ('education', 'Association of Chartered Certifed Accountants (ACCA)'),
@@ -101,7 +118,7 @@ VALUES
  ('education', 'Public Relations / Advertising (PR/Advertising)'),
  ('education', 'Tourism (Tourism)'),
  ('education', 'Vocational-Training (Vocational Training)'),
- ('education', 'Other (Other)');
+ ('education', 'Other (Other)'),
 
  ( 'questionType','Checkbox'),
  ( 'questionType','Radio button'),
@@ -113,12 +130,6 @@ VALUES
  ( 'addressType','Job Location'),
  ( 'addressType','Interview Location'),
  ( 'addressType','Both'),
-
- ( 'stage','Source'),
- ( 'stage','Screen'),
- ( 'stage','Interview'),
- ( 'stage','Offer'),
- ( 'stage','Reject'),
 
  ( 'process','Hiring Manager'),
  ( 'process','Lead Recruiter'),
@@ -136,6 +147,7 @@ VALUES
  ( 'noticePeriod','Others');
 
 
+delete from configuration_settings;
 -- max limits for various parameters
 insert into CONFIGURATION_SETTINGS(CONFIG_NAME, CONFIG_VALUE) values
 ('maxScreeningQuestionsLimit',50),
@@ -145,10 +157,12 @@ insert into CONFIGURATION_SETTINGS(CONFIG_NAME, CONFIG_VALUE) values
 ('sendEmail',1),
 ('sendSms',1),
 ('maxCvFiles',20),
+('mlCall',1),
 ('maxCapabilities',10),
 ('cvRatingTimeout', 5000);
 
 
+delete from skills_master;
  -- key skill master data
 insert into skills_master (skill_name) values
 ('Core Java'),
@@ -641,6 +655,7 @@ insert into skills_master (skill_name) values
 ('WindowsFAX'),
 ('FreeSwitch');
 
+delete from sms_templates;
 INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
 ('ChatInvite','New Job - [[${commBean.jobtitle}]] at [[${commBean.sendercompany}]]%n[[${commBean.receiverfirstname}]],%n[[${commBean.senderfirstname}]] from [[${commBean.sendercompany}]] has invited you to apply for the [[${commBean.jobtitle}]] position. Click the link below to apply.%n[[${commBean.chatlink}]]'),
 ('ChatCompleted','Congratulations [[${commBean.receiverfirstname}]]!%nYour Profile is now complete for the [[${commBean.jobtitle}]] position. [[${commBean.senderfirstname}]] from [[${commBean.sendercompany}]] will be in touch with you if your profile is shortlisted.%n%nGood luck!'),
@@ -651,16 +666,17 @@ INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
 ('ChatNotVisitedReminder1','Hi [[${commBean.receiverfirstname}]],%nHere is your link to create your Litmus Profile for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. It''s required to submit completed profile to be considered for the job. The link is valid only for 48 hours. Click the link to begin. [[${commBean.chatlink}]] '),
 ('ChatNotVisitedReminder2','[[${commBean.receiverfirstname}]],%nJust a reminder to complete your Litmus Profile for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. It will take just a few minutes to finish it.  It''s required that you finish the profile to be considered for the job.  This link will expire in 24 hours.%nClick the link to apply. [[${commBean.chatlink}]] ');
 
+delete from create_job_page_sequence;
 INSERT INTO CREATE_JOB_PAGE_SEQUENCE (PAGE_DISPLAY_NAME, PAGE_NAME, PAGE_DISPLAY_ORDER, DISPLAY_FLAG,SUBSCRIPTION_AVAILABILITY)
 VALUES
 ('Overview', 'overview', 1, 'T','Lite'),
-('Expertise', 'expertise', 2, 'F','Lite'),
-('Job Detail', 'jobDetail', 3, 'F','Max'),
-('Screening Questions', 'screeningQuestions', 4, 'T','Lite'),
-('Key Skills', 'keySkills', 5, 'T','Lite'),
-('Hiring Team', 'hiringTeam', 6, 'F','Max'),
-('Capabilities', 'capabilities', 7, 'T','Lite'),
-('Preview', 'preview', 8, 'T','Lite');
+('Expertise', 'expertise', 3, 'F','Lite'),
+('Job Detail', 'jobDetail', 8, 'F','Max'),
+('Screening', 'screeningQuestions', 2, 'T','Lite'),
+('Key Skills', 'keySkills', 4, 'T','Lite'),
+('Hiring Team', 'hiringTeam', 6, 'T','Max'),
+('Capabilities', 'capabilities', 5, 'T','Lite'),
+('Preview', 'preview', 7, 'T','Lite');
 
 INSERT INTO MASTER_DATA (TYPE, VALUE, VALUE_TO_USE, COMMENTS)
 VALUES
@@ -686,6 +702,7 @@ VALUES
 ( 'function','Anchoring / TV / Films / Production'),
 ( 'function','Architects / Interior Design / Naval Arch');
 
+delete from weightage_cutoff_mapping;
 insert into weightage_cutoff_mapping (weightage, percentage, cutoff, star_rating)
 values
 (2,100,10,1),
@@ -711,3 +728,68 @@ INSERT INTO public.currency(currency_full_name, currency_short_name, country) VA
 ('Singapore Dollar', 'SGD', 'sg'),
 ('Pound Sterling', 'GBP', 'gb'),
 ('US Dollar', 'USD', 'us');
+
+INSERT INTO STAGE_MASTER(ID, STAGE_NAME) VALUES
+(1, 'Sourcing'),
+(2, 'Screening'),
+(3, 'Submitted'),
+(4, 'Interview'),
+(5, 'Make Offer'),
+(6, 'Offer'),
+(7, 'Hired');
+
+INSERT INTO STEPS_PER_STAGE (STAGE_ID, STEP_NAME) VALUES
+(1, 'Sourcing'),
+(2, 'Screening'),
+(3, 'Submitted'),
+(4, 'L1'),
+(4, 'L2'),
+(4, 'L3'),
+(5, 'Make Offer'),
+(6, 'Offer'),
+(7, 'Hired');
+
+INSERT INTO public.master_data(type, value, value_to_use) VALUES
+('role', 'HR Recruiter', 'Recruiter'),
+('role', 'HR Head', 'ClientAdmin'),
+('role', 'Admin', 'ClientAdmin'),
+('role', 'Hiring Manager', 'BusinessUser'),
+('role', 'Interviewer', 'BusinessUser');
+
+--Ticket #258
+INSERT INTO export_format_master
+(format, system_supported)
+values
+('default', true);
+
+INSERT INTO export_format_detail
+(format_id, column_name, header,  "position")
+VALUES
+(1, 'candidateName','Candidate Name', 1),
+(1, 'chatbotStatus','Chatbot Status', 2),
+(1, 'keySkillsStrength','Key Skills Strength', 3),
+(1, 'currentCompany','Current Commpany', 4),
+(1, 'currentDesignation','Current Designation', 5),
+(1, 'email','Email', 6),
+(1, 'countryCode','Country Code', 7),
+(1, 'mobile','Mobile', 8),
+(1, 'totalExperience','Total Experience', 9),
+(1, 'createdBy','Created By', 10);
+
+Insert into MASTER_DATA (TYPE, VALUE) values
+('reasonForChange','Too much time spent in Commuting to work'),
+('reasonForChange','Too much travelling in the job'),
+('reasonForChange','Have been in same company for too long'),
+('reasonForChange','Company has shutdown'),
+('reasonForChange','Company is downsizing /got a layoff'),
+('reasonForChange','Am a Contract employee, want to shift to permanent employment'),
+('reasonForChange','Want to work in a different domain'),
+('reasonForChange','Want to work in a different project'),
+('reasonForChange','Not getting paid my salary on time'),
+('reasonForChange','Have not been promoted for a long time'),
+('reasonForChange','Want to work with a Larger Size Company'),
+('reasonForChange','Want to work with a Bigger Brand'),
+('reasonForChange','Want to get away from shift working'),
+('reasonForChange','Have been on maternity break'),
+('reasonForChange','Have been on Sabbatical'),
+('reasonForChange','Other');

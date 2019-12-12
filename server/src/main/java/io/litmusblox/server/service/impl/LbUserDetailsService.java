@@ -68,6 +68,12 @@ public class LbUserDetailsService implements UserDetailsService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Resource
+    CompanyAddressRepository companyAddressRepository;
+
+    @Resource
+    CompanyBuRepository companyBuRepository;
+
     @Autowired
     JwtTokenUtil jwtTokenUtil;
 
@@ -99,7 +105,7 @@ public class LbUserDetailsService implements UserDetailsService {
 
         log.info("Completed processing login request in " + (System.currentTimeMillis() - startTime) +" ms.");
 
-        return new LoginResponseBean(token, userDetails.getDisplayName(), userDetails.getCompany().getCompanyName(),jobCandidateMappingRepository.getUploadedCandidateCount(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()), userDetails), userDetails.getCompany().getId());
+        return new LoginResponseBean(token, userDetails.getDisplayName(), userDetails.getCompany(),jobCandidateMappingRepository.getUploadedCandidateCount(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()), userDetails));
     }
 
 
@@ -132,16 +138,24 @@ public class LbUserDetailsService implements UserDetailsService {
         checkForDuplicateUser(user, loggedInUser.getRole());
         validateUser(user);
 
+        //TODO Need revisit this code after getting screens
         Company companyObjToUse = null;
-        if(IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole())) {
+        if(IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && null == user.getCompany().getRecruitmentAgencyId()) {
             //check if company exists
-            Company userCompany = companyRepository.findByCompanyNameIgnoreCase(user.getCompany().getCompanyName());
+            Company userCompany = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyIdIsNull(user.getCompany().getCompanyName());
 
             if (null == userCompany) {
                 //create a company
-                companyObjToUse = companyRepository.save(new Company(user.getCompany().getCompanyName(), true, new Date(), loggedInUser.getId()));
-                companyService.saveCompanyHistory(companyObjToUse.getId(), "New company, "+companyObjToUse.getCompanyName()+", created", loggedInUser);
+                companyObjToUse = companyService.addCompany(new Company(user.getCompany().getCompanyName(), true, user.getCompany().getCompanyType(),null, new Date(), loggedInUser.getId()), loggedInUser);
+                user.setRole(IConstant.ADMIN);
             } else {
+                companyObjToUse = userCompany;
+            }
+        }else if(null != user.getCompany() && null != user.getCompany().getRecruitmentAgencyId() && IConstant.UserRole.Names.RECRUITMENT_AGENCY.equals(loggedInUser.getRole())){
+            Company userCompany = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(user.getCompany().getCompanyName(), loggedInUser.getCompany().getId());
+            if(null==userCompany){
+                companyObjToUse = companyService.addCompany(new Company(user.getCompany().getCompanyName(), true, IConstant.CompanyType.INDIVIDUAL.getValue(),loggedInUser.getCompany().getId(), new Date(), loggedInUser.getId()), loggedInUser);
+            }else {
                 companyObjToUse = userCompany;
             }
         }
@@ -152,6 +166,34 @@ public class LbUserDetailsService implements UserDetailsService {
         u.setEmail(user.getEmail().toLowerCase());
         if(null == companyObjToUse)
             companyObjToUse=loggedInUser.getCompany();
+
+        //add CompanyAddressId and CompanyBuId in user
+        if(null != user.getCompanyAddressId()){
+            Boolean isCompanyPresent = false;
+            if(null != loggedInUser.getCompany().getCompanyAddressList() && loggedInUser.getCompany().getCompanyAddressList().size()>0) {
+                List<Long> companyAddressList = new ArrayList<>();
+                loggedInUser.getCompany().getCompanyAddressList().forEach(companyAddress -> companyAddressList.add(companyAddress.getId()));
+                if(companyAddressList.contains(user.getCompanyAddressId())){
+                    u.setCompanyAddressId(user.getCompanyAddressId());
+                    isCompanyPresent = true;
+                }
+            }
+            if(!isCompanyPresent)
+                log.error("Company Address Id is not related to logged in user company, CompanyAddressId : "+user.getCompanyAddressId());
+        }
+        if(null != user.getCompanyBuId()){
+            Boolean isCompanyPresent = false;
+            if(null != loggedInUser.getCompany().getCompanyBuList() && loggedInUser.getCompany().getCompanyBuList().size()>0){
+                List<Long> companyBuList = new ArrayList<>();
+                loggedInUser.getCompany().getCompanyBuList().forEach(companyBu -> companyBuList.add(companyBu.getId()));
+                if(companyBuList.contains(user.getCompanyBuId())){
+                    u.setCompanyBuId(user.getCompanyBuId());
+                    isCompanyPresent = true;
+                }
+            }
+            if(!isCompanyPresent)
+                log.error("Company Bu Id is not related to logged in user company, CompanyBuId : "+user.getCompanyBuId());
+        }
         //u.setCompany((companyObjToUse==null)?loggedInUser.getCompany():companyObjToUse);
         u.setCompany(companyObjToUse);
         if (null == user.getRole()) {
@@ -159,12 +201,20 @@ public class LbUserDetailsService implements UserDetailsService {
            u.setRole(IConstant.UserRole.Names.RECRUITER);
         }
         else {
+
+            if(IConstant.HR_RECRUITER.equals(user.getRole()))
+                user.setRole(IConstant.UserRole.Names.RECRUITER);
+            else if(IConstant.HR_HEAD.equals(user.getRole()) || IConstant.ADMIN.equals(user.getRole()))
+                user.setRole(IConstant.UserRole.Names.CLIENT_ADMIN);
+            else if(IConstant.HIRING_MANAGER.equals(user.getRole()) || IConstant.INTERVIEWER.equals(user.getRole()))
+                user.setRole(IConstant.UserRole.Names.BUSINESS_USER);
+
             //set role as present in the request
             //check that the role is valid and exists in the system
             if(Arrays.stream(IConstant.UserRole.values()).anyMatch((definedRole) -> definedRole.toString().equalsIgnoreCase(user.getRole()))) {
                 //if logged in user is client admin, a new user with super admin role cannot be created
-                if(loggedInUser.getRole().equals(IConstant.UserRole.Names.CLIENT_ADMIN)) {
-                    if(user.getRole().equals(IConstant.UserRole.Names.SUPER_ADMIN))
+                if(IConstant.UserRole.Names.CLIENT_ADMIN.equals(loggedInUser.getRole())) {
+                    if(IConstant.UserRole.Names.SUPER_ADMIN.equals(user.getRole()))
                         throw new ValidationException("User with Client Admin privilege: " + loggedInUser.getEmail() + " attempted to create a user with Super Admin privilege", HttpStatus.FORBIDDEN);
                 }
                 u.setRole(user.getRole());
@@ -172,7 +222,7 @@ public class LbUserDetailsService implements UserDetailsService {
             else
                 throw new ValidationException("Invalid role in create user request: " + user.getRole(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
-        if(user.getUserType().equals(IConstant.UserType.BUSINESS) || user.getUserType().equals(IConstant.UserType.RECRUITING))
+        if(IConstant.UserType.BUSINESS.getValue().equals(user.getUserType()) || IConstant.UserType.RECRUITING.getValue().equals(user.getUserType()))
             u.setUserType(user.getUserType());
         else
             u.setUserType(IConstant.UserType.RECRUITING.getValue());
@@ -290,7 +340,7 @@ public class LbUserDetailsService implements UserDetailsService {
             throw new ValidationException("Invalid user", HttpStatus.UNPROCESSABLE_ENTITY);
 
         //if user is client admin, block the company
-        if(objFromDb.getRole().equals(IConstant.UserRole.Names.CLIENT_ADMIN)) {
+        if(IConstant.UserRole.Names.CLIENT_ADMIN.equals(objFromDb.getRole())) {
             if(blockUser) {
                 Company companyToBlock = objFromDb.getCompany();
                 companyToBlock.setActive(false);
@@ -335,7 +385,7 @@ public class LbUserDetailsService implements UserDetailsService {
         List<User> userList = userRepository.findByCompanyId(companyId);
         List<UserWorkspaceBean> responseBeans = new ArrayList<>(userList.size());
         userList.forEach(user->{
-            UserWorkspaceBean workspaceBean = new UserWorkspaceBean(user.getId(), user.getDisplayName(), user.getStatus());
+            UserWorkspaceBean workspaceBean = new UserWorkspaceBean(user.getId(), user.getDisplayName(), user.getStatus(), user.getCompanyAddressId(), user.getCompanyBuId());
             workspaceBean.setNumberOfJobsCreated(jobRepository.countByCreatedBy(user));
             responseBeans.add(workspaceBean);
         });

@@ -23,10 +23,14 @@ public class UserWorkspaceBean {
     String userName;
     String status;
     int numberOfJobsCreated;
+    Long companyAddressId;
+    Long companyBuId;
 
-    public UserWorkspaceBean(Long userId, String userName, String status) {
+    public UserWorkspaceBean(Long userId, String userName, String status, Long companyAddressId, Long companyBuId) {
         this.userId = userId;
         this.userName = userName;
         this.status = status;
+        this.companyAddressId = companyAddressId;
+        this.companyBuId = companyBuId;
     }
 }

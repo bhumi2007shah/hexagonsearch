@@ -53,7 +53,7 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @NotNull
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "STAGE")
-    private MasterData stage;
+    private JobStageStep stage;
 
     @NotNull
     @Column(name = "CANDIDATE_SOURCE")
@@ -116,6 +116,33 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date chatbotUpdatedOn;
 
+    @Column(name="ALTERNATE_EMAIL")
+    private String alternateEmail;
+
+    @Column(name="ALTERNATE_MOBILE")
+    private String alternateMobile;
+
+    @Column(name="SERVING_NOTICE_PERIOD")
+    private boolean servingNoticePeriod;
+
+    @Column(name="NEGOTIABLE_NOTICE_PERIOD")
+    private boolean negotiableNoticePeriod;
+
+    @Column(name="OTHER_OFFERS")
+    private boolean otherOffers;
+
+    @Column(name="UPDATE_RESUME")
+    private boolean updateResume;
+
+    @Column(name="COMMUNICATION_RATING")
+    private Integer communicationRating = 0;
+
+    @Column(name = "REJECTED")
+    private boolean rejected;
+
+    @Column(name="REASON_FOR_CHANGE")
+    private String reasonForChange;
+
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private CandidateTechResponseData techResponseData;
@@ -146,13 +173,17 @@ public class JobCandidateMapping implements Serializable, Comparable {
 
     @Transient
     @JsonProperty
+    List<String> candidateKeySkills = new ArrayList<>();
+
+    @Transient
+    @JsonProperty
     private Date hiringManagerInterestDate;
 
     public String getDisplayName() {
         return candidateFirstName + " " + candidateLastName;
     }
 
-    public JobCandidateMapping(@NotNull Job job, @NotNull Candidate candidate, @NotNull MasterData stage, @NotNull String candidateSource, @NotNull Date createdOn, @NotNull User createdBy, UUID chatbotUuid, String candidateFirstName, String candidateLastName) {
+    public JobCandidateMapping(@NotNull Job job, @NotNull Candidate candidate, @NotNull JobStageStep stage, @NotNull String candidateSource, @NotNull Date createdOn, @NotNull User createdBy, UUID chatbotUuid, String candidateFirstName, String candidateLastName) {
         this.job = job;
         this.candidate = candidate;
         this.stage = stage;

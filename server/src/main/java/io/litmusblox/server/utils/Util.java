@@ -254,30 +254,32 @@ public class Util {
 
     }
 
-    public static String indianMobileConvertor(String mobileNo) {
-        //remove all occurences of '
-        mobileNo = mobileNo.replaceAll("\'","");
+    public static String indianMobileConvertor(String mobileNo,  String countryCode) {
+        if(countryCode.equals(IConstant.CountryCode.INDIA_CODE.getValue())){
+            //remove all occurences of '
+            mobileNo = mobileNo.replaceAll("\'","");
 
-        if(!Util.isNull(mobileNo)) {
-            //check if number contains any prefix like 0 or +
-            //strip all occurences of 0 and +
-            while (mobileNo.charAt(0) == '0' || mobileNo.charAt(0) == '+') {
-                mobileNo = mobileNo.substring(1);
+            if(!Util.isNull(mobileNo)) {
+                //check if number contains any prefix like 0 or +
+                //strip all occurences of 0 and +
+                while (mobileNo.charAt(0) == '0' || mobileNo.charAt(0) == '+') {
+                    mobileNo = mobileNo.substring(1);
+                }
             }
-        }
+            //strip all white spaces
+            mobileNo = mobileNo.replaceAll("\\s+", "");
 
-        //strip all white spaces
-        mobileNo = mobileNo.replaceAll("\\s+", "");
+            //if mobile number is greater than 10 digits, and prefix is 91, remove 91
+            if(mobileNo.length() > 10 && mobileNo.startsWith("91"))
+                mobileNo = mobileNo.substring(2);
 
-        //if mobile number is greater than 10 digits, and prefix is 91, remove 91
-        if(mobileNo.length() > 10 && mobileNo.startsWith("91"))
-            mobileNo = mobileNo.substring(2);
-
-        //if mobile number is greater than 10 digits and start with anything else than 91 and replace any non digit character
-        if(mobileNo.length() > 10 ){
-            mobileNo = mobileNo.replaceAll("\\D", "");
-            mobileNo = mobileNo.substring(mobileNo.length()-10);
-        }
+            //if mobile number is greater than 10 digits and start with anything else than 91 and replace any non digit character
+            if(mobileNo.length() > 10 ){
+                mobileNo = mobileNo.replaceAll("\\D", "");
+                mobileNo = mobileNo.substring(mobileNo.length()-10);
+            }
+        }else
+            log.info("Not a Indian MobileNo : "+mobileNo+" CountryCode : "+countryCode);
 
         return mobileNo;
     }
@@ -380,6 +382,14 @@ public class Util {
             cleanFirstName = Util.toSentenceCase(cleanFirstName);
         }
         return cleanFirstName;
+    }
+
+    public static String cleanFileName(String fileName){
+        log.info("Inside cleanFileName");
+        String cleanFileName = fileName.substring(0, fileName.lastIndexOf("."));
+        cleanFileName = cleanFileName.replaceAll("\\W","");
+        cleanFileName = cleanFileName + "."+Util.getFileExtension(fileName);
+        return cleanFileName;
     }
 
     public static Date getCurrentOrBefore1YearDate(Boolean dateBefore1Year) throws ParseException {

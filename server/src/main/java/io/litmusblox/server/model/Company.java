@@ -6,6 +6,8 @@ package io.litmusblox.server.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -30,6 +32,8 @@ import java.util.Set;
 @Table(name = "COMPANY")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Company implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
@@ -124,6 +128,15 @@ public class Company implements Serializable {
     public Company(@NotNull String companyName, @NotNull Boolean active, @NotNull Date createdOn, @NotNull Long createdBy) {
         this.companyName = companyName;
         this.active = active;
+        this.createdOn = createdOn;
+        this.createdBy = createdBy;
+    }
+
+    public Company(@NotNull(message = "COMPANY_NAME " + IErrorMessages.NULL_MESSAGE) @NotBlank(message = "COMPANY_NAME " + IErrorMessages.BLANK_MESSAGE) @Pattern(message = "COMPANY_NAME " + IErrorMessages.COMPANY_NAME_NOT_VALID, regexp = IConstant.REGEX_FOR_COMPANY_NAME) String companyName, @NotNull Boolean active, @NotNull String companyType, Long recruitmentAgencyId, @NotNull Date createdOn, @NotNull Long createdBy) {
+        this.companyName = companyName;
+        this.active = active;
+        this.companyType = companyType;
+        this.recruitmentAgencyId = recruitmentAgencyId;
         this.createdOn = createdOn;
         this.createdBy = createdBy;
     }

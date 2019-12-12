@@ -41,4 +41,7 @@ public interface JcmCommunicationDetailsRepository extends JpaRepository<JcmComm
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query(nativeQuery = true, value = "update jcm_Communication_Details set hr_chat_complete_flag = true where jcm_id =:jcmId")
     void updateHrChatbotFlagByJcmId(Long jcmId);
+
+    @Transactional
+    void deleteByJcmId(Long jobCandidateMappingId);
 }

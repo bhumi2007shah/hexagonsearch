@@ -36,7 +36,7 @@ public interface IJobCandidateMappingService {
      * @return the status of upload operation
      * @throws Exception
      */
-    UploadResponseBean uploadIndividualCandidate(List<Candidate> candidates, Long jobId) throws Exception;
+    UploadResponseBean uploadIndividualCandidate(List<Candidate> candidates, Long jobId, boolean ignoreMobile) throws Exception;
 
     /**
      * Service method to add candidates from a file in one of the supported formats
@@ -91,7 +91,7 @@ public interface IJobCandidateMappingService {
      * @param jcmList list of jcm ids for chatbot invitation
      * @throws Exception
      */
-    void inviteCandidates(List<Long> jcmList) throws Exception;
+    InviteCandidateResponseBean inviteCandidates(List<Long> jcmList) throws Exception;
 
     /**
      * Service method to process sharing of candidate profiles with Hiring managers
@@ -168,4 +168,22 @@ public interface IJobCandidateMappingService {
      * @param jobCandidateMapping updated data from JobCandidateMapping model
      */
     void editCandidate(JobCandidateMapping jobCandidateMapping);
+
+    /**
+     * Service to set a specific stage like Interview, Offer etc
+     *
+     * @param jcmList The list of candidates for the job that need to be moved to the specified stage
+     * @param stage the new stage
+     * @throws Exception
+     */
+    void setStageForCandidates(List<Long> jcmList, String stage) throws Exception;
+
+    /**
+     * Service to return error list for drag and drop CV's for a job
+     *
+     * @param jobId job id for which files with error wil be returned
+     * @return List of RChilliErrorResponseBean which have file name, processed date, status, jcmId, candidate name if available
+     * @throws Exception
+     */
+    List<ResponseBean> getRchilliError(Long jobId) throws Exception;
 }

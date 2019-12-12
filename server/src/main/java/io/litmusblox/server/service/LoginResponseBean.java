@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.service;
 
+import io.litmusblox.server.model.Company;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,7 +22,6 @@ import lombok.NoArgsConstructor;
 public class LoginResponseBean {
     private String jwtToken;
     private String userName;
-    private String company;
+    private Company company;
     private int candidatesProcessed;
-    private long companyId;
 }

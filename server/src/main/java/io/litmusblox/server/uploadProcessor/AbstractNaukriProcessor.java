@@ -32,8 +32,8 @@ public abstract class AbstractNaukriProcessor {
 
         candidate.setEmail(naukriRow.getEmail());
 
-        //trim mobile number
-        candidate.setMobile(Util.indianMobileConvertor(naukriRow.getMobile()));
+        //clean mobile no in common place
+        candidate.setMobile(naukriRow.getMobile());
 
         candidate.setTelephone(naukriRow.getTelephone());
 

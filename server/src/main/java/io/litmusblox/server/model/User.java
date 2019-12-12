@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.litmusblox.server.constant.IConstant;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -27,12 +29,13 @@ import java.util.*;
  * Project Name : server
  *
  */
-
+@Builder
 @Data
 @Entity
 @Table(name = "USERS")
 @JsonFilter("User")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
+@AllArgsConstructor
 public class User implements Serializable, UserDetails {
 
     private static final long serialVersionUID = 6868521896546285046L;
@@ -111,6 +114,12 @@ public class User implements Serializable, UserDetails {
 
     @Column(name = "UPDATED_BY")
     private Long updatedBy;
+
+    @Column(name = "COMPANY_ADDRESS_ID")
+    private Long companyAddressId;
+
+    @Column(name = "COMPANY_BU_ID")
+    private Long companyBuId;
 
     @Transient
     @JsonProperty
