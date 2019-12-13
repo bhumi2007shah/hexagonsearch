@@ -316,13 +316,13 @@ public class JobService implements IJobService {
         long startTime = System.currentTimeMillis();
         companyList.stream().forEach(company -> {
             if (archived) {
-                responseBean.setListOfJobs(jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByCreatedOnDesc(company));
-                responseBean.setArchivedJobs(responseBean.getListOfJobs().size());
-                responseBean.setOpenJobs((jobRepository.countByCompanyIdAndDateArchivedIsNull(company)).intValue());
+                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByCreatedOnDesc(company));
+                responseBean.setArchivedJobs(responseBean.getArchivedJobs() + (responseBean.getListOfJobs().size()));
+                responseBean.setOpenJobs(responseBean.getOpenJobs()+(jobRepository.countByCompanyIdAndDateArchivedIsNull(company)).intValue());
             } else {
-                responseBean.setListOfJobs(jobRepository.findByCompanyIdAndDateArchivedIsNullOrderByCreatedOnDesc(company));
-                responseBean.setOpenJobs(responseBean.getListOfJobs().size());
-                responseBean.setArchivedJobs((jobRepository.countByCompanyIdAndDateArchivedIsNotNull(company)).intValue());
+                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndDateArchivedIsNullOrderByCreatedOnDesc(company));
+                responseBean.setOpenJobs(responseBean.getOpenJobs() + responseBean.getListOfJobs().size());
+                responseBean.setArchivedJobs(responseBean.getArchivedJobs() + (jobRepository.countByCompanyIdAndDateArchivedIsNotNull(company)).intValue());
             }
         });
         log.info("Got " + responseBean.getListOfJobs().size() + " jobs in " + (System.currentTimeMillis() - startTime) + "ms");
