@@ -126,7 +126,10 @@ public class NaukriHtmlParser implements HtmlParser {
         if (null != ugEducation) {
             if(null == candidate.getCandidateEducationDetails())
                 candidate.setCandidateEducationDetails(new ArrayList<CandidateEducationDetails>());
-            candidate.getCandidateEducationDetails().add(CandidateEducationDetails.builder().degree(ugEducation.substring(0, ugEducation.indexOf("from")).trim()).instituteName(ugEducation.substring(ugEducation.indexOf("from") + 4).trim()).build());
+            if(ugEducation.indexOf("from") == -1)
+                candidate.getCandidateEducationDetails().add(CandidateEducationDetails.builder().degree(ugEducation).instituteName(ugEducation.substring(ugEducation.indexOf("from") + 4).trim()).build());
+            else
+                candidate.getCandidateEducationDetails().add(CandidateEducationDetails.builder().degree(ugEducation.substring(0, ugEducation.indexOf("from")).trim()).instituteName(ugEducation.substring(ugEducation.indexOf("from") + 4).trim()).build());
         }
 
         //set location
