@@ -316,12 +316,14 @@ public class JobService implements IJobService {
         long startTime = System.currentTimeMillis();
         companyList.stream().forEach(company -> {
             if (archived) {
-                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByCreatedOnDesc(company));
-                responseBean.setArchivedJobs(responseBean.getArchivedJobs() + (responseBean.getListOfJobs().size()));
+                List<Job> jobList = jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByCreatedOnDesc(company);
+                responseBean.getListOfJobs().addAll(jobList);
+                responseBean.setArchivedJobs(responseBean.getArchivedJobs() + (jobList.size()));
                 responseBean.setOpenJobs(responseBean.getOpenJobs()+(jobRepository.countByCompanyIdAndDateArchivedIsNull(company)).intValue());
             } else {
-                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndDateArchivedIsNullOrderByCreatedOnDesc(company));
-                responseBean.setOpenJobs(responseBean.getOpenJobs() + responseBean.getListOfJobs().size());
+                List<Job> jobList = jobRepository.findByCompanyIdAndDateArchivedIsNullOrderByCreatedOnDesc(company);
+                responseBean.getListOfJobs().addAll(jobList);
+                responseBean.setOpenJobs(responseBean.getOpenJobs() + jobList.size());
                 responseBean.setArchivedJobs(responseBean.getArchivedJobs() + (jobRepository.countByCompanyIdAndDateArchivedIsNotNull(company)).intValue());
             }
         });
