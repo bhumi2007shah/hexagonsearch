@@ -74,7 +74,7 @@ public class CompanyDataController {
      */
     @PutMapping(value = "/update",consumes = {"multipart/form-data"})
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "')")
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + IConstant.UserRole.Names.RECRUITMENT_AGENCY +"')")
     Company updateCompany(
             @RequestParam(value = "logo", required = false) MultipartFile logo,
             @RequestParam("company") String companyString
