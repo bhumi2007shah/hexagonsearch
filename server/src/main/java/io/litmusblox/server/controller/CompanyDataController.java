@@ -164,9 +164,9 @@ public class CompanyDataController {
     @PostMapping("/createCompany")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    void createCompany(@RequestBody Company company){
+    Company createCompany(@RequestBody Company company){
         log.info("inside createCompany method");
-        companyService.createCompanyByAgency(company);
+        return companyService.createCompanyByAgency(company);
     }
 
     /**

@@ -544,7 +544,7 @@ public class CompanyService implements ICompanyService {
     }
 
     @Transactional
-    public void createCompanyByAgency(Company company) {
+    public Company createCompanyByAgency(Company company) {
         log.info("inside createCompanyByAgency method");
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Company companyFromDb = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(company.getCompanyName(), company.getRecruitmentAgencyId());
@@ -558,9 +558,10 @@ public class CompanyService implements ICompanyService {
         company.setCreatedOn(new Date());
         company.setCreatedBy(loggedInUser.getId());
         company = truncateField(company);
-        companyRepository.save(company);
+        Company newCompany = companyRepository.save(company);
 
         addStageStepsForCompany(company, loggedInUser);
+        return newCompany;
     }
 
     private void addStageStepsForCompany(Company company, User loggedInUser) {

@@ -91,7 +91,7 @@ public interface ICompanyService {
      * @param company
      * @return company model
      */
-    void createCompanyByAgency(Company company);
+    Company createCompanyByAgency(Company company);
 
     /**
      * Service method to get company list by agency company id
