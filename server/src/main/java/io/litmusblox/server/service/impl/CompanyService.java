@@ -531,8 +531,12 @@ public class CompanyService implements ICompanyService {
     public Company getCompanyDetail(Long companyId) {
         log.info("inside getCompanyDetail method");
         Company company = companyRepository.findById(companyId).orElse(null);
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if(null == company)
             throw new ValidationException("Company not found for id : " + companyId, HttpStatus.BAD_REQUEST);
+        else if(loggedInUser.getRole().equals(IConstant.UserRole.RECRUITMENT_AGENCY) && !company.getRecruitmentAgencyId().equals(loggedInUser.getCompany().getId())) {
+            throw new ValidationException("Client company : " + company.getCompanyName() + " not belonging to agency : "+loggedInUser.getCompany().getCompanyName(), HttpStatus.UNAUTHORIZED);
+        }
 
         Hibernate.initialize(company.getCompanyBuList());
         Hibernate.initialize(company.getCompanyAddressList());

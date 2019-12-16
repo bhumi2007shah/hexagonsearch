@@ -175,6 +175,7 @@ public class CompanyDataController {
      */
     @GetMapping("/getCompanyByAgency/{recruitmentAgencyId}")
     @ResponseBody
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.RECRUITMENT_AGENCY +"') or hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN +"')")
     @ResponseStatus(HttpStatus.OK)
     List<Company> getCompanyListByAgency(@PathVariable ("recruitmentAgencyId") Long recruitmentAgencyId){
         log.info("inside getCompanyListByAgency method");
