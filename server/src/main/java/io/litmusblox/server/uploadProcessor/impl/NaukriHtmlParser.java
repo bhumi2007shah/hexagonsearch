@@ -65,8 +65,10 @@ public class NaukriHtmlParser implements HtmlParser {
     }
 
     private void populateCandidateCompanyDetails(Candidate candidate, String text) {
-        CandidateCompanyDetails companyDetails = CandidateCompanyDetails.builder().designation(text.substring(0, text.indexOf(" at "))).companyName(text.substring(text.indexOf(" at ") + 4)).build();
-        candidate.getCandidateCompanyDetails().add(companyDetails);
+        if(text.length() > 0 && text.indexOf(" at ") != -1) {
+            CandidateCompanyDetails companyDetails = CandidateCompanyDetails.builder().designation(text.substring(0, text.indexOf(" at "))).companyName(text.substring(text.indexOf(" at ") + 4)).build();
+            candidate.getCandidateCompanyDetails().add(companyDetails);
+        }
     }
 
     private void populateCandidateName(Candidate candidate, Document doc) {
@@ -95,18 +97,25 @@ public class NaukriHtmlParser implements HtmlParser {
     private void populateCandidateDetails(Candidate candidate, Document doc) {
         String experienceAndCtc = doc.getElementsMatchingOwnText("Total Experience").parents().tagName("tbody").get(1).text().replaceAll("Total Experience CTC ","").replaceAll("&", "");
 
-        //set experience
-        String experience = experienceAndCtc.substring(0, experienceAndCtc.indexOf("Months"));
-        String years = experience.substring(0,experienceAndCtc.indexOf("Years")).trim();
-        String months = experience.substring(experienceAndCtc.indexOf("Years") + 5).trim();
-        candidate.setCandidateDetails(CandidateDetails.builder().totalExperience(Double.parseDouble(years+"."+months)).build());
+        if(experienceAndCtc.indexOf("Not Mentioned") == -1) {
+            //set experience
+            String experience = experienceAndCtc.substring(0, experienceAndCtc.indexOf("Months"));
+            String years = experience.substring(0, experienceAndCtc.indexOf("Years")).trim();
+            String months = experience.substring(experienceAndCtc.indexOf("Years") + 5).trim();
+            candidate.setCandidateDetails(CandidateDetails.builder().totalExperience(Double.parseDouble(years + "." + months)).build());
 
-        //set ctc
-        candidate.getCandidateCompanyDetails().get(0).setSalary(experienceAndCtc.substring(experienceAndCtc.indexOf("Months") + 6).trim());
-
+            //set ctc
+            if (candidate.getCandidateCompanyDetails().size() == 0)
+                candidate.getCandidateCompanyDetails().add(CandidateCompanyDetails.builder().salary(experienceAndCtc.substring(experienceAndCtc.indexOf("Months") + 6).trim()).build());
+            else
+                candidate.getCandidateCompanyDetails().get(0).setSalary(experienceAndCtc.substring(experienceAndCtc.indexOf("Months") + 6).trim());
+        }
         //set noticePeriod
         String noticePeriod = doc.getElementsMatchingOwnText("Notice Period").last().parents().tagName("tbody").get(1).text().replaceAll("Notice Period","").trim();
-        if (noticePeriod.indexOf("Serving") != -1)
+        if (candidate.getCandidateCompanyDetails().size() == 0)
+            candidate.getCandidateCompanyDetails().add(new CandidateCompanyDetails());
+
+        if (noticePeriod.indexOf("Not Mentioned") != -1 || noticePeriod.indexOf("Serving") != -1)
             candidate.getCandidateCompanyDetails().get(0).setNoticePeriod("0");
         else if (noticePeriod.indexOf("Months") != -1)
             candidate.getCandidateCompanyDetails().get(0).setNoticePeriod(String.valueOf(Integer.parseInt(noticePeriod.substring(0, noticePeriod.indexOf("Months")).trim()) * 30));
@@ -135,6 +144,8 @@ public class NaukriHtmlParser implements HtmlParser {
         //set location
         String location = doc.getElementsMatchingOwnText("Location").first().parent().tagName("tr").nextElementSibling().nextElementSibling().text();
                 //parents().tagName("tr").first().nextElementSibling().nextElementSibling().text();
+        if(null == candidate.getCandidateDetails())
+            candidate.setCandidateDetails(new CandidateDetails());
         candidate.getCandidateDetails().setLocation(location.substring(0, location.indexOf("(")).trim());
 
         //set keyskill

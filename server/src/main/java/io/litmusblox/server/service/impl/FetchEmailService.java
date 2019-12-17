@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 @Service
@@ -147,7 +148,7 @@ public class FetchEmailService {
 
         fileLocation.append(File.separator).append(mailData.getCandidateFromMail().getId()).append(".").append(Util.getFileExtension(mailData.getFileName()));
 
-        Files.copy(mailData.getFileStream(), Paths.get(fileLocation.toString()));
+        Files.copy(mailData.getFileStream(), Paths.get(fileLocation.toString()), StandardCopyOption.REPLACE_EXISTING);
         new File(fileLocation.toString());
     }
 
