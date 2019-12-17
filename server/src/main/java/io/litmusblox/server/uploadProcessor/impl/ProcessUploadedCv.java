@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
@@ -94,7 +95,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
      * Method that will be called by scheduler
      * All eligible records of CV will be run against CV rating api and rated
      */
-    @Transactional
+   // @Transactional
     public void rateCv() {
         List<CvParsingDetails> cvToRateList = cvParsingDetailsRepository.findCvRatingRecordsToProcess();
         log.info("Found " + cvToRateList.size() + " records for CV rating process");
@@ -132,7 +133,9 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         });
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     private long callCvRatingApi(MlCvRatingRequestBean requestBean, Long jcmId) throws Exception {
+        CvRating cvRatingFromDb = null;
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
@@ -145,9 +148,16 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         long startTime = System.currentTimeMillis();
         CvRatingResponseWrapper responseBean = objectMapper.readValue(mlResponse, CvRatingResponseWrapper.class);
 
-        CvRating cvRatingObj = cvRatingRepository.save(new CvRating(jcmId, responseBean.getCvRatingResponse().getOverallRating()));
-        cvRatingSkillKeywordDetailsRepository.saveAll(convertToCvRatingSkillKeywordDetails(responseBean.getCvRatingResponse().getKeywords(), cvRatingObj.getId()));
-
+        cvRatingFromDb = cvRatingRepository.findByJobCandidateMappingId(jcmId);
+        if(null == cvRatingFromDb){
+            cvRatingFromDb = cvRatingRepository.save(new CvRating(jcmId, responseBean.getCvRatingResponse().getOverallRating()));
+            cvRatingSkillKeywordDetailsRepository.saveAll(convertToCvRatingSkillKeywordDetails(responseBean.getCvRatingResponse().getKeywords(), cvRatingFromDb.getId()));
+        }else{
+            log.info("Update cv_rating id : "+cvRatingFromDb.getId()+", For jcm id : "+jcmId);
+            log.info("Old cv_rating : "+cvRatingFromDb.getOverallRating()+", New Rating : "+responseBean.getCvRatingResponse().getOverallRating());
+            cvRatingFromDb.setOverallRating(responseBean.getCvRatingResponse().getOverallRating());
+            cvRatingRepository.save(cvRatingFromDb);
+        }
         log.info("Time taken to process ml cv rating data data: " + (System.currentTimeMillis() - startTime) + "ms.");
         return (apiCallEndTime - apiCallStartTime);
     }
