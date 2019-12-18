@@ -760,7 +760,7 @@ INSERT INTO public.master_data(type, value, value_to_use) VALUES
 INSERT INTO export_format_master
 (format, system_supported)
 values
-('default', true);
+('All Data', true);
 
 INSERT INTO export_format_detail
 (format_id, column_name, header,  "position")

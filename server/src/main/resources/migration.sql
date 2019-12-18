@@ -1177,7 +1177,7 @@ CREATE TABLE EXPORT_FORMAT_DETAIL(
 INSERT INTO export_format_master
 (format, system_supported)
 values
-('default', true);
+('All Data', true);
 
 INSERT INTO export_format_detail
 (format_id, column_name, header,  "position")
