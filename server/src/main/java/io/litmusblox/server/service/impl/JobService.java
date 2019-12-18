@@ -745,7 +745,12 @@ public class JobService implements IJobService {
         oldJob.getJobKeySkillsList().forEach(oldKeySkill -> {
             if (oldKeySkill.getMlProvided()) {
                 JobKeySkills newValue = newSkillValues.get(oldKeySkill.getSkillId().getId());
-                oldKeySkill.setSelected(newValue.getSelected());
+                if(null != newValue) {
+                    oldKeySkill.setSelected(newValue.getSelected());
+                    log.info("ML provided skill {} not returned in the api call", oldKeySkill.getSkillId().getSkillName());
+                }
+                else
+                    oldKeySkill.setSelected(false);
                 oldKeySkill.setUpdatedOn(new Date());
                 oldKeySkill.setUpdatedBy(loggedInUser);
             }
