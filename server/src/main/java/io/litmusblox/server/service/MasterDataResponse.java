@@ -45,4 +45,5 @@ public class MasterDataResponse {
     private List<String> role = new ArrayList<>();
     private List<String> reasonForChange = new ArrayList<>();
     private Map<Long, String> defaultExportFormats = new HashMap<>();
+    private List<String> callOutCome = new ArrayList<>();
 }

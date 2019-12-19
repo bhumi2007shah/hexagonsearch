@@ -122,6 +122,8 @@ public class MasterDataService implements IMasterDataService {
                 MasterDataBean.getInstance().getRole().add(data.getValue());
             else if(data.getType().equalsIgnoreCase("reasonForChange"))
                 MasterDataBean.getInstance().getReasonForChange().add(data.getValue());
+            else if(data.getType().equalsIgnoreCase("callOutCome"))
+                MasterDataBean.getInstance().getCallOutCome().add(data.getValue());
             else
                 ((Map)mapAccessor.getPropertyValue(data.getType())).put(data.getId(), data.getValue());
 
@@ -237,6 +239,7 @@ public class MasterDataService implements IMasterDataService {
     private static final String ROLE = "role";
     private static final String REASON_FOR_CHANGE = "reasonForChange";
     private static final String DEFAULT_EXPORT_FORMAT = "defaultExportFormats";
+    private static final String CALL_OUT_COME = "callOutCome";
 
 
     /**
@@ -279,6 +282,9 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case REASON_FOR_CHANGE:
                 master.getReasonForChange().addAll(MasterDataBean.getInstance().getReasonForChange());
+                break;
+            case CALL_OUT_COME:
+                master.getCallOutCome().addAll(MasterDataBean.getInstance().getCallOutCome());
                 break;
             default: //for all other properties, use reflection
 

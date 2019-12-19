@@ -1284,3 +1284,26 @@ DROP CONSTRAINT company_address_address_title_key;
 
 ALTER TABLE COMPANY_ADDRESS
 ADD CONSTRAINT UNIQUE_COMPANY_ADDRESS_TITLE UNIQUE(COMPANY_ID, ADDRESS_TITLE);
+
+--For ticket #289
+INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
+('callOutCome', 'Connected'),
+('callOutCome', 'No Answer'),
+('callOutCome', 'Busy'),
+('callOutCome', 'Wrong Number'),
+('callOutCome', 'Left Message/VoiceMail');
+
+ALTER TABLE JCM_HISTORY
+ADD COLUMN CALL_LOG_OUTCOME VARCHAR(25),
+ADD COLUMN SYSTEM_GENERATED BOOL DEFAULT 't' NOT NULL;
+
+ALTER TABLE JCM_HISTORY
+RENAME COLUMN DETAILS TO COMMENT;
+
+ALTER TABLE JCM_HISTORY
+ALTER COLUMN COMMENT TYPE TEXT;
+
+--For ticket #28
+UPDATE SMS_TEMPLATES SET  TEMPLATE_CONTENT = 'Oh no [[${commBean.receiverfirstname}]]!  The Litmus Profile you started creating for the [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]] was left incomplete. It''s important that you finish the profile to be considered for the job. Continue from where you left last. Just click the link to continue. [[${commBean.chatlink}]]'  WHERE TEMPLATE_NAME = 'ChatIncompleteReminder1';
+
+
