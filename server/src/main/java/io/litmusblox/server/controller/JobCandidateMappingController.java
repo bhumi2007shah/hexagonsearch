@@ -268,4 +268,42 @@ public class JobCandidateMappingController {
         log.info("Completed processing frequest to fetch drag and drop cv error list for jobId: "+ jobId+ " in "+ (System.currentTimeMillis()-startTime) + "ms.");
         return rChilliErrorResonseBeanList;
     }
+
+    /**
+     *  REST API to get candidate history by jcm id
+     *
+     * @param jcmId
+     * @return Return JcmHistory list
+     */
+    @GetMapping(value = {"/candidateHistory/{jcmId}"})
+    @ResponseStatus(value = HttpStatus.OK)
+    String retrieveCandidateHistory(@PathVariable Long jcmId){
+        log.info("inside retrieveCandidateHistory");
+        return Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.retrieveCandidateHistory(jcmId),
+                new HashMap<String, List<String>>() {{
+                    put("User", new ArrayList<>(0));
+                    put("JobStageStep", new ArrayList<>(0));
+                    put("JobCandidateMapping",  new ArrayList<>(0));
+                }},
+                new HashMap<String, List<String>>() {{
+                    put("JcmHistory", Arrays.asList("jcmId","userId", "stage"));
+                }});
+    }
+
+    /**
+     * REST API to add comment for candidate
+     *
+     * @param requestJson RequestJson map contain jcmId and comment
+     * @param callOutcome Call out come predefine strings
+     */
+    @PostMapping(value = {"/addComment", "/addComment/{callOutcome}"})
+    @ResponseStatus(value = HttpStatus.OK)
+    void addComment(@RequestBody Map<String, String> requestJson, @PathVariable(required = false, value = "callOutcome") Optional callOutcome){
+        String  reqCallOutCome = null;
+        log.info("inside addComment");
+        if(callOutcome.isPresent())
+            reqCallOutCome = callOutcome.get().toString();
+
+        jobCandidateMappingService.addComment(requestJson.get("comment"), Long.parseLong(requestJson.get("jcmId")), reqCallOutCome);
+    }
 }

@@ -1606,4 +1606,30 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         });
         return rChilliErrorResonseBeanList;
     }
+
+    /**
+     * Service method to get candidate history related to jcm
+     *
+     * @param jcmId
+     * @return JcmHistory list
+     */
+    @Transactional
+    public List<JcmHistory> retrieveCandidateHistory(Long jcmId) {
+        JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findById(jcmId).orElse(null);
+        return jcmHistoryRepository.getJcmHistoryList(jobCandidateMapping.getJob().getCompanyId().getId(), jobCandidateMapping.getCandidate().getId());
+    }
+
+    /**
+     *
+     * @param comment comment add by  recruiter
+     * @param jcmId for which jcm we need to create jcm history
+     * @param callOutCome callOutCome if callOutCome is present then set in jcm history
+     */
+    @Transactional
+    public void addComment(String comment, Long jcmId, String callOutCome) {
+        log.info("inside addComment");
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findById(jcmId).orElse(null);
+        jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, comment, callOutCome, false, new Date(), jobCandidateMapping.getStage(), loggedInUser));
+    }
 }

@@ -1306,4 +1306,8 @@ ALTER COLUMN COMMENT TYPE TEXT;
 --For ticket #28
 UPDATE SMS_TEMPLATES SET  TEMPLATE_CONTENT = 'Oh no [[${commBean.receiverfirstname}]]!  The Litmus Profile you started creating for the [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]] was left incomplete. It''s important that you finish the profile to be considered for the job. Continue from where you left last. Just click the link to continue. [[${commBean.chatlink}]]'  WHERE TEMPLATE_NAME = 'ChatIncompleteReminder1';
 
+--From ML get capability_name length 50
+ALTER TABLE JOB_CAPABILITIES
+ALTER COLUMN CAPABILITY_NAME TYPE VARCHAR(50);
+
 
