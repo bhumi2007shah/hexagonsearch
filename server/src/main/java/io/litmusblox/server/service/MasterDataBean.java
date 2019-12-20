@@ -66,6 +66,8 @@ public class MasterDataBean {
 
     private List<ExportFormatMaster> defaultExportFormats = new ArrayList<>();
 
+    private List<String> callOutCome = new ArrayList<>();
+
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;
 }

@@ -147,14 +147,18 @@ public class LbUserDetailsService implements UserDetailsService {
             if (null == userCompany) {
                 //create a company
                 companyObjToUse = companyService.addCompany(new Company(user.getCompany().getCompanyName(), true, user.getCompany().getCompanyType(),null, new Date(), loggedInUser.getId()), loggedInUser);
+                user.setRole(IConstant.ADMIN);
             } else {
                 companyObjToUse = userCompany;
             }
         }else if(null != user.getCompany() && null != user.getCompany().getRecruitmentAgencyId() && IConstant.UserRole.Names.RECRUITMENT_AGENCY.equals(loggedInUser.getRole())){
             Company userCompany = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(user.getCompany().getCompanyName(), loggedInUser.getCompany().getId());
             if(null==userCompany){
-                companyObjToUse = companyService.addCompany(new Company(user.getCompany().getCompanyName(), true, IConstant.CompanyType.INDIVIDUAL.getValue(),loggedInUser.getCompany().getId(), new Date(), loggedInUser.getId()), loggedInUser);
+                //If Client company not found then do not create company thow exception
+                throw new ValidationException("Client company not found for company name : " + user.getCompany().getCompanyName() + " ,For Recruitment agency : "+loggedInUser.getCompany().getCompanyName() , HttpStatus.BAD_REQUEST);
             }else {
+                if(!userCompany.getRecruitmentAgencyId().equals(loggedInUser.getCompany().getId()))
+                    throw new ValidationException("Client company : " + user.getCompany().getCompanyName() + " not belonging to agency : "+loggedInUser.getCompany().getCompanyName(), HttpStatus.UNAUTHORIZED);
                 companyObjToUse = userCompany;
             }
         }
