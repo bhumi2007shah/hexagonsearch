@@ -156,6 +156,10 @@ public class Job implements Serializable {
     @JoinColumn(name = "EXPERIENCE_RANGE")
     private MasterData experienceRange;
 
+    @Column(name = "JOB_REFERENCE_ID")
+    @org.hibernate.annotations.Type(type = "pg-uuid")
+    private UUID jobReferenceId;
+
     @OneToMany(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY,mappedBy = "jobId")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private List<JobHiringTeam> jobHiringTeamList=new ArrayList<>();

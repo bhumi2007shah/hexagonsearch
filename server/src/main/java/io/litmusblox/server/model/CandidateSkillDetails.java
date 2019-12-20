@@ -6,6 +6,8 @@ package io.litmusblox.server.model;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -20,8 +22,10 @@ import java.util.Date;
  * Project Name : server
  */
 @Data
-@NoArgsConstructor
+@Builder
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "CANDIDATE_SKILL_DETAILS")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonFilter("CandidateSkillDetails")

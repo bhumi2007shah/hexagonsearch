@@ -7,10 +7,7 @@ package io.litmusblox.server.service;
 import io.litmusblox.server.model.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Interface class for following services:
@@ -30,10 +27,11 @@ public interface IJobCandidateMappingService {
      *
      * @param candidates the list of candidates to be added
      * @param jobId the job for which the candidate is to be added
+     * @param createdBy optional paramter, createdBy, will be supplied only when calling processing candidates from mail
      * @return the status of upload operation
      * @throws Exception
      */
-    UploadResponseBean uploadIndividualCandidate(List<Candidate> candidates, Long jobId, boolean ignoreMobile) throws Exception;
+    UploadResponseBean uploadIndividualCandidate(List<Candidate> candidates, Long jobId, boolean ignoreMobile, Optional<User> createdBy) throws Exception;
 
     /**
      * Service method to add candidates from a file in one of the supported formats
@@ -52,10 +50,11 @@ public interface IJobCandidateMappingService {
      * @param candidate the candidate to be added
      * @param jobId the job for which the candidate is to be added
      * @param candidateCv candidate Cv
+     * @param createdBy optional paramter, createdBy, will be supplied only when calling processing candidates from mail
      * @return the status of upload operation
      * @throws Exception
      */
-    UploadResponseBean uploadCandidateFromPlugin(Candidate candidate, Long jobId, MultipartFile candidateCv) throws Exception;
+    UploadResponseBean uploadCandidateFromPlugin(Candidate candidate, Long jobId, MultipartFile candidateCv, Optional<User> createdBy) throws Exception;
 
 
     /**

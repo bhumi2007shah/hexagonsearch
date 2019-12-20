@@ -234,6 +234,7 @@ public class Util {
             }
             else if (name.length > 0) {
                 candidate.setFirstName(toSentenceCase(name[0]));
+                candidate.setLastName("-");
                 return;
             }
         }
@@ -251,7 +252,8 @@ public class Util {
         }
         if (null != lastName)
             candidate.setLastName(toSentenceCase(lastName.toString()));
-
+        else
+            candidate.setLastName("-");
     }
 
     public static String indianMobileConvertor(String mobileNo,  String countryCode) {

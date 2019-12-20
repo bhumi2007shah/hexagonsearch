@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Repository class for Job table related CRUD operations
@@ -71,7 +72,6 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     @Transactional
     int countByJobLocationOrInterviewLocation(CompanyAddress jobLocation, CompanyAddress interviewLocation);
 
-
     @Transactional(readOnly = true)
     @Query(nativeQuery = true, value = "select job_stage_step.id, stage_master.stage_name\n" +
             "from job_stage_step, company_stage_step, stage_master\n" +
@@ -79,4 +79,7 @@ public interface JobRepository extends JpaRepository<Job, Long> {
             "and company_stage_step.stage = stage_master.id\n" +
             "and job_stage_step.job_id = :jobId")
     List<Object[]> findStagesForJob(Long jobId) throws Exception;
+
+    @Transactional(readOnly = true)
+    Job findByJobReferenceId(UUID jobReferenceId);
 }
