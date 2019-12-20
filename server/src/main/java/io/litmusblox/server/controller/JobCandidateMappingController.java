@@ -286,7 +286,7 @@ public class JobCandidateMappingController {
                     put("JobCandidateMapping",  new ArrayList<>(0));
                 }},
                 new HashMap<String, List<String>>() {{
-                    put("JcmHistory", Arrays.asList("jcmId","userId", "stage"));
+                    put("JcmHistory", Arrays.asList("id", "jcmId","userId", "stage"));
                 }});
     }
 
