@@ -4,10 +4,7 @@
 
 package io.litmusblox.server.service;
 
-import io.litmusblox.server.model.Candidate;
-import io.litmusblox.server.model.JobCandidateMapping;
-import io.litmusblox.server.model.JobScreeningQuestions;
-import io.litmusblox.server.model.User;
+import io.litmusblox.server.model.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
@@ -185,4 +182,21 @@ public interface IJobCandidateMappingService {
      * @throws Exception
      */
     List<ResponseBean> getRchilliError(Long jobId) throws Exception;
+
+    /**
+     * Service to retrieve candidate history based on jcmId
+     *
+     * @param jcmId
+     * @return list of jcm
+     */
+    List<JcmHistory> retrieveCandidateHistory(Long jcmId);
+
+    /**
+     * Service to create jcm history for every comment by recruiter
+     *
+     * @param comment comment add by  recruiter
+     * @param jcmId for which jcm we need to create jcm history
+     * @param callOutCome callOutCome if callOutCome is present then set in jcm history
+     */
+    void addComment(String comment, Long jcmId, String callOutCome);
 }
