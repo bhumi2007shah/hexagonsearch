@@ -25,6 +25,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -253,6 +254,7 @@ class JobServiceTest extends AbstractTest {
                     .experienceRange(MasterData.builder().id(125L).build())
                     .expertise(MasterData.builder().id(122L).build())
                     .function(MasterData.builder().id(130L).build())
+                    .jobReferenceId(UUID.randomUUID())
                     .currency("INR")
                     .usersForCompany(new ArrayList<>())
                     .build();
