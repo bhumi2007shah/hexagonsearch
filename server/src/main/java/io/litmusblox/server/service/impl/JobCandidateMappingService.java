@@ -1634,6 +1634,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         log.info("inside addComment");
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findById(jcmId).orElse(null);
+        if(null == jobCandidateMapping)
+            throw new ValidationException("Job candidate not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
+
         jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, comment, callOutCome, false, new Date(), jobCandidateMapping.getStage(), loggedInUser));
     }
 }
