@@ -281,12 +281,12 @@ public class JobCandidateMappingController {
         log.info("inside retrieveCandidateHistory");
         return Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.retrieveCandidateHistory(jcmId),
                 new HashMap<String, List<String>>() {{
-                    put("User", new ArrayList<>(0));
+                    put("User", Arrays.asList("displayName"));
                     put("JobStageStep", new ArrayList<>(0));
                     put("JobCandidateMapping",  new ArrayList<>(0));
                 }},
                 new HashMap<String, List<String>>() {{
-                    put("JcmHistory", Arrays.asList("id", "jcmId","userId", "stage"));
+                    put("JcmHistory", Arrays.asList("id", "jcmId", "stage"));
                 }});
     }
 
