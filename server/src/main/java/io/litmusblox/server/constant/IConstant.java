@@ -131,7 +131,7 @@ public interface IConstant {
     }
 
     enum CandidateSource {
-        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("iimJobs"), DragDropCv("DragDropCv"), NaukriEmail("NaukriMail");
+        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriEmail("NaukriMail");
         private String value;
 
         CandidateSource(String val) {
