@@ -446,7 +446,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                     }
                 });
             }
-            if(candidate.getMobile().isEmpty() || null == candidate.getMobile())
+            if(null == candidate.getMobile() || candidate.getMobile().isEmpty())
                 responseBean = uploadIndividualCandidate(Arrays.asList(candidate), jobId, true, createdBy);
             else
                 responseBean = uploadIndividualCandidate(Arrays.asList(candidate), jobId, false, createdBy);
