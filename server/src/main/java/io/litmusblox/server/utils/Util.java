@@ -7,6 +7,7 @@ package io.litmusblox.server.utils;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import io.litmusblox.server.constant.IConstant;
@@ -80,6 +81,7 @@ public class Util {
                         filter.addFilter(key, SimpleBeanPropertyFilter.serializeAllExcept(new HashSet<String>(value)))
                 );
 
+            mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
             json = mapper.writer(filter).writeValueAsString(responseBean);
 
         } catch (JsonGenerationException e) {

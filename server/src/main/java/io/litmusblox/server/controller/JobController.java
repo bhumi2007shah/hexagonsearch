@@ -171,6 +171,9 @@ public class JobController {
                     put("CompanyScreeningQuestion",new ArrayList<>(0));
                     put("UserScreeningQuestion",new ArrayList<>(0));
                     put("JobCapabilities",new ArrayList<>(0));
+                    put("JobStageStep",new ArrayList<>(0));
+                    put("CompanyStageStep",new ArrayList<>(0));
+                    put("StageMaster",new ArrayList<>(0));
                 }}));
         //return jobService.getJobDetails(jobId);
     }
