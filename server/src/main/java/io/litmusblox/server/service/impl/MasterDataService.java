@@ -6,6 +6,7 @@ package io.litmusblox.server.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
+import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
@@ -202,6 +203,30 @@ public class MasterDataService implements IMasterDataService {
         fetchItemList.stream().forEach(item -> getMasterData(master, item));
 
         log.info("Completed request to fetch master data in " + (System.currentTimeMillis() - startTime) + "ms");
+        return master;
+    }
+
+    /**
+     * Service to get masterData for only specific fields, which is used in noAuth call
+     *
+     * @param fetchItemList (jobType, referrerRelation)
+     * @return MasterDataResponse
+     */
+    @Override
+    public MasterDataResponse fetchForItemsForNoAuth(List<String> fetchItemList) {
+        log.info("Received request to fetch master data from no auth call");
+        long startTime = System.currentTimeMillis();
+
+        MasterDataResponse master = new MasterDataResponse();
+        //populate data for each of the required items
+        fetchItemList.stream().forEach(item -> {
+            if(!Arrays.asList(IConstant.fetchItemsType).contains(item))
+                throw new ValidationException("You can not access masterData for " +item+" Item", HttpStatus.UNPROCESSABLE_ENTITY);
+
+            getMasterData(master, item);
+        });
+
+        log.info("Completed request to fetch master from no auth data in " + (System.currentTimeMillis() - startTime) + "ms");
         return master;
     }
 

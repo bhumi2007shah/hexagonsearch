@@ -1314,3 +1314,22 @@ ADD COLUMN JOB_REFERENCE_ID UUID NOT NULL DEFAULT uuid_generate_v1();
 ALTER TABLE JOB_CAPABILITIES
 ALTER COLUMN CAPABILITY_NAME TYPE VARCHAR(50);
 
+--For ticket #301
+INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
+('referrerRelation', 'Candidate reported to me directly'),
+('referrerRelation', 'I reported to the Candidate'),
+('referrerRelation', 'We were peers in the same company'),
+('referrerRelation', 'Candidate is a friend'),
+('referrerRelation', 'Candidate is a relative'),
+('referrerRelation', 'We were students together'),
+('referrerRelation', 'I don''t know the candidate, simply referring'),
+('jobType', 'Full Time'),
+('jobType', 'Part Time'),
+('jobType', 'Temporary'),
+('jobType', 'Intern');
+
+
+
+
+
+

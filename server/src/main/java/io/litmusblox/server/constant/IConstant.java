@@ -284,4 +284,6 @@ public interface IConstant {
     String ADMIN = "Admin";
 
     String NOT_AVAILABLE_EMAIL = "@notavailable.io";
+
+    String[] fetchItemsType = new String[]{"referrerRelation", "jobType"};
 }

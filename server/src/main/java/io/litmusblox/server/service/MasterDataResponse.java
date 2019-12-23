@@ -46,4 +46,6 @@ public class MasterDataResponse {
     private List<String> reasonForChange = new ArrayList<>();
     private Map<Long, String> defaultExportFormats = new HashMap<>();
     private List<String> callOutCome = new ArrayList<>();
+    private Map<Long, String> referrerRelation = new HashMap<>();
+    private Map<Long, String> jobType = new HashMap<>();
 }
