@@ -10,6 +10,7 @@ import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.model.JobScreeningQuestions;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.IJobCandidateMappingService;
+import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.IMasterDataService;
 import io.litmusblox.server.service.TechChatbotRequestBean;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
@@ -55,6 +56,9 @@ public class NoAuthController {
 
     @Autowired
     IMasterDataService masterDataService;
+
+    @Autowired
+    IJobService jobService;
 
     @Value("${scoringEngineIpAddress}")
     private String scoringEngineIpAddress;
@@ -248,5 +252,21 @@ public class NoAuthController {
         return Util.stripExtraInfoFromResponseBean(
                 masterDataService.fetchForItemsForNoAuth(requestItems),null,
                 null);
+    }
+
+    /**
+     * API to return job details based on job reference id
+     *
+     * @param jobReferenceId job reference id to search for
+     * @return String representation of the job details information
+     * @throws Exception
+     */
+    @GetMapping(value = "/jobDetailsByReferenceId/{jobReferenceId}")
+    String jobDetailsByReferenceId(@PathVariable("jobReferenceId") UUID jobReferenceId) throws Exception {
+        return Util.stripExtraInfoFromResponseBean(jobService.findByJobReferenceId(jobReferenceId),
+                new HashMap<String, List<String>>() {{
+                    put("Job",Arrays.asList("jobTitle","jobDescription", "jobLocation" , "function"));
+                    put("MasterData", Arrays.asList("value"));
+                }}, null);
     }
 }
