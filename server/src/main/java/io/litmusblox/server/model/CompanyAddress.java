@@ -46,6 +46,15 @@ public class CompanyAddress implements Serializable {
     @Column(name = "LONGITUDE")
     private Double longitude;
 
+    @Column(name = "CITY")
+    private String city;
+
+    @Column(name = "STATE")
+    private String state;
+
+    @Column(name = "COUNTRY")
+    private String country;
+
     @NotNull
 /*    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="COMPANY_ID")*/

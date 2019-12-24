@@ -282,6 +282,7 @@ public interface IConstant {
     String HIRING_MANAGER = "Hiring Manager";
     String INTERVIEWER = "Interviewer";
     String ADMIN = "Admin";
+    String DEFAULT_JOB_TYPE = "Full Time";
 
     String NOT_AVAILABLE_EMAIL = "@notavailable.io";
 

@@ -70,6 +70,7 @@ public class MasterDataBean {
 
     private Map<Long, String> referrerRelation = new HashMap<>();
     private Map<Long, String> jobType = new HashMap<>();
+    private MasterData defaultJobType = null;
 
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;
