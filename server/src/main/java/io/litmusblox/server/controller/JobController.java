@@ -55,6 +55,7 @@ public class JobController {
                 put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
                 put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                 put("JobCapabilities", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
+                put("MasterData", new ArrayList<>(0));
             }})
         );
     }
@@ -76,6 +77,7 @@ public class JobController {
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList","jobHiringTeamList","jobDetail", "expertise", "education", "noticePeriod", "function", "experienceRange", "userEnteredKeySkill", "updatedOn", "updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
                 }})
         );
     }
@@ -111,6 +113,7 @@ public class JobController {
                     put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData"));
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateCompanyDetails", Arrays.asList("candidateId"));
+                    put("MasterData", new ArrayList<>(0));
                 }})
         );
     }
@@ -174,6 +177,7 @@ public class JobController {
                     put("JobStageStep",new ArrayList<>(0));
                     put("CompanyStageStep",new ArrayList<>(0));
                     put("StageMaster",new ArrayList<>(0));
+                    put("MasterData", new ArrayList<>(0));
                 }}));
         //return jobService.getJobDetails(jobId);
     }
@@ -192,6 +196,7 @@ public class JobController {
                     put("ScreeningQuestions",new ArrayList<>(0));
                     put("CompanyScreeningQuestion",new ArrayList<>(0));
                     put("UserScreeningQuestion",new ArrayList<>(0));
+                    put("MasterData", new ArrayList<>(0));
                 }}));
     }
 
@@ -214,7 +219,8 @@ public class JobController {
                     put("CompanyStageStep", Arrays.asList("id","createdOn", "createdBy","updatedOn","updatedBy","companyId"));
                     put("JobStageStep", Arrays.asList("jobId","createdOn","createdBy","updatedOn", "updatedBy"));
                     put("StageMaster", Arrays.asList("id"));
-        }});
+                    put("MasterData", new ArrayList<>(0));
+                }});
     }
 
     @GetMapping(value = "/supportedexportformat/{jobId}")

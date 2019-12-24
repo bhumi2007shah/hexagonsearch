@@ -86,6 +86,7 @@ public class NoAuthController {
                     put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
                     put("JobScreeningQuestions", Arrays.asList("jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("ScreeningQuestions", new ArrayList<>(0));
+                    put("MasterData", new ArrayList<>(0));
                 }}
         );
         if(response.size() >0 ) {
@@ -121,7 +122,7 @@ public class NoAuthController {
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails","createdOn","createdBy","candidateSource","firstName","lastName","candidateSource","CandidateCompanyDetails"));
                     put("Company", Arrays.asList("companyAddressList", "companyBuList"));
                     put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData"));
-
+                    put("MasterData", new ArrayList<>(0));
             }}
         );
     }
@@ -211,6 +212,7 @@ public class NoAuthController {
                     put("CandidateSkillDetails", Arrays.asList("id","candidateId"));
                     put("CandidateWorkAuthorization", Arrays.asList("id","candidateId"));
                     put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
                 }});
        // log.info("before call to replace:\n {}",response);
         response = response.replaceAll(Pattern.quote("$companyName"),responseObj.getCreatedBy().getCompany().getCompanyName());
@@ -251,7 +253,9 @@ public class NoAuthController {
     String fetchItems(@RequestBody List<String> requestItems) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
                 masterDataService.fetchForItemsForNoAuth(requestItems),null,
-                null);
+                new HashMap<String, List<String>>() {{
+                    put("MasterData", new ArrayList<>(0));
+                }});
     }
 
     /**

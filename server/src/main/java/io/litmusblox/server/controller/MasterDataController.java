@@ -59,9 +59,10 @@ public class MasterDataController {
     String fetchForItems(@RequestBody List<String> requestItems) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
                 masterDataService.fetchForItems(requestItems),null,
-            (new HashMap<String, List<String>>(){{
+            new HashMap<String, List<String>>(){{
                 put("ScreeningQuestions", new ArrayList<>(0));
-            }}));
+                put("MasterData", new ArrayList<>(0));
+            }});
     }
 
     /**
