@@ -211,6 +211,10 @@ public class CandidateService implements ICandidateService {
                 obj.setDegree(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.DEGREE.name(), IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue(), obj.getDegree()));
             }
 
+            if (!Util.isNull(obj.getSpecialization()) && obj.getSpecialization().length() > IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.getValue()){
+                obj.setSpecialization(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.name(), IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.getValue(), obj.getSpecialization()));
+            }
+
             try{
                 int yearOfPassing = Integer.parseInt(obj.getYearOfPassing());
             }catch (Exception e){
