@@ -220,13 +220,13 @@ public class JobController {
     }
 
     @GetMapping(value = {"/exportdata/{jobId}", "/exportdata/{jobId}/{formatId}"})
-    String exportData(@PathVariable("jobId") Long jobId, @PathVariable(required = false, value = "formatId") Optional<Long>formatId) throws Exception{
+    String exportData(@PathVariable("jobId") Long jobId, @PathVariable(required = false, value = "formatId") Optional<Long>formatId, @RequestParam("stage")String stage) throws Exception{
         String data=null;
         if(!formatId.isPresent()){
-            data = jobService.exportData(jobId, null);
+            data = jobService.exportData(jobId, null, stage);
         }
         else{
-            data = jobService.exportData(jobId, formatId.get());
+            data = jobService.exportData(jobId, formatId.get(), stage);
         }
         return data;
     }

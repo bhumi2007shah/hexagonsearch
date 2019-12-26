@@ -22,12 +22,14 @@ import java.util.List;
  */
 @Service
 public class ExportData {
-    public static List<Object[]> exportDataList(Long jobId, String columns, EntityManager em){
+    public static List<Object[]> exportDataList(Long jobId, String stage, String columns, EntityManager em){
         StringBuilder query =new StringBuilder("");
         query.append("select ");
         query.append(columns);
         query.append(" from exportDataView where jobId=");
         query.append(jobId);
+        query.append(" and currentStage=");
+        query.append(stage);
         List<Object[]> exportDataList= new ArrayList<>();
 
         if(!query.toString().isEmpty()){

@@ -1177,7 +1177,7 @@ public class JobService implements IJobService {
      * @return formatted json in String format
      * @throws Exception
      */
-    public String exportData(Long jobId, Long formatId) throws Exception {
+    public String exportData(Long jobId, Long formatId, String stage) throws Exception {
         if(formatId!=null) {
             log.info("Received Request to fetch export data for jobId: " + jobId + " and formatId:" + formatId);
         }

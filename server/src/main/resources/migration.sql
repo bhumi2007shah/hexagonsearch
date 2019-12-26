@@ -1200,6 +1200,7 @@ select
 	concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidateName,
 	jcm.chatbot_status as chatbotStatus,
 	cvr.overall_rating as keySkillsStrength,
+	sm.stage_name as currentStage,
 	currentCompany.company_name as currentCompany,
 	currentCompany.designation as currentDesignation,
 	jcm.email,
@@ -1219,10 +1220,13 @@ select
 	) as currentCompany on jcm.candidate_id = currentCompany.candidate_id
 	left join candidate_details cd on cd.candidate_id = jcm.candidate_id
 	inner join users ON users.id = jcm.created_by
+	inner join job_stage_step jss on jss.id=jcm.stage
+	inner join company_stage_step css on css.id = jss.stage_step_id
+	inner join stage_master sm on sm.id = css.stage
 	left join (
 		select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
 		union
-		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.company_screening_question_id=usq.id
+		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.user_screening_question_id=usq.id
 		union
 		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
 	) as jsq on jsq.jsqJobId = jcm.job_id

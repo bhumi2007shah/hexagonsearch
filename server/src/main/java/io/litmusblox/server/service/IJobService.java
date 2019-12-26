@@ -114,5 +114,5 @@ public interface IJobService {
      * @return formatted json in String format
      * @throws Exception
      */
-    String exportData(Long jobId, Long formatId) throws Exception;
+    String exportData(Long jobId, Long formatId, String stage) throws Exception;
 }
