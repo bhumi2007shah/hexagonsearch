@@ -316,13 +316,15 @@ public class JobService implements IJobService {
         long startTime = System.currentTimeMillis();
         companyList.stream().forEach(company -> {
             if (archived) {
-                responseBean.setListOfJobs(jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByCreatedOnDesc(company));
-                responseBean.setArchivedJobs(responseBean.getListOfJobs().size());
-                responseBean.setOpenJobs((jobRepository.countByCompanyIdAndDateArchivedIsNull(company)).intValue());
+                List<Job> jobList = jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByCreatedOnDesc(company);
+                responseBean.getListOfJobs().addAll(jobList);
+                responseBean.setArchivedJobs(responseBean.getArchivedJobs() + (jobList.size()));
+                responseBean.setOpenJobs(responseBean.getOpenJobs()+(jobRepository.countByCompanyIdAndDateArchivedIsNull(company)).intValue());
             } else {
-                responseBean.setListOfJobs(jobRepository.findByCompanyIdAndDateArchivedIsNullOrderByCreatedOnDesc(company));
-                responseBean.setOpenJobs(responseBean.getListOfJobs().size());
-                responseBean.setArchivedJobs((jobRepository.countByCompanyIdAndDateArchivedIsNotNull(company)).intValue());
+                List<Job> jobList = jobRepository.findByCompanyIdAndDateArchivedIsNullOrderByCreatedOnDesc(company);
+                responseBean.getListOfJobs().addAll(jobList);
+                responseBean.setOpenJobs(responseBean.getOpenJobs() + jobList.size());
+                responseBean.setArchivedJobs(responseBean.getArchivedJobs() + (jobRepository.countByCompanyIdAndDateArchivedIsNotNull(company)).intValue());
             }
         });
         log.info("Got " + responseBean.getListOfJobs().size() + " jobs in " + (System.currentTimeMillis() - startTime) + "ms");
@@ -389,8 +391,9 @@ public class JobService implements IJobService {
         }
         else {
             User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if(!IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && !job.getCompanyId().getId().equals(loggedInUser.getCompany().getId()))
+            if(!IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && !IConstant.UserRole.Names.RECRUITMENT_AGENCY.equals(loggedInUser.getRole()) && !job.getCompanyId().getId().equals(loggedInUser.getCompany().getId()))
                 throw new WebException(IErrorMessages.JOB_COMPANY_MISMATCH, HttpStatus.UNAUTHORIZED);
+
             if(IConstant.JobStatus.DRAFT.getValue().equals(job.getStatus())) {
                 StringBuffer info = new StringBuffer(IErrorMessages.JOB_NOT_LIVE).append(job.getStatus());
                 log.info(info.toString());
@@ -516,7 +519,7 @@ public class JobService implements IJobService {
             job.setMlDataAvailable(false);
             job.setStatus(IConstant.JobStatus.DRAFT.getValue());
             job.setCreatedBy(loggedInUser);
-
+            job.setJobReferenceId(UUID.randomUUID());
             //End of code to be removed
             oldJob = jobRepository.save(job);
         }
@@ -742,7 +745,12 @@ public class JobService implements IJobService {
         oldJob.getJobKeySkillsList().forEach(oldKeySkill -> {
             if (oldKeySkill.getMlProvided()) {
                 JobKeySkills newValue = newSkillValues.get(oldKeySkill.getSkillId().getId());
-                oldKeySkill.setSelected(newValue.getSelected());
+                if(null != newValue) {
+                    oldKeySkill.setSelected(newValue.getSelected());
+                    log.info("ML provided skill {} not returned in the api call", oldKeySkill.getSkillId().getSkillName());
+                }
+                else
+                    oldKeySkill.setSelected(false);
                 oldKeySkill.setUpdatedOn(new Date());
                 oldKeySkill.setUpdatedBy(loggedInUser);
             }
@@ -1237,5 +1245,16 @@ public class JobService implements IJobService {
 
         log.info("Completed processing export data in "+(System.currentTimeMillis() - startTime));
         return new ObjectMapper().writeValueAsString(exportResponseBean);
+    }
+
+    /**
+     * Method to find a job based on the reference id provided
+     *
+     * @param jobReferenceId
+     * @return
+     */
+    @Transactional(readOnly = true)
+    public Job findByJobReferenceId(UUID jobReferenceId) {
+        return jobRepository.findByJobReferenceId(jobReferenceId);
     }
 }
