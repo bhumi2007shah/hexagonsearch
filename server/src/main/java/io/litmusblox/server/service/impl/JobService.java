@@ -1216,7 +1216,7 @@ public class JobService implements IJobService {
         String columnsToExport = String.join(", ", columnNames);
 
         //list of objects from db to create export data json
-        List<Object[]> exportDataList = ExportData.exportDataList(jobId, columnsToExport, em);
+        List<Object[]> exportDataList = ExportData.exportDataList(jobId, stage, columnsToExport, em);
         List<LinkedHashMap<String, Object>> exportResponseBean = new ArrayList<>();
 
         if(exportDataList.size()==0){
