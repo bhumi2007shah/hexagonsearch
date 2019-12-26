@@ -6,6 +6,7 @@ package io.litmusblox.server.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
+import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
@@ -96,8 +97,8 @@ public class MasterDataService implements IMasterDataService {
             MasterDataBean.getInstance().getJobPageNamesInOrder().add(page.getPageName());
         });
 
-        stageMasterRepository.findAll().stream().forEach(stageMaster -> MasterDataBean.getInstance().getStage().add(stageMaster.getStageName()));
-        MasterDataBean.getInstance().getDefaultStepsPerStage().addAll(stepsPerStageRepository.findAll());
+        stageMasterRepository.findAllByOrderByIdAsc().stream().forEach(stageMaster -> MasterDataBean.getInstance().getStage().add(stageMaster.getStageName()));
+        MasterDataBean.getInstance().getDefaultStepsPerStage().addAll(stepsPerStageRepository.findAllByOrderByIdAsc());
 
         currencyRepository.findAll().stream().forEach(currency -> {
             MasterDataBean.getInstance().getCurrencyList().add(currency.getCurrencyShortName());
@@ -120,6 +121,10 @@ public class MasterDataService implements IMasterDataService {
 
             if(data.getType().equalsIgnoreCase("role"))
                 MasterDataBean.getInstance().getRole().add(data.getValue());
+            else if(data.getType().equalsIgnoreCase("reasonForChange"))
+                MasterDataBean.getInstance().getReasonForChange().add(data.getValue());
+            else if(data.getType().equalsIgnoreCase("callOutCome"))
+                MasterDataBean.getInstance().getCallOutCome().add(data.getValue());
             else
                 ((Map)mapAccessor.getPropertyValue(data.getType())).put(data.getId(), data.getValue());
 
@@ -202,6 +207,30 @@ public class MasterDataService implements IMasterDataService {
     }
 
     /**
+     * Service to get masterData for only specific fields, which is used in noAuth call
+     *
+     * @param fetchItemList (jobType, referrerRelation)
+     * @return MasterDataResponse
+     */
+    @Override
+    public MasterDataResponse fetchForItemsForNoAuth(List<String> fetchItemList) {
+        log.info("Received request to fetch master data from no auth call");
+        long startTime = System.currentTimeMillis();
+
+        MasterDataResponse master = new MasterDataResponse();
+        //populate data for each of the required items
+        fetchItemList.stream().forEach(item -> {
+            if(!Arrays.asList(IConstant.fetchItemsType).contains(item))
+                throw new ValidationException("You can not access masterData for " +item+" Item", HttpStatus.UNPROCESSABLE_ENTITY);
+
+            getMasterData(master, item);
+        });
+
+        log.info("Completed request to fetch master from no auth data in " + (System.currentTimeMillis() - startTime) + "ms");
+        return master;
+    }
+
+    /**
      * Method to add master data to database.
      * Supported master data types:
      * 1. UserScreeningQuestion
@@ -233,7 +262,9 @@ public class MasterDataService implements IMasterDataService {
     private static final String ADD_JOB_PAGES = "addJobPages";
     private static final String CURRENCY_LIST = "currencyList";
     private static final String ROLE = "role";
+    private static final String REASON_FOR_CHANGE = "reasonForChange";
     private static final String DEFAULT_EXPORT_FORMAT = "defaultExportFormats";
+    private static final String CALL_OUT_COME = "callOutCome";
 
 
     /**
@@ -273,6 +304,12 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case ROLE:
                 master.getRole().addAll(MasterDataBean.getInstance().getRole());
+                break;
+            case REASON_FOR_CHANGE:
+                master.getReasonForChange().addAll(MasterDataBean.getInstance().getReasonForChange());
+                break;
+            case CALL_OUT_COME:
+                master.getCallOutCome().addAll(MasterDataBean.getInstance().getCallOutCome());
                 break;
             default: //for all other properties, use reflection
 

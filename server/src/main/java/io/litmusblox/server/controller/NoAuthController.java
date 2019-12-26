@@ -10,6 +10,7 @@ import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.model.JobScreeningQuestions;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.IJobCandidateMappingService;
+import io.litmusblox.server.service.IMasterDataService;
 import io.litmusblox.server.service.TechChatbotRequestBean;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
 import io.litmusblox.server.utils.Util;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Controller for REST apis that do not require authentication. For e.g.
@@ -50,6 +52,9 @@ public class NoAuthController {
 
     @Autowired
     private HttpServletRequest servletRequest;
+
+    @Autowired
+    IMasterDataService masterDataService;
 
     @Value("${scoringEngineIpAddress}")
     private String scoringEngineIpAddress;
@@ -178,7 +183,8 @@ public class NoAuthController {
     String getCandidateProfile(@PathVariable("profileSharingUuid") UUID profileSharingUuid) throws Exception {
         log.info("Received request to fetch candidate profile");
         long startTime = System.currentTimeMillis();
-        String response = Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.getCandidateProfile(profileSharingUuid),
+        JobCandidateMapping responseObj = jobCandidateMappingService.getCandidateProfile(profileSharingUuid);
+        String response = Util.stripExtraInfoFromResponseBean(responseObj,
                 new HashMap<String, List<String>>() {{
                     put("User", Arrays.asList("displayName"));
                     put("ScreeningQuestions", Arrays.asList("id","question","options"));
@@ -202,6 +208,10 @@ public class NoAuthController {
                     put("CandidateWorkAuthorization", Arrays.asList("id","candidateId"));
                     put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                 }});
+       // log.info("before call to replace:\n {}",response);
+        response = response.replaceAll(Pattern.quote("$companyName"),responseObj.getCreatedBy().getCompany().getCompanyName());
+       // log.info("after call to replace:\n {}",response);
+
         log.info("Completed processing fetch candidate profile request in " + (System.currentTimeMillis()-startTime) + "ms.");
         return response;
     }
@@ -224,5 +234,19 @@ public class NoAuthController {
         long startTime = System.currentTimeMillis();
         jobCandidateMappingService.updateTechResponseStatus(requestBean);
         log.info("Completed processing request to update tech chatbot status in " + (System.currentTimeMillis() - startTime) + "ms.");
+    }
+
+    /**
+     * Service to get masterData for only specific fields, which is used in noAuth call
+     *
+     * @param requestItems (fileType, referrerRelation)
+     * @return MasterData
+     * @throws Exception
+     */
+    @PostMapping(value="/fetch/items")
+    String fetchItems(@RequestBody List<String> requestItems) throws Exception {
+        return Util.stripExtraInfoFromResponseBean(
+                masterDataService.fetchForItemsForNoAuth(requestItems),null,
+                null);
     }
 }

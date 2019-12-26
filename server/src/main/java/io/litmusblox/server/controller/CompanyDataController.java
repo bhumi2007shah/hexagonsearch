@@ -74,7 +74,7 @@ public class CompanyDataController {
      */
     @PutMapping(value = "/update",consumes = {"multipart/form-data"})
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "')")
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN +"') or hasRole('" + IConstant.UserRole.Names.RECRUITMENT_AGENCY +"')")
     Company updateCompany(
             @RequestParam(value = "logo", required = false) MultipartFile logo,
             @RequestParam("company") String companyString
@@ -164,9 +164,9 @@ public class CompanyDataController {
     @PostMapping("/createCompany")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    void createCompany(@RequestBody Company company){
+    Company createCompany(@RequestBody Company company){
         log.info("inside createCompany method");
-        companyService.createCompanyByAgency(company);
+        return companyService.createCompanyByAgency(company);
     }
 
     /**
@@ -175,6 +175,7 @@ public class CompanyDataController {
      */
     @GetMapping("/getCompanyByAgency/{recruitmentAgencyId}")
     @ResponseBody
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.RECRUITMENT_AGENCY +"') or hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN +"')")
     @ResponseStatus(HttpStatus.OK)
     List<Company> getCompanyListByAgency(@PathVariable ("recruitmentAgencyId") Long recruitmentAgencyId){
         log.info("inside getCompanyListByAgency method");

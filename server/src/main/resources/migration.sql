@@ -1155,6 +1155,7 @@ ADD COLUMN RELEVANT_EXPERIENCE NUMERIC (4, 2);
 
 
 -- FOR TICKET #258
+DROP TABLE IF EXISTS EXPORT_FORMAT_DETAIL;
 DROP TABLE IF EXISTS EXPORT_FORMAT_MASTER;
 CREATE TABLE EXPORT_FORMAT_MASTER(
 ID serial PRIMARY KEY NOT NULL,
@@ -1163,8 +1164,6 @@ FORMAT varchar(15) NOT NULL,
 SYSTEM_SUPPORTED BOOL DEFAULT FALSE
 );
 
-
-DROP TABLE IF EXISTS EXPORT_FORMAT_DETAIL;
 CREATE TABLE EXPORT_FORMAT_DETAIL(
     ID serial PRIMARY KEY NOT NULL,
     FORMAT_ID integer REFERENCES EXPORT_FORMAT_MASTER(ID) NOT NULL,
@@ -1177,21 +1176,22 @@ CREATE TABLE EXPORT_FORMAT_DETAIL(
 INSERT INTO export_format_master
 (format, system_supported)
 values
-('default', true);
+('All Data', true);
 
 INSERT INTO export_format_detail
 (format_id, column_name, header,  "position")
 VALUES
 (1, 'candidateName','Candidate Name', 1),
 (1, 'chatbotStatus','Chatbot Status', 2),
-(1, 'keySkillsStrength','Key Skills Strength', 3),
-(1, 'currentCompany','Current Commpany', 4),
-(1, 'currentDesignation','Current Designation', 5),
-(1, 'email','Email', 6),
-(1, 'countryCode','Country Code', 7),
-(1, 'mobile','Mobile', 8),
-(1, 'totalExperience','Total Experience', 9),
-(1, 'createdBy','Created By', 10);
+(1, 'currentStage','Stage', 3),
+(1, 'keySkillsStrength','Key Skills Strength', 4),
+(1, 'currentCompany','Current Commpany', 5),
+(1, 'currentDesignation','Current Designation', 6),
+(1, 'email','Email', 7),
+(1, 'countryCode','Country Code', 8),
+(1, 'mobile','Mobile', 9),
+(1, 'totalExperience','Total Experience', 10),
+(1, 'createdBy','Created By', 11);
 
 drop view if exists exportDataView;
 create view exportDataView AS
@@ -1200,6 +1200,7 @@ select
 	concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidateName,
 	jcm.chatbot_status as chatbotStatus,
 	cvr.overall_rating as keySkillsStrength,
+	sm.stage_name as currentStage,
 	currentCompany.company_name as currentCompany,
 	currentCompany.designation as currentDesignation,
 	jcm.email,
@@ -1219,12 +1220,120 @@ select
 	) as currentCompany on jcm.candidate_id = currentCompany.candidate_id
 	left join candidate_details cd on cd.candidate_id = jcm.candidate_id
 	inner join users ON users.id = jcm.created_by
+	inner join job_stage_step jss on jss.id=jcm.stage
+	inner join company_stage_step css on css.id = jss.stage_step_id
+	inner join stage_master sm on sm.id = css.stage
 	left join (
 		select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
 		union
-		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.company_screening_question_id=usq.id
+		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.user_screening_question_id=usq.id
 		union
 		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
 	) as jsq on jsq.jsqJobId = jcm.job_id
 	left join
 	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId;
+
+--For ticket #272
+UPDATE STAGE_MASTER SET STAGE_NAME='Sourcing' WHERE STAGE_NAME = 'Source';
+UPDATE STAGE_MASTER SET STAGE_NAME='Screening' WHERE STAGE_NAME = 'Screen';
+UPDATE STAGE_MASTER SET STAGE_NAME='Submitted' WHERE STAGE_NAME = 'Resume Submit';
+UPDATE STAGE_MASTER SET STAGE_NAME='Hired' WHERE STAGE_NAME = 'Join';
+
+UPDATE STEPS_PER_STAGE SET STEP_NAME='Sourcing' WHERE STEP_NAME = 'Source';
+UPDATE STEPS_PER_STAGE SET STEP_NAME='Screening' WHERE STEP_NAME = 'Screen';
+UPDATE STEPS_PER_STAGE SET STEP_NAME='Submitted' WHERE STEP_NAME = 'Resume Submit';
+UPDATE STEPS_PER_STAGE SET STEP_NAME='Hired' WHERE STEP_NAME = 'Join';
+
+UPDATE COMPANY_STAGE_STEP SET STEP='Sourcing' WHERE STEP = 'Source';
+UPDATE COMPANY_STAGE_STEP SET STEP='Screening' WHERE STEP = 'Screen';
+UPDATE COMPANY_STAGE_STEP SET STEP='Submitted' WHERE STEP = 'Resume Submit';
+UPDATE COMPANY_STAGE_STEP SET STEP='Hired' WHERE STEP = 'Join';
+
+--For ticket #276
+ALTER TABLE CANDIDATE_COMPANY_DETAILS
+ALTER COLUMN COMPANY_NAME TYPE VARCHAR(75);
+
+ALTER TABLE CANDIDATE_PROJECT_DETAILS
+ALTER COLUMN COMPANY_NAME TYPE VARCHAR(75);
+
+--For ticket #267
+Update cv_parsing_details set cv_rating_api_flag = false where job_candidate_mapping_id not in (select job_candidate_mapping_id from cv_rating)
+and processing_status = 'Success' and cv_rating_api_flag is true;
+
+--For ticket #268
+Insert into MASTER_DATA (TYPE, VALUE) values
+('reasonForChange','Too much time spent in Commuting to work'),
+('reasonForChange','Too much travelling in the job'),
+('reasonForChange','Have been in same company for too long'),
+('reasonForChange','Company has shutdown'),
+('reasonForChange','Company is downsizing /got a layoff'),
+('reasonForChange','Am a Contract employee, want to shift to permanent employment'),
+('reasonForChange','Want to work in a different domain'),
+('reasonForChange','Want to work in a different project'),
+('reasonForChange','Not getting paid my salary on time'),
+('reasonForChange','Have not been promoted for a long time'),
+('reasonForChange','Want to work with a Larger Size Company'),
+('reasonForChange','Want to work with a Bigger Brand'),
+('reasonForChange','Want to get away from shift working'),
+('reasonForChange','Have been on maternity break'),
+('reasonForChange','Have been on Sabbatical'),
+('reasonForChange','Other');
+
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN REASON_FOR_CHANGE VARCHAR(100);
+
+--For ticket #284
+ALTER TABLE COMPANY_ADDRESS
+DROP CONSTRAINT company_address_address_title_key;
+
+ALTER TABLE COMPANY_ADDRESS
+ADD CONSTRAINT UNIQUE_COMPANY_ADDRESS_TITLE UNIQUE(COMPANY_ID, ADDRESS_TITLE);
+
+--For ticket #289
+INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
+('callOutCome', 'Connected'),
+('callOutCome', 'No Answer'),
+('callOutCome', 'Busy'),
+('callOutCome', 'Wrong Number'),
+('callOutCome', 'Left Message/VoiceMail');
+
+ALTER TABLE JCM_HISTORY
+ADD COLUMN CALL_LOG_OUTCOME VARCHAR(25),
+ADD COLUMN SYSTEM_GENERATED BOOL DEFAULT 't' NOT NULL;
+
+ALTER TABLE JCM_HISTORY
+RENAME COLUMN DETAILS TO COMMENT;
+
+ALTER TABLE JCM_HISTORY
+ALTER COLUMN COMMENT TYPE TEXT;
+
+--For ticket #28
+UPDATE SMS_TEMPLATES SET  TEMPLATE_CONTENT = 'Oh no [[${commBean.receiverfirstname}]]!  The Litmus Profile you started creating for the [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]] was left incomplete. It''s important that you finish the profile to be considered for the job. Continue from where you left last. Just click the link to continue. [[${commBean.chatlink}]]'  WHERE TEMPLATE_NAME = 'ChatIncompleteReminder1';
+
+--For ticket #255
+ALTER TABLE JOB
+ADD COLUMN JOB_REFERENCE_ID UUID NOT NULL DEFAULT uuid_generate_v1();
+
+--From ML get capability_name length 50
+ALTER TABLE JOB_CAPABILITIES
+ALTER COLUMN CAPABILITY_NAME TYPE VARCHAR(50);
+
+--For ticket #301
+INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
+('referrerRelation', 'Candidate reported to me directly'),
+('referrerRelation', 'I reported to the Candidate'),
+('referrerRelation', 'We were peers in the same company'),
+('referrerRelation', 'Candidate is a friend'),
+('referrerRelation', 'Candidate is a relative'),
+('referrerRelation', 'We were students together'),
+('referrerRelation', 'I don''t know the candidate, simply referring'),
+('jobType', 'Full Time'),
+('jobType', 'Part Time'),
+('jobType', 'Temporary'),
+('jobType', 'Intern');
+
+
+
+
+
+

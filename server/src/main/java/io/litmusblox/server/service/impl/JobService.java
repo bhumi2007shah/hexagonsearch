@@ -316,13 +316,15 @@ public class JobService implements IJobService {
         long startTime = System.currentTimeMillis();
         companyList.stream().forEach(company -> {
             if (archived) {
-                responseBean.setListOfJobs(jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByCreatedOnDesc(company));
-                responseBean.setArchivedJobs(responseBean.getListOfJobs().size());
-                responseBean.setOpenJobs((jobRepository.countByCompanyIdAndDateArchivedIsNull(company)).intValue());
+                List<Job> jobList = jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByCreatedOnDesc(company);
+                responseBean.getListOfJobs().addAll(jobList);
+                responseBean.setArchivedJobs(responseBean.getArchivedJobs() + (jobList.size()));
+                responseBean.setOpenJobs(responseBean.getOpenJobs()+(jobRepository.countByCompanyIdAndDateArchivedIsNull(company)).intValue());
             } else {
-                responseBean.setListOfJobs(jobRepository.findByCompanyIdAndDateArchivedIsNullOrderByCreatedOnDesc(company));
-                responseBean.setOpenJobs(responseBean.getListOfJobs().size());
-                responseBean.setArchivedJobs((jobRepository.countByCompanyIdAndDateArchivedIsNotNull(company)).intValue());
+                List<Job> jobList = jobRepository.findByCompanyIdAndDateArchivedIsNullOrderByCreatedOnDesc(company);
+                responseBean.getListOfJobs().addAll(jobList);
+                responseBean.setOpenJobs(responseBean.getOpenJobs() + jobList.size());
+                responseBean.setArchivedJobs(responseBean.getArchivedJobs() + (jobRepository.countByCompanyIdAndDateArchivedIsNotNull(company)).intValue());
             }
         });
         log.info("Got " + responseBean.getListOfJobs().size() + " jobs in " + (System.currentTimeMillis() - startTime) + "ms");
@@ -339,7 +341,7 @@ public class JobService implements IJobService {
                 List<Long> jobIds = new ArrayList<>();
                 jobIds.addAll(jobsMap.keySet());
                 //get counts by stage for ALL job ids in 1 db call
-                List<Object[]> stageCountList = jobCandidateMappingRepository.findCandidateCountByStageJobIds(jobIds);
+                List<Object[]> stageCountList = jobCandidateMappingRepository.findCandidateCountByStageJobIds(jobIds, false);
                 //Format results in a map<jobId, resultset>
                 Map<Long, List<Object[]>> stageCountMapByJobId = stageCountList.stream().collect(groupingBy(obj -> ((Integer) obj[0]).longValue()));
                 log.info("Got stageCountByJobIds, row count: " + stageCountMapByJobId.size());
@@ -349,7 +351,13 @@ public class JobService implements IJobService {
                     value.stream().forEach(objArray -> {
                         job.getCandidateCountByStage().put(objArray[1].toString(), ((BigInteger) objArray[2]).intValue());
                     });
+                    try {
+                        job.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(), jobCandidateMappingRepository.findRejectedCandidateCount(job.getId()));
+                    } catch (Exception e) {
+                        log.error("Exception while finding rejected candidate count for job with id {}" + job.getId());
+                    }
                 });
+
                 log.info("Got candidate count by stage for " + jobs.size() + " jobs in " + (System.currentTimeMillis() - startTime) + "ms");
             } catch (Exception e) {
                 log.error(e.getMessage());
@@ -383,8 +391,9 @@ public class JobService implements IJobService {
         }
         else {
             User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if(!IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && !job.getCompanyId().getId().equals(loggedInUser.getCompany().getId()))
+            if(!IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && !IConstant.UserRole.Names.RECRUITMENT_AGENCY.equals(loggedInUser.getRole()) && !job.getCompanyId().getId().equals(loggedInUser.getCompany().getId()))
                 throw new WebException(IErrorMessages.JOB_COMPANY_MISMATCH, HttpStatus.UNAUTHORIZED);
+
             if(IConstant.JobStatus.DRAFT.getValue().equals(job.getStatus())) {
                 StringBuffer info = new StringBuffer(IErrorMessages.JOB_NOT_LIVE).append(job.getStatus());
                 log.info(info.toString());
@@ -397,7 +406,12 @@ public class JobService implements IJobService {
 
         SingleJobViewResponseBean responseBean = new SingleJobViewResponseBean();
 
-        List<JobCandidateMapping> jcmList = jobCandidateMappingRepository.findByJobAndStage(job, jobStageStepRepository.findStageIdForJob(jobId, stage));
+        List<JobCandidateMapping> jcmList;
+
+        if(IConstant.Stage.Reject.getValue().equals(stage))
+            jcmList = jobCandidateMappingRepository.findByJobAndRejectedIsTrue(job);
+        else
+            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, jobStageStepRepository.findStageIdForJob(jobId, stage));
 
         jcmList.forEach(jcmFromDb-> {
             jcmFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(jcmFromDb.getId()));
@@ -444,6 +458,8 @@ public class JobService implements IJobService {
             else //stage exists in response bean, add the count of the other step to existing value
                 responseBean.getCandidateCountByStage().put(key,responseBean.getCandidateCountByStage().get(key)  + ((BigInteger) objArray[1]).intValue());
         });
+        //add count of rejected candidates
+        responseBean.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(),  jobCandidateMappingRepository.findRejectedCandidateCount(jobId));
         log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.", jobId, stage ,(System.currentTimeMillis() - startTime));
 
         return responseBean;
@@ -503,7 +519,7 @@ public class JobService implements IJobService {
             job.setMlDataAvailable(false);
             job.setStatus(IConstant.JobStatus.DRAFT.getValue());
             job.setCreatedBy(loggedInUser);
-
+            job.setJobReferenceId(UUID.randomUUID());
             //End of code to be removed
             oldJob = jobRepository.save(job);
         }
@@ -729,7 +745,12 @@ public class JobService implements IJobService {
         oldJob.getJobKeySkillsList().forEach(oldKeySkill -> {
             if (oldKeySkill.getMlProvided()) {
                 JobKeySkills newValue = newSkillValues.get(oldKeySkill.getSkillId().getId());
-                oldKeySkill.setSelected(newValue.getSelected());
+                if(null != newValue) {
+                    oldKeySkill.setSelected(newValue.getSelected());
+                    log.info("ML provided skill {} not returned in the api call", oldKeySkill.getSkillId().getSkillName());
+                }
+                else
+                    oldKeySkill.setSelected(false);
                 oldKeySkill.setUpdatedOn(new Date());
                 oldKeySkill.setUpdatedBy(loggedInUser);
             }
@@ -1164,7 +1185,7 @@ public class JobService implements IJobService {
      * @return formatted json in String format
      * @throws Exception
      */
-    public String exportData(Long jobId, Long formatId) throws Exception {
+    public String exportData(Long jobId, Long formatId, String stage) throws Exception {
         if(formatId!=null) {
             log.info("Received Request to fetch export data for jobId: " + jobId + " and formatId:" + formatId);
         }
@@ -1195,7 +1216,7 @@ public class JobService implements IJobService {
         String columnsToExport = String.join(", ", columnNames);
 
         //list of objects from db to create export data json
-        List<Object[]> exportDataList = ExportData.exportDataList(jobId, columnsToExport, em);
+        List<Object[]> exportDataList = ExportData.exportDataList(jobId, stage, columnsToExport, em);
         List<LinkedHashMap<String, Object>> exportResponseBean = new ArrayList<>();
 
         if(exportDataList.size()==0){
@@ -1224,5 +1245,16 @@ public class JobService implements IJobService {
 
         log.info("Completed processing export data in "+(System.currentTimeMillis() - startTime));
         return new ObjectMapper().writeValueAsString(exportResponseBean);
+    }
+
+    /**
+     * Method to find a job based on the reference id provided
+     *
+     * @param jobReferenceId
+     * @return
+     */
+    @Transactional(readOnly = true)
+    public Job findByJobReferenceId(UUID jobReferenceId) {
+        return jobRepository.findByJobReferenceId(jobReferenceId);
     }
 }

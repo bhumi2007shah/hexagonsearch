@@ -63,7 +63,6 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Column(name="EMAIL")
     private String email;
 
-    @NotNull
     @Column(name="MOBILE")
     private String mobile;
 
@@ -135,7 +134,13 @@ public class JobCandidateMapping implements Serializable, Comparable {
     private boolean updateResume;
 
     @Column(name="COMMUNICATION_RATING")
-    private Integer communicationRating;
+    private Integer communicationRating = 0;
+
+    @Column(name = "REJECTED")
+    private boolean rejected;
+
+    @Column(name="REASON_FOR_CHANGE")
+    private String reasonForChange;
 
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
@@ -183,7 +188,9 @@ public class JobCandidateMapping implements Serializable, Comparable {
         this.stage = stage;
         this.candidateSource = candidateSource;
         this.email = candidate.getEmail();
-        this.mobile = candidate.getMobile();
+        if(null != candidate.getMobile())
+            this.mobile = candidate.getMobile();
+
         this.countryCode = candidate.getCountryCode();
         this.createdOn = createdOn;
         this.createdBy = createdBy;

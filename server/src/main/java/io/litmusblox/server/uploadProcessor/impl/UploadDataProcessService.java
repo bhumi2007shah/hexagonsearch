@@ -61,14 +61,14 @@ public class UploadDataProcessService implements IUploadDataProcessService {
     ICandidateService candidateService;
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void processData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, int candidateProcessed, Long jobId, boolean ignoreMobile){
+    public void processData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, int candidateProcessed, Long jobId, boolean ignoreMobile, Optional<User> createdBy){
         log.info("inside processData");
 
         int recordsProcessed = 0;
         int successCount = 0;
         int failureCount = uploadResponseBean.getFailureCount();
 
-        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User loggedInUser = createdBy.isPresent()?createdBy.get():(User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         Job job=jobRepository.getOne(jobId);
 
@@ -206,7 +206,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             candidateObjToUse.setEmail(candidate.getEmail());
             candidateObjToUse.setMobile(candidate.getMobile());
 
-            JobStageStep stageStepForSource = jobStageStepRepository.findStageIdForJob(job.getId(), IConstant.Stage.Source.getValue());
+            JobStageStep stageStepForSource = jobStageStepRepository.findStageIdForJob(job.getId(), IConstant.Stage.Source.getValue()).get(0);
             JobCandidateMapping savedObj = jobCandidateMappingRepository.save(new JobCandidateMapping(job,candidateObjToUse,stageStepForSource, candidate.getCandidateSource(), new Date(),loggedInUser, UUID.randomUUID(), candidate.getFirstName(), candidate.getLastName()));
 
             //string to store detail about jcmHistory

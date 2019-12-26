@@ -7,6 +7,8 @@ package io.litmusblox.server.repository;
 import io.litmusblox.server.model.StepsPerStage;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 /**
  * @author : Shital Raval
  * Date : 20/11/19
@@ -15,4 +17,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * Project Name : server
  */
 public interface StepsPerStageRepository extends JpaRepository<StepsPerStage, Long> {
+    List<StepsPerStage> findAllByOrderByIdAsc();
 }

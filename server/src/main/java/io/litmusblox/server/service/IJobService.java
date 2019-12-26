@@ -10,6 +10,7 @@ import io.litmusblox.server.model.JobStageStep;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Interface definition for Job Service
@@ -114,5 +115,12 @@ public interface IJobService {
      * @return formatted json in String format
      * @throws Exception
      */
-    String exportData(Long jobId, Long formatId) throws Exception;
+    String exportData(Long jobId, Long formatId, String stage) throws Exception;
+
+    /**
+     * Method to find a job based on the reference id provided
+     * @param jobReferenceId
+     * @return
+     */
+    Job findByJobReferenceId(UUID jobReferenceId);
 }

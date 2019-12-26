@@ -659,7 +659,7 @@ delete from sms_templates;
 INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
 ('ChatInvite','New Job - [[${commBean.jobtitle}]] at [[${commBean.sendercompany}]]%n[[${commBean.receiverfirstname}]],%n[[${commBean.senderfirstname}]] from [[${commBean.sendercompany}]] has invited you to apply for the [[${commBean.jobtitle}]] position. Click the link below to apply.%n[[${commBean.chatlink}]]'),
 ('ChatCompleted','Congratulations [[${commBean.receiverfirstname}]]!%nYour Profile is now complete for the [[${commBean.jobtitle}]] position. [[${commBean.senderfirstname}]] from [[${commBean.sendercompany}]] will be in touch with you if your profile is shortlisted.%n%nGood luck!'),
-('ChatIncompleteReminder1','Oh no [[${commBean.receiverfirstname}]]!  The Litmus Profile you started creating to for the [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]] was left incomplete. It''s important that you finish the profile to be considered for the job. Continue from where you left last. Just click the link to continue. [[${commBean.chatlink}]]'),
+('ChatIncompleteReminder1','Oh no [[${commBean.receiverfirstname}]]!  The Litmus Profile you started creating for the [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]] was left incomplete. It''s important that you finish the profile to be considered for the job. Continue from where you left last. Just click the link to continue. [[${commBean.chatlink}]]'),
 ('ChatIncompleteReminder2','[[${commBean.receiverfirstname}]],%nThis is your final reminder%n[[${commBean.sendercompany}]] is still waiting to see your profile for the [[${commBean.jobtitle}]] job. Your Litmus Profile is not complete. It will take just a few more minutes to finish it. Please click the link to continue. [[${commBean.chatlink}]]'),
 ('LinkNotVisitedReminder1','[[${commBean.jobtitle}]] Job opportunity at [[${commBean.sendercompany}]]. [[${commBean.receiverfirstname}]], you are being considered for this job. Click the link to apply. [[${commBean.chatlink}]]'),
 ('LinkNotVisitedReminder2','[[${commBean.receiverfirstname}]], are you not interested in this job? [[${commBean.senderfirstname}]] from [[${commBean.sendercompany}]] has invited you to apply for the [[${commBean.jobtitle}]] position. Click the link below to apply. [[${commBean.chatlink}]]'),
@@ -730,24 +730,24 @@ INSERT INTO public.currency(currency_full_name, currency_short_name, country) VA
 ('US Dollar', 'USD', 'us');
 
 INSERT INTO STAGE_MASTER(ID, STAGE_NAME) VALUES
-(1, 'Source'),
-(2, 'Screen'),
-(3, 'Resume Submit'),
+(1, 'Sourcing'),
+(2, 'Screening'),
+(3, 'Submitted'),
 (4, 'Interview'),
 (5, 'Make Offer'),
 (6, 'Offer'),
-(7, 'Join');
+(7, 'Hired');
 
 INSERT INTO STEPS_PER_STAGE (STAGE_ID, STEP_NAME) VALUES
-(1, 'Source'),
-(2, 'Screen'),
-(3, 'Resume Submit'),
+(1, 'Sourcing'),
+(2, 'Screening'),
+(3, 'Submitted'),
 (4, 'L1'),
 (4, 'L2'),
 (4, 'L3'),
 (5, 'Make Offer'),
 (6, 'Offer'),
-(7, 'Join');
+(7, 'Hired');
 
 INSERT INTO public.master_data(type, value, value_to_use) VALUES
 ('role', 'HR Recruiter', 'Recruiter'),
@@ -760,7 +760,7 @@ INSERT INTO public.master_data(type, value, value_to_use) VALUES
 INSERT INTO export_format_master
 (format, system_supported)
 values
-('default', true);
+('All Data', true);
 
 INSERT INTO export_format_detail
 (format_id, column_name, header,  "position")
@@ -775,3 +775,28 @@ VALUES
 (1, 'mobile','Mobile', 8),
 (1, 'totalExperience','Total Experience', 9),
 (1, 'createdBy','Created By', 10);
+
+Insert into MASTER_DATA (TYPE, VALUE) values
+('reasonForChange','Too much time spent in Commuting to work'),
+('reasonForChange','Too much travelling in the job'),
+('reasonForChange','Have been in same company for too long'),
+('reasonForChange','Company has shutdown'),
+('reasonForChange','Company is downsizing /got a layoff'),
+('reasonForChange','Am a Contract employee, want to shift to permanent employment'),
+('reasonForChange','Want to work in a different domain'),
+('reasonForChange','Want to work in a different project'),
+('reasonForChange','Not getting paid my salary on time'),
+('reasonForChange','Have not been promoted for a long time'),
+('reasonForChange','Want to work with a Larger Size Company'),
+('reasonForChange','Want to work with a Bigger Brand'),
+('reasonForChange','Want to get away from shift working'),
+('reasonForChange','Have been on maternity break'),
+('reasonForChange','Have been on Sabbatical'),
+('reasonForChange','Other');
+
+INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
+('callOutCome', 'Connected'),
+('callOutCome', 'No Answer'),
+('callOutCome', 'Busy'),
+('callOutCome', 'Wrong Number'),
+('callOutCome', 'Left Message/VoiceMail');
