@@ -816,9 +816,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         returnObj.setTechResponseData(objFromDb.getTechResponseData().getTechResponse());
 
         //set the cv location
-        if(null != returnObj.getCandidateDetails() && null != returnObj.getCandidateDetails().getCvFileType()) {
+        if(null != returnObj.getCandidateDetails() && null != objFromDb.getCvFileType()) {
             StringBuffer cvLocation = new StringBuffer("");
-            cvLocation.append(IConstant.CANDIDATE_CV).append(File.separator).append(objFromDb.getJob().getId()).append(File.separator).append(objFromDb.getCandidate().getId()).append(returnObj.getCandidateDetails().getCvFileType());
+            cvLocation.append(IConstant.CANDIDATE_CV).append(File.separator).append(objFromDb.getJob().getId()).append(File.separator).append(objFromDb.getCandidate().getId()).append(objFromDb.getCvFileType());
             returnObj.getCandidateDetails().setCvLocation(cvLocation.toString());
         }
         returnObj.setScreeningQuestionResponses(new ArrayList<>(screeningQuestionsMap.values()));
