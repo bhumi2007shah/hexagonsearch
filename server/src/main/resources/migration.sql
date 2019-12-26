@@ -1155,6 +1155,7 @@ ADD COLUMN RELEVANT_EXPERIENCE NUMERIC (4, 2);
 
 
 -- FOR TICKET #258
+DROP TABLE IF EXISTS EXPORT_FORMAT_DETAIL;
 DROP TABLE IF EXISTS EXPORT_FORMAT_MASTER;
 CREATE TABLE EXPORT_FORMAT_MASTER(
 ID serial PRIMARY KEY NOT NULL,
@@ -1163,8 +1164,6 @@ FORMAT varchar(15) NOT NULL,
 SYSTEM_SUPPORTED BOOL DEFAULT FALSE
 );
 
-
-DROP TABLE IF EXISTS EXPORT_FORMAT_DETAIL;
 CREATE TABLE EXPORT_FORMAT_DETAIL(
     ID serial PRIMARY KEY NOT NULL,
     FORMAT_ID integer REFERENCES EXPORT_FORMAT_MASTER(ID) NOT NULL,
@@ -1184,14 +1183,15 @@ INSERT INTO export_format_detail
 VALUES
 (1, 'candidateName','Candidate Name', 1),
 (1, 'chatbotStatus','Chatbot Status', 2),
-(1, 'keySkillsStrength','Key Skills Strength', 3),
-(1, 'currentCompany','Current Commpany', 4),
-(1, 'currentDesignation','Current Designation', 5),
-(1, 'email','Email', 6),
-(1, 'countryCode','Country Code', 7),
-(1, 'mobile','Mobile', 8),
-(1, 'totalExperience','Total Experience', 9),
-(1, 'createdBy','Created By', 10);
+(1, 'currentStage','Stage', 3),
+(1, 'keySkillsStrength','Key Skills Strength', 4),
+(1, 'currentCompany','Current Commpany', 5),
+(1, 'currentDesignation','Current Designation', 6),
+(1, 'email','Email', 7),
+(1, 'countryCode','Country Code', 8),
+(1, 'mobile','Mobile', 9),
+(1, 'totalExperience','Total Experience', 10),
+(1, 'createdBy','Created By', 11);
 
 drop view if exists exportDataView;
 create view exportDataView AS
