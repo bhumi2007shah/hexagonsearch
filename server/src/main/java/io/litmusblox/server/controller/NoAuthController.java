@@ -4,15 +4,13 @@
 
 package io.litmusblox.server.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.model.JobScreeningQuestions;
 import io.litmusblox.server.model.User;
-import io.litmusblox.server.service.IJobCandidateMappingService;
-import io.litmusblox.server.service.IJobService;
-import io.litmusblox.server.service.IMasterDataService;
-import io.litmusblox.server.service.TechChatbotRequestBean;
+import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
@@ -274,5 +272,17 @@ public class NoAuthController {
                 }}, null);
     }
 
-
+    /**
+     * API to search jobs for a company based on search criteria
+     *
+     * @param searchRequest the request bean with search criteria
+     * @return the list of jobs matching the search criteria
+     */
+    @GetMapping(value="/searchJobs")
+    String searchJobs(@RequestBody String searchRequest) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        SearchRequestBean requestBean = objectMapper.readValue(searchRequest, SearchRequestBean.class);
+        //TODO: Add service call here
+        return null;
+    }
 }
