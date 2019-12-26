@@ -199,4 +199,11 @@ public interface IJobCandidateMappingService {
      * @param callOutCome callOutCome if callOutCome is present then set in jcm history
      */
     void addComment(String comment, Long jcmId, String callOutCome);
+
+    /**
+     * Service to upload resume against jcm
+     * @param jcmId
+     * @param candidateCv
+     */
+    void uploadResume(MultipartFile candidateCv, Long jcmId) throws Exception;
 }

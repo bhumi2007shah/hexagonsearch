@@ -1633,8 +1633,35 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findById(jcmId).orElse(null);
         if(null == jobCandidateMapping)
-            throw new ValidationException("Job candidate not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
+            throw new ValidationException("Job candidate mapping not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
 
         jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, comment, callOutCome, false, new Date(), jobCandidateMapping.getStage(), loggedInUser));
+    }
+
+    /**
+     * Service to upload resume against jcm
+     *
+     * @param jcmId
+     * @param candidateCv
+     */
+    @Transactional
+    public void uploadResume(MultipartFile candidateCv, Long jcmId) throws Exception {
+        log.info("inside uploadResume");
+        String filePath = null;
+        JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(jcmId).orElse(null);
+        if(null == jcmFromDb)
+            throw new ValidationException("Job candidate mapping not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
+
+        String extension = Util.getFileExtension(candidateCv.getOriginalFilename()).toLowerCase();
+        if(extension.equals(IConstant.FILE_TYPE.rar) || extension.equals(IConstant.FILE_TYPE.zip) || !Arrays.asList(IConstant.cvUploadSupportedExtensions).contains(extension))
+            throw new ValidationException(IErrorMessages.UNSUPPORTED_FILE_TYPE+" "+extension+", For JcmId : "+jcmId, HttpStatus.BAD_REQUEST);
+
+        try {
+            filePath = StoreFileUtil.storeFile(candidateCv, jcmFromDb.getJob().getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),jcmFromDb.getCandidate(),null);
+        }catch (Exception ex){
+           log.error("{}, File name : {}, For jcmId : ", IErrorMessages.FAILED_TO_SAVE_FILE, candidateCv.getOriginalFilename(), jcmId, ex.getMessage());
+            throw new ValidationException(IErrorMessages.FAILED_TO_SAVE_FILE+" "+candidateCv.getOriginalFilename()+ex.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+        log.info("Upload resume to : "+filePath);
     }
 }

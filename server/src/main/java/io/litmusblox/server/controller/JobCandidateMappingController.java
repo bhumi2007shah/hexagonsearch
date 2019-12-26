@@ -302,4 +302,17 @@ public class JobCandidateMappingController {
         log.info("inside addComment");
         jobCandidateMappingService.addComment(requestJson.get("comment"), Long.parseLong(requestJson.get("jcmId")), callOutcome.isPresent()?callOutcome.get().toString():null);
     }
+
+    /**
+     * REST API to upload resume related to jcm
+     * @param multipartFile
+     * @param jcmId
+     */
+    @GetMapping(value = {"/uploadResume/{jcmId}"})
+    @ResponseStatus(value = HttpStatus.OK)
+    void uploadResume(@RequestParam("candidateCv") MultipartFile multipartFile, @PathVariable Long jcmId) throws Exception {
+        log.info("inside uploadResume");
+        jobCandidateMappingService.uploadResume(multipartFile, jcmId);
+        log.info("Resume upload successFully");
+    }
 }
