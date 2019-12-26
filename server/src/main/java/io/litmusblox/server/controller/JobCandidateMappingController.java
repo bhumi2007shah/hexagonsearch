@@ -308,7 +308,7 @@ public class JobCandidateMappingController {
      * @param multipartFile
      * @param jcmId
      */
-    @GetMapping(value = {"/uploadResume/{jcmId}"})
+    @PostMapping(value = {"/uploadResume/{jcmId}"})
     @ResponseStatus(value = HttpStatus.OK)
     void uploadResume(@RequestParam("candidateCv") MultipartFile multipartFile, @PathVariable Long jcmId) throws Exception {
         log.info("inside uploadResume");
