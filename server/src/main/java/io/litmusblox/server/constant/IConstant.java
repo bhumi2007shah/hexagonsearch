@@ -40,7 +40,7 @@ public interface IConstant {
     String REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_MOBILE = "[^\\d]";
     String REGEX_FOR_NAME_VALIDATION = "[a-zA-Z\\-][a-zA-Z.\\-\\s]*";
     String REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_NAME = "[^\\w\\s\\-]*";
-    String REGEX_FOR_DOT_IN_NAME = "([A-Z][\\.]?\\s)+";
+    String REGEX_FOR_DOT_IN_NAME = "(?<=[a.zA-Z\\.]\\s)+";
 
 
     // lengths
@@ -131,7 +131,7 @@ public interface IConstant {
     }
 
     enum CandidateSource {
-        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("iimJobs"), DragDropCv("DragDropCv"), NaukriEmail("NaukriMail");
+        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriEmail("NaukriMail");
         private String value;
 
         CandidateSource(String val) {

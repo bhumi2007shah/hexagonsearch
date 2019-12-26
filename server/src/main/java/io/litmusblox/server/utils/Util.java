@@ -227,11 +227,24 @@ public class Util {
     }
 
     public static void handleCandidateName(Candidate candidate, String candidateName) {
+
         if (candidateName.indexOf('.') != -1) { //a dot (.) is found in the name, process accordingly
             String[] name = candidateName.split(IConstant.REGEX_FOR_DOT_IN_NAME);
-            if (name.length > 1) {
+            if (name.length == 2) {
                 candidate.setLastName(toSentenceCase(name[0]));
                 candidate.setFirstName(toSentenceCase(name[1]));
+                return;
+            }else if(name.length > 2){
+                candidate.setFirstName(toSentenceCase(name[name.length-1]));
+                int nameCount = 0;
+                while(nameCount<name.length-1){
+                    if(nameCount==0)
+                        candidate.setLastName(toSentenceCase(name[nameCount]));
+                    else
+                        candidate.setLastName(toSentenceCase(candidate.getLastName()+name[nameCount]));
+
+                    nameCount++;
+                }
                 return;
             }
             else if (name.length > 0) {

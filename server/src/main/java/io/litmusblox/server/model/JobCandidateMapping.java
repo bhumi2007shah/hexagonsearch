@@ -63,7 +63,6 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Column(name="EMAIL")
     private String email;
 
-    @NotNull
     @Column(name="MOBILE")
     private String mobile;
 
@@ -189,7 +188,9 @@ public class JobCandidateMapping implements Serializable, Comparable {
         this.stage = stage;
         this.candidateSource = candidateSource;
         this.email = candidate.getEmail();
-        this.mobile = candidate.getMobile();
+        if(null != candidate.getMobile())
+            this.mobile = candidate.getMobile();
+
         this.countryCode = candidate.getCountryCode();
         this.createdOn = createdOn;
         this.createdBy = createdBy;
