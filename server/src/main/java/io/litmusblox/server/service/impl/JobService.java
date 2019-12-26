@@ -1148,7 +1148,7 @@ public class JobService implements IJobService {
      */
     @Transactional
     public Map<Long, String> getSupportedExportFormat(Long jobId){
-        log.info("Received Request to fetch supported export formats for jobId: "+jobId);
+        log.info("Received Request to fetch supported export formats for jobId: {}", jobId);
         long startTime = System.currentTimeMillis();
 
         Job job = jobRepository.findById(jobId).orElse(null);
@@ -1157,24 +1157,20 @@ public class JobService implements IJobService {
             throw new WebException("Job with id " + jobId + "does not exist ", HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
-        Map<Long, String> exportFomratMapForCompany = new HashMap<>();
+        Map<Long, String> exportFormatMapForCompany = new HashMap<>();
 
-        //list of export format data to be returned.
-        List<ExportFormatMaster> exportFormatMasters = new ArrayList<>();
-
-        //add all default export format supported by litmusblox by default
-        exportFormatMasters.addAll(MasterDataBean.getInstance().getDefaultExportFormats());
-
-        //add company specific export format.
-        exportFormatMasters.addAll(exportFormatMasterRepository.findByCompanyIdAndSystemSupportedIsTrue(job.getCompanyId().getId()));
-
-        //create map of id and format from above list
-        exportFormatMasters.forEach(exportFormatMaster -> {
-            exportFomratMapForCompany.put(exportFormatMaster.getId(), exportFormatMaster.getFormat());
+        //add all default export format supported by litmusblox by default to exportFormatMapForCompany
+        MasterDataBean.getInstance().getDefaultExportFormats().forEach(exportFormatMaster -> {
+            exportFormatMapForCompany.put(exportFormatMaster.getId(), exportFormatMaster.getFormat());
         });
 
-        log.info("Finished Request to fetch supported export formats for jobId: "+jobId+" in "+(System.currentTimeMillis()-startTime));
-        return exportFomratMapForCompany;
+        //add company specific export format to exportFormatMapForCompany.
+        exportFormatMasterRepository.findByCompanyIdAndSystemSupportedIsTrue(job.getCompanyId().getId()).forEach(exportFormatMaster -> {
+            exportFormatMapForCompany.put(exportFormatMaster.getId(), exportFormatMaster.getFormat());
+        });
+
+        log.info("Finished Request to fetch supported export formats for jobId: {} in {}", jobId, (System.currentTimeMillis()-startTime));
+        return exportFormatMapForCompany;
     }
 
     /**
@@ -1186,12 +1182,7 @@ public class JobService implements IJobService {
      * @throws Exception
      */
     public String exportData(Long jobId, Long formatId, String stage) throws Exception {
-        if(formatId!=null) {
-            log.info("Received Request to fetch export data for jobId: " + jobId + " and formatId:" + formatId);
-        }
-        else{
-            log.info("Received Request to fetch export data for default format");
-        }
+        log.info("Received Request to fetch export data for jobId: {} and formatId: {} ", jobId , formatId!=null?formatId: "default");
         long startTime = System.currentTimeMillis();
         //get default export format master
         ExportFormatMaster exportFormatMaster = exportFormatMasterRepository.getOne(formatId!=null?formatId:1L);
@@ -1217,11 +1208,12 @@ public class JobService implements IJobService {
 
         //list of objects from db to create export data json
         List<Object[]> exportDataList = ExportData.exportDataList(jobId, stage, columnsToExport, em);
-        List<LinkedHashMap<String, Object>> exportResponseBean = new ArrayList<>();
 
         if(exportDataList.size()==0){
-            throw new WebException("No Export data availablle for jobId: "+jobId, HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new WebException("No Export data available for jobId: "+jobId, HttpStatus.UNPROCESSABLE_ENTITY);
         }
+
+        List<LinkedHashMap<String, Object>> exportResponseBean = new ArrayList<>();
 
         exportDataList.forEach(data-> {
             LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
@@ -1243,7 +1235,7 @@ public class JobService implements IJobService {
             }
         });
 
-        log.info("Completed processing export data in "+(System.currentTimeMillis() - startTime));
+        log.info("Completed processing export data in {}", System.currentTimeMillis() - startTime);
         return new ObjectMapper().writeValueAsString(exportResponseBean);
     }
 

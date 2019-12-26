@@ -23,7 +23,7 @@ import java.util.List;
 @Service
 public class ExportData {
     public static List<Object[]> exportDataList(Long jobId, String stage, String columns, EntityManager em){
-        StringBuilder query =new StringBuilder("");
+        StringBuffer query =new StringBuffer("");
         query.append("select ");
         query.append(columns);
         query.append(" from exportDataView where jobId=");
@@ -31,28 +31,29 @@ public class ExportData {
         query.append(" and currentStage='"+stage+"'");
         List<Object[]> exportDataList= new ArrayList<>();
 
-        if(!query.toString().isEmpty()){
-            try {
-                exportDataList = em.createNativeQuery(query.toString()).getResultList();
-            }
-            catch(Exception e){
-                throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-            finally {
-                em.close();
-            }
+        try {
+            exportDataList = em.createNativeQuery(query.toString()).getResultList();
+        }
+        catch(Exception e){
+            throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        finally {
+            em.close();
         }
         return exportDataList;
     }
 
     public static LinkedHashMap<String, String> getQuestionAnswerForCandidate(String email, Long jobId, EntityManager em){
         LinkedHashMap<String, String> questionAnswerMapForCandidate = new LinkedHashMap<>();
-        String query = "select screeningQuestion, candidateResponse from exportDataView where email='"+email+"' and jobId='"+jobId+"'";
+        StringBuffer query = new StringBuffer("");
+        query.append("select screeningQuestion, candidateResponse from exportDataView where email='");
+        query.append(email);
+        query.append("' and jobId='"+jobId+"'");
 
         List<Object[]> exportDataList= new ArrayList<>();
 
         try{
-            exportDataList = em.createNativeQuery(query).getResultList();
+            exportDataList = em.createNativeQuery(query.toString()).getResultList();
         }
         catch (Exception e){
             throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
