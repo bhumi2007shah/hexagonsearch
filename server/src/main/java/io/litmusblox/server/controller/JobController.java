@@ -56,6 +56,7 @@ public class JobController {
                 put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                 put("JobCapabilities", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
                 put("MasterData", new ArrayList<>(0));
+                put("CompanyAddress", new ArrayList<>(0));
             }})
         );
     }
@@ -74,6 +75,7 @@ public class JobController {
                 jobService.findAllJobsForUser((archived.isPresent() ? archived.get() : false),(companyName.isPresent()?companyName.get():null)),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id", "displayName"));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList","jobHiringTeamList","jobDetail", "expertise", "education", "noticePeriod", "function", "experienceRange", "userEnteredKeySkill", "updatedOn", "updatedBy"));
@@ -105,6 +107,7 @@ public class JobController {
                     put("CvRating", Arrays.asList("overallRating"));
                     put("CandidateEducationDetails", Arrays.asList("degree"));
                     put("JobStageStep", Arrays.asList("stageName"));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy"));
@@ -166,6 +169,7 @@ public class JobController {
                 jobService.getJobDetails(jobId),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("displayName"));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",new ArrayList<>(0));
@@ -189,6 +193,7 @@ public class JobController {
                 jobService.getJobHistory(jobId),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("displayName"));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",new ArrayList<>(0));
@@ -214,6 +219,7 @@ public class JobController {
                 (new HashMap<String, List<String>>(){{
                     put("User",new ArrayList<>(0));
                     put("Company", new ArrayList<>(0));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 new HashMap<String, List<String>>() {{
                     put("CompanyStageStep", Arrays.asList("id","createdOn", "createdBy","updatedOn","updatedBy","companyId"));

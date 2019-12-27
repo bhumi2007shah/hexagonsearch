@@ -216,6 +216,7 @@ public class NoAuthController {
                     put("CandidateWorkAuthorization", Arrays.asList("id","candidateId"));
                     put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("MasterData", new ArrayList<>(0));
+                    put("CompanyAddress", new ArrayList<>(0));
                 }});
        // log.info("before call to replace:\n {}",response);
         response = response.replaceAll(Pattern.quote("$companyName"),responseObj.getCreatedBy().getCompany().getCompanyName());
@@ -292,7 +293,8 @@ public class NoAuthController {
         log.info("Complete processing search operation in {} ms.", (System.currentTimeMillis() - startTime));
         return Util.stripExtraInfoFromResponseBean(jobsFound,
                 new HashMap<String, List<String>>() {{
-                    put("Job", Arrays.asList("jobTitle", "jobDescription", "jobLocation", "function", "jobReferenceId"));
+                    put("Job", Arrays.asList("jobTitle", "jobDescription", "jobLocation", "function", "jobReferenceId","jobType"));
+                    put("CompanyAddress", Arrays.asList("address"));
                     put("MasterData", Arrays.asList("value"));
                 }}, null);
 
