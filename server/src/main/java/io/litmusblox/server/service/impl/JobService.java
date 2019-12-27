@@ -38,6 +38,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -1266,19 +1267,37 @@ public class JobService implements IJobService {
      * @return List of jobs
      */
     static String SELECT_QUERY_PREFIX = "Select jobId from jobDetailsView where companyId = ";
-    static String AND = " and ", IN_BEGIN = " in (", BRACKET_CLOSE = ")", LIKE_BEGIN = " LIKE \'%", LIKE_END = "%\'", LOWER_BEGIN = "LOWER(";
+    static String AND = " and ", IN_BEGIN = " in (", BRACKET_CLOSE = ")", LIKE_BEGIN = " LIKE \'%", LIKE_END = "%\'", LOWER_BEGIN = "LOWER(", OR = " or ";
     @Transactional(readOnly = true)
     public List<Job> searchJobs(SearchRequestBean searchRequest) {
         //TODO: generate query here
         StringBuffer query = new StringBuffer().append(SELECT_QUERY_PREFIX).append(searchRequest.getCompanyId());
-        searchRequest.getSearchParam().forEach(searchParam -> {
+        if(searchRequest.getSearchParam().size()>0)
             query.append(AND);
+        final AtomicBoolean firstSearchParam = new AtomicBoolean(true);
+        searchRequest.getSearchParam().forEach(searchParam -> {
+            if(firstSearchParam.get()) {
+                query.append("(");
+                firstSearchParam.set(false);
+            }
+            else
+                query.append(OR);
+
             if(searchParam.isMultiSelect())
                 query.append(searchParam.getKey()).append(IN_BEGIN).append(searchParam.getValue()).append(BRACKET_CLOSE);
-            else
-                query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(searchParam.getValue().toLowerCase()).append(LIKE_END);
-
+            else {
+                String[] searchValues = searchParam.getValue().toLowerCase().split(",");
+                for (int i=0;i<searchValues.length;i++) {
+                    if (i>0)
+                        query.append(OR);
+                    query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(searchValues[i].toLowerCase()).append(LIKE_END);
+                }
+                //query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(searchParam.getValue().toLowerCase()).append(LIKE_END);
+            }
         });
+        if(searchRequest.getSearchParam().size()>0)
+            query.append(BRACKET_CLOSE);
+
         log.info("Query generated:\n {}", query.toString());
         return customQueryExecutor.executeSearchQuery(query.toString());//"Select id from job where id < 20;");
     }
