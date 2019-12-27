@@ -6,7 +6,7 @@ package io.litmusblox.server.service;
 
 import lombok.Data;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  * @author : Shital Raval
@@ -18,6 +18,12 @@ import java.util.Map;
  */
 @Data
 public class SearchRequestBean {
-    private Map<String, String> searchParams;
+    private List<SearchParam> searchParams;
     private Long companyId;
+}
+
+class SearchParam {
+    private String key;
+    private String value;
+    private boolean multiSelect = false;
 }
