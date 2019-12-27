@@ -7,11 +7,16 @@ package io.litmusblox.server.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.error.WebException;
+import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.model.JobScreeningQuestions;
 import io.litmusblox.server.model.User;
-import io.litmusblox.server.service.*;
+import io.litmusblox.server.service.IJobCandidateMappingService;
+import io.litmusblox.server.service.IJobService;
+import io.litmusblox.server.service.IMasterDataService;
+import io.litmusblox.server.service.TechChatbotRequestBean;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
+import io.litmusblox.server.service.impl.SearchRequestBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -281,8 +286,17 @@ public class NoAuthController {
     @GetMapping(value="/searchJobs")
     String searchJobs(@RequestBody String searchRequest) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
-        SearchRequestBean requestBean = objectMapper.readValue(searchRequest, SearchRequestBean.class);
-        //TODO: Add service call here
+        try {
+            SearchRequestBean requestBean = objectMapper.readValue(searchRequest, SearchRequestBean.class);
+            List<Job> jobsFound = jobService.searchJobs(requestBean);
+            return Util.stripExtraInfoFromResponseBean(jobsFound,
+                    new HashMap<String, List<String>>() {{
+                        put("Job", Arrays.asList("jobTitle", "jobDescription", "jobLocation", "function", "jobReferenceId"));
+                        put("MasterData", Arrays.asList("value"));
+                    }}, null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return null;
     }
 }

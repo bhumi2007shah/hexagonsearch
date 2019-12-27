@@ -1360,7 +1360,7 @@ select
 	job.id as jobId,
 	job.company_id as companyId,
 	job.job_title as jobTitle,
-	job.job_type as job_type,
+	job.job_type as jobType,
 	job.created_on as jobCreatedOn,
 	company_address.address as jobLocation,
 	company_address.city as jobLocationCity,

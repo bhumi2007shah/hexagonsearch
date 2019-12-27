@@ -14,7 +14,10 @@ import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.exportData.ExportData;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
-import io.litmusblox.server.service.*;
+import io.litmusblox.server.service.IJobService;
+import io.litmusblox.server.service.JobWorspaceResponseBean;
+import io.litmusblox.server.service.MasterDataBean;
+import io.litmusblox.server.service.SingleJobViewResponseBean;
 import io.litmusblox.server.service.impl.ml.RolePredictionBean;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.SentryUtil;
@@ -85,9 +88,6 @@ public class JobService implements IJobService {
     SkillMasterRepository skillMasterRepository;
 
     @Resource
-    MasterDataRepository masterDataRepository;
-
-    @Resource
     CompanyAddressRepository companyAddressRepository;
 
     @Resource
@@ -111,9 +111,6 @@ public class JobService implements IJobService {
     @Resource
     JcmProfileSharingDetailsRepository jcmProfileSharingDetailsRepository;
 
-    @Autowired
-    IScreeningQuestionService screeningQuestionService;
-
     @Resource
     JobHistoryRepository jobHistoryRepository;
 
@@ -134,6 +131,9 @@ public class JobService implements IJobService {
 
     @PersistenceContext
     EntityManager em;
+
+    @Autowired
+    CustomQueryExecutor customQueryExecutor;
 
     @Value("${mlApiUrl}")
     private String mlUrl;
@@ -1256,5 +1256,30 @@ public class JobService implements IJobService {
     @Transactional(readOnly = true)
     public Job findByJobReferenceId(UUID jobReferenceId) {
         return jobRepository.findByJobReferenceId(jobReferenceId);
+    }
+
+
+    /**
+     * Service method to find list of jobs matching the search criteria
+     *
+     * @param searchRequest the request bean with company id and map of search paramters
+     * @return List of jobs
+     */
+    static String SELECT_QUERY_PREFIX = "Select jobId from jobDetailsView where companyId = ";
+    static String AND = " and ", IN_BEGIN = " in (", BRACKET_CLOSE = ")", LIKE_BEGIN = " LIKE \'%", LIKE_END = "%\'", LOWER_BEGIN = "LOWER(";
+    @Transactional(readOnly = true)
+    public List<Job> searchJobs(SearchRequestBean searchRequest) {
+        //TODO: generate query here
+        StringBuffer query = new StringBuffer().append(SELECT_QUERY_PREFIX).append(searchRequest.getCompanyId());
+        searchRequest.getSearchParam().forEach(searchParam -> {
+            query.append(AND);
+            if(searchParam.isMultiSelect())
+                query.append(searchParam.getKey()).append(IN_BEGIN).append(searchParam.getValue()).append(BRACKET_CLOSE);
+            else
+                query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(searchParam.getValue()).append(LIKE_END);
+
+        });
+        log.info("Query generated:\n {}", query.toString());
+        return customQueryExecutor.executeSearchQuery(query.toString());//"Select id from job where id < 20;");
     }
 }
