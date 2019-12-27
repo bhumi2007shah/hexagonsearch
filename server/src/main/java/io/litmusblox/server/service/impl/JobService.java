@@ -1276,7 +1276,7 @@ public class JobService implements IJobService {
             if(searchParam.isMultiSelect())
                 query.append(searchParam.getKey()).append(IN_BEGIN).append(searchParam.getValue()).append(BRACKET_CLOSE);
             else
-                query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(searchParam.getValue()).append(LIKE_END);
+                query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(searchParam.getValue().toLowerCase()).append(LIKE_END);
 
         });
         log.info("Query generated:\n {}", query.toString());

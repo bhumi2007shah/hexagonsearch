@@ -285,18 +285,16 @@ public class NoAuthController {
      */
     @GetMapping(value="/searchJobs")
     String searchJobs(@RequestBody String searchRequest) throws Exception {
+        log.info("Received request to search jobs");
+        long startTime = System.currentTimeMillis();
         ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            SearchRequestBean requestBean = objectMapper.readValue(searchRequest, SearchRequestBean.class);
-            List<Job> jobsFound = jobService.searchJobs(requestBean);
-            return Util.stripExtraInfoFromResponseBean(jobsFound,
-                    new HashMap<String, List<String>>() {{
-                        put("Job", Arrays.asList("jobTitle", "jobDescription", "jobLocation", "function", "jobReferenceId"));
-                        put("MasterData", Arrays.asList("value"));
-                    }}, null);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        List<Job> jobsFound = jobService.searchJobs(objectMapper.readValue(searchRequest, SearchRequestBean.class));
+        log.info("Complete processing search operation in {} ms.", (System.currentTimeMillis() - startTime));
+        return Util.stripExtraInfoFromResponseBean(jobsFound,
+                new HashMap<String, List<String>>() {{
+                    put("Job", Arrays.asList("jobTitle", "jobDescription", "jobLocation", "function", "jobReferenceId"));
+                    put("MasterData", Arrays.asList("value"));
+                }}, null);
+
     }
 }

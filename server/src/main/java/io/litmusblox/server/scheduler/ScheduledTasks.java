@@ -40,6 +40,6 @@ public class ScheduledTasks {
         processUploadedCV.rateCv();
     }
 
-//    @Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
+    @Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
     public void processEmailApplications() { fetchEmailService.processEmail(); }
 }
