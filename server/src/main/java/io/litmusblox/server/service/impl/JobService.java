@@ -933,13 +933,14 @@ public class JobService implements IJobService {
         if(!IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())){
 
             //Update Education
-            if (null == masterDataBean.getEducation().get(job.getEducation().getId())) {
-                //throw new ValidationException("In Job, education " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
-                log.error("In Job, education " + IErrorMessages.NULL_MESSAGE + job.getId());
-            }else{
-                oldJob.setEducation(job.getEducation());
+            if(null != job.getEducation()){
+                if (null == masterDataBean.getEducation().get(job.getEducation().getId())) {
+                    //throw new ValidationException("In Job, education " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
+                    log.error("In Job, education " + IErrorMessages.NULL_MESSAGE + job.getId());
+                }else{
+                    oldJob.setEducation(job.getEducation());
+                }
             }
-
             //Update Notice period
             oldJob.setNoticePeriod(job.getNoticePeriod());
         }
