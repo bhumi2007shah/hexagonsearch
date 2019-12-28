@@ -132,6 +132,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Resource
     JobStageStepRepository jobStageStepRepository;
 
+    @Resource
+    EmployeeReferrerRepository employeeReferrerRepository;
+
+    @Resource
+    UserRepository userRepository;
+
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
         return jobRepository.findById(jobId).get();
@@ -1651,5 +1657,69 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
            log.error("{}, File name : {}, For jcmId : ", IErrorMessages.FAILED_TO_SAVE_FILE, candidateCv.getOriginalFilename(), jcmId, ex.getMessage());
             throw new ValidationException(IErrorMessages.FAILED_TO_SAVE_FILE+" "+candidateCv.getOriginalFilename()+ex.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+
+    /**
+     *Service to add candidate via career page, job portal, employee referral
+     *
+     * @param candidateSource from where we source the candidate
+     * @param candidate candidate all info
+     * @param jobReferenceId In which job upload candidate
+     * @param candidateCv candidate cv
+     * @param employeeReferrer if candidate upload by employee referral then this model come
+     * @return UploadResponseBean
+     * @throws Exception
+     */
+    @Transactional
+    public UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer) throws Exception {
+        log.info("Inside uploadCandidateByNoAuthCall");
+        UploadResponseBean responseBean = null;
+        EmployeeReferrer referrerFromDb;
+
+        if(null == candidate.getCandidateName() || candidate.getCandidateName().isEmpty()){
+            candidate.setCandidateName(IConstant.NOT_AVAILABLE);
+            candidate.setFirstName(IConstant.NOT_AVAILABLE);
+        }else{
+            //populate the first name and last name of the candidate
+            Util.handleCandidateName(candidate, candidate.getCandidateName());
+        }
+
+        if(!Arrays.asList(IConstant.CandidateSource.values()).contains(IConstant.CandidateSource.valueOf(candidateSource)))
+            throw new ValidationException("Not a valid candidate source : "+candidateSource, HttpStatus.BAD_REQUEST);
+
+        if(null != candidateCv){
+            String cvFileType = Util.getFileExtension(candidateCv.getOriginalFilename());
+            candidate.getCandidateDetails().setCvFileType("."+cvFileType);
+        }
+        Job job = jobRepository.findByJobReferenceId(jobReferenceId);
+        candidate.setCandidateSource(candidateSource);
+
+        if(null != employeeReferrer){
+            referrerFromDb = employeeReferrerRepository.findByEmail(employeeReferrer.getEmail());
+            if(null == referrerFromDb){
+                referrerFromDb = employeeReferrerRepository.save(new EmployeeReferrer(employeeReferrer.getFirstName(), employeeReferrer.getLastName(), employeeReferrer.getEmail(), employeeReferrer.getEmployeeId(), employeeReferrer.getMobile(), employeeReferrer.getLocation(), employeeReferrer.getCreatedOn()));
+            }
+            referrerFromDb.setReferrerRelation(employeeReferrer.getReferrerRelation());
+            referrerFromDb.setReferrerContactDuration(employeeReferrer.getReferrerContactDuration());
+            candidate.setEmployeeReferrer(referrerFromDb);
+        }
+        //Upload candidate
+        responseBean = uploadIndividualCandidate(Arrays.asList(candidate), job.getId(), false, Optional.ofNullable(userRepository.findByEmail(IConstant.SYSTEM_USER_EMAIL)));
+
+        //Store candidate cv to repository location
+        try{
+            if(null!=candidateCv) {
+                if (responseBean.getSuccessfulCandidates().size()>0)
+                    StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getSuccessfulCandidates().get(0),null);
+                else
+                    StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getFailedCandidates().get(0), null);
+
+                responseBean.setCvStatus(true);
+            }
+        }catch(Exception e){
+            log.error("Resume upload failed :"+e.getMessage());
+            responseBean.setCvErrorMsg(e.getMessage());
+        }
+        return responseBean;
     }
 }

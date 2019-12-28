@@ -57,6 +57,9 @@ public class UploadDataProcessService implements IUploadDataProcessService {
     @Resource
     JobStageStepRepository jobStageStepRepository;
 
+    @Resource
+    CandidateReferralDetailRepository candidateReferralDetailRepository;
+
     @Autowired
     ICandidateService candidateService;
 
@@ -208,6 +211,10 @@ public class UploadDataProcessService implements IUploadDataProcessService {
 
             JobStageStep stageStepForSource = jobStageStepRepository.findStageIdForJob(job.getId(), IConstant.Stage.Source.getValue()).get(0);
             JobCandidateMapping savedObj = jobCandidateMappingRepository.save(new JobCandidateMapping(job,candidateObjToUse,stageStepForSource, candidate.getCandidateSource(), new Date(),loggedInUser, UUID.randomUUID(), candidate.getFirstName(), candidate.getLastName(), (null != candidate.getCandidateDetails())?candidate.getCandidateDetails().getCvFileType():null));
+
+            if(savedObj.getCandidateSource().equals(IConstant.CandidateSource.EmployeeReferral.getValue())){
+                candidateReferralDetailRepository.save(new CandidateReferralDetail(savedObj, candidate.getEmployeeReferrer(), candidate.getEmployeeReferrer().getReferrerRelation(), candidate.getEmployeeReferrer().getReferrerContactDuration()));
+            }
 
             //string to store detail about jcmHistory
             String candidateDetail = "jcm created for "+msg;

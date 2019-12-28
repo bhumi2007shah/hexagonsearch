@@ -131,7 +131,7 @@ public interface IConstant {
     }
 
     enum CandidateSource {
-        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriEmail("NaukriMail");
+        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriEmail("NaukriMail"), EmployeeReferral("EmployeeReferral"), CareerPage("CareerPage"), JobPosting("JobPosting");
         private String value;
 
         CandidateSource(String val) {
@@ -284,6 +284,7 @@ public interface IConstant {
     String ADMIN = "Admin";
 
     String NOT_AVAILABLE_EMAIL = "@notavailable.io";
+    String SYSTEM_USER_EMAIL = "systemuser@hex.com";
 
     String[] fetchItemsType = new String[]{"referrerRelation", "jobType"};
 }
