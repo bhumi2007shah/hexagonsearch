@@ -56,10 +56,10 @@ public class CsvFileProcessorService implements IUploadFileProcessorService {
                 Map<String, String> breadCrumb= new HashMap<>();
                 breadCrumb.put("File Name", fileName);
                 breadCrumb.put("File Type",IConstant.PROCESS_FILE_TYPE.CsvFile.toString());
-                breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.FirstName.getValue(), headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.FirstName.getValue()).toString());
-                breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.LastName.getValue(), headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.LastName.getValue()).toString());
-                breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.Email.getValue(), headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.Email.getValue()).toString());
-                breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.Mobile.getValue(), headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.Mobile.getValue()).toString());
+                breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.FirstName.getValue(), (null!=headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.FirstName.getValue()))?headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.FirstName.getValue()).toString():"");
+                breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.LastName.getValue(), (null!=headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.LastName.getValue()))?headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.LastName.getValue()).toString():"");
+                breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.Email.getValue(), (null!=headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.Email.getValue()))?headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.Email.getValue()).toString():"");
+                breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.Mobile.getValue(), (null!=headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.Mobile.getValue()))?headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.Mobile.getValue()).toString():"");
                 throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY, breadCrumb);
             }
 

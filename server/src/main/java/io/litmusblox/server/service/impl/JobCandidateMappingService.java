@@ -1587,20 +1587,21 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @throws Exception
      */
     public List<ResponseBean> getRchilliError(Long jobId) throws Exception{
-        List<ResponseBean> rChilliErrorResonseBeanList = new ArrayList<>();
+        List<ResponseBean> rChilliErrorResponseBeanList = new ArrayList<>();
 
         //fetch records with error from cv parsing details table using jobId
-        List<CvParsingDetails> cvParsingDetailsList = cvParsingDetailsRepository.getRchilliErrorResonseBeanList(jobId);
+        List<CvParsingDetails> cvParsingDetailsList = cvParsingDetailsRepository.getRchilliErrorResponseBeanList(jobId);
 
         //for each cv parsing record create rchilliResponseBean and push to rChilliResponseBeanList
         cvParsingDetailsList.forEach(cvParsingDetails -> {
-            ResponseBean rChilliErrorResonseBean = new ResponseBean();
-            rChilliErrorResonseBean.setFileName(cvParsingDetails.getCvFileName().replaceAll("\\d+_\\d+_",""));
-            rChilliErrorResonseBean.setProcessedOn(cvParsingDetails.getProcessedOn());
-            rChilliErrorResonseBean.setStatus(cvParsingDetails.getProcessingStatus());
-            rChilliErrorResonseBeanList.add(rChilliErrorResonseBean);
+            ResponseBean rChilliErrorResponseBean = new ResponseBean();
+            //Replace job id and user id from file name to return clean file name as uploaded by user.
+            rChilliErrorResponseBean.setFileName(cvParsingDetails.getCvFileName().replaceAll("\\d+_\\d+_",""));
+            rChilliErrorResponseBean.setProcessedOn(cvParsingDetails.getProcessedOn());
+            rChilliErrorResponseBean.setStatus(cvParsingDetails.getProcessingStatus());
+            rChilliErrorResponseBeanList.add(rChilliErrorResponseBean);
         });
-        return rChilliErrorResonseBeanList;
+        return rChilliErrorResponseBeanList;
     }
 
     /**
