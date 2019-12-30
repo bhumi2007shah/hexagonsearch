@@ -21,6 +21,8 @@ import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Service class for Candidate related operations
@@ -138,6 +140,24 @@ public class CandidateService implements ICandidateService {
             return dupCandidateByEmail;
         }
         return dupCandidateByEmail;
+    }
+
+    public Candidate findByProfileTypeAndUniqueId(List<CandidateOnlineProfile> candidateOnlineProfiles) throws Exception{
+        //extract uniqueId for linkedIn and searching for candidate with this profile in DB.
+        Candidate candidateFromDB = null;
+        Optional<CandidateOnlineProfile> profileToSearch = candidateOnlineProfiles.stream()
+                .filter(candidateOnlineProfile -> candidateOnlineProfile.getProfileType().equalsIgnoreCase(IConstant.CandidateSource.LinkedIn.toString().toLowerCase()))
+                .findAny();
+        if(profileToSearch.isPresent()){
+            Pattern pattern = Pattern.compile(IConstant.REGEX_TO_FIND_ONLINE_PROFILE_UNIQUE_ID);
+            Matcher matcher = pattern.matcher(profileToSearch.get().getUrl());
+            if(matcher.find()) {
+                candidateFromDB = candidateRepository.findCandidateByProfileTypeAndUniqueId(
+                        IConstant.CandidateSource.LinkedIn.toString().toLowerCase(), matcher.group()
+                );
+            }
+        }
+        return candidateFromDB;
     }
 
     /**

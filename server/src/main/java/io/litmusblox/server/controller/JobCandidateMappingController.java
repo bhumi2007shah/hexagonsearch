@@ -197,6 +197,8 @@ public class JobCandidateMappingController {
                     put("CandidateSkillDetails", Arrays.asList("id","candidateId"));
                     put("CandidateWorkAuthorization", Arrays.asList("id","candidateId"));
                     put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
+                    put("CompanyAddress", new ArrayList<>(0));
                 }});
         log.info("Completed processing fetch candidate profile request in " + (System.currentTimeMillis()-startTime) + "ms.");
         return response;

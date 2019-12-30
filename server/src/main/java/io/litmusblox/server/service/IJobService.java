@@ -7,6 +7,7 @@ package io.litmusblox.server.service;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobHistory;
 import io.litmusblox.server.model.JobStageStep;
+import io.litmusblox.server.service.impl.SearchRequestBean;
 
 import java.util.List;
 import java.util.Map;
@@ -123,4 +124,12 @@ public interface IJobService {
      * @return
      */
     Job findByJobReferenceId(UUID jobReferenceId);
+
+    /**
+     * Service method to find list of jobs matching the search criteria
+     *
+     * @param searchRequest the request bean with company id and map of search paramters
+     * @return List of jobs
+     */
+    List<Job> searchJobs(SearchRequestBean searchRequest);
 }
