@@ -14,7 +14,7 @@ import java.util.Date;
  * @author : sameer
  * Date : 26/11/19
  * Time : 3:48 PM
- * Class Name : RChilliErrorResonseBean
+ * Class Name : ResponseBean
  * Project Name : server
  */
 

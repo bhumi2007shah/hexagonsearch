@@ -157,9 +157,12 @@ public class CandidateService implements ICandidateService {
         log.info("Inside createCandidate method - create candidate, emailHistory, mobileHistory");
         Candidate candidate = candidateRepository.save(new Candidate(firstName, lastName, email, mobile, countryCode, new Date(), loggedInUser));
         candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, email, new Date(), loggedInUser));
-        candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobile, countryCode, new Date(), loggedInUser));
+        if(null != mobile)
+            candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobile, countryCode, new Date(), loggedInUser));
+
         if(alternateMobile.isPresent())
             candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, alternateMobile.get(), countryCode, new Date(), loggedInUser));
+
         return candidate;
     }
 
@@ -206,6 +209,10 @@ public class CandidateService implements ICandidateService {
             }
             if (!Util.isNull(obj.getDegree()) && obj.getDegree().length() > IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue()){
                 obj.setDegree(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.DEGREE.name(), IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue(), obj.getDegree()));
+            }
+
+            if (!Util.isNull(obj.getSpecialization()) && obj.getSpecialization().length() > IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.getValue()){
+                obj.setSpecialization(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.name(), IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.getValue(), obj.getSpecialization()));
             }
 
             try{

@@ -10,6 +10,7 @@ import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.model.JobScreeningQuestions;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.IJobCandidateMappingService;
+import io.litmusblox.server.service.IMasterDataService;
 import io.litmusblox.server.service.TechChatbotRequestBean;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
 import io.litmusblox.server.utils.Util;
@@ -51,6 +52,9 @@ public class NoAuthController {
 
     @Autowired
     private HttpServletRequest servletRequest;
+
+    @Autowired
+    IMasterDataService masterDataService;
 
     @Value("${scoringEngineIpAddress}")
     private String scoringEngineIpAddress;
@@ -230,5 +234,19 @@ public class NoAuthController {
         long startTime = System.currentTimeMillis();
         jobCandidateMappingService.updateTechResponseStatus(requestBean);
         log.info("Completed processing request to update tech chatbot status in " + (System.currentTimeMillis() - startTime) + "ms.");
+    }
+
+    /**
+     * Service to get masterData for only specific fields, which is used in noAuth call
+     *
+     * @param requestItems (fileType, referrerRelation)
+     * @return MasterData
+     * @throws Exception
+     */
+    @PostMapping(value="/fetch/items")
+    String fetchItems(@RequestBody List<String> requestItems) throws Exception {
+        return Util.stripExtraInfoFromResponseBean(
+                masterDataService.fetchForItemsForNoAuth(requestItems),null,
+                null);
     }
 }

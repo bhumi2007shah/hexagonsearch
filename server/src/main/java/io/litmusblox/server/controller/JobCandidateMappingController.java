@@ -65,7 +65,7 @@ public class JobCandidateMappingController {
         log.info("Received request to add a list of individually added candidates. Number of candidates to be added: " + candidate.size());
         log.info("Candidate name: " + candidate.get(0).getFirstName()+" "+candidate.get(0).getLastName());
         long startTime = System.currentTimeMillis();
-        UploadResponseBean responseBean = jobCandidateMappingService.uploadIndividualCandidate(candidate, jobId, false);
+        UploadResponseBean responseBean = jobCandidateMappingService.uploadIndividualCandidate(candidate, jobId, false, null);
         log.info("Completed processing list of candidates in " + (System.currentTimeMillis()-startTime) + "ms.");
         return Util.stripExtraInfoFromResponseBean(responseBean, null,
                 new HashMap<String, List<String>>() {{
@@ -116,7 +116,7 @@ public class JobCandidateMappingController {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
         Candidate candidate=objectMapper.readValue(candidateString, Candidate.class);
-        UploadResponseBean responseBean = jobCandidateMappingService.uploadCandidateFromPlugin(candidate, jobId, candidateCv);
+        UploadResponseBean responseBean = jobCandidateMappingService.uploadCandidateFromPlugin(candidate, jobId, candidateCv, null);
         log.info("Completed adding candidate from plugin in " + (System.currentTimeMillis()-startTime) + "ms.");
         return Util.stripExtraInfoFromResponseBean(responseBean, null,
                 new HashMap<String, List<String>>() {{
@@ -134,12 +134,15 @@ public class JobCandidateMappingController {
      */
     @PostMapping(value = "/inviteCandidates")
     @ResponseStatus(value = HttpStatus.OK)
-    InviteCandidateResponseBean inviteCandidates(@RequestBody List<Long> jcmList) throws Exception {
+    String inviteCandidates(@RequestBody List<Long> jcmList) throws Exception {
         log.info("Received request to invite candidates");
         long startTime = System.currentTimeMillis();
         InviteCandidateResponseBean inviteCandidateResponseBean = jobCandidateMappingService.inviteCandidates(jcmList);
         log.info("Completed inviting candidates in " + (System.currentTimeMillis()-startTime)+"ms.");
-        return inviteCandidateResponseBean;
+        return Util.stripExtraInfoFromResponseBean(inviteCandidateResponseBean,
+                new HashMap<String, List<String>>() {{
+                    put("Candidate", new ArrayList<>(0));
+                }}, null);
     }
 
     /**
@@ -264,8 +267,42 @@ public class JobCandidateMappingController {
     List<ResponseBean> getRchilliError(@PathVariable("jobId") @NotNull Long jobId)throws Exception{
         log.info("Received request to fetch drag and drop cv error list for jobId: "+jobId);
         long startTime = System.currentTimeMillis();
-        List<ResponseBean> rChilliErrorResonseBeanList=  jobCandidateMappingService.getRchilliError(jobId);
+        List<ResponseBean> rChilliErrorResponseBeanList=  jobCandidateMappingService.getRchilliError(jobId);
         log.info("Completed processing frequest to fetch drag and drop cv error list for jobId: "+ jobId+ " in "+ (System.currentTimeMillis()-startTime) + "ms.");
-        return rChilliErrorResonseBeanList;
+        return rChilliErrorResponseBeanList;
+    }
+
+    /**
+     *  REST API to get candidate history by jcm id
+     *
+     * @param jcmId
+     * @return Return JcmHistory list
+     */
+    @GetMapping(value = {"/candidateHistory/{jcmId}"})
+    @ResponseStatus(value = HttpStatus.OK)
+    String retrieveCandidateHistory(@PathVariable Long jcmId){
+        log.info("inside retrieveCandidateHistory");
+        return Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.retrieveCandidateHistory(jcmId),
+                new HashMap<String, List<String>>() {{
+                    put("User", Arrays.asList("displayName"));
+                    put("JobStageStep", new ArrayList<>(0));
+                    put("JobCandidateMapping",  new ArrayList<>(0));
+                }},
+                new HashMap<String, List<String>>() {{
+                    put("JcmHistory", Arrays.asList("id", "jcmId", "stage"));
+                }});
+    }
+
+    /**
+     * REST API to add comment for candidate
+     *
+     * @param requestJson RequestJson map contain jcmId and comment
+     * @param callOutcome Call out come predefine strings
+     */
+    @PostMapping(value = {"/addComment", "/addComment/{callOutcome}"})
+    @ResponseStatus(value = HttpStatus.OK)
+    void addComment(@RequestBody Map<String, String> requestJson, @PathVariable(required = false, value = "callOutcome") Optional callOutcome){
+        log.info("inside addComment");
+        jobCandidateMappingService.addComment(requestJson.get("comment"), Long.parseLong(requestJson.get("jcmId")), callOutcome.isPresent()?callOutcome.get().toString():null);
     }
 }

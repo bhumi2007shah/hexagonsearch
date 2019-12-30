@@ -155,11 +155,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      *
      * @param candidates the list of candidates to be added
      * @param jobId      the job for which the candidate is to be added
+     * @param createdBy optional paramter, createdBy, will be supplied only when calling processing candidates from mail
      * @return the status of upload operation
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public UploadResponseBean uploadIndividualCandidate(List<Candidate> candidates, Long jobId, boolean ignoreMobile) throws Exception {
+    public UploadResponseBean uploadIndividualCandidate(List<Candidate> candidates, Long jobId, boolean ignoreMobile, Optional<User> createdBy) throws Exception {
 
         //verify that the job is live before processing candidates
         Job job = jobRepository.getOne(jobId);
@@ -171,7 +172,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
 
         UploadResponseBean uploadResponseBean = new UploadResponseBean();
-        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User loggedInUser = (null != createdBy && createdBy.isPresent())?createdBy.get():(User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Date createdOn=Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
 
         int candidateProcessed=jobCandidateMappingRepository.getUploadedCandidateCount(createdOn,loggedInUser);
@@ -196,7 +197,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     private void processCandidateData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, User loggedInUser, Long jobId, int candidateProcessed, boolean ignoreMobile) throws Exception{
 
         if (null != candidateList && candidateList.size() > 0) {
-            iUploadDataProcessService.processData(candidateList, uploadResponseBean, candidateProcessed,jobId, ignoreMobile);
+            iUploadDataProcessService.processData(candidateList, uploadResponseBean, candidateProcessed,jobId, ignoreMobile, Optional.of(loggedInUser));
         }
 
         for (Candidate candidate:candidateList) {
@@ -396,11 +397,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      *
      * @param candidate the candidate to be added
      * @param jobId     the job for which the candidate is to be added
+     * @param createdBy optional paramter, createdBy, will be supplied only when calling processing candidates from mail
      * @return the status of upload operation
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public UploadResponseBean uploadCandidateFromPlugin(Candidate candidate, Long jobId, MultipartFile candidateCv) throws Exception {
+    public UploadResponseBean uploadCandidateFromPlugin(Candidate candidate, Long jobId, MultipartFile candidateCv, Optional<User> createdBy) throws Exception {
         UploadResponseBean responseBean = null;
         if (null != candidate) {
 
@@ -418,7 +420,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             }
 
             //check source of candidate and set source as coorect one from IConstant
-            if(candidate.getCandidateSource().contains(IConstant.CandidateSource.Naukri.getValue())){
+            if (candidate.getCandidateSource().contains(IConstant.CandidateSource.NaukriEmail.getValue()))
+                candidate.setCandidateSource(IConstant.CandidateSource.NaukriEmail.getValue());
+            else if(candidate.getCandidateSource().contains(IConstant.CandidateSource.Naukri.getValue())){
                 candidate.setCandidateSource(IConstant.CandidateSource.Naukri.getValue());
             }
             else if(candidate.getCandidateSource().contains(IConstant.CandidateSource.LinkedIn.getValue())){
@@ -442,10 +446,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                     }
                 });
             }
-            if(candidate.getMobile().isEmpty() || null == candidate.getMobile())
-                responseBean = uploadIndividualCandidate(Arrays.asList(candidate), jobId, true);
-            else
-                responseBean = uploadIndividualCandidate(Arrays.asList(candidate), jobId, false);
+
+            responseBean = uploadIndividualCandidate(Arrays.asList(candidate), jobId, (null == candidate.getMobile() || candidate.getMobile().isEmpty()), createdBy);
 
             //Store candidate cv to repository location
             try{
@@ -1591,19 +1593,49 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @throws Exception
      */
     public List<ResponseBean> getRchilliError(Long jobId) throws Exception{
-        List<ResponseBean> rChilliErrorResonseBeanList = new ArrayList<>();
+        List<ResponseBean> rChilliErrorResponseBeanList = new ArrayList<>();
 
         //fetch records with error from cv parsing details table using jobId
-        List<CvParsingDetails> cvParsingDetailsList = cvParsingDetailsRepository.getRchilliErrorResonseBeanList(jobId);
+        List<CvParsingDetails> cvParsingDetailsList = cvParsingDetailsRepository.getRchilliErrorResponseBeanList(jobId);
 
         //for each cv parsing record create rchilliResponseBean and push to rChilliResponseBeanList
         cvParsingDetailsList.forEach(cvParsingDetails -> {
-            ResponseBean rChilliErrorResonseBean = new ResponseBean();
-            rChilliErrorResonseBean.setFileName(cvParsingDetails.getCvFileName().replaceAll("\\d+_\\d+_",""));
-            rChilliErrorResonseBean.setProcessedOn(cvParsingDetails.getProcessedOn());
-            rChilliErrorResonseBean.setStatus(cvParsingDetails.getProcessingStatus());
-            rChilliErrorResonseBeanList.add(rChilliErrorResonseBean);
+            ResponseBean rChilliErrorResponseBean = new ResponseBean();
+            //Replace job id and user id from file name to return clean file name as uploaded by user.
+            rChilliErrorResponseBean.setFileName(cvParsingDetails.getCvFileName().replaceAll("\\d+_\\d+_",""));
+            rChilliErrorResponseBean.setProcessedOn(cvParsingDetails.getProcessedOn());
+            rChilliErrorResponseBean.setStatus(cvParsingDetails.getProcessingStatus());
+            rChilliErrorResponseBeanList.add(rChilliErrorResponseBean);
         });
-        return rChilliErrorResonseBeanList;
+        return rChilliErrorResponseBeanList;
+    }
+
+    /**
+     * Service method to get candidate history related to jcm
+     *
+     * @param jcmId
+     * @return JcmHistory list
+     */
+    @Transactional
+    public List<JcmHistory> retrieveCandidateHistory(Long jcmId) {
+        JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findById(jcmId).orElse(null);
+        return jcmHistoryRepository.getJcmHistoryList(jobCandidateMapping.getJob().getCompanyId().getId(), jobCandidateMapping.getCandidate().getId());
+    }
+
+    /**
+     *
+     * @param comment comment add by  recruiter
+     * @param jcmId for which jcm we need to create jcm history
+     * @param callOutCome callOutCome if callOutCome is present then set in jcm history
+     */
+    @Transactional
+    public void addComment(String comment, Long jcmId, String callOutCome) {
+        log.info("inside addComment");
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findById(jcmId).orElse(null);
+        if(null == jobCandidateMapping)
+            throw new ValidationException("Job candidate not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
+
+        jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, comment, callOutCome, false, new Date(), jobCandidateMapping.getStage(), loggedInUser));
     }
 }
