@@ -162,7 +162,7 @@ public class JobController {
         return Util.stripExtraInfoFromResponseBean(
                 jobService.getJobDetails(jobId),
                 (new HashMap<String, List<String>>(){{
-                    put("User",Arrays.asList("displayName"));
+                    put("User",Arrays.asList("id","displayName"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",new ArrayList<>(0));
@@ -171,8 +171,8 @@ public class JobController {
                     put("CompanyScreeningQuestion",new ArrayList<>(0));
                     put("UserScreeningQuestion",new ArrayList<>(0));
                     put("JobCapabilities",new ArrayList<>(0));
-                    put("JobStageStep",new ArrayList<>(0));
-                    put("CompanyStageStep",new ArrayList<>(0));
+                    put("JobStageStep", Arrays.asList("updatedBy", "updatedOn", "createdBy", "createdOn", "jobId"));
+                    put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
                     put("StageMaster",new ArrayList<>(0));
                 }}));
         //return jobService.getJobDetails(jobId);
