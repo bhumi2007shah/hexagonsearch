@@ -1185,7 +1185,7 @@ VALUES
 (1, 'chatbotStatus','Chatbot Status', 2),
 (1, 'currentStage','Stage', 3),
 (1, 'keySkillsStrength','Key Skills Strength', 4),
-(1, 'currentCompany','Current Commpany', 5),
+(1, 'currentCompany','Current Company', 5),
 (1, 'currentDesignation','Current Designation', 6),
 (1, 'email','Email', 7),
 (1, 'countryCode','Country Code', 8),
