@@ -41,6 +41,7 @@ public interface IConstant {
     String REGEX_FOR_NAME_VALIDATION = "[a-zA-Z\\-][a-zA-Z.\\-\\s]*";
     String REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_NAME = "[^\\w\\s\\-]*";
     String REGEX_FOR_DOT_IN_NAME = "(?<=[a.zA-Z\\.]\\s)+";
+    String REGEX_TO_FIND_ONLINE_PROFILE_UNIQUE_ID = "(?<=\\/)[\\w-]+$";
 
 
     // lengths
