@@ -168,7 +168,7 @@ public class JobController {
         return Util.stripExtraInfoFromResponseBean(
                 jobService.getJobDetails(jobId),
                 (new HashMap<String, List<String>>(){{
-                    put("User",Arrays.asList("displayName"));
+                    put("User",Arrays.asList("id","displayName"));
                     put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
@@ -178,8 +178,8 @@ public class JobController {
                     put("CompanyScreeningQuestion",new ArrayList<>(0));
                     put("UserScreeningQuestion",new ArrayList<>(0));
                     put("JobCapabilities",new ArrayList<>(0));
-                    put("JobStageStep",new ArrayList<>(0));
-                    put("CompanyStageStep",new ArrayList<>(0));
+                    put("JobStageStep", Arrays.asList("updatedBy", "updatedOn", "createdBy", "createdOn", "jobId"));
+                    put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
                     put("StageMaster",new ArrayList<>(0));
                     put("MasterData", new ArrayList<>(0));
                 }}));
@@ -235,13 +235,13 @@ public class JobController {
     }
 
     @GetMapping(value = {"/exportdata/{jobId}", "/exportdata/{jobId}/{formatId}"})
-    String exportData(@PathVariable("jobId") Long jobId, @PathVariable(required = false, value = "formatId") Optional<Long>formatId) throws Exception{
+    String exportData(@PathVariable("jobId") Long jobId, @PathVariable(required = false, value = "formatId") Optional<Long>formatId, @RequestParam("stage")String stage) throws Exception{
         String data=null;
         if(!formatId.isPresent()){
-            data = jobService.exportData(jobId, null);
+            data = jobService.exportData(jobId, null, stage);
         }
         else{
-            data = jobService.exportData(jobId, formatId.get());
+            data = jobService.exportData(jobId, formatId.get(), stage);
         }
         return data;
     }
