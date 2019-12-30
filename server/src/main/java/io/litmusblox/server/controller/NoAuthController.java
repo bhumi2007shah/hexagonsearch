@@ -20,6 +20,7 @@ import io.litmusblox.server.service.IMasterDataService;
 import io.litmusblox.server.service.TechChatbotRequestBean;
 import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
+import io.litmusblox.server.service.impl.SearchRequestBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
