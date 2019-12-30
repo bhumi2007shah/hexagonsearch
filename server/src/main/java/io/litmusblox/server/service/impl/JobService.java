@@ -376,7 +376,7 @@ public class JobService implements IJobService {
     @Transactional
     public SingleJobViewResponseBean getJobViewById(Long jobId, String stage) throws Exception {
         log.info("Received request to request to find a list of all candidates for job: {} and stage {} ",jobId, stage);
-        long startTime = System.currentTimeMillis();
+        long startTimeMethod = System.currentTimeMillis(), startTime = System.currentTimeMillis();
         //If the job is not published, do not process the request
         Job job = jobRepository.getOne(jobId);
 
@@ -413,7 +413,10 @@ public class JobService implements IJobService {
         else
             jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, jobStageStepRepository.findStageIdForJob(jobId, stage));
 
-        jcmList.forEach(jcmFromDb-> {
+        log.info("****Time to fetch jcmList {} ms", (System.currentTimeMillis() - startTime));
+        startTime = System.currentTimeMillis();
+
+        jcmList.parallelStream().forEach(jcmFromDb-> {
             jcmFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(jcmFromDb.getId()));
             jcmFromDb.setCvRating(cvRatingRepository.findByJobCandidateMappingId(jcmFromDb.getId()));
 
@@ -443,9 +446,18 @@ public class JobService implements IJobService {
                             .collect(Collectors.toList())
             );
         });
+        log.info("****JCM list populated with profile sharing, hiring manager and all details in {} ms", (System.currentTimeMillis() - startTime));
+        startTime = System.currentTimeMillis();
+
         Collections.sort(jcmList);
 
+        log.info("****Sorting of jcmlist done in {} ms", (System.currentTimeMillis()-startTime));
+        startTime = System.currentTimeMillis();
+
         responseBean.setCandidateList(jcmList);
+
+        //log.info("****Populated list of candidates in {} ms", (System.currentTimeMillis() - startTime));
+        //startTime = System.currentTimeMillis();
 
         Map<Long, String> stagesForJob = convertObjectArrayToMap(jobRepository.findStagesForJob(jobId));
 
@@ -460,7 +472,8 @@ public class JobService implements IJobService {
         });
         //add count of rejected candidates
         responseBean.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(),  jobCandidateMappingRepository.findRejectedCandidateCount(jobId));
-        log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.", jobId, stage ,(System.currentTimeMillis() - startTime));
+        log.info("****Populated response bean with various stage specific counts in {} ms", (System.currentTimeMillis() - startTime));
+        log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.", jobId, stage ,(System.currentTimeMillis() - startTimeMethod));
 
         return responseBean;
     }
