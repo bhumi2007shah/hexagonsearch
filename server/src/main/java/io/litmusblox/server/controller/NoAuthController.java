@@ -4,15 +4,19 @@
 
 package io.litmusblox.server.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.error.WebException;
+import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.model.JobScreeningQuestions;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.IJobCandidateMappingService;
+import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.IMasterDataService;
 import io.litmusblox.server.service.TechChatbotRequestBean;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
+import io.litmusblox.server.service.impl.SearchRequestBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +60,9 @@ public class NoAuthController {
     @Autowired
     IMasterDataService masterDataService;
 
+    @Autowired
+    IJobService jobService;
+
     @Value("${scoringEngineIpAddress}")
     private String scoringEngineIpAddress;
 
@@ -82,6 +89,7 @@ public class NoAuthController {
                     put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
                     put("JobScreeningQuestions", Arrays.asList("jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("ScreeningQuestions", new ArrayList<>(0));
+                    put("MasterData", new ArrayList<>(0));
                 }}
         );
         if(response.size() >0 ) {
@@ -117,7 +125,7 @@ public class NoAuthController {
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails","createdOn","createdBy","candidateSource","firstName","lastName","candidateSource","CandidateCompanyDetails"));
                     put("Company", Arrays.asList("companyAddressList", "companyBuList"));
                     put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData"));
-
+                    put("MasterData", new ArrayList<>(0));
             }}
         );
     }
@@ -207,6 +215,8 @@ public class NoAuthController {
                     put("CandidateSkillDetails", Arrays.asList("id","candidateId"));
                     put("CandidateWorkAuthorization", Arrays.asList("id","candidateId"));
                     put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
+                    put("CompanyAddress", new ArrayList<>(0));
                 }});
        // log.info("before call to replace:\n {}",response);
         response = response.replaceAll(Pattern.quote("$companyName"),responseObj.getCreatedBy().getCompany().getCompanyName());
@@ -247,6 +257,46 @@ public class NoAuthController {
     String fetchItems(@RequestBody List<String> requestItems) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
                 masterDataService.fetchForItemsForNoAuth(requestItems),null,
-                null);
+                new HashMap<String, List<String>>() {{
+                    put("MasterData", new ArrayList<>(0));
+                }});
+    }
+
+    /**
+     * API to return job details based on job reference id
+     *
+     * @param jobReferenceId job reference id to search for
+     * @return String representation of the job details information
+     * @throws Exception
+     */
+    @GetMapping(value = "/jobDetailsByReferenceId/{jobReferenceId}")
+    String jobDetailsByReferenceId(@PathVariable("jobReferenceId") UUID jobReferenceId) throws Exception {
+        return Util.stripExtraInfoFromResponseBean(jobService.findByJobReferenceId(jobReferenceId),
+                new HashMap<String, List<String>>() {{
+                    put("Job",Arrays.asList("jobTitle","jobDescription", "jobLocation" , "function"));
+                    put("MasterData", Arrays.asList("value"));
+                }}, null);
+    }
+
+    /**
+     * API to search jobs for a company based on search criteria
+     *
+     * @param searchRequest the request bean with search criteria
+     * @return the list of jobs matching the search criteria
+     */
+    @GetMapping(value="/searchJobs")
+    String searchJobs(@RequestBody String searchRequest) throws Exception {
+        log.info("Received request to search jobs");
+        long startTime = System.currentTimeMillis();
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<Job> jobsFound = jobService.searchJobs(objectMapper.readValue(searchRequest, SearchRequestBean.class));
+        log.info("Complete processing search operation in {} ms.", (System.currentTimeMillis() - startTime));
+        return Util.stripExtraInfoFromResponseBean(jobsFound,
+                new HashMap<String, List<String>>() {{
+                    put("Job", Arrays.asList("jobTitle", "jobDescription", "jobLocation", "function", "jobReferenceId","jobType"));
+                    put("CompanyAddress", Arrays.asList("address"));
+                    put("MasterData", Arrays.asList("value"));
+                }}, null);
+
     }
 }

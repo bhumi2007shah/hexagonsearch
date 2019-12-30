@@ -14,7 +14,10 @@ import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.exportData.ExportData;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
-import io.litmusblox.server.service.*;
+import io.litmusblox.server.service.IJobService;
+import io.litmusblox.server.service.JobWorspaceResponseBean;
+import io.litmusblox.server.service.MasterDataBean;
+import io.litmusblox.server.service.SingleJobViewResponseBean;
 import io.litmusblox.server.service.impl.ml.RolePredictionBean;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.SentryUtil;
@@ -35,6 +38,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -85,9 +89,6 @@ public class JobService implements IJobService {
     SkillMasterRepository skillMasterRepository;
 
     @Resource
-    MasterDataRepository masterDataRepository;
-
-    @Resource
     CompanyAddressRepository companyAddressRepository;
 
     @Resource
@@ -111,9 +112,6 @@ public class JobService implements IJobService {
     @Resource
     JcmProfileSharingDetailsRepository jcmProfileSharingDetailsRepository;
 
-    @Autowired
-    IScreeningQuestionService screeningQuestionService;
-
     @Resource
     JobHistoryRepository jobHistoryRepository;
 
@@ -134,6 +132,9 @@ public class JobService implements IJobService {
 
     @PersistenceContext
     EntityManager em;
+
+    @Autowired
+    CustomQueryExecutor customQueryExecutor;
 
     @Value("${mlApiUrl}")
     private String mlUrl;
@@ -376,7 +377,7 @@ public class JobService implements IJobService {
     @Transactional
     public SingleJobViewResponseBean getJobViewById(Long jobId, String stage) throws Exception {
         log.info("Received request to request to find a list of all candidates for job: {} and stage {} ",jobId, stage);
-        long startTime = System.currentTimeMillis();
+        long startTimeMethod = System.currentTimeMillis(), startTime = System.currentTimeMillis();
         //If the job is not published, do not process the request
         Job job = jobRepository.getOne(jobId);
 
@@ -413,7 +414,10 @@ public class JobService implements IJobService {
         else
             jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, jobStageStepRepository.findStageIdForJob(jobId, stage));
 
-        jcmList.forEach(jcmFromDb-> {
+        log.info("****Time to fetch jcmList {} ms", (System.currentTimeMillis() - startTime));
+        startTime = System.currentTimeMillis();
+
+        jcmList.parallelStream().forEach(jcmFromDb-> {
             jcmFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(jcmFromDb.getId()));
             jcmFromDb.setCvRating(cvRatingRepository.findByJobCandidateMappingId(jcmFromDb.getId()));
 
@@ -443,9 +447,18 @@ public class JobService implements IJobService {
                             .collect(Collectors.toList())
             );
         });
+        log.info("****JCM list populated with profile sharing, hiring manager and all details in {} ms", (System.currentTimeMillis() - startTime));
+        startTime = System.currentTimeMillis();
+
         Collections.sort(jcmList);
 
+        log.info("****Sorting of jcmlist done in {} ms", (System.currentTimeMillis()-startTime));
+        startTime = System.currentTimeMillis();
+
         responseBean.setCandidateList(jcmList);
+
+        //log.info("****Populated list of candidates in {} ms", (System.currentTimeMillis() - startTime));
+        //startTime = System.currentTimeMillis();
 
         Map<Long, String> stagesForJob = convertObjectArrayToMap(jobRepository.findStagesForJob(jobId));
 
@@ -460,7 +473,8 @@ public class JobService implements IJobService {
         });
         //add count of rejected candidates
         responseBean.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(),  jobCandidateMappingRepository.findRejectedCandidateCount(jobId));
-        log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.", jobId, stage ,(System.currentTimeMillis() - startTime));
+        log.info("****Populated response bean with various stage specific counts in {} ms", (System.currentTimeMillis() - startTime));
+        log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.", jobId, stage ,(System.currentTimeMillis() - startTimeMethod));
 
         return responseBean;
     }
@@ -933,13 +947,14 @@ public class JobService implements IJobService {
         if(!IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())){
 
             //Update Education
-            if (null == masterDataBean.getEducation().get(job.getEducation().getId())) {
-                //throw new ValidationException("In Job, education " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
-                log.error("In Job, education " + IErrorMessages.NULL_MESSAGE + job.getId());
-            }else{
-                oldJob.setEducation(job.getEducation());
+            if(null != job.getEducation()){
+                if (null == masterDataBean.getEducation().get(job.getEducation().getId())) {
+                    //throw new ValidationException("In Job, education " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
+                    log.error("In Job, education " + IErrorMessages.NULL_MESSAGE + job.getId());
+                }else{
+                    oldJob.setEducation(job.getEducation());
+                }
             }
-
             //Update Notice period
             oldJob.setNoticePeriod(job.getNoticePeriod());
         }
@@ -1248,5 +1263,48 @@ public class JobService implements IJobService {
     @Transactional(readOnly = true)
     public Job findByJobReferenceId(UUID jobReferenceId) {
         return jobRepository.findByJobReferenceId(jobReferenceId);
+    }
+
+
+    /**
+     * Service method to find list of jobs matching the search criteria
+     *
+     * @param searchRequest the request bean with company id and map of search paramters
+     * @return List of jobs
+     */
+    static String SELECT_QUERY_PREFIX = "Select jobId from jobDetailsView where companyId = ";
+    static String AND = " and ", IN_BEGIN = " in (", BRACKET_CLOSE = ")", LIKE_BEGIN = " LIKE \'%", LIKE_END = "%\'", LOWER_BEGIN = "LOWER(", OR = " or ";
+    @Transactional(readOnly = true)
+    public List<Job> searchJobs(SearchRequestBean searchRequest) {
+        //TODO: generate query here
+        StringBuffer query = new StringBuffer().append(SELECT_QUERY_PREFIX).append(searchRequest.getCompanyId());
+        if(searchRequest.getSearchParam().size()>0)
+            query.append(AND);
+        final AtomicBoolean firstSearchParam = new AtomicBoolean(true);
+        searchRequest.getSearchParam().forEach(searchParam -> {
+            if(firstSearchParam.get()) {
+                query.append("(");
+                firstSearchParam.set(false);
+            }
+            else
+                query.append(OR);
+
+            if(searchParam.isMultiSelect())
+                query.append(searchParam.getKey()).append(IN_BEGIN).append(searchParam.getValue()).append(BRACKET_CLOSE);
+            else {
+                String[] searchValues = searchParam.getValue().toLowerCase().split(",");
+                for (int i=0;i<searchValues.length;i++) {
+                    if (i>0)
+                        query.append(OR);
+                    query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(searchValues[i].toLowerCase()).append(LIKE_END);
+                }
+                //query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(searchParam.getValue().toLowerCase()).append(LIKE_END);
+            }
+        });
+        if(searchRequest.getSearchParam().size()>0)
+            query.append(BRACKET_CLOSE);
+
+        log.info("Query generated:\n {}", query.toString());
+        return customQueryExecutor.executeSearchQuery(query.toString());//"Select id from job where id < 20;");
     }
 }

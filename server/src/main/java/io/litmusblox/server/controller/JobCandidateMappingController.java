@@ -134,12 +134,15 @@ public class JobCandidateMappingController {
      */
     @PostMapping(value = "/inviteCandidates")
     @ResponseStatus(value = HttpStatus.OK)
-    InviteCandidateResponseBean inviteCandidates(@RequestBody List<Long> jcmList) throws Exception {
+    String inviteCandidates(@RequestBody List<Long> jcmList) throws Exception {
         log.info("Received request to invite candidates");
         long startTime = System.currentTimeMillis();
         InviteCandidateResponseBean inviteCandidateResponseBean = jobCandidateMappingService.inviteCandidates(jcmList);
         log.info("Completed inviting candidates in " + (System.currentTimeMillis()-startTime)+"ms.");
-        return inviteCandidateResponseBean;
+        return Util.stripExtraInfoFromResponseBean(inviteCandidateResponseBean,
+                new HashMap<String, List<String>>() {{
+                    put("Candidate", new ArrayList<>(0));
+                }}, null);
     }
 
     /**
@@ -194,6 +197,8 @@ public class JobCandidateMappingController {
                     put("CandidateSkillDetails", Arrays.asList("id","candidateId"));
                     put("CandidateWorkAuthorization", Arrays.asList("id","candidateId"));
                     put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
+                    put("CompanyAddress", new ArrayList<>(0));
                 }});
         log.info("Completed processing fetch candidate profile request in " + (System.currentTimeMillis()-startTime) + "ms.");
         return response;

@@ -55,6 +55,8 @@ public class JobController {
                 put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
                 put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                 put("JobCapabilities", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
+                put("MasterData", new ArrayList<>(0));
+                put("CompanyAddress", new ArrayList<>(0));
             }})
         );
     }
@@ -73,9 +75,11 @@ public class JobController {
                 jobService.findAllJobsForUser((archived.isPresent() ? archived.get() : false),(companyName.isPresent()?companyName.get():null)),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id", "displayName"));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList","jobHiringTeamList","jobDetail", "expertise", "education", "noticePeriod", "function", "experienceRange", "userEnteredKeySkill", "updatedOn", "updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
                 }})
         );
     }
@@ -103,6 +107,7 @@ public class JobController {
                     put("CvRating", Arrays.asList("overallRating"));
                     put("CandidateEducationDetails", Arrays.asList("degree"));
                     put("JobStageStep", Arrays.asList("stageName"));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy"));
@@ -111,6 +116,7 @@ public class JobController {
                     put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData"));
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateCompanyDetails", Arrays.asList("candidateId"));
+                    put("MasterData", new ArrayList<>(0));
                 }})
         );
     }
@@ -162,7 +168,8 @@ public class JobController {
         return Util.stripExtraInfoFromResponseBean(
                 jobService.getJobDetails(jobId),
                 (new HashMap<String, List<String>>(){{
-                    put("User",Arrays.asList("displayName"));
+                    put("User",Arrays.asList("id","displayName"));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",new ArrayList<>(0));
@@ -171,9 +178,10 @@ public class JobController {
                     put("CompanyScreeningQuestion",new ArrayList<>(0));
                     put("UserScreeningQuestion",new ArrayList<>(0));
                     put("JobCapabilities",new ArrayList<>(0));
-                    put("JobStageStep",new ArrayList<>(0));
-                    put("CompanyStageStep",new ArrayList<>(0));
+                    put("JobStageStep", Arrays.asList("updatedBy", "updatedOn", "createdBy", "createdOn", "jobId"));
+                    put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
                     put("StageMaster",new ArrayList<>(0));
+                    put("MasterData", new ArrayList<>(0));
                 }}));
         //return jobService.getJobDetails(jobId);
     }
@@ -185,6 +193,7 @@ public class JobController {
                 jobService.getJobHistory(jobId),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("displayName"));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",new ArrayList<>(0));
@@ -192,6 +201,7 @@ public class JobController {
                     put("ScreeningQuestions",new ArrayList<>(0));
                     put("CompanyScreeningQuestion",new ArrayList<>(0));
                     put("UserScreeningQuestion",new ArrayList<>(0));
+                    put("MasterData", new ArrayList<>(0));
                 }}));
     }
 
@@ -209,12 +219,14 @@ public class JobController {
                 (new HashMap<String, List<String>>(){{
                     put("User",new ArrayList<>(0));
                     put("Company", new ArrayList<>(0));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 new HashMap<String, List<String>>() {{
                     put("CompanyStageStep", Arrays.asList("id","createdOn", "createdBy","updatedOn","updatedBy","companyId"));
                     put("JobStageStep", Arrays.asList("jobId","createdOn","createdBy","updatedOn", "updatedBy"));
                     put("StageMaster", Arrays.asList("id"));
-        }});
+                    put("MasterData", new ArrayList<>(0));
+                }});
     }
 
     @GetMapping(value = "/supportedexportformat/{jobId}")

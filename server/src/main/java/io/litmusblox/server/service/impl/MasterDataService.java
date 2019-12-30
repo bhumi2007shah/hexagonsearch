@@ -128,11 +128,14 @@ public class MasterDataService implements IMasterDataService {
             else
                 ((Map)mapAccessor.getPropertyValue(data.getType())).put(data.getId(), data.getValue());
 
-                if(data.getType().equalsIgnoreCase("noticePeriod"))
-                    MasterDataBean.getInstance().getNoticePeriodMapping().put(data.getValue(), data);
+            if(data.getType().equalsIgnoreCase("noticePeriod"))
+                MasterDataBean.getInstance().getNoticePeriodMapping().put(data.getValue(), data);
 
-                if(data.getType().equalsIgnoreCase("expertise"))
-                    MasterDataBean.getInstance().getExpertise().put(data.getId(), data);
+            if(data.getType().equalsIgnoreCase("expertise"))
+                MasterDataBean.getInstance().getExpertise().put(data.getId(), data);
+
+            if(data.getValue().equalsIgnoreCase(IConstant.DEFAULT_JOB_TYPE))
+                MasterDataBean.getInstance().setDefaultJobType(data);
         });
 
         //populate various configuration settings like max limits, send sms/email flag,etc
@@ -221,7 +224,7 @@ public class MasterDataService implements IMasterDataService {
         //populate data for each of the required items
         fetchItemList.stream().forEach(item -> {
             if(!Arrays.asList(IConstant.fetchItemsType).contains(item))
-                throw new ValidationException("You can not access masterData for " +item+" Item", HttpStatus.UNPROCESSABLE_ENTITY);
+                throw new ValidationException("You can not access masterData for " +item+" Item", HttpStatus.FORBIDDEN);
 
             getMasterData(master, item);
         });

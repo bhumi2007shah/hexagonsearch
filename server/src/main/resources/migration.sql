@@ -1332,8 +1332,53 @@ INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
 ('jobType', 'Temporary'),
 ('jobType', 'Intern');
 
+--For ticket #310
+ALTER TABLE JOB
+ADD COLUMN JOB_TYPE INTEGER REFERENCES MASTER_DATA(ID);
 
+UPDATE JOB
+SET JOB_TYPE = (SELECT ID FROM MASTER_DATA WHERE TYPE = 'jobType' AND VALUE = 'Full Time');
 
+ALTER TABLE JOB
+ALTER COLUMN JOB_TYPE SET NOT NULL;
 
+DROP TABLE JOB_DETAILS;
 
+ALTER TABLE COMPANY_ADDRESS
+ADD COLUMN CITY VARCHAR(100),
+ADD COLUMN STATE VARCHAR(100),
+ADD COLUMN COUNTRY VARCHAR(50);
 
+-- view to concatenate all skills as comma separated values per job
+drop view if exists jobKeySkillAggregation;
+create view jobKeySkillAggregation as
+select job_key_skills.job_id as jobId, string_agg(trim(skills_master.skill_name), ',') as keySkills
+from skills_master, job_key_skills
+where skills_master.id = job_key_skills.skill_id
+group by job_key_skills.job_id;
+
+-- view to select all required fields for search query
+drop view if exists jobDetailsView;
+create view jobDetailsView AS
+select
+	job.id as jobId,
+	job.company_id as companyId,
+	job.job_title as jobTitle,
+	job.job_type as jobType,
+	job.created_on as jobCreatedOn,
+	company_address.address as jobLocation,
+	company_address.city as jobLocationCity,
+	company_address.state as jobLocationState,
+	company_address.country as jobLocationCountry,
+	exp.value as jobExperience,
+	education.value as education, jobKeySkillAggregation.keyskills as keyskills
+from job
+left join company_address
+on job.job_location = company_address.id
+left join master_data exp
+on job.experience_range = exp.id
+left join master_data education
+on job.education = education.id
+left join jobKeySkillAggregation
+on job.id = jobKeySkillAggregation.jobId
+order by jobId;

@@ -21,10 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * REST controller for company specific data operations
@@ -61,6 +58,7 @@ public class CompanyDataController {
             new HashMap<String, List<String>>() {{
                 put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
                 put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
+                put("MasterData", new ArrayList<>(0));
             }}
         );
     }
