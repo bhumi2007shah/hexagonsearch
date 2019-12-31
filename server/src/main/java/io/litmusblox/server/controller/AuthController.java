@@ -49,9 +49,9 @@ public class AuthController {
     @ResponseStatus(HttpStatus.OK)
     String login(@RequestBody User user) throws Exception {
         return  Util.stripExtraInfoFromResponseBean(userDetailsService.login(user),
-                null/*(new HashMap<String, List<String>>(){{
+                (new HashMap<String, List<String>>(){{
                     put("CompanyAddress", new ArrayList<>(0));
-                }})*/,
+                }}),
                 (new HashMap<String, List<String>>(){{
                     put("User", new ArrayList<>(0));
                     put("Company", Arrays.asList("companyAddressList", "companyBuList"));

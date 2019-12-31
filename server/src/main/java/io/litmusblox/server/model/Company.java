@@ -3,7 +3,6 @@
  */
 package io.litmusblox.server.model;
 
-import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
@@ -35,7 +34,6 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@JsonFilter("Company")
 public class Company implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
