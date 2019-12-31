@@ -71,6 +71,7 @@ public class Util {
         try {
 
             SimpleFilterProvider filter = new SimpleFilterProvider();
+            filter.setFailOnUnknownId(false);
             if (null != serializeMap)
                 serializeMap.forEach((key, value) ->
                         filter.addFilter(key, SimpleBeanPropertyFilter.filterOutAllExcept(new HashSet<String>(value)))

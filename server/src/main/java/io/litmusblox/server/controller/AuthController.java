@@ -6,6 +6,7 @@ package io.litmusblox.server.controller;
 
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.User;
+import io.litmusblox.server.service.LoginResponseBean;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
@@ -14,7 +15,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Controller class for all authentication related apis like:
@@ -47,16 +51,9 @@ public class AuthController {
     @PostMapping(value = "/login")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    String login(@RequestBody User user) throws Exception {
-        return  Util.stripExtraInfoFromResponseBean(userDetailsService.login(user),
-                (new HashMap<String, List<String>>(){{
-                    put("CompanyAddress", new ArrayList<>(0));
-                }}),
-                (new HashMap<String, List<String>>(){{
-                    put("User", new ArrayList<>(0));
-                    put("Company", Arrays.asList("companyAddressList", "companyBuList"));
-                    put("MasterData", new ArrayList<>(0));
-                }}));
+    LoginResponseBean login(@RequestBody User user) throws Exception {
+        return userDetailsService.login(user);
+
     }
 
     @PostMapping(value = "/activateUser")
