@@ -23,4 +23,5 @@ import java.util.List;
 public class MlCvRatingRequestBean {
     List<String> jdKeyskills;
     String resumeContent;
+    String industry;
 }

@@ -580,6 +580,7 @@ public class JobService implements IJobService {
         log.info("inside callMl method");
         String mlResponse = null;
         String mlRequest = null;
+        String function = MasterDataBean.getInstance().getFunction().get(job.getFunction().getId());
         Map breadCrumb = new HashMap<String, String>();
         try {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -588,6 +589,9 @@ public class JobService implements IJobService {
             if(null != job.getSelectedRole()){
                 requestBean.getRolePrediction().setRecruiterRoles(job.getSelectedRole());
             }
+            if(null != function)
+                requestBean.getRolePrediction().setIndustry(function);
+
             objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             mlRequest = objectMapper.writeValueAsString(requestBean);
