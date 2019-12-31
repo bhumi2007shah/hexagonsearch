@@ -1399,6 +1399,9 @@ from skills_master, job_key_skills
 where skills_master.id = job_key_skills.skill_id
 group by job_key_skills.job_id;
 
+-- Increase address length #329
+ALTER TABLE company_address ALTER COLUMN address type VARCHAR(300);
+
 -- view to select all required fields for search query
 drop view if exists jobDetailsView;
 create view jobDetailsView AS
