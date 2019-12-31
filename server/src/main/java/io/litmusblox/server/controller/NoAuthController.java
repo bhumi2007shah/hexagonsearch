@@ -320,11 +320,14 @@ public class NoAuthController {
     @PostMapping(value = "/addCandidate/{candidateSource}")
     @ResponseStatus(value = HttpStatus.OK)
     String uploadCandidate(@PathVariable("candidateSource") String candidateSource, @RequestParam(name = "candidateCv", required = false) MultipartFile candidateCv, @RequestParam("candidate") String candidateString, @RequestParam("jobReferenceId") UUID jobReferenceId, @RequestParam(name = "employeeReferrer", required = false) String employeeReferrerString) throws Exception{
+        EmployeeReferrer employeeReferrer = null;
         ObjectMapper objectMapper=new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
         Candidate candidate=objectMapper.readValue(candidateString, Candidate.class);
-        EmployeeReferrer employeeReferrer =objectMapper.readValue(employeeReferrerString, EmployeeReferrer.class);
+        if(null != employeeReferrerString)
+            employeeReferrer =objectMapper.readValue(employeeReferrerString, EmployeeReferrer.class);
+
         long startTime = System.currentTimeMillis();
         UploadResponseBean responseBean = jobCandidateMappingService.uploadCandidateByNoAuthCall(candidateSource, candidate, jobReferenceId, candidateCv, employeeReferrer);
         log.info("Candidate upload in " + (System.currentTimeMillis() - startTime) + "ms.");
