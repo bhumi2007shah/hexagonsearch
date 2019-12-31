@@ -199,4 +199,24 @@ public interface IJobCandidateMappingService {
      * @param callOutCome callOutCome if callOutCome is present then set in jcm history
      */
     void addComment(String comment, Long jcmId, String callOutCome);
+
+    /**
+     * Service to upload resume against jcm
+     * @param jcmId
+     * @param candidateCv
+     */
+    void uploadResume(MultipartFile candidateCv, Long jcmId) throws Exception;
+
+    /**
+     *Service to add candidate via career page, job portal, employee referral
+     *
+     * @param candidateSource from where we source the candidate
+     * @param candidate candidate all info
+     * @param jobReferenceId In which job upload candidate
+     * @param candidateCv candidate cv
+     * @param employeeReferrer if candidate upload by employee referral then this model come
+     * @return UploadResponseBean
+     * @throws Exception
+     */
+    UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer) throws Exception;
 }

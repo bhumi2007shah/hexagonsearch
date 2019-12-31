@@ -156,4 +156,8 @@ public class Candidate implements Serializable {
     @Transient
     private String alternateMobile;
 
+    @JsonProperty
+    @Transient
+    private EmployeeReferrer employeeReferrer;
+
 }

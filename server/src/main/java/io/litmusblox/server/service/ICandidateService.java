@@ -31,6 +31,14 @@ public interface ICandidateService {
     Candidate findByMobileOrEmail(String email, String mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception;
 
     /**
+     * Method to find a candidate using profile type and uniqueId from that profile
+     * @param candidateOnlineProfiles - list of online profiles of candidate
+     * @return Candidate from Db
+     * @throws Exception
+     */
+    Candidate findByProfileTypeAndUniqueId(List<CandidateOnlineProfile> candidateOnlineProfiles) throws Exception;
+
+    /**
      * Method to create a new candidate, candidateEmailHistory and candidateMobileHistory
      *
      * @param firstName first name of candidate

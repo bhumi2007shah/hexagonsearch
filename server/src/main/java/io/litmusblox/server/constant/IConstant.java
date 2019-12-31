@@ -41,6 +41,7 @@ public interface IConstant {
     String REGEX_FOR_NAME_VALIDATION = "[a-zA-Z\\-][a-zA-Z.\\-\\s]*";
     String REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_NAME = "[^\\w\\s\\-]*";
     String REGEX_FOR_DOT_IN_NAME = "(?<=[a.zA-Z\\.]\\s)+";
+    String REGEX_TO_FIND_ONLINE_PROFILE_UNIQUE_ID = "(?<=\\/)[\\w-]+$";
 
 
     // lengths
@@ -131,7 +132,7 @@ public interface IConstant {
     }
 
     enum CandidateSource {
-        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriEmail("NaukriMail");
+        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriEmail("NaukriMail"), EmployeeReferral("EmployeeReferral"), CareerPage("CareerPage"), JobPosting("JobPosting");
         private String value;
 
         CandidateSource(String val) {
@@ -285,6 +286,7 @@ public interface IConstant {
     String DEFAULT_JOB_TYPE = "Full Time";
 
     String NOT_AVAILABLE_EMAIL = "@notavailable.io";
+    String SYSTEM_USER_EMAIL = "systemuser@hex.com";
 
     String[] fetchItemsType = new String[]{"referrerRelation", "jobType"};
 }

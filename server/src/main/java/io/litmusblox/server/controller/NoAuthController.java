@@ -5,8 +5,11 @@
 package io.litmusblox.server.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.error.WebException;
+import io.litmusblox.server.model.*;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.model.JobScreeningQuestions;
@@ -15,6 +18,7 @@ import io.litmusblox.server.service.IJobCandidateMappingService;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.IMasterDataService;
 import io.litmusblox.server.service.TechChatbotRequestBean;
+import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
 import io.litmusblox.server.service.impl.SearchRequestBean;
 import io.litmusblox.server.utils.Util;
@@ -23,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -247,13 +252,14 @@ public class NoAuthController {
     }
 
     /**
-     * Service to get masterData for only specific fields, which is used in noAuth call
+     * REST Api to get masterData for only specific fields, which is used in noAuth call
      *
      * @param requestItems (fileType, referrerRelation)
      * @return MasterData
      * @throws Exception
      */
     @PostMapping(value="/fetch/items")
+    @ResponseStatus(value = HttpStatus.OK)
     String fetchItems(@RequestBody List<String> requestItems) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
                 masterDataService.fetchForItemsForNoAuth(requestItems),null,
@@ -298,5 +304,35 @@ public class NoAuthController {
                     put("MasterData", Arrays.asList("value"));
                 }}, null);
 
+    }
+
+    /**
+     * Rest API to upload candidate via career page, job portal, employee referral
+     *
+     * @param candidateSource From where we source the candidate
+     * @param candidateCv candidate cv
+     * @param candidateString  Candidate all info string
+     * @param jobReferenceId In which job upload candidate
+     * @param employeeReferrerString employee info string
+     * @return UploadResponseBean
+     * @throws Exception
+     */
+    @PostMapping(value = "/addCandidate/{candidateSource}")
+    @ResponseStatus(value = HttpStatus.OK)
+    String uploadCandidate(@PathVariable("candidateSource") String candidateSource, @RequestParam(name = "candidateCv", required = false) MultipartFile candidateCv, @RequestParam("candidate") String candidateString, @RequestParam("jobReferenceId") UUID jobReferenceId, @RequestParam(name = "employeeReferrer", required = false) String employeeReferrerString) throws Exception{
+        ObjectMapper objectMapper=new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+        Candidate candidate=objectMapper.readValue(candidateString, Candidate.class);
+        EmployeeReferrer employeeReferrer =objectMapper.readValue(employeeReferrerString, EmployeeReferrer.class);
+        long startTime = System.currentTimeMillis();
+        UploadResponseBean responseBean = jobCandidateMappingService.uploadCandidateByNoAuthCall(candidateSource, candidate, jobReferenceId, candidateCv, employeeReferrer);
+        log.info("Candidate upload in " + (System.currentTimeMillis() - startTime) + "ms.");
+        return Util.stripExtraInfoFromResponseBean(responseBean, null,
+                new HashMap<String, List<String>>() {{
+                    put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
+                            "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
+                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
+                }});
     }
 }
