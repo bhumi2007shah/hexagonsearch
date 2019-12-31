@@ -488,7 +488,7 @@ public class JobService implements IJobService {
     }
 
     private void addJobOverview(Job job, Job oldJob, User loggedInUser) { //method for add job for Overview page
-        boolean deleteExistingJobStageStep = (null != job.getId());
+        //boolean deleteExistingJobStageStep = (null != job.getId());
 
         //validate title
         if (job.getJobTitle().length() > IConstant.TITLE_MAX_LENGTH)  //Truncate job title if it is greater than max length
@@ -503,10 +503,12 @@ public class JobService implements IJobService {
 
         job.setCompanyId(userCompany);
         String historyMsg = "Created";
-        if(deleteExistingJobStageStep){
+
+        //TODO Currently we do not delete jobStageStep refer ticket #326, we need to revisit this code after getting select stage step pages
+        /*if(deleteExistingJobStageStep){
             jobStageStepRepository.deleteByJobId(job.getId());
             jobStageStepRepository.flush();
-        }
+        }*/
 
         if (null != oldJob && !IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())) {//only update existing job
             if(null != job.getHiringManager())
@@ -536,10 +538,10 @@ public class JobService implements IJobService {
             job.setJobReferenceId(UUID.randomUUID());
             //End of code to be removed
             oldJob = jobRepository.save(job);
+            //Add job stage step for this job
+            addJobStageStep(oldJob);
         }
         //TODO: remove one JobRepository call
-        //Add job stage step for this job
-        addJobStageStep(oldJob);
         //Add Job details
         addJobDetail(job, oldJob, loggedInUser);
 
