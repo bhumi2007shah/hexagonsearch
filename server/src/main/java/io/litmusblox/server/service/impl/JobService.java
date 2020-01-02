@@ -212,6 +212,7 @@ public class JobService implements IJobService {
                 throw new OperationNotSupportedException("Unknown page: " + pageName);
         }
 
+        job.setJobHiringTeamList(oldJob.getJobHiringTeamList());
         populateDataForNextPage(job, pageName);
 
         log.info("Completed processing request to add job in " + (System.currentTimeMillis() - startTime) + "ms");

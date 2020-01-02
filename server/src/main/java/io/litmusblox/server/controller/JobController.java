@@ -47,7 +47,7 @@ public class JobController {
             (new HashMap<String, List<String>>(){{
                 put("User",Arrays.asList("displayName","id"));
                 put("ScreeningQuestions", Arrays.asList("question","id"));
-                put("JobStageStep", Arrays.asList("id"));
+                put("JobStageStep", Arrays.asList("id", "stageStepId"));
             }}),
             (new HashMap<String, List<String>>(){{
                 put("Job",Arrays.asList("createdOn","createdBy", "updatedOn", "updatedBy"));
@@ -57,6 +57,8 @@ public class JobController {
                 put("JobCapabilities", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
                 put("MasterData", new ArrayList<>(0));
                 put("CompanyAddress", new ArrayList<>(0));
+                put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
+                put("StageMaster",new ArrayList<>(0));
             }})
         );
     }
