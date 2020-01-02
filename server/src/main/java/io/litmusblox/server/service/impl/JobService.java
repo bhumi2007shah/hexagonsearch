@@ -212,7 +212,7 @@ public class JobService implements IJobService {
                 throw new OperationNotSupportedException("Unknown page: " + pageName);
         }
 
-        if(null != oldJob)
+        if(null != oldJob && null != oldJob.getJobHiringTeamList() && !IConstant.AddJobPages.hiringTeam.name().equals(pageName))
             job.setJobHiringTeamList(oldJob.getJobHiringTeamList());
 
         populateDataForNextPage(job, pageName);
