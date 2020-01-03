@@ -73,4 +73,6 @@ public interface IErrorMessages {
     String INVALID_UK_MOBILE_NUMBER = "Mobile number is not a valid Uk Mobile number ";
     String INVALID_US_MOBILE_NUMBER = "Mobile number is not a valid Us Mobile number ";
     String INVALID_SINGAPORE_MOBILE_NUMBER = "Mobile number is not a valid Singapore Mobile number ";
+
+    String USER_DESIGNATION_NOT_VALID= "User designation not valid";
 }

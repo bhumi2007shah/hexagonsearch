@@ -33,6 +33,7 @@ import javax.annotation.Resource;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Userdetails implementation class
@@ -79,6 +80,8 @@ public class LbUserDetailsService implements UserDetailsService {
 
     @Autowired
     CompanyService companyService;
+
+    private static Pattern USER_DESIGNATION_PATTERN = Pattern.compile(IConstant.REGEX_FOR_USER_DESIGNATION);
 
     /**
      * Implementation for login functionality which will
@@ -164,6 +167,12 @@ public class LbUserDetailsService implements UserDetailsService {
         }
 
         User u = new User();
+        if(null != user.getDesignation()){
+            if(!USER_DESIGNATION_PATTERN.matcher(user.getDesignation()).matches())
+                throw new ValidationException(IErrorMessages.USER_DESIGNATION_NOT_VALID, HttpStatus.BAD_REQUEST);
+            else
+                u.setDesignation(user.getDesignation());
+        }
         u.setFirstName(Util.toSentenceCase(user.getFirstName()));
         u.setLastName(Util.toSentenceCase(user.getLastName()));
         u.setEmail(user.getEmail().toLowerCase());

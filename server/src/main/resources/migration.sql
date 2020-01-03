@@ -1428,3 +1428,6 @@ INSERT INTO public.users(
 
 -- Increase address length #329
 ALTER TABLE company_address ALTER COLUMN address type VARCHAR(300);
+
+--Increase designation length #337
+ALTER TABLE CANDIDATE_COMPANY_DETAILS COLUMN DESIGNATION TYPE VARCHAR(100);
