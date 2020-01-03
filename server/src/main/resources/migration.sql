@@ -1428,3 +1428,7 @@ INSERT INTO public.users(
 
 -- Increase address length #329
 ALTER TABLE company_address ALTER COLUMN address type VARCHAR(300);
+
+-- Additional column for company_short_name
+ALTER TABLE COMPANY
+ADD COLUMN SHORT_NAME VARCHAR(8) UNIQUE;

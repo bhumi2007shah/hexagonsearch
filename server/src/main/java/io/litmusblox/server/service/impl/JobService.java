@@ -1285,8 +1285,15 @@ public class JobService implements IJobService {
     static String AND = " and ", IN_BEGIN = " in (", BRACKET_CLOSE = ")", LIKE_BEGIN = " LIKE \'%", LIKE_END = "%\'", LOWER_BEGIN = "LOWER(", OR = " or ";
     @Transactional(readOnly = true)
     public List<Job> searchJobs(SearchRequestBean searchRequest) {
-        //TODO: generate query here
-        StringBuffer query = new StringBuffer().append(SELECT_QUERY_PREFIX).append(searchRequest.getCompanyId());
+        StringBuffer query = new StringBuffer().append(SELECT_QUERY_PREFIX);
+        if(null != searchRequest.getCompanyId())
+            query.append(searchRequest.getCompanyId());
+        else {
+            Company objFromDb = companyRepository.findByShortNameIgnoreCase(searchRequest.getCompanyShortName());
+            if(null == objFromDb)
+                throw new WebException("No company found for short name: " + searchRequest.getCompanyShortName(), HttpStatus.UNPROCESSABLE_ENTITY);
+            query.append(objFromDb.getId());
+        }
         if(searchRequest.getSearchParam().size()>0)
             query.append(AND);
         final AtomicBoolean firstSearchParam = new AtomicBoolean(true);

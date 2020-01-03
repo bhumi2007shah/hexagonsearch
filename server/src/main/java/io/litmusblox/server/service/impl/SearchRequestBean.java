@@ -20,6 +20,7 @@ import java.util.List;
 public class SearchRequestBean {
     private List<SearchParam> searchParam;
     private Long companyId;
+    private String companyShortName;
 }
 
 @Data
