@@ -32,8 +32,7 @@ import javax.annotation.Resource;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -133,6 +132,38 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         });
     }
 
+    /**
+     * Method to convert cv file to cv text
+     * In cv_parsing_detail if parsing_response_text is null then convert cv to text and save
+     */
+    @Transactional
+    public void CvToCvText() {
+        log.info("inside CvToCvText");
+        List<CvParsingDetails> cvParsingDetailsList = new ArrayList<>();
+        List<CvParsingDetails> cvParsingDetails = cvParsingDetailsRepository.getDataForConvertCvToCvText();
+        if(null != cvParsingDetails && cvParsingDetails.size()>0){
+            cvParsingDetails.forEach(cvParsingDetailsFromDb->{
+                String cvText = null;
+                Map<String, String> queryParameters = new HashMap<>();
+                queryParameters.put("file", environment.getProperty("cvStorageUrl")+cvParsingDetailsFromDb.getJobCandidateMappingId().getJob().getId()+"/"+cvParsingDetailsFromDb.getCandidateId()+cvParsingDetailsFromDb.getJobCandidateMappingId().getCvFileType());
+                log.info("CvFile path : {}",queryParameters.get("file"));
+                try {
+                    long apiCallStartTime = System.currentTimeMillis();
+                    cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), null);
+                    log.info("Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}",(System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
+                    if(null != cvText){
+                        cvParsingDetailsFromDb.setParsingResponseText(cvText);
+                        cvParsingDetailsList.add(cvParsingDetailsFromDb);
+                    }
+                } catch (Exception e) {
+                    log.error("Error while convert cv to text for cvParsingDetailsId  : {}, error message : {}",cvParsingDetailsFromDb.getId(), e.getMessage());
+                }
+            });
+            if(cvParsingDetailsList.size()>0)
+                cvParsingDetailsRepository.saveAll(cvParsingDetailsList);
+        }
+    }
+
     @Transactional(propagation = Propagation.REQUIRED)
     private long callCvRatingApi(MlCvRatingRequestBean requestBean, Long jcmId) throws Exception {
         CvRating cvRatingFromDb = null;
@@ -169,4 +200,5 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         );
         return targetList;
     }
+
 }
