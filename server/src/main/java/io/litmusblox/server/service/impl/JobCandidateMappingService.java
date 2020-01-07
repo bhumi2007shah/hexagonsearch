@@ -821,10 +821,18 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         returnObj.setTechResponseData(objFromDb.getTechResponseData().getTechResponse());
 
         //set the cv location
+        StringBuffer cvLocation = new StringBuffer("");
+        cvLocation.append(IConstant.CANDIDATE_CV).append(File.separator).append(objFromDb.getJob().getId()).append(File.separator).append(objFromDb.getCandidate().getId());
         if(null != returnObj.getCandidateDetails() && null != objFromDb.getCvFileType()) {
-            StringBuffer cvLocation = new StringBuffer("");
-            cvLocation.append(IConstant.CANDIDATE_CV).append(File.separator).append(objFromDb.getJob().getId()).append(File.separator).append(objFromDb.getCandidate().getId()).append(objFromDb.getCvFileType());
-            objFromDb.setCvLocation(cvLocation.toString());
+            cvLocation.append(objFromDb.getCvFileType());
+            returnObj.getCandidateDetails().setCvLocation(cvLocation.toString());
+        }else if(null == returnObj.getCandidateDetails() && null != objFromDb.getCvFileType()){
+            CandidateDetails candidateDetails = new CandidateDetails();
+            cvLocation.append(objFromDb.getCvFileType());
+            candidateDetails.setCvLocation(cvLocation.toString());
+            candidateDetails.setCandidateId(returnObj);
+            returnObj.setCandidateDetails(candidateDetails);
+            candidateRepository.save(returnObj);
         }
         returnObj.setScreeningQuestionResponses(new ArrayList<>(screeningQuestionsMap.values()));
 
