@@ -75,6 +75,9 @@ public class LbUserDetailsService implements UserDetailsService {
     @Resource
     CompanyBuRepository companyBuRepository;
 
+    @Resource
+    JcmProfileSharingDetailsRepository jcmProfileSharingDetailsRepository;
+
     @Autowired
     JwtTokenUtil jwtTokenUtil;
 
@@ -397,8 +400,15 @@ public class LbUserDetailsService implements UserDetailsService {
         List<User> userList = userRepository.findByCompanyId(companyId);
         List<UserWorkspaceBean> responseBeans = new ArrayList<>(userList.size());
         userList.forEach(user->{
-            UserWorkspaceBean workspaceBean = new UserWorkspaceBean(user.getId(), user.getDisplayName(), user.getStatus(), user.getCompanyAddressId(), user.getCompanyBuId());
+            UserWorkspaceBean workspaceBean = new UserWorkspaceBean(user.getId(), user.getDisplayName(), user.getStatus(), user.getCompanyAddressId(), user.getCompanyBuId(), user.getEmail(), user.getMobile());
             workspaceBean.setNumberOfJobsCreated(jobRepository.countByCreatedBy(user));
+            workspaceBean.setNumOfInvites(jobCandidateMappingRepository.getInviteCount(user.getId()));
+            List<Object[]> object = jobCandidateMappingRepository.getChatbotCountCompletedAndInCompleted(user.getId());
+            if(null != (object.get(0))[1]){
+                workspaceBean.setIncompleteChatbotCount(Integer.parseInt((object.get(0))[1].toString()));
+                workspaceBean.setCompletedChatbotCount(Integer.parseInt((object.get(0))[0].toString()));
+            }
+            workspaceBean.setAnalyticsSharedCount(jcmProfileSharingDetailsRepository.getProfileSharingCount(user.getId()));
             responseBeans.add(workspaceBean);
         });
 

@@ -90,4 +90,18 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Modifying
     @Query(nativeQuery = true, value = "update job_candidate_mapping set rejected=true, updated_by=:updatedBy, updated_on = :updatedOn where id in :jcmList")
     void updateForRejectStage(List<Long> jcmList, Long updatedBy, Date updatedOn);
+
+    @Transactional
+    @Query(value = "select count(jcd.id)\n" +
+            "from jcm_communication_details jcd, job_candidate_mapping jcm\n" +
+            "where jcd.chat_invite_flag is true\n" +
+            "and jcm.updated_by=:userId\n" +
+            "and jcd.jcm_id = jcm.id", nativeQuery = true)
+    Integer getInviteCount(Long userId);
+
+    @Transactional
+    @Query(value = "SELECT sum((chatbot_status LIKE 'Complete')\\:\\:INT) AS completeCount, sum((chatbot_status LIKE 'Incomplete')\\:\\:INT) AS incompleteCount\n" +
+            "FROM job_candidate_mapping\n" +
+            "where updated_by =:userId", nativeQuery = true)
+    List<Object[]> getChatbotCountCompletedAndInCompleted(Long userId);
 }
