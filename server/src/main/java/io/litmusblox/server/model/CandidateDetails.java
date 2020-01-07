@@ -107,13 +107,13 @@ public class CandidateDetails implements Serializable {
     @Column(name = "RELEVANT_EXPERIENCE")
     private Double relevantExperience;
 
-    @Transient
-    @JsonProperty
-    private String cvLocation;
-
     @JsonProperty
     @Transient
     private String textCv;
+
+    @Transient
+    @JsonProperty
+    private String cvLocation;
 
     @JsonProperty
     @Transient
