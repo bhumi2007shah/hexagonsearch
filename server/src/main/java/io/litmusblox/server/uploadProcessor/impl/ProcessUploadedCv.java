@@ -112,7 +112,8 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                         log.error("Found no key skills for " + cvToRate.getJobCandidateMappingId().getJob().getId());
                     else {
                         try {
-                            cvRatingApiProcessingTime = callCvRatingApi(new MlCvRatingRequestBean(jdKeySkills, cvToRate.getParsingResponseText(), cvToRate.getJobCandidateMappingId().getJob().getFunction().getValue()), cvToRate.getJobCandidateMappingId().getId());
+                            //TODO currently ML team not handle for industry so we don't send industry, need revisit after ML done implementation for industry
+                            cvRatingApiProcessingTime = callCvRatingApi(new MlCvRatingRequestBean(jdKeySkills, cvToRate.getParsingResponseText(), ""/*cvToRate.getJobCandidateMappingId().getJob().getFunction().getValue()*/), cvToRate.getJobCandidateMappingId().getId());
                         } catch (Exception e) {
                             log.info("Error while performing CV rating operation " + e.getMessage());
                             processingError = true;
