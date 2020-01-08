@@ -65,16 +65,16 @@ public class JobController {
 
     /**
      * Api for retrieving a list of jobs created by user
-     * @param archived optional flag indicating if a list of archived jobs is requested. By default only open jobs will be returned
+     * @param jobStatus as per job status we fetch list of jobs
      * @param companyName optional name of the company for which jobs have to be found. Will be populated only when superadmin accesses an account
      * @return response bean with a list of jobs, count of open jobs and count of archived jobs
      * @throws Exception
      */
     @GetMapping(value = "/listOfJobs")
-    String listAllJobsForUser(@RequestParam("archived") Optional<Boolean> archived, @RequestParam("companyName") Optional<String> companyName) throws Exception {
+    String listAllJobsForUser(@RequestParam("companyName") Optional<String> companyName, @RequestParam("jobStatus") String jobStatus) throws Exception {
 
         return Util.stripExtraInfoFromResponseBean(
-                jobService.findAllJobsForUser((archived.isPresent() ? archived.get() : false),(companyName.isPresent()?companyName.get():null)),
+                jobService.findAllJobsForUser((companyName.isPresent()?companyName.get():null), jobStatus),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id", "displayName"));
                     put("CompanyAddress", Arrays.asList("address"));

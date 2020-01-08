@@ -253,14 +253,14 @@ public class JobService implements IJobService {
      * Fetch details of currently logged in user and
      * query the repository to find the list of all jobs
      *
-     * @param archived flag indicating if only archived jobs need to be fetched
+     * @param jobStatus as per job status we fetch list of jobs
      * @param companyName name of the company for which jobs have to be found
      * @return List of jobs created by the logged in user
      */
     @Transactional(readOnly = true)
-    public JobWorspaceResponseBean findAllJobsForUser(boolean archived, String companyName) throws Exception {
+    public JobWorspaceResponseBean findAllJobsForUser(String companyName, String jobStatus) throws Exception {
 
-        log.info("Received request to request to find all jobs for user for archived = " + archived);
+        log.info("Received request to request to find all jobs for user for jobStatus = " + jobStatus);
         long startTime = System.currentTimeMillis();
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -273,7 +273,7 @@ public class JobService implements IJobService {
                 log.info(msg + "Request from Client Admin, all jobs for the company will be returned");
                 companyList = new ArrayList<>();
                 companyList.add(loggedInUser.getCompany());
-                jobsForCompany(responseBean, archived, companyList);
+                jobsForCompany(responseBean, jobStatus, companyList);
                 break;
             case IConstant.UserRole.Names.RECRUITMENT_AGENCY:
                 if (Util.isNull(companyName))
@@ -282,7 +282,7 @@ public class JobService implements IJobService {
                 if(null == company)
                     throw new ValidationException("Recruitment agency not found for : "+companyName, HttpStatus.UNPROCESSABLE_ENTITY);
                 List<Company> companies = companyRepository.findByRecruitmentAgencyId(company.getId());
-                jobsForCompany(responseBean, archived, companies);
+                jobsForCompany(responseBean, jobStatus, companies);
                 break;
             case IConstant.UserRole.Names.SUPER_ADMIN:
                 if (Util.isNull(companyName))
@@ -292,47 +292,57 @@ public class JobService implements IJobService {
                 companyList.add(companyObjToUse);
                 if (null == companyObjToUse)
                     throw new ValidationException("Company not found : " + companyName, HttpStatus.UNPROCESSABLE_ENTITY);
-                jobsForCompany(responseBean, archived, companyList);
+                jobsForCompany(responseBean, jobStatus, companyList);
                 break;
             default:
-                jobsForLoggedInUser(responseBean, archived, loggedInUser);
+                jobsForLoggedInUser(responseBean, jobStatus, loggedInUser);
         }
         log.info(msg + "Completed processing request to find all jobs for user in " + (System.currentTimeMillis() - startTime) + "ms");
         return responseBean;
     }
 
-    private void jobsForLoggedInUser(JobWorspaceResponseBean responseBean, boolean archived, User loggedInUser) {
+    private void jobsForLoggedInUser(JobWorspaceResponseBean responseBean, String jobStatus, User loggedInUser) {
         long startTime = System.currentTimeMillis();
-        if (archived) {
-            responseBean.setListOfJobs(jobRepository.findByCreatedByAndDateArchivedIsNotNullOrderByCreatedOnDesc(loggedInUser));
-            responseBean.setArchivedJobs(responseBean.getListOfJobs().size());
-            responseBean.setOpenJobs((jobRepository.countByCreatedByAndDateArchivedIsNull(loggedInUser)).intValue());
-        } else {
-            responseBean.setListOfJobs(jobRepository.findByCreatedByAndDateArchivedIsNullOrderByCreatedOnDesc(loggedInUser));
-            responseBean.setOpenJobs(responseBean.getListOfJobs().size());
-            responseBean.setArchivedJobs((jobRepository.countByCreatedByAndDateArchivedIsNotNull(loggedInUser)).intValue());
-        }
+        List<Job> jobList = jobRepository.findByCreatedByOrderByCreatedOnDesc(loggedInUser);
+        responseBean = setJobWorkspaceResponseBean(jobList, responseBean, jobStatus);
         log.info("Got " + responseBean.getListOfJobs().size() + " jobs in " + (System.currentTimeMillis() - startTime) + "ms");
         getCandidateCountByStage(responseBean.getListOfJobs());
     }
 
-    private void jobsForCompany(JobWorspaceResponseBean responseBean, boolean archived, List<Company> companyList) {
+    private void jobsForCompany(JobWorspaceResponseBean responseBean, String jobStatus, List<Company> companyList) {
         long startTime = System.currentTimeMillis();
-        companyList.stream().forEach(company -> {
-            if (archived) {
-                List<Job> jobList = jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByCreatedOnDesc(company);
-                responseBean.getListOfJobs().addAll(jobList);
-                responseBean.setArchivedJobs(responseBean.getArchivedJobs() + (jobList.size()));
-                responseBean.setOpenJobs(responseBean.getOpenJobs()+(jobRepository.countByCompanyIdAndDateArchivedIsNull(company)).intValue());
-            } else {
-                List<Job> jobList = jobRepository.findByCompanyIdAndDateArchivedIsNullOrderByCreatedOnDesc(company);
-                responseBean.getListOfJobs().addAll(jobList);
-                responseBean.setOpenJobs(responseBean.getOpenJobs() + jobList.size());
-                responseBean.setArchivedJobs(responseBean.getArchivedJobs() + (jobRepository.countByCompanyIdAndDateArchivedIsNotNull(company)).intValue());
-            }
-        });
+        //find all job list for all companies
+        List<Job> jobList = jobRepository.findByCompanyIdOrderByCreatedOnDesc(companyList);
+        responseBean = setJobWorkspaceResponseBean(jobList, responseBean, jobStatus);
         log.info("Got " + responseBean.getListOfJobs().size() + " jobs in " + (System.currentTimeMillis() - startTime) + "ms");
         getCandidateCountByStage(responseBean.getListOfJobs());
+    }
+
+    private JobWorspaceResponseBean setJobWorkspaceResponseBean(List<Job> jobList, JobWorspaceResponseBean responseBean, String jobStatus){
+        log.info("inside setJobWorkspaceResponseBean");
+        List<Job> liveJobs = jobList.stream()
+                .filter(job -> IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus()))
+                .collect(Collectors.toList());
+        List<Job> archivedJobs = jobList.stream()
+                .filter(job -> IConstant.JobStatus.ARCHIVED.getValue().equals(job.getStatus()))
+                .collect(Collectors.toList());
+        List<Job> draftJobs = jobList.stream()
+                .filter(job -> IConstant.JobStatus.DRAFT.getValue().equals(job.getStatus()))
+                .collect(Collectors.toList());
+
+        //set list of jobs as per jobStatus
+        if(IConstant.JobStatus.PUBLISHED.getValue().equals(jobStatus))
+            responseBean.getListOfJobs().addAll(liveJobs);
+        else if(IConstant.JobStatus.DRAFT.getValue().equals(jobStatus))
+            responseBean.getListOfJobs().addAll(draftJobs);
+        else if(IConstant.JobStatus.ARCHIVED.getValue().equals(jobStatus))
+            responseBean.getListOfJobs().addAll(archivedJobs);
+
+        //set job count as per jobStatus
+        responseBean.setLiveJobs(liveJobs.size());
+        responseBean.setDraftJobs(draftJobs.size());
+        responseBean.setArchivedJobs(archivedJobs.size());
+        return responseBean;
     }
 
     private void getCandidateCountByStage(List<Job> jobs) {

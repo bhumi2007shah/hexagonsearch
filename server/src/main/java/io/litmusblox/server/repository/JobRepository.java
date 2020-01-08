@@ -26,43 +26,11 @@ import java.util.UUID;
 @Repository
 public interface JobRepository extends JpaRepository<Job, Long> {
 
-
-    //find all jobs that are not archived
-    @Transactional
-    List<Job> findByCreatedByAndDateArchivedIsNullOrderByCreatedOnDesc(User createdBy);
-    //find all archived jobs
-    @Transactional
-    List<Job> findByCreatedByAndDateArchivedIsNotNullOrderByCreatedOnDesc(User createdBy);
-
-    //count of archived jobs
-    @Transactional
-    Long countByCreatedByAndDateArchivedIsNotNull(User createdBy);
-
-    //count of active jobs
-    @Transactional
-    Long countByCreatedByAndDateArchivedIsNull(User createdBy);
-
     //find all jobs for which ml data is not available
     @Transactional
     List<Job> findByMlDataAvailable(Boolean mlDataFlag);
 
     int countByCreatedBy(User createdBy);
-
-    //find all archived jobs by company
-    @Transactional
-    List<Job> findByCompanyIdAndDateArchivedIsNotNullOrderByCreatedOnDesc(Company company);
-
-    //count of all active jobs by company
-    @Transactional
-    Long countByCompanyIdAndDateArchivedIsNull(Company company);
-
-    //find all active jobs by company
-    @Transactional
-    List<Job> findByCompanyIdAndDateArchivedIsNullOrderByCreatedOnDesc(Company company);
-
-    //count of all archived jobs by company
-    @Transactional
-    Long countByCompanyIdAndDateArchivedIsNotNull(Company company);
 
     //count of all job attached to a BU
     @Transactional
@@ -82,4 +50,12 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     @Transactional(readOnly = true)
     Job findByJobReferenceId(UUID jobReferenceId);
+
+    //find job list by createdBy
+    @Transactional
+    List<Job> findByCreatedByOrderByCreatedOnDesc(User createdBy);
+
+    //find job list by company list
+    @Transactional
+    List<Job> findByCompanyIdOrderByCreatedOnDesc(List<Company> companyList);
 }
