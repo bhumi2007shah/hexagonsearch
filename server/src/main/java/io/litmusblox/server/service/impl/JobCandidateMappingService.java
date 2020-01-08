@@ -832,8 +832,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             candidateDetails.setCvLocation(cvLocation.toString());
             candidateDetails.setCandidateId(returnObj);
             returnObj.setCandidateDetails(candidateDetails);
-            candidateRepository.save(returnObj);
-            candidateRepository.flush();
+            objFromDb.setCandidate(returnObj);
         }
         returnObj.setScreeningQuestionResponses(new ArrayList<>(screeningQuestionsMap.values()));
 
