@@ -833,6 +833,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             candidateDetails.setCandidateId(returnObj);
             returnObj.setCandidateDetails(candidateDetails);
             candidateRepository.save(returnObj);
+            candidateRepository.flush();
         }
         returnObj.setScreeningQuestionResponses(new ArrayList<>(screeningQuestionsMap.values()));
 
