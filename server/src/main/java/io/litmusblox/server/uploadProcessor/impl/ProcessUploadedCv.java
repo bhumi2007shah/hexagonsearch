@@ -153,7 +153,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     long apiCallStartTime = System.currentTimeMillis();
                     cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), null);
                     log.info("Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}",(System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
-                    if(null != cvText){
+                    if(null != cvText && !cvText.isEmpty()){
                         cvParsingDetailsFromDb.setParsingResponseText(cvText);
                         cvParsingDetailsList.add(cvParsingDetailsFromDb);
                     }
