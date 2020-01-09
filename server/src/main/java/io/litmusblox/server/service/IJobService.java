@@ -33,12 +33,13 @@ public interface IJobService {
     /**
      * Find all jobs for logged in user
      *
-     * @param jobStatus as per job status we fetch list of jobs
-     * @param companyName name of the company for which jobs have to be found
+     * @param archived flag indicating if only archived jobs need to be fetched
+     * @param companyId id of the company for which jobs have to be found
+     * @param jobStatus
      * @return response bean with list of jobs created by the user, count of active jobs and count of archived jobs
      * @throws Exception
      */
-    JobWorspaceResponseBean findAllJobsForUser(String companyName, String jobStatus) throws Exception;
+    JobWorspaceResponseBean findAllJobsForUser(boolean archived, Long companyId, String jobStatus) throws Exception;
 
     /**
      * For the specified job, retrieve
