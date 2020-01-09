@@ -167,7 +167,7 @@ public class FetchEmailService {
 
         //check if the content is plain text
         if (p.isMimeType("text/plain")) {
-            log.info("In plain text block\n{}",(String) p.getContent());
+           // log.info("In plain text block\n{}",(String) p.getContent());
         }
         //check if the content has attachment
         else if (p.isMimeType("multipart/*")) {
@@ -186,7 +186,7 @@ public class FetchEmailService {
             log.info("In else block");
             Object o = p.getContent();
             if (o instanceof String) {
-                log.info("String Message:\n {}", (String)o);
+                //log.info("String Message:\n {}", (String)o);
                 mailData.setCandidateFromMail(naukriHtmlParser.parseData((String)o, mailData.getJobFromReference().getCreatedBy()));
             } else if (o instanceof InputStream) {
                 log.info("Input stream: File");
@@ -194,7 +194,7 @@ public class FetchEmailService {
                 mailData.setFileStream((InputStream) o);
             } else {
                 log.info("Unknown type: ");
-                log.info(o.toString());
+                //log.info(o.toString());
             }
         }
 
