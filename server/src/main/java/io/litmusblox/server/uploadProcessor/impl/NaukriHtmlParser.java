@@ -147,9 +147,11 @@ public class NaukriHtmlParser implements HtmlParser {
         //set location
         String location = doc.getElementsMatchingOwnText("Location").first().parent().tagName("tr").nextElementSibling().nextElementSibling().text();
                 //parents().tagName("tr").first().nextElementSibling().nextElementSibling().text();
-        if(null == candidate.getCandidateDetails())
-            candidate.setCandidateDetails(new CandidateDetails());
-        candidate.getCandidateDetails().setLocation(location.substring(0, location.indexOf("(")).trim());
+
+        if(location.indexOf("(") !=-1) {
+            if(null == candidate.getCandidateDetails())
+                candidate.setCandidateDetails(new CandidateDetails());                          candidate.getCandidateDetails().setLocation(location.substring(0, location.indexOf("(")).trim());
+        }
 
         //set keyskill
         String keyskills = doc.getElementsMatchingOwnText("Keyskills").parents().tagName("tr").first().nextElementSibling().nextElementSibling().text();
