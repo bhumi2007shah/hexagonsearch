@@ -102,13 +102,21 @@ public class FetchEmailService {
                         MailData mailData = new MailData();
                         mailData.setJobFromReference(findJobForEmailSubject(message.getSubject()));
 
-                        writePart(message, mailData);
-                        message.setFlag(Flags.Flag.SEEN, true);
-                        if(null != mailData.getFileName())
-                            mailData.getCandidateFromMail().getCandidateDetails().setCvFileType("."+Util.getFileExtension(mailData.getFileName()));
-                        UploadResponseBean response = jobCandidateMappingService.uploadCandidateFromPlugin(mailData.getCandidateFromMail(), mailData.getJobFromReference().getId(), null, Optional.of(mailData.getJobFromReference().getCreatedBy()));
-                        if (IConstant.UPLOAD_STATUS.Success.name().equals(response.getStatus()) && null != mailData.getFileName())
-                            saveCandidateCv(mailData);
+                        if(null == mailData.getJobFromReference()) {
+                            log.error("Could not find job to process email with subject: {}", message.getSubject());
+                            //mark the mail as read to skip processing it in the next round
+                            message.setFlag(Flags.Flag.SEEN, true);
+                        }
+                        else {
+
+                            writePart(message, mailData);
+                            message.setFlag(Flags.Flag.SEEN, true);
+                            if (null != mailData.getFileName())
+                                mailData.getCandidateFromMail().getCandidateDetails().setCvFileType("." + Util.getFileExtension(mailData.getFileName()));
+                            UploadResponseBean response = jobCandidateMappingService.uploadCandidateFromPlugin(mailData.getCandidateFromMail(), mailData.getJobFromReference().getId(), null, Optional.of(mailData.getJobFromReference().getCreatedBy()));
+                            if (IConstant.UPLOAD_STATUS.Success.name().equals(response.getStatus()) && null != mailData.getFileName())
+                                saveCandidateCv(mailData);
+                        }
 
                     }
                 } catch(Exception e) {
