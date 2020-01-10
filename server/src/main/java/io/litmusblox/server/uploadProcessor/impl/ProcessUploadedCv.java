@@ -19,7 +19,6 @@ import io.litmusblox.server.service.impl.MlCvRatingRequestBean;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import io.litmusblox.server.uploadProcessor.RChilliCvProcessor;
 import io.litmusblox.server.utils.RestClient;
-import io.litmusblox.server.utils.SentryUtil;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -158,12 +157,12 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                         cvParsingDetailsList.add(cvParsingDetailsFromDb);
                     }
                 } catch (Exception e) {
-                    log.error("Error while convert cv to text for cvParsingDetailsId  : {}, error message : {}",cvParsingDetailsFromDb.getId(), e.getMessage());
-                    Map<String, String> breadCrumb = new HashMap<>();
+                    log.error("Error while convert cv to text cvFilePath : {}, for cvParsingDetailsId  : {}, error message : {}",queryParameters.get("file"),cvParsingDetailsFromDb.getId(), e.getMessage());
+                    /*Map<String, String> breadCrumb = new HashMap<>();
                     breadCrumb.put("cvParsingDetailsId",cvParsingDetailsFromDb.getId().toString());
                     breadCrumb.put("Jcm id",cvParsingDetailsFromDb.getJobCandidateMappingId().getId().toString());
                     breadCrumb.put("FilePath", queryParameters.get("file"));
-                    SentryUtil.logWithStaticAPI(null,"Failed to convert cv to text",breadCrumb);
+                    SentryUtil.logWithStaticAPI(null,"Failed to convert cv to text",breadCrumb);*/
                 }
             });
             if(cvParsingDetailsList.size()>0)
