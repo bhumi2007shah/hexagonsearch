@@ -47,7 +47,7 @@ public class JobController {
             (new HashMap<String, List<String>>(){{
                 put("User",Arrays.asList("displayName","id"));
                 put("ScreeningQuestions", Arrays.asList("question","id"));
-                put("JobStageStep", Arrays.asList("id"));
+                put("JobStageStep", Arrays.asList("id", "stageStepId"));
             }}),
             (new HashMap<String, List<String>>(){{
                 put("Job",Arrays.asList("createdOn","createdBy", "updatedOn", "updatedBy"));
@@ -55,6 +55,10 @@ public class JobController {
                 put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
                 put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                 put("JobCapabilities", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
+                put("MasterData", new ArrayList<>(0));
+                put("CompanyAddress", new ArrayList<>(0));
+                put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
+                put("StageMaster",new ArrayList<>(0));
             }})
         );
     }
@@ -62,20 +66,22 @@ public class JobController {
     /**
      * Api for retrieving a list of jobs created by user
      * @param archived optional flag indicating if a list of archived jobs is requested. By default only open jobs will be returned
-     * @param companyName optional name of the company for which jobs have to be found. Will be populated only when superadmin accesses an account
+     * @param companyId optional id of the company for which jobs have to be found. Will be populated only when superadmin accesses an account
      * @return response bean with a list of jobs, count of open jobs and count of archived jobs
      * @throws Exception
      */
     @GetMapping(value = "/listOfJobs")
-    String listAllJobsForUser(@RequestParam("archived") Optional<Boolean> archived, @RequestParam("companyName") Optional<String> companyName) throws Exception {
+    String listAllJobsForUser(@RequestParam("archived") Optional<Boolean> archived, @RequestParam("companyId") Optional<Long> companyId, @RequestParam("jobStatus") Optional<String> jobStatus) throws Exception {
 
         return Util.stripExtraInfoFromResponseBean(
-                jobService.findAllJobsForUser((archived.isPresent() ? archived.get() : false),(companyName.isPresent()?companyName.get():null)),
+                jobService.findAllJobsForUser((archived.isPresent() ? archived.get() : false),(companyId.isPresent()?companyId.get():null), (jobStatus.isPresent()?jobStatus.get():null)),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id", "displayName"));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList","jobHiringTeamList","jobDetail", "expertise", "education", "noticePeriod", "function", "experienceRange", "userEnteredKeySkill", "updatedOn", "updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
                 }})
         );
     }
@@ -103,6 +109,7 @@ public class JobController {
                     put("CvRating", Arrays.asList("overallRating"));
                     put("CandidateEducationDetails", Arrays.asList("degree"));
                     put("JobStageStep", Arrays.asList("stageName"));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy"));
@@ -111,6 +118,7 @@ public class JobController {
                     put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData"));
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateCompanyDetails", Arrays.asList("candidateId"));
+                    put("MasterData", new ArrayList<>(0));
                 }})
         );
     }
@@ -162,7 +170,8 @@ public class JobController {
         return Util.stripExtraInfoFromResponseBean(
                 jobService.getJobDetails(jobId),
                 (new HashMap<String, List<String>>(){{
-                    put("User",Arrays.asList("displayName"));
+                    put("User",Arrays.asList("id","displayName"));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",new ArrayList<>(0));
@@ -171,9 +180,10 @@ public class JobController {
                     put("CompanyScreeningQuestion",new ArrayList<>(0));
                     put("UserScreeningQuestion",new ArrayList<>(0));
                     put("JobCapabilities",new ArrayList<>(0));
-                    put("JobStageStep",new ArrayList<>(0));
-                    put("CompanyStageStep",new ArrayList<>(0));
+                    put("JobStageStep", Arrays.asList("updatedBy", "updatedOn", "createdBy", "createdOn", "jobId"));
+                    put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
                     put("StageMaster",new ArrayList<>(0));
+                    put("MasterData", new ArrayList<>(0));
                 }}));
         //return jobService.getJobDetails(jobId);
     }
@@ -185,6 +195,7 @@ public class JobController {
                 jobService.getJobHistory(jobId),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("displayName"));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",new ArrayList<>(0));
@@ -192,6 +203,7 @@ public class JobController {
                     put("ScreeningQuestions",new ArrayList<>(0));
                     put("CompanyScreeningQuestion",new ArrayList<>(0));
                     put("UserScreeningQuestion",new ArrayList<>(0));
+                    put("MasterData", new ArrayList<>(0));
                 }}));
     }
 
@@ -209,12 +221,14 @@ public class JobController {
                 (new HashMap<String, List<String>>(){{
                     put("User",new ArrayList<>(0));
                     put("Company", new ArrayList<>(0));
+                    put("CompanyAddress", Arrays.asList("address"));
                 }}),
                 new HashMap<String, List<String>>() {{
                     put("CompanyStageStep", Arrays.asList("id","createdOn", "createdBy","updatedOn","updatedBy","companyId"));
                     put("JobStageStep", Arrays.asList("jobId","createdOn","createdBy","updatedOn", "updatedBy"));
                     put("StageMaster", Arrays.asList("id"));
-        }});
+                    put("MasterData", new ArrayList<>(0));
+                }});
     }
 
     @GetMapping(value = "/supportedexportformat/{jobId}")

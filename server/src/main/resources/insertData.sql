@@ -768,7 +768,7 @@ VALUES
 (1, 'candidateName','Candidate Name', 1),
 (1, 'chatbotStatus','Chatbot Status', 2),
 (1, 'keySkillsStrength','Key Skills Strength', 3),
-(1, 'currentCompany','Current Commpany', 4),
+(1, 'currentCompany','Current Company', 4),
 (1, 'currentDesignation','Current Designation', 5),
 (1, 'email','Email', 6),
 (1, 'countryCode','Country Code', 7),

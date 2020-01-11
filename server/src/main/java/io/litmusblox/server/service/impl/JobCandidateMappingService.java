@@ -36,7 +36,6 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -132,6 +131,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
     @Resource
     JobStageStepRepository jobStageStepRepository;
+
+    @Resource
+    EmployeeReferrerRepository employeeReferrerRepository;
+
+    @Resource
+    UserRepository userRepository;
 
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
@@ -816,10 +821,20 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         returnObj.setTechResponseData(objFromDb.getTechResponseData().getTechResponse());
 
         //set the cv location
-        if(null != returnObj.getCandidateDetails() && null != returnObj.getCandidateDetails().getCvFileType()) {
-            StringBuffer cvLocation = new StringBuffer("");
-            cvLocation.append(IConstant.CANDIDATE_CV).append(File.separator).append(objFromDb.getJob().getId()).append(File.separator).append(objFromDb.getCandidate().getId()).append(returnObj.getCandidateDetails().getCvFileType());
+        StringBuffer cvLocation = new StringBuffer("");
+        cvLocation.append(IConstant.CANDIDATE_CV).append(File.separator).append(objFromDb.getJob().getId()).append(File.separator).append(objFromDb.getCandidate().getId());
+        if(null != returnObj.getCandidateDetails() && null != objFromDb.getCvFileType()) {
+            cvLocation.append(objFromDb.getCvFileType());
             returnObj.getCandidateDetails().setCvLocation(cvLocation.toString());
+        }else if(null == returnObj.getCandidateDetails() && null != objFromDb.getCvFileType()){
+            CandidateDetails candidateDetails = new CandidateDetails();
+            cvLocation.append(objFromDb.getCvFileType());
+            candidateDetails.setCvLocation(cvLocation.toString());
+            candidateDetails.setCandidateId(returnObj);
+            returnObj.setCandidateDetails(candidateDetails);
+            candidateRepository.save(returnObj);
+            candidateRepository.flush();
+            objFromDb.setCandidate(returnObj);
         }
         returnObj.setScreeningQuestionResponses(new ArrayList<>(screeningQuestionsMap.values()));
 
@@ -1060,15 +1075,24 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
             //Update education details
             JobCandidateMapping finalJcmFromDb = jcmFromDb;
+            if(jobCandidateMapping.getCandidate().getCandidateEducationDetails().size()>0){
+                candidateEducationDetailsRepository.deleteByCandidateId(finalJcmFromDb.getCandidate().getId());
+                candidateEducationDetailsRepository.flush();
+            }
+
             jobCandidateMapping.getCandidate().getCandidateEducationDetails().forEach(candidateEducationFromRequest ->{
-                if (Util.isNotNull(candidateEducationFromRequest.getDegree())) {
-                    AtomicReference<CandidateEducationDetails> tempEducationDetails=new AtomicReference<>();
-                    finalJcmFromDb.getCandidate().getCandidateEducationDetails().forEach(candidateEducationFromDb -> {
-                        if (candidateEducationFromDb.getDegree().equalsIgnoreCase(candidateEducationFromRequest.getDegree())) {
-                            tempEducationDetails.set(candidateEducationFromDb);
-                        }
-                    });
-                    createAndUpdateEducationDetails(candidateEducationFromRequest, finalJcmFromDb, tempEducationDetails.get());
+                if(null != candidateEducationFromRequest.getDegree()){
+                    if (candidateEducationFromRequest.getDegree().length() > IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue())
+                        candidateEducationFromRequest.setDegree(Util.truncateField(finalJcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.DEGREE.name(), IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue(), candidateEducationFromRequest.getDegree()));
+
+                    if (null != candidateEducationFromRequest.getSpecialization() && candidateEducationFromRequest.getSpecialization().length() > IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.getValue())
+                        candidateEducationFromRequest.setSpecialization(Util.truncateField(finalJcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.name(), IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.getValue(), candidateEducationFromRequest.getSpecialization()));
+
+                    if (null != candidateEducationFromRequest.getInstituteName() && candidateEducationFromRequest.getInstituteName().length() > IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue())
+                        candidateEducationFromRequest.setInstituteName(Util.truncateField(finalJcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.name(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue(), candidateEducationFromRequest.getInstituteName()));
+
+                    CandidateEducationDetails candidateEducationDetails = new CandidateEducationDetails(finalJcmFromDb.getCandidate().getId(), candidateEducationFromRequest.getDegree(), Util.isNotNull(candidateEducationFromRequest.getYearOfPassing())?candidateEducationFromRequest.getYearOfPassing():String.valueOf(Calendar.getInstance().get(Calendar.YEAR)), candidateEducationFromRequest.getInstituteName(), candidateEducationFromRequest.getSpecialization());
+                    candidateEducationDetailsRepository.save(candidateEducationDetails);
                 }
             });
 
@@ -1151,26 +1175,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 companyDetails.setDesignation(companyDetailsByRequest.getDesignation());
         }
         return companyDetails;
-    }
-
-    private void createAndUpdateEducationDetails(CandidateEducationDetails candidateEducationFromRequest, JobCandidateMapping jcmFromDb, CandidateEducationDetails candidateEducationFromDb){
-        if (null == candidateEducationFromDb || jcmFromDb.getCandidate().getCandidateEducationDetails().size()==0) {
-            if (candidateEducationFromRequest.getDegree().length() > IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue())
-                candidateEducationFromRequest.setDegree(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.DEGREE.name(), IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue(), candidateEducationFromRequest.getDegree()));
-
-            if (candidateEducationFromRequest.getInstituteName().length() > IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue())
-                candidateEducationFromRequest.setInstituteName(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.name(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue(), candidateEducationFromRequest.getInstituteName()));
-
-            CandidateEducationDetails candidateEducationDetails = new CandidateEducationDetails(jcmFromDb.getCandidate().getId(), candidateEducationFromRequest.getDegree(), Util.isNotNull(candidateEducationFromRequest.getYearOfPassing())?candidateEducationFromRequest.getYearOfPassing():String.valueOf(Calendar.getInstance().get(Calendar.YEAR)), candidateEducationFromRequest.getInstituteName());
-            candidateEducationDetailsRepository.save(candidateEducationDetails);
-        }else {
-            if (candidateEducationFromRequest.getInstituteName().length() > IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue())
-                candidateEducationFromRequest.setInstituteName(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.name(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue(), candidateEducationFromRequest.getInstituteName()));
-
-            candidateEducationFromDb.setInstituteName(candidateEducationFromRequest.getInstituteName());
-            candidateEducationFromDb.setYearOfPassing(Util.isNotNull(candidateEducationFromRequest.getYearOfPassing())?candidateEducationFromRequest.getYearOfPassing():String.valueOf(Calendar.getInstance().get(Calendar.YEAR)));
-            candidateEducationDetailsRepository.save(candidateEducationFromDb);
-        }
     }
 
     //Method for update alternate mobile and email in jcm
@@ -1634,8 +1638,99 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findById(jcmId).orElse(null);
         if(null == jobCandidateMapping)
-            throw new ValidationException("Job candidate not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
+            throw new ValidationException("Job candidate mapping not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
 
         jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, comment, callOutCome, false, new Date(), jobCandidateMapping.getStage(), loggedInUser));
+    }
+
+    /**
+     * Service to upload resume against jcm
+     *
+     * @param jcmId
+     * @param candidateCv
+     */
+    @Transactional
+    public void uploadResume(MultipartFile candidateCv, Long jcmId) throws Exception {
+        log.info("inside uploadResume");
+        JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(jcmId).orElse(null);
+        if(null == jcmFromDb)
+            throw new ValidationException("Job candidate mapping not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
+
+        String extension = Util.getFileExtension(candidateCv.getOriginalFilename()).toLowerCase();
+        if(extension.equals(IConstant.FILE_TYPE.rar) || extension.equals(IConstant.FILE_TYPE.zip) || !Arrays.asList(IConstant.cvUploadSupportedExtensions).contains(extension))
+            throw new ValidationException(IErrorMessages.UNSUPPORTED_FILE_TYPE+" "+extension+", For JcmId : "+jcmId, HttpStatus.BAD_REQUEST);
+
+        try {
+            StoreFileUtil.storeFile(candidateCv, jcmFromDb.getJob().getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),jcmFromDb.getCandidate(),null);
+            jcmFromDb.setCvFileType("."+extension);
+            jobCandidateMappingRepository.save(jcmFromDb);
+        }catch (Exception ex){
+           log.error("{}, File name : {}, For jcmId : ", IErrorMessages.FAILED_TO_SAVE_FILE, candidateCv.getOriginalFilename(), jcmId, ex.getMessage());
+            throw new ValidationException(IErrorMessages.FAILED_TO_SAVE_FILE+" "+candidateCv.getOriginalFilename()+ex.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    /**
+     *Service to add candidate via career page, job portal, employee referral
+     *
+     * @param candidateSource from where we source the candidate
+     * @param candidate candidate all info
+     * @param jobReferenceId In which job upload candidate
+     * @param candidateCv candidate cv
+     * @param employeeReferrer if candidate upload by employee referral then this model come
+     * @return UploadResponseBean
+     * @throws Exception
+     */
+    @Transactional
+    public UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer) throws Exception {
+        log.info("Inside uploadCandidateByNoAuthCall");
+        UploadResponseBean responseBean = null;
+        EmployeeReferrer referrerFromDb;
+
+        if(null == candidate.getCandidateName() || candidate.getCandidateName().isEmpty()){
+            candidate.setCandidateName(IConstant.NOT_AVAILABLE);
+            candidate.setFirstName(IConstant.NOT_AVAILABLE);
+        }else{
+            //populate the first name and last name of the candidate
+            Util.handleCandidateName(candidate, candidate.getCandidateName());
+        }
+
+        if(!Arrays.asList(IConstant.CandidateSource.values()).contains(IConstant.CandidateSource.valueOf(candidateSource)))
+            throw new ValidationException("Not a valid candidate source : "+candidateSource, HttpStatus.BAD_REQUEST);
+
+        if(null != candidateCv){
+            String cvFileType = Util.getFileExtension(candidateCv.getOriginalFilename());
+            candidate.getCandidateDetails().setCvFileType("."+cvFileType);
+        }
+        Job job = jobRepository.findByJobReferenceId(jobReferenceId);
+        candidate.setCandidateSource(candidateSource);
+
+        if(null != employeeReferrer){
+            referrerFromDb = employeeReferrerRepository.findByEmail(employeeReferrer.getEmail());
+            if(null == referrerFromDb){
+                referrerFromDb = employeeReferrerRepository.save(new EmployeeReferrer(employeeReferrer.getFirstName(), employeeReferrer.getLastName(), employeeReferrer.getEmail(), employeeReferrer.getEmployeeId(), employeeReferrer.getMobile(), employeeReferrer.getLocation(), employeeReferrer.getCreatedOn()));
+            }
+            referrerFromDb.setReferrerRelation(employeeReferrer.getReferrerRelation());
+            referrerFromDb.setReferrerContactDuration(employeeReferrer.getReferrerContactDuration());
+            candidate.setEmployeeReferrer(referrerFromDb);
+        }
+        //Upload candidate
+        responseBean = uploadIndividualCandidate(Arrays.asList(candidate), job.getId(), false, Optional.ofNullable(userRepository.findByEmail(IConstant.SYSTEM_USER_EMAIL)));
+
+        //Store candidate cv to repository location
+        try{
+            if(null!=candidateCv) {
+                if (responseBean.getSuccessfulCandidates().size()>0)
+                    StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getSuccessfulCandidates().get(0),null);
+                else
+                    StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getFailedCandidates().get(0), null);
+
+                responseBean.setCvStatus(true);
+            }
+        }catch(Exception e){
+            log.error("Resume upload failed :"+e.getMessage());
+            responseBean.setCvErrorMsg(e.getMessage());
+        }
+        return responseBean;
     }
 }

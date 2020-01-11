@@ -25,12 +25,20 @@ public class UserWorkspaceBean {
     int numberOfJobsCreated;
     Long companyAddressId;
     Long companyBuId;
+    String email;
+    String mobile;
+    int numOfInvites;
+    int completedChatbotCount;
+    int incompleteChatbotCount;
+    int analyticsSharedCount;
 
-    public UserWorkspaceBean(Long userId, String userName, String status, Long companyAddressId, Long companyBuId) {
+    public UserWorkspaceBean(Long userId, String userName, String status, Long companyAddressId, Long companyBuId, String email, String mobile) {
         this.userId = userId;
         this.userName = userName;
         this.status = status;
         this.companyAddressId = companyAddressId;
         this.companyBuId = companyBuId;
+        this.email = email;
+        this.mobile = mobile;
     }
 }

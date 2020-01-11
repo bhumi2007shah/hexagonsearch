@@ -97,7 +97,7 @@ public class NaukriHtmlParser implements HtmlParser {
     private void populateCandidateDetails(Candidate candidate, Document doc) {
         String experienceAndCtc = doc.getElementsMatchingOwnText("Total Experience").parents().tagName("tbody").get(1).text().replaceAll("Total Experience CTC ","").replaceAll("&", "");
 
-        if(experienceAndCtc.indexOf("Not Mentioned") == -1) {
+        if(experienceAndCtc.indexOf("Not Mentioned") == -1 && experienceAndCtc.indexOf("Fresher") == -1) {
             //set experience
             String experience = experienceAndCtc.substring(0, experienceAndCtc.indexOf("Months"));
             String years = experience.substring(0, experienceAndCtc.indexOf("Years")).trim();
@@ -110,13 +110,16 @@ public class NaukriHtmlParser implements HtmlParser {
             else
                 candidate.getCandidateCompanyDetails().get(0).setSalary(experienceAndCtc.substring(experienceAndCtc.indexOf("Months") + 6).trim());
         }
+        log.info("Set experience");
         //set noticePeriod
         String noticePeriod = doc.getElementsMatchingOwnText("Notice Period").last().parents().tagName("tbody").get(1).text().replaceAll("Notice Period","").trim();
         if (candidate.getCandidateCompanyDetails().size() == 0)
             candidate.getCandidateCompanyDetails().add(new CandidateCompanyDetails());
 
-        if (noticePeriod.indexOf("Not Mentioned") != -1 || noticePeriod.indexOf("Serving") != -1)
+        if (noticePeriod.indexOf("Not Mentioned") != -1 || noticePeriod.indexOf("Serving") != -1) {
+            log.info("Candidate notice period is Not mentioned or candidate is serving notice period");
             candidate.getCandidateCompanyDetails().get(0).setNoticePeriod("0");
+        }
         else if (noticePeriod.indexOf("Months") != -1)
             candidate.getCandidateCompanyDetails().get(0).setNoticePeriod(String.valueOf(Integer.parseInt(noticePeriod.substring(0, noticePeriod.indexOf("Months")).trim()) * 30));
         else
@@ -144,9 +147,11 @@ public class NaukriHtmlParser implements HtmlParser {
         //set location
         String location = doc.getElementsMatchingOwnText("Location").first().parent().tagName("tr").nextElementSibling().nextElementSibling().text();
                 //parents().tagName("tr").first().nextElementSibling().nextElementSibling().text();
-        if(null == candidate.getCandidateDetails())
-            candidate.setCandidateDetails(new CandidateDetails());
-        candidate.getCandidateDetails().setLocation(location.substring(0, location.indexOf("(")).trim());
+
+        if(location.indexOf("(") !=-1) {
+            if(null == candidate.getCandidateDetails())
+                candidate.setCandidateDetails(new CandidateDetails());                          candidate.getCandidateDetails().setLocation(location.substring(0, location.indexOf("(")).trim());
+        }
 
         //set keyskill
         String keyskills = doc.getElementsMatchingOwnText("Keyskills").parents().tagName("tr").first().nextElementSibling().nextElementSibling().text();

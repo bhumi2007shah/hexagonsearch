@@ -102,13 +102,21 @@ public class FetchEmailService {
                         MailData mailData = new MailData();
                         mailData.setJobFromReference(findJobForEmailSubject(message.getSubject()));
 
-                        writePart(message, mailData);
-                        message.setFlag(Flags.Flag.SEEN, true);
-                        if(null != mailData.getFileName())
-                            mailData.getCandidateFromMail().getCandidateDetails().setCvFileType("."+Util.getFileExtension(mailData.getFileName()));
-                        UploadResponseBean response = jobCandidateMappingService.uploadCandidateFromPlugin(mailData.getCandidateFromMail(), mailData.getJobFromReference().getId(), null, Optional.of(mailData.getJobFromReference().getCreatedBy()));
-                        if (IConstant.UPLOAD_STATUS.Success.name().equals(response.getStatus()) && null != mailData.getFileName())
-                            saveCandidateCv(mailData);
+                        if(null == mailData.getJobFromReference()) {
+                            log.error("Could not find job to process email with subject: {}", message.getSubject());
+                            //mark the mail as read to skip processing it in the next round
+                            message.setFlag(Flags.Flag.SEEN, true);
+                        }
+                        else {
+
+                            writePart(message, mailData);
+                            message.setFlag(Flags.Flag.SEEN, true);
+                            if (null != mailData.getFileName())
+                                mailData.getCandidateFromMail().getCandidateDetails().setCvFileType("." + Util.getFileExtension(mailData.getFileName()));
+                            UploadResponseBean response = jobCandidateMappingService.uploadCandidateFromPlugin(mailData.getCandidateFromMail(), mailData.getJobFromReference().getId(), null, Optional.of(mailData.getJobFromReference().getCreatedBy()));
+                            if (IConstant.UPLOAD_STATUS.Success.name().equals(response.getStatus()) && null != mailData.getFileName())
+                                saveCandidateCv(mailData);
+                        }
 
                     }
                 } catch(Exception e) {
@@ -167,7 +175,7 @@ public class FetchEmailService {
 
         //check if the content is plain text
         if (p.isMimeType("text/plain")) {
-            log.info("In plain text block\n{}",(String) p.getContent());
+           // log.info("In plain text block\n{}",(String) p.getContent());
         }
         //check if the content has attachment
         else if (p.isMimeType("multipart/*")) {
@@ -186,7 +194,7 @@ public class FetchEmailService {
             log.info("In else block");
             Object o = p.getContent();
             if (o instanceof String) {
-                log.info("String Message:\n {}", (String)o);
+                //log.info("String Message:\n {}", (String)o);
                 mailData.setCandidateFromMail(naukriHtmlParser.parseData((String)o, mailData.getJobFromReference().getCreatedBy()));
             } else if (o instanceof InputStream) {
                 log.info("Input stream: File");
@@ -194,7 +202,7 @@ public class FetchEmailService {
                 mailData.setFileStream((InputStream) o);
             } else {
                 log.info("Unknown type: ");
-                log.info(o.toString());
+                //log.info(o.toString());
             }
         }
 

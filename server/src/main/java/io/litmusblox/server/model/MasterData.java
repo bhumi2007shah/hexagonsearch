@@ -28,6 +28,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+//@JsonFilter("MasterData")
 public class MasterData implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285041L;

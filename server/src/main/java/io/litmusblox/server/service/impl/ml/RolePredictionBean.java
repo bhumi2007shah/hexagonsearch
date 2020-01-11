@@ -26,6 +26,7 @@ public class RolePredictionBean {
         private String jobTitle;
         private String jobDescription;
         private String recruiterRoles;
+        private String industry;
     }
 }
 

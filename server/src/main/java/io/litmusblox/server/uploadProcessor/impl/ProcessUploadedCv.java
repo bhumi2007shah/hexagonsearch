@@ -32,8 +32,7 @@ import javax.annotation.Resource;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -112,7 +111,8 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                         log.error("Found no key skills for " + cvToRate.getJobCandidateMappingId().getJob().getId());
                     else {
                         try {
-                            cvRatingApiProcessingTime = callCvRatingApi(new MlCvRatingRequestBean(jdKeySkills, cvToRate.getParsingResponseText()), cvToRate.getJobCandidateMappingId().getId());
+                            //TODO currently ML team not handle for industry so we don't send industry, need revisit after ML done implementation for industry
+                            cvRatingApiProcessingTime = callCvRatingApi(new MlCvRatingRequestBean(jdKeySkills, cvToRate.getParsingResponseText(), ""/*cvToRate.getJobCandidateMappingId().getJob().getFunction().getValue()*/), cvToRate.getJobCandidateMappingId().getId());
                         } catch (Exception e) {
                             log.info("Error while performing CV rating operation " + e.getMessage());
                             processingError = true;
@@ -131,6 +131,43 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                 log.error("Error processing record to rate cv with jcmId: " + cvToRate.getJobCandidateMappingId().getId() + "\n" + ex.getMessage());
             }
         });
+    }
+
+    /**
+     * Method to convert cv file to cv text
+     * In cv_parsing_detail if parsing_response_text is null then convert cv to text and save
+     */
+    @Transactional
+    public void CvToCvText() {
+        log.info("inside CvToCvText");
+        List<CvParsingDetails> cvParsingDetailsList = new ArrayList<>();
+        List<CvParsingDetails> cvParsingDetails = cvParsingDetailsRepository.getDataForConvertCvToCvText();
+        if(null != cvParsingDetails && cvParsingDetails.size()>0){
+            cvParsingDetails.forEach(cvParsingDetailsFromDb->{
+                String cvText = null;
+                Map<String, String> queryParameters = new HashMap<>();
+                queryParameters.put("file", environment.getProperty("cvStorageUrl")+cvParsingDetailsFromDb.getJobCandidateMappingId().getJob().getId()+"/"+cvParsingDetailsFromDb.getCandidateId()+cvParsingDetailsFromDb.getJobCandidateMappingId().getCvFileType());
+                log.info("CvFile path : {}",queryParameters.get("file"));
+                try {
+                    long apiCallStartTime = System.currentTimeMillis();
+                    cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), null);
+                    log.info("Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}",(System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
+                    if(null != cvText && !cvText.isEmpty()){
+                        cvParsingDetailsFromDb.setParsingResponseText(cvText);
+                        cvParsingDetailsList.add(cvParsingDetailsFromDb);
+                    }
+                } catch (Exception e) {
+                    log.error("Error while convert cv to text cvFilePath : {}, for cvParsingDetailsId  : {}, error message : {}",queryParameters.get("file"),cvParsingDetailsFromDb.getId(), e.getMessage());
+                    /*Map<String, String> breadCrumb = new HashMap<>();
+                    breadCrumb.put("cvParsingDetailsId",cvParsingDetailsFromDb.getId().toString());
+                    breadCrumb.put("Jcm id",cvParsingDetailsFromDb.getJobCandidateMappingId().getId().toString());
+                    breadCrumb.put("FilePath", queryParameters.get("file"));
+                    SentryUtil.logWithStaticAPI(null,"Failed to convert cv to text",breadCrumb);*/
+                }
+            });
+            if(cvParsingDetailsList.size()>0)
+                cvParsingDetailsRepository.saveAll(cvParsingDetailsList);
+        }
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -169,4 +206,5 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         );
         return targetList;
     }
+
 }

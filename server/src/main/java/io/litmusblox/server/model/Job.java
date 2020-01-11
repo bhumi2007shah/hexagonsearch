@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
+import io.litmusblox.server.service.MasterDataBean;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -155,6 +156,10 @@ public class Job implements Serializable {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "EXPERIENCE_RANGE")
     private MasterData experienceRange;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "JOB_TYPE")
+    private MasterData jobType = MasterDataBean.getInstance().getDefaultJobType();
 
     @Column(name = "JOB_REFERENCE_ID")
     @org.hibernate.annotations.Type(type = "pg-uuid")

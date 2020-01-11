@@ -33,6 +33,7 @@ import javax.annotation.Resource;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Userdetails implementation class
@@ -74,11 +75,16 @@ public class LbUserDetailsService implements UserDetailsService {
     @Resource
     CompanyBuRepository companyBuRepository;
 
+    @Resource
+    JcmProfileSharingDetailsRepository jcmProfileSharingDetailsRepository;
+
     @Autowired
     JwtTokenUtil jwtTokenUtil;
 
     @Autowired
     CompanyService companyService;
+
+    private static Pattern USER_DESIGNATION_PATTERN = Pattern.compile(IConstant.REGEX_FOR_USER_DESIGNATION);
 
     /**
      * Implementation for login functionality which will
@@ -164,6 +170,12 @@ public class LbUserDetailsService implements UserDetailsService {
         }
 
         User u = new User();
+        if(null != user.getDesignation()){
+            if(!USER_DESIGNATION_PATTERN.matcher(user.getDesignation()).matches())
+                throw new ValidationException(IErrorMessages.USER_DESIGNATION_NOT_VALID, HttpStatus.BAD_REQUEST);
+            else
+                u.setDesignation(user.getDesignation());
+        }
         u.setFirstName(Util.toSentenceCase(user.getFirstName()));
         u.setLastName(Util.toSentenceCase(user.getLastName()));
         u.setEmail(user.getEmail().toLowerCase());
@@ -388,8 +400,15 @@ public class LbUserDetailsService implements UserDetailsService {
         List<User> userList = userRepository.findByCompanyId(companyId);
         List<UserWorkspaceBean> responseBeans = new ArrayList<>(userList.size());
         userList.forEach(user->{
-            UserWorkspaceBean workspaceBean = new UserWorkspaceBean(user.getId(), user.getDisplayName(), user.getStatus(), user.getCompanyAddressId(), user.getCompanyBuId());
+            UserWorkspaceBean workspaceBean = new UserWorkspaceBean(user.getId(), user.getDisplayName(), user.getStatus(), user.getCompanyAddressId(), user.getCompanyBuId(), user.getEmail(), user.getMobile());
             workspaceBean.setNumberOfJobsCreated(jobRepository.countByCreatedBy(user));
+            workspaceBean.setNumOfInvites(jobCandidateMappingRepository.getInviteCount(user.getId()));
+            List<Object[]> object = jobCandidateMappingRepository.getChatbotCountCompletedAndInCompleted(user.getId());
+            if(null != (object.get(0))[1]){
+                workspaceBean.setIncompleteChatbotCount(Integer.parseInt((object.get(0))[1].toString()));
+                workspaceBean.setCompletedChatbotCount(Integer.parseInt((object.get(0))[0].toString()));
+            }
+            workspaceBean.setAnalyticsSharedCount(jcmProfileSharingDetailsRepository.getProfileSharingCount(user.getId()));
             responseBeans.add(workspaceBean);
         });
 

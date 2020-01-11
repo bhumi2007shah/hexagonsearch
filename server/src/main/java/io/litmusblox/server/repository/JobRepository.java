@@ -29,18 +29,10 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     //find all jobs that are not archived
     @Transactional
-    List<Job> findByCreatedByAndDateArchivedIsNullOrderByCreatedOnDesc(User createdBy);
+    List<Job> findByCreatedByAndStatusAndDateArchivedIsNullOrderByCreatedOnDesc(User createdBy, String jobStatus);
     //find all archived jobs
     @Transactional
     List<Job> findByCreatedByAndDateArchivedIsNotNullOrderByCreatedOnDesc(User createdBy);
-
-    //count of archived jobs
-    @Transactional
-    Long countByCreatedByAndDateArchivedIsNotNull(User createdBy);
-
-    //count of active jobs
-    @Transactional
-    Long countByCreatedByAndDateArchivedIsNull(User createdBy);
 
     //find all jobs for which ml data is not available
     @Transactional
@@ -52,17 +44,9 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     @Transactional
     List<Job> findByCompanyIdAndDateArchivedIsNotNullOrderByCreatedOnDesc(Company company);
 
-    //count of all active jobs by company
-    @Transactional
-    Long countByCompanyIdAndDateArchivedIsNull(Company company);
-
     //find all active jobs by company
     @Transactional
-    List<Job> findByCompanyIdAndDateArchivedIsNullOrderByCreatedOnDesc(Company company);
-
-    //count of all archived jobs by company
-    @Transactional
-    Long countByCompanyIdAndDateArchivedIsNotNull(Company company);
+    List<Job> findByCompanyIdAndStatusAndDateArchivedIsNullOrderByCreatedOnDesc(Company company, String jobStatus);
 
     //count of all job attached to a BU
     @Transactional
@@ -82,4 +66,23 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     @Transactional(readOnly = true)
     Job findByJobReferenceId(UUID jobReferenceId);
+
+
+    //find job count per status by createdBy
+    @Transactional
+    @Query(value = "SELECT sum((status LIKE 'Live')\\:\\:INT) AS liveJobCount, sum((status LIKE 'Draft')\\:\\:INT) As draftJobCount, sum((status LIKE 'Archived')\\:\\:INT) AS archivedJobCount " +
+            "FROM job where created_by =:createdBy", nativeQuery = true)
+    List<Object[]> getJobCountPerStatusByCreatedBy(Long createdBy);
+
+    //find job count per status by companyId
+    @Transactional
+    @Query(value = "SELECT sum((status LIKE 'Live')\\:\\:INT) AS liveJobCount, sum((status LIKE 'Draft')\\:\\:INT) As draftJobCount, sum((status LIKE 'Archived')\\:\\:INT) AS archivedJobCount " +
+            "FROM job where company_id =:companyId", nativeQuery = true)
+    List<Object[]> getJobCountPerStatusByCompanyId(Long companyId);
+
+
+
+
+
+
 }

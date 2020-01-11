@@ -197,6 +197,8 @@ public class JobCandidateMappingController {
                     put("CandidateSkillDetails", Arrays.asList("id","candidateId"));
                     put("CandidateWorkAuthorization", Arrays.asList("id","candidateId"));
                     put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
+                    put("CompanyAddress", new ArrayList<>(0));
                 }});
         log.info("Completed processing fetch candidate profile request in " + (System.currentTimeMillis()-startTime) + "ms.");
         return response;
@@ -304,5 +306,18 @@ public class JobCandidateMappingController {
     void addComment(@RequestBody Map<String, String> requestJson, @PathVariable(required = false, value = "callOutcome") Optional callOutcome){
         log.info("inside addComment");
         jobCandidateMappingService.addComment(requestJson.get("comment"), Long.parseLong(requestJson.get("jcmId")), callOutcome.isPresent()?callOutcome.get().toString():null);
+    }
+
+    /**
+     * REST API to upload resume related to jcm
+     * @param multipartFile
+     * @param jcmId
+     */
+    @PostMapping(value = {"/uploadResume/{jcmId}"})
+    @ResponseStatus(value = HttpStatus.OK)
+    void uploadResume(@RequestParam("candidateCv") MultipartFile multipartFile, @PathVariable Long jcmId) throws Exception {
+        log.info("inside uploadResume");
+        jobCandidateMappingService.uploadResume(multipartFile, jcmId);
+        log.info("Resume upload successFully");
     }
 }

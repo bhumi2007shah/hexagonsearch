@@ -1185,7 +1185,7 @@ VALUES
 (1, 'chatbotStatus','Chatbot Status', 2),
 (1, 'currentStage','Stage', 3),
 (1, 'keySkillsStrength','Key Skills Strength', 4),
-(1, 'currentCompany','Current Commpany', 5),
+(1, 'currentCompany','Current Company', 5),
 (1, 'currentDesignation','Current Designation', 6),
 (1, 'email','Email', 7),
 (1, 'countryCode','Country Code', 8),
@@ -1332,8 +1332,106 @@ INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
 ('jobType', 'Temporary'),
 ('jobType', 'Intern');
 
+--For ticket #310
+ALTER TABLE JOB
+ADD COLUMN JOB_TYPE INTEGER REFERENCES MASTER_DATA(ID);
+
+UPDATE JOB
+SET JOB_TYPE = (SELECT ID FROM MASTER_DATA WHERE TYPE = 'jobType' AND VALUE = 'Full Time');
+
+ALTER TABLE JOB
+ALTER COLUMN JOB_TYPE SET NOT NULL;
+
+DROP TABLE JOB_DETAILS;
+
+ALTER TABLE COMPANY_ADDRESS
+ADD COLUMN CITY VARCHAR(100),
+ADD COLUMN STATE VARCHAR(100),
+ADD COLUMN COUNTRY VARCHAR(50);
+
+-- view to concatenate all skills as comma separated values per job
+drop view if exists jobKeySkillAggregation;
+create view jobKeySkillAggregation as
+select job_key_skills.job_id as jobId, string_agg(trim(skills_master.skill_name), ',') as keySkills
+from skills_master, job_key_skills
+where skills_master.id = job_key_skills.skill_id
+group by job_key_skills.job_id;
+
+-- view to select all required fields for search query
+drop view if exists jobDetailsView;
+create view jobDetailsView AS
+select
+	job.id as jobId,
+	job.company_id as companyId,
+	job.job_title as jobTitle,
+	job.job_type as jobType,
+	job.created_on as jobCreatedOn,
+	company_address.address as jobLocation,
+	company_address.city as jobLocationCity,
+	company_address.state as jobLocationState,
+	company_address.country as jobLocationCountry,
+	exp.value as jobExperience,
+	education.value as education, jobKeySkillAggregation.keyskills as keyskills
+from job
+left join company_address
+on job.job_location = company_address.id
+left join master_data exp
+on job.experience_range = exp.id
+left join master_data education
+on job.education = education.id
+left join jobKeySkillAggregation
+on job.id = jobKeySkillAggregation.jobId
+order by jobId;
+
+--For ticket  #290
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN CV_FILE_TYPE VARCHAR (10);
+
+--Migrate all cvTypes from candidate detail table to job candidate mapping table
+UPDATE JOB_CANDIDATE_MAPPING AS JCM
+SET CV_FILE_TYPE = CD.CV_FILE_TYPE
+FROM CANDIDATE_DETAILS AS CD
+WHERE JCM.CANDIDATE_ID = CD.CANDIDATE_ID AND CD.CV_FILE_TYPE IS NOT NULL;
+
+ALTER TABLE CANDIDATE_DETAILS
+DROP COLUMN CV_FILE_TYPE;
+
+--For ticket #311
+CREATE TABLE EMPLOYEE_REFERRER (
+ID serial PRIMARY KEY NOT NULL,
+FIRST_NAME VARCHAR (45) NOT NULL,
+LAST_NAME VARCHAR (45) NOT NULL,
+EMAIL VARCHAR(50) NOT NULL UNIQUE,
+EMPLOYEE_ID VARCHAR(10) NOT NULL,
+MOBILE VARCHAR (15) NOT NULL,
+LOCATION VARCHAR(50) NOT NULL,
+CREATED_ON TIMESTAMP NOT NULL
+);
+
+CREATE TABLE CANDIDATE_REFERRAL_DETAIL(
+ID serial PRIMARY KEY NOT NULL,
+JOB_CANDIDATE_MAPPING_ID INTEGER REFERENCES JOB_CANDIDATE_MAPPING(ID) NOT NULL,
+EMPLOYEE_REFERRER_ID INTEGER REFERENCES EMPLOYEE_REFERRER(ID) NOT NULL,
+REFERRER_RELATION INTEGER REFERENCES MASTER_DATA(ID) NOT NULL,
+REFERRER_CONTACT_DURATION SMALLINT NOT NULL
+);
+
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ALTER COLUMN CANDIDATE_SOURCE TYPE VARCHAR(17);
 
 
+INSERT INTO public.users(
+ email, first_name, last_name, mobile, company_id, role, status, country_id, created_on)
+	VALUES ('systemuser@hex.com', 'System', 'User','1234567890',
+			(select id from company where company_name= 'LitmusBlox'),'BusinessUser','New', 3, now());
 
 
+-- Increase address length #329
+ALTER TABLE company_address ALTER COLUMN address type VARCHAR(300);
 
+--Increase designation length #337
+ALTER TABLE CANDIDATE_COMPANY_DETAILS ALTER COLUMN DESIGNATION TYPE VARCHAR(100);
+
+-- Additional column for company_short_name
+ALTER TABLE COMPANY
+ADD COLUMN SHORT_NAME VARCHAR(8) UNIQUE;

@@ -98,9 +98,6 @@ public class CandidateDetails implements Serializable {
     @Column(name = "OTHER_CERTIFICATES")
     private String otherCertificates;
 
-    @Column(name = "CV_FILE_TYPE")
-    private String cvFileType;
-
     @Column(name = "LAST_ACTIVE")
     private Date lastActive;
 
@@ -110,13 +107,17 @@ public class CandidateDetails implements Serializable {
     @Column(name = "RELEVANT_EXPERIENCE")
     private Double relevantExperience;
 
+    @JsonProperty
+    @Transient
+    private String textCv;
+
     @Transient
     @JsonProperty
     private String cvLocation;
 
     @JsonProperty
     @Transient
-    private String textCv;
+    private String cvFileType;
 
     public CandidateDetails(Date dateOfBirth, String location, Double totalExperience, Double relevantExperience, Candidate candidateId) {
         this.dateOfBirth = dateOfBirth;
