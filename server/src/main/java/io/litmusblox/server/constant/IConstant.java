@@ -291,13 +291,21 @@ public interface IConstant {
 
     String[] fetchItemsType = new String[]{"referrerRelation", "jobType"};
 
+
+
     //Constants for process otp
-    String AUTH_KEY = "authkey";
-    String SEND_OTP_URL = "sendOtpUrl";
-    String VERIFY_OTP = "verifyOtpUrl";
-    String RETRY_OTP = "retrySendOtp";
-    String SENDER = "sender";
-    String TEMPLATE_ID = "template_id";
-    String OTP_LENGTH = "otp_length";
-    String RETRY_TYPE = "retrytype";
+    enum OtpMsg91 {
+
+        AUTH_KEY("authkey"), SEND_OTP_URL("sendOtpUrl"), VERIFY_OTP("verifyOtpUrl"), RETRY_OTP("retrySendOtp"), SENDER("sender"), TEMPLATE_ID("template_id"), OTP_LENGTH("otp_length"), RETRY_TYPE("retrytype");
+
+        private String value;
+
+        OtpMsg91(String val) {
+            this.value = val;
+        }
+
+        public String getValue() {
+            return this.value;
+        }
+    }
 }
