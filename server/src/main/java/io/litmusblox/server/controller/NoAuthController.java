@@ -4,21 +4,13 @@
 
 package io.litmusblox.server.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
-import io.litmusblox.server.model.Job;
-import io.litmusblox.server.model.JobCandidateMapping;
-import io.litmusblox.server.model.JobScreeningQuestions;
-import io.litmusblox.server.model.User;
-import io.litmusblox.server.service.IJobCandidateMappingService;
-import io.litmusblox.server.service.IJobService;
-import io.litmusblox.server.service.IMasterDataService;
-import io.litmusblox.server.service.TechChatbotRequestBean;
-import io.litmusblox.server.service.UploadResponseBean;
+import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
 import io.litmusblox.server.service.impl.SearchRequestBean;
 import io.litmusblox.server.utils.Util;
@@ -290,7 +282,7 @@ public class NoAuthController {
      * @param searchRequest the request bean with search criteria
      * @return the list of jobs matching the search criteria
      */
-    @GetMapping(value="/searchJobs")
+    @PostMapping(value="/searchJobs")
     String searchJobs(@RequestBody String searchRequest) throws Exception {
         log.info("Received request to search jobs");
         long startTime = System.currentTimeMillis();
