@@ -290,4 +290,14 @@ public interface IConstant {
     String SYSTEM_USER_EMAIL = "systemuser@hex.com";
 
     String[] fetchItemsType = new String[]{"referrerRelation", "jobType"};
+
+    //Constants for process otp
+    String AUTH_KEY = "authkey";
+    String SEND_OTP_URL = "sendOtpUrl";
+    String VERIFY_OTP = "verifyOtpUrl";
+    String RETRY_OTP = "retrySendOtp";
+    String SENDER = "sender";
+    String TEMPLATE_ID = "template_id";
+    String OTP_LENGTH = "otp_length";
+    String RETRY_TYPE = "retrytype";
 }
