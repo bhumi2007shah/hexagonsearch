@@ -138,7 +138,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
      * In cv_parsing_detail if parsing_response_text is null then convert cv to text and save
      */
     @Transactional
-    public void CvToCvText() {
+    public void cvToCvText() {
         log.info("inside CvToCvText");
         List<CvParsingDetails> cvParsingDetailsList = new ArrayList<>();
         List<CvParsingDetails> cvParsingDetails = cvParsingDetailsRepository.getDataForConvertCvToCvText();

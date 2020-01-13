@@ -45,6 +45,6 @@ public class ScheduledTasks {
 
     @Scheduled(fixedRate = 120000, initialDelay = 5000)
     public void convertCvFileToCvText() {
-        processUploadedCV.CvToCvText();
+        processUploadedCV.cvToCvText();
     }
 }
