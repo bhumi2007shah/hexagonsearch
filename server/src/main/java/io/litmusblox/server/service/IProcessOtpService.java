@@ -25,9 +25,10 @@ public interface IProcessOtpService {
      * Service method to validate Otp against a mobile number
      * @param mobile the mobile number for the otp
      * @param otp the otp value
+     * @return boolean indicating whether the otp verification succeeded or failed
      * @throws Exception
      */
-    void verifyOtp(String mobile, String otp);
+    boolean verifyOtp(String mobile, String otp);
 
     /**
      * Service method to handle request for resend otp for a mobile number

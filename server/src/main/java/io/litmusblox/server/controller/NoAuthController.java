@@ -351,12 +351,13 @@ public class NoAuthController {
      * REST Api to validate Otp against a mobile number
      * @param mobile the mobile number for the otp
      * @param otp the otp value
+     * @return boolean indicating whether the otp verification succeeded or failed
      * @throws Exception
      */
     @GetMapping(value = "/verifyOtp")
     @ResponseStatus(value = HttpStatus.OK)
-    void verifyOtp(@RequestParam String mobile, @RequestParam String otp) throws Exception {
-        processOtpService.verifyOtp(mobile, otp);
+    boolean verifyOtp(@RequestParam String mobile, @RequestParam String otp) throws Exception {
+        return processOtpService.verifyOtp(mobile, otp);
     }
 
     /**

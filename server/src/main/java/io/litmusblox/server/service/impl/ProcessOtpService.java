@@ -50,7 +50,8 @@ public class ProcessOtpService implements IProcessOtpService {
             stringBuilder.append("&otp_length="+environment.getProperty(IConstant.OtpMsg91.OTP_LENGTH.getValue()));
             stringBuilder.append("&country="+countryCode);
             stringBuilder.append("&otp=");
-            rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.GET,null);
+            String response = rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.GET,null);
+            log.info("Response from resend otp api call: {}", response);
         }catch (Exception ex){
             log.error("Error while send otp : "+ex.getMessage());
         }
@@ -61,23 +62,30 @@ public class ProcessOtpService implements IProcessOtpService {
      * Service method to validate Otp against a mobile number
      * @param mobile the mobile number for the otp
      * @param otp the otp value
+     * @return boolean indicating whether the otp verification succeeded or failed
      * @throws Exception
      */
+    private static String OTP_MATCH = "{\"message\":\"OTP verified success\",\"type\":\"success\"}\n";
     @Override
-    public void verifyOtp(String mobile, String otp){
+    public boolean verifyOtp(String mobile, String otp){
         log.info("Received request to Verify OTP for mobile number {} with otp value {}", mobile, otp);
         long startTime = System.currentTimeMillis();
+        boolean match = true;
         try {
             RestClient rest = RestClient.getInstance();
             StringBuilder stringBuilder = new StringBuilder(environment.getProperty(IConstant.OtpMsg91.VERIFY_OTP.getValue()));
             stringBuilder.append("?authkey="+environment.getProperty(IConstant.OtpMsg91.AUTH_KEY.getValue()));
             stringBuilder.append("&mobile="+mobile);
             stringBuilder.append("&otp="+otp);
-            rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.POST,null);
+            String response = rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.POST,null);
+            if (!OTP_MATCH.equalsIgnoreCase(response))
+                match = false;
+            log.info("Response from msg91\n{}", response);
         }catch (Exception ex){
             log.error("Error while verify otp : "+ex.getMessage());
         }
         log.info("Completed processing Verify OTP request in {}",(System.currentTimeMillis() - startTime));
+        return match;
     }
 
     /**
@@ -95,7 +103,8 @@ public class ProcessOtpService implements IProcessOtpService {
             stringBuilder.append("?authkey="+environment.getProperty(IConstant.OtpMsg91.AUTH_KEY.getValue()));
             stringBuilder.append("&mobile="+mobile);
             stringBuilder.append("&retrytype="+environment.getProperty(IConstant.OtpMsg91.RETRY_TYPE.getValue()));
-            rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.POST,null);
+            String response = rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.POST,null);
+            log.info("Response from resend otp api call: {}", response);
         }catch (Exception ex){
             log.error("Error while retry otp : "+ex.getMessage());
         }
