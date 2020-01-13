@@ -822,7 +822,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         //set the cv location
         StringBuffer cvLocation = new StringBuffer("");
-        if(null != returnObj.getCandidateDetails() && null != objFromDb.getCvFileType()) {
+        if(null != objFromDb && null != objFromDb.getCvFileType()) {
             cvLocation.append(IConstant.CANDIDATE_CV).append(File.separator).append(objFromDb.getJob().getId()).append(File.separator).append(objFromDb.getCandidate().getId()).append(objFromDb.getCvFileType());
             objFromDb.setCvLocation(cvLocation.toString());
         }
