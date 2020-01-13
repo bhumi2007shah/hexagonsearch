@@ -1155,6 +1155,7 @@ ADD COLUMN RELEVANT_EXPERIENCE NUMERIC (4, 2);
 
 
 -- FOR TICKET #258
+DROP TABLE IF EXISTS EXPORT_FORMAT_DETAIL;
 DROP TABLE IF EXISTS EXPORT_FORMAT_MASTER;
 CREATE TABLE EXPORT_FORMAT_MASTER(
 ID serial PRIMARY KEY NOT NULL,
@@ -1163,8 +1164,6 @@ FORMAT varchar(15) NOT NULL,
 SYSTEM_SUPPORTED BOOL DEFAULT FALSE
 );
 
-
-DROP TABLE IF EXISTS EXPORT_FORMAT_DETAIL;
 CREATE TABLE EXPORT_FORMAT_DETAIL(
     ID serial PRIMARY KEY NOT NULL,
     FORMAT_ID integer REFERENCES EXPORT_FORMAT_MASTER(ID) NOT NULL,
@@ -1184,14 +1183,15 @@ INSERT INTO export_format_detail
 VALUES
 (1, 'candidateName','Candidate Name', 1),
 (1, 'chatbotStatus','Chatbot Status', 2),
-(1, 'keySkillsStrength','Key Skills Strength', 3),
-(1, 'currentCompany','Current Commpany', 4),
-(1, 'currentDesignation','Current Designation', 5),
-(1, 'email','Email', 6),
-(1, 'countryCode','Country Code', 7),
-(1, 'mobile','Mobile', 8),
-(1, 'totalExperience','Total Experience', 9),
-(1, 'createdBy','Created By', 10);
+(1, 'currentStage','Stage', 3),
+(1, 'keySkillsStrength','Key Skills Strength', 4),
+(1, 'currentCompany','Current Company', 5),
+(1, 'currentDesignation','Current Designation', 6),
+(1, 'email','Email', 7),
+(1, 'countryCode','Country Code', 8),
+(1, 'mobile','Mobile', 9),
+(1, 'totalExperience','Total Experience', 10),
+(1, 'createdBy','Created By', 11);
 
 drop view if exists exportDataView;
 create view exportDataView AS
@@ -1200,6 +1200,7 @@ select
 	concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidateName,
 	jcm.chatbot_status as chatbotStatus,
 	cvr.overall_rating as keySkillsStrength,
+	sm.stage_name as currentStage,
 	currentCompany.company_name as currentCompany,
 	currentCompany.designation as currentDesignation,
 	jcm.email,
@@ -1219,10 +1220,13 @@ select
 	) as currentCompany on jcm.candidate_id = currentCompany.candidate_id
 	left join candidate_details cd on cd.candidate_id = jcm.candidate_id
 	inner join users ON users.id = jcm.created_by
+	inner join job_stage_step jss on jss.id=jcm.stage
+	inner join company_stage_step css on css.id = jss.stage_step_id
+	inner join stage_master sm on sm.id = css.stage
 	left join (
 		select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
 		union
-		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.company_screening_question_id=usq.id
+		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.user_screening_question_id=usq.id
 		union
 		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
 	) as jsq on jsq.jsqJobId = jcm.job_id
@@ -1284,3 +1288,150 @@ DROP CONSTRAINT company_address_address_title_key;
 
 ALTER TABLE COMPANY_ADDRESS
 ADD CONSTRAINT UNIQUE_COMPANY_ADDRESS_TITLE UNIQUE(COMPANY_ID, ADDRESS_TITLE);
+
+--For ticket #289
+INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
+('callOutCome', 'Connected'),
+('callOutCome', 'No Answer'),
+('callOutCome', 'Busy'),
+('callOutCome', 'Wrong Number'),
+('callOutCome', 'Left Message/VoiceMail');
+
+ALTER TABLE JCM_HISTORY
+ADD COLUMN CALL_LOG_OUTCOME VARCHAR(25),
+ADD COLUMN SYSTEM_GENERATED BOOL DEFAULT 't' NOT NULL;
+
+ALTER TABLE JCM_HISTORY
+RENAME COLUMN DETAILS TO COMMENT;
+
+ALTER TABLE JCM_HISTORY
+ALTER COLUMN COMMENT TYPE TEXT;
+
+--For ticket #28
+UPDATE SMS_TEMPLATES SET  TEMPLATE_CONTENT = 'Oh no [[${commBean.receiverfirstname}]]!  The Litmus Profile you started creating for the [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]] was left incomplete. It''s important that you finish the profile to be considered for the job. Continue from where you left last. Just click the link to continue. [[${commBean.chatlink}]]'  WHERE TEMPLATE_NAME = 'ChatIncompleteReminder1';
+
+--For ticket #255
+ALTER TABLE JOB
+ADD COLUMN JOB_REFERENCE_ID UUID NOT NULL DEFAULT uuid_generate_v1();
+
+--From ML get capability_name length 50
+ALTER TABLE JOB_CAPABILITIES
+ALTER COLUMN CAPABILITY_NAME TYPE VARCHAR(50);
+
+--For ticket #301
+INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
+('referrerRelation', 'Candidate reported to me directly'),
+('referrerRelation', 'I reported to the Candidate'),
+('referrerRelation', 'We were peers in the same company'),
+('referrerRelation', 'Candidate is a friend'),
+('referrerRelation', 'Candidate is a relative'),
+('referrerRelation', 'We were students together'),
+('referrerRelation', 'I don''t know the candidate, simply referring'),
+('jobType', 'Full Time'),
+('jobType', 'Part Time'),
+('jobType', 'Temporary'),
+('jobType', 'Intern');
+
+--For ticket #310
+ALTER TABLE JOB
+ADD COLUMN JOB_TYPE INTEGER REFERENCES MASTER_DATA(ID);
+
+UPDATE JOB
+SET JOB_TYPE = (SELECT ID FROM MASTER_DATA WHERE TYPE = 'jobType' AND VALUE = 'Full Time');
+
+ALTER TABLE JOB
+ALTER COLUMN JOB_TYPE SET NOT NULL;
+
+DROP TABLE JOB_DETAILS;
+
+ALTER TABLE COMPANY_ADDRESS
+ADD COLUMN CITY VARCHAR(100),
+ADD COLUMN STATE VARCHAR(100),
+ADD COLUMN COUNTRY VARCHAR(50);
+
+-- view to concatenate all skills as comma separated values per job
+drop view if exists jobKeySkillAggregation;
+create view jobKeySkillAggregation as
+select job_key_skills.job_id as jobId, string_agg(trim(skills_master.skill_name), ',') as keySkills
+from skills_master, job_key_skills
+where skills_master.id = job_key_skills.skill_id
+group by job_key_skills.job_id;
+
+-- view to select all required fields for search query
+drop view if exists jobDetailsView;
+create view jobDetailsView AS
+select
+	job.id as jobId,
+	job.company_id as companyId,
+	job.job_title as jobTitle,
+	job.job_type as jobType,
+	job.created_on as jobCreatedOn,
+	company_address.address as jobLocation,
+	company_address.city as jobLocationCity,
+	company_address.state as jobLocationState,
+	company_address.country as jobLocationCountry,
+	exp.value as jobExperience,
+	education.value as education, jobKeySkillAggregation.keyskills as keyskills
+from job
+left join company_address
+on job.job_location = company_address.id
+left join master_data exp
+on job.experience_range = exp.id
+left join master_data education
+on job.education = education.id
+left join jobKeySkillAggregation
+on job.id = jobKeySkillAggregation.jobId
+order by jobId;
+
+--For ticket  #290
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN CV_FILE_TYPE VARCHAR (10);
+
+--Migrate all cvTypes from candidate detail table to job candidate mapping table
+UPDATE JOB_CANDIDATE_MAPPING AS JCM
+SET CV_FILE_TYPE = CD.CV_FILE_TYPE
+FROM CANDIDATE_DETAILS AS CD
+WHERE JCM.CANDIDATE_ID = CD.CANDIDATE_ID AND CD.CV_FILE_TYPE IS NOT NULL;
+
+ALTER TABLE CANDIDATE_DETAILS
+DROP COLUMN CV_FILE_TYPE;
+
+--For ticket #311
+CREATE TABLE EMPLOYEE_REFERRER (
+ID serial PRIMARY KEY NOT NULL,
+FIRST_NAME VARCHAR (45) NOT NULL,
+LAST_NAME VARCHAR (45) NOT NULL,
+EMAIL VARCHAR(50) NOT NULL UNIQUE,
+EMPLOYEE_ID VARCHAR(10) NOT NULL,
+MOBILE VARCHAR (15) NOT NULL,
+LOCATION VARCHAR(50) NOT NULL,
+CREATED_ON TIMESTAMP NOT NULL
+);
+
+CREATE TABLE CANDIDATE_REFERRAL_DETAIL(
+ID serial PRIMARY KEY NOT NULL,
+JOB_CANDIDATE_MAPPING_ID INTEGER REFERENCES JOB_CANDIDATE_MAPPING(ID) NOT NULL,
+EMPLOYEE_REFERRER_ID INTEGER REFERENCES EMPLOYEE_REFERRER(ID) NOT NULL,
+REFERRER_RELATION INTEGER REFERENCES MASTER_DATA(ID) NOT NULL,
+REFERRER_CONTACT_DURATION SMALLINT NOT NULL
+);
+
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ALTER COLUMN CANDIDATE_SOURCE TYPE VARCHAR(17);
+
+
+INSERT INTO public.users(
+ email, first_name, last_name, mobile, company_id, role, status, country_id, created_on)
+	VALUES ('systemuser@hex.com', 'System', 'User','1234567890',
+			(select id from company where company_name= 'LitmusBlox'),'BusinessUser','New', 3, now());
+
+
+-- Increase address length #329
+ALTER TABLE company_address ALTER COLUMN address type VARCHAR(300);
+
+--Increase designation length #337
+ALTER TABLE CANDIDATE_COMPANY_DETAILS ALTER COLUMN DESIGNATION TYPE VARCHAR(100);
+
+-- Additional column for company_short_name
+ALTER TABLE COMPANY
+ADD COLUMN SHORT_NAME VARCHAR(8) UNIQUE;

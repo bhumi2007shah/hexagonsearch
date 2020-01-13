@@ -21,6 +21,8 @@ import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Service class for Candidate related operations
@@ -140,6 +142,24 @@ public class CandidateService implements ICandidateService {
         return dupCandidateByEmail;
     }
 
+    public Candidate findByProfileTypeAndUniqueId(List<CandidateOnlineProfile> candidateOnlineProfiles) throws Exception{
+        //extract uniqueId for linkedIn and searching for candidate with this profile in DB.
+        Candidate candidateFromDB = null;
+        Optional<CandidateOnlineProfile> profileToSearch = candidateOnlineProfiles.stream()
+                .filter(candidateOnlineProfile -> candidateOnlineProfile.getProfileType().equalsIgnoreCase(IConstant.CandidateSource.LinkedIn.toString().toLowerCase()))
+                .findAny();
+        if(profileToSearch.isPresent()){
+            Pattern pattern = Pattern.compile(IConstant.REGEX_TO_FIND_ONLINE_PROFILE_UNIQUE_ID);
+            Matcher matcher = pattern.matcher(profileToSearch.get().getUrl());
+            if(matcher.find()) {
+                candidateFromDB = candidateRepository.findCandidateByProfileTypeAndUniqueId(
+                        IConstant.CandidateSource.LinkedIn.toString().toLowerCase(), matcher.group()
+                );
+            }
+        }
+        return candidateFromDB;
+    }
+
     /**
      * Method to create a new candidate, candidateEmailHistory and candidateMobileHistory
      *
@@ -157,9 +177,12 @@ public class CandidateService implements ICandidateService {
         log.info("Inside createCandidate method - create candidate, emailHistory, mobileHistory");
         Candidate candidate = candidateRepository.save(new Candidate(firstName, lastName, email, mobile, countryCode, new Date(), loggedInUser));
         candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, email, new Date(), loggedInUser));
-        candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobile, countryCode, new Date(), loggedInUser));
+        if(null != mobile)
+            candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobile, countryCode, new Date(), loggedInUser));
+
         if(alternateMobile.isPresent())
             candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, alternateMobile.get(), countryCode, new Date(), loggedInUser));
+
         return candidate;
     }
 
@@ -206,6 +229,10 @@ public class CandidateService implements ICandidateService {
             }
             if (!Util.isNull(obj.getDegree()) && obj.getDegree().length() > IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue()){
                 obj.setDegree(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.DEGREE.name(), IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue(), obj.getDegree()));
+            }
+
+            if (!Util.isNull(obj.getSpecialization()) && obj.getSpecialization().length() > IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.getValue()){
+                obj.setSpecialization(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.name(), IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.getValue(), obj.getSpecialization()));
             }
 
             try{

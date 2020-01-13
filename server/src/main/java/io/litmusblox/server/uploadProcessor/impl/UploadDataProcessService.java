@@ -57,18 +57,21 @@ public class UploadDataProcessService implements IUploadDataProcessService {
     @Resource
     JobStageStepRepository jobStageStepRepository;
 
+    @Resource
+    CandidateReferralDetailRepository candidateReferralDetailRepository;
+
     @Autowired
     ICandidateService candidateService;
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void processData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, int candidateProcessed, Long jobId, boolean ignoreMobile){
+    public void processData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, int candidateProcessed, Long jobId, boolean ignoreMobile, Optional<User> createdBy){
         log.info("inside processData");
 
         int recordsProcessed = 0;
         int successCount = 0;
         int failureCount = uploadResponseBean.getFailureCount();
 
-        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User loggedInUser = createdBy.isPresent()?createdBy.get():(User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         Job job=jobRepository.getOne(jobId);
 
@@ -175,6 +178,9 @@ public class UploadDataProcessService implements IUploadDataProcessService {
         //create a candidate if no history found for email and mobile
         long candidateId;
         Candidate existingCandidate = candidateService.findByMobileOrEmail(candidate.getEmail(),candidate.getMobile(),(Util.isNull(candidate.getCountryCode())?loggedInUser.getCountryId().getCountryCode():candidate.getCountryCode()), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
+        if(null == existingCandidate && candidate.getCandidateSource().equalsIgnoreCase(IConstant.CandidateSource.LinkedIn.getValue())){
+            existingCandidate = candidateService.findByProfileTypeAndUniqueId(candidate.getCandidateOnlineProfiles());
+        }
         Candidate candidateObjToUse = existingCandidate;
         if(null == existingCandidate) {
             candidate.setCreatedOn(new Date());
@@ -207,7 +213,11 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             candidateObjToUse.setMobile(candidate.getMobile());
 
             JobStageStep stageStepForSource = jobStageStepRepository.findStageIdForJob(job.getId(), IConstant.Stage.Source.getValue()).get(0);
-            JobCandidateMapping savedObj = jobCandidateMappingRepository.save(new JobCandidateMapping(job,candidateObjToUse,stageStepForSource, candidate.getCandidateSource(), new Date(),loggedInUser, UUID.randomUUID(), candidate.getFirstName(), candidate.getLastName()));
+            JobCandidateMapping savedObj = jobCandidateMappingRepository.save(new JobCandidateMapping(job,candidateObjToUse,stageStepForSource, candidate.getCandidateSource(), new Date(),loggedInUser, UUID.randomUUID(), candidate.getFirstName(), candidate.getLastName(), (null != candidate.getCandidateDetails())?candidate.getCandidateDetails().getCvFileType():null));
+
+            if(savedObj.getCandidateSource().equals(IConstant.CandidateSource.EmployeeReferral.getValue())){
+                candidateReferralDetailRepository.save(new CandidateReferralDetail(savedObj, candidate.getEmployeeReferrer(), candidate.getEmployeeReferrer().getReferrerRelation(), candidate.getEmployeeReferrer().getReferrerContactDuration()));
+            }
 
             //string to store detail about jcmHistory
             String candidateDetail = "jcm created for "+msg;

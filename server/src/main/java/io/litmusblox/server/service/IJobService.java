@@ -7,9 +7,11 @@ package io.litmusblox.server.service;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobHistory;
 import io.litmusblox.server.model.JobStageStep;
+import io.litmusblox.server.service.impl.SearchRequestBean;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Interface definition for Job Service
@@ -32,11 +34,12 @@ public interface IJobService {
      * Find all jobs for logged in user
      *
      * @param archived flag indicating if only archived jobs need to be fetched
-     * @param companyName name of the company for which jobs have to be found
+     * @param companyId id of the company for which jobs have to be found
+     * @param jobStatus
      * @return response bean with list of jobs created by the user, count of active jobs and count of archived jobs
      * @throws Exception
      */
-    JobWorspaceResponseBean findAllJobsForUser(boolean archived, String companyName) throws Exception;
+    JobWorspaceResponseBean findAllJobsForUser(boolean archived, Long companyId, String jobStatus) throws Exception;
 
     /**
      * For the specified job, retrieve
@@ -114,5 +117,20 @@ public interface IJobService {
      * @return formatted json in String format
      * @throws Exception
      */
-    String exportData(Long jobId, Long formatId) throws Exception;
+    String exportData(Long jobId, Long formatId, String stage) throws Exception;
+
+    /**
+     * Method to find a job based on the reference id provided
+     * @param jobReferenceId
+     * @return
+     */
+    Job findByJobReferenceId(UUID jobReferenceId);
+
+    /**
+     * Service method to find list of jobs matching the search criteria
+     *
+     * @param searchRequest the request bean with company id and map of search paramters
+     * @return List of jobs
+     */
+    List<Job> searchJobs(SearchRequestBean searchRequest);
 }

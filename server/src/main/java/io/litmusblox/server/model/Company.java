@@ -85,6 +85,9 @@ public class Company implements Serializable {
     @Column(name="COMPANY_TYPE")
     private String companyType = "Individual";
 
+    @Column(name = "SHORT_NAME")
+    private String shortName;
+
     @Column(name="RECRUITMENT_AGENCY_ID")
     private Long recruitmentAgencyId;
 

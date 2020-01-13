@@ -7,6 +7,7 @@ package io.litmusblox.server.utils;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import io.litmusblox.server.constant.IConstant;
@@ -70,6 +71,7 @@ public class Util {
         try {
 
             SimpleFilterProvider filter = new SimpleFilterProvider();
+            filter.setFailOnUnknownId(false);
             if (null != serializeMap)
                 serializeMap.forEach((key, value) ->
                         filter.addFilter(key, SimpleBeanPropertyFilter.filterOutAllExcept(new HashSet<String>(value)))
@@ -80,6 +82,7 @@ public class Util {
                         filter.addFilter(key, SimpleBeanPropertyFilter.serializeAllExcept(new HashSet<String>(value)))
                 );
 
+            mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
             json = mapper.writer(filter).writeValueAsString(responseBean);
 
         } catch (JsonGenerationException e) {
@@ -225,15 +228,29 @@ public class Util {
     }
 
     public static void handleCandidateName(Candidate candidate, String candidateName) {
+
         if (candidateName.indexOf('.') != -1) { //a dot (.) is found in the name, process accordingly
             String[] name = candidateName.split(IConstant.REGEX_FOR_DOT_IN_NAME);
-            if (name.length > 1) {
+            if (name.length == 2) {
                 candidate.setLastName(toSentenceCase(name[0]));
                 candidate.setFirstName(toSentenceCase(name[1]));
+                return;
+            }else if(name.length > 2){
+                candidate.setFirstName(toSentenceCase(name[name.length-1]));
+                int nameCount = 0;
+                while(nameCount<name.length-1){
+                    if(nameCount==0)
+                        candidate.setLastName(toSentenceCase(name[nameCount]));
+                    else
+                        candidate.setLastName(toSentenceCase(candidate.getLastName()+name[nameCount]));
+
+                    nameCount++;
+                }
                 return;
             }
             else if (name.length > 0) {
                 candidate.setFirstName(toSentenceCase(name[0]));
+                candidate.setLastName("-");
                 return;
             }
         }
@@ -251,7 +268,8 @@ public class Util {
         }
         if (null != lastName)
             candidate.setLastName(toSentenceCase(lastName.toString()));
-
+        else
+            candidate.setLastName("-");
     }
 
     public static String indianMobileConvertor(String mobileNo,  String countryCode) {

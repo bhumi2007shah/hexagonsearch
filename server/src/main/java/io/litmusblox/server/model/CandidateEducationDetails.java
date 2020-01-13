@@ -5,6 +5,8 @@
 package io.litmusblox.server.model;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -18,6 +20,8 @@ import javax.persistence.*;
  * Project Name : server
  */
 @Data
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Table(name = "CANDIDATE_EDUCATION_DETAILS")
@@ -46,10 +50,12 @@ public class CandidateEducationDetails {
     @Column(name = "YEAR_OF_PASSING")
     private String yearOfPassing;
 
-    public CandidateEducationDetails(Long candidateId, String degree, String yearOfPassing, String instituteName) {
+    public CandidateEducationDetails(Long candidateId, String degree, String yearOfPassing, String instituteName, String specialization) {
         this.candidateId = candidateId;
         this.degree = degree;
         this.yearOfPassing = yearOfPassing;
         this.instituteName = instituteName;
+        this.specialization = specialization;
     }
+
 }

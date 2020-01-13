@@ -32,4 +32,7 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     @Transactional
     Company findByCompanyNameIgnoreCaseAndCompanyType(String companyName, String companyType);
+
+    @Transactional(readOnly = true)
+    Company findByShortNameIgnoreCase(String shortName);
 }

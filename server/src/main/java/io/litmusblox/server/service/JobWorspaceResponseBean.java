@@ -21,7 +21,8 @@ import java.util.List;
  */
 @Data
 public class JobWorspaceResponseBean {
-    private int openJobs;
+    private int liveJobs;
+    private int draftJobs;
     private int archivedJobs;
     private List<Job> listOfJobs = new ArrayList<>();
 }

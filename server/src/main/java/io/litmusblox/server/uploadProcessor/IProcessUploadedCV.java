@@ -24,4 +24,10 @@ public interface IProcessUploadedCV {
      * All eligible records of CV will be run against CV rating api and rated
      */
     void rateCv();
+
+    /**
+     * Method to convert cv file to cv text
+     * In cv_parsing_detail if parsing_response_text is null then convert cv to text and save
+     */
+    void cvToCvText();
 }

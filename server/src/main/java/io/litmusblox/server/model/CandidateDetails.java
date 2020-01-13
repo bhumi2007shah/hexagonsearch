@@ -7,6 +7,8 @@ package io.litmusblox.server.model;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -22,7 +24,9 @@ import java.util.Date;
  * Project Name : server
  */
 @Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "CANDIDATE_DETAILS")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -94,9 +98,6 @@ public class CandidateDetails implements Serializable {
     @Column(name = "OTHER_CERTIFICATES")
     private String otherCertificates;
 
-    @Column(name = "CV_FILE_TYPE")
-    private String cvFileType;
-
     @Column(name = "LAST_ACTIVE")
     private Date lastActive;
 
@@ -106,13 +107,17 @@ public class CandidateDetails implements Serializable {
     @Column(name = "RELEVANT_EXPERIENCE")
     private Double relevantExperience;
 
+    @JsonProperty
+    @Transient
+    private String textCv;
+
     @Transient
     @JsonProperty
     private String cvLocation;
 
     @JsonProperty
     @Transient
-    private String textCv;
+    private String cvFileType;
 
     public CandidateDetails(Date dateOfBirth, String location, Double totalExperience, Double relevantExperience, Candidate candidateId) {
         this.dateOfBirth = dateOfBirth;

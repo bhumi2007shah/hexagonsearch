@@ -63,7 +63,6 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Column(name="EMAIL")
     private String email;
 
-    @NotNull
     @Column(name="MOBILE")
     private String mobile;
 
@@ -143,9 +142,16 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Column(name="REASON_FOR_CHANGE")
     private String reasonForChange;
 
+    @Column(name = "CV_FILE_TYPE")
+    private String cvFileType;
+
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private CandidateTechResponseData techResponseData;
+
+    @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
+    private CandidateReferralDetail candidateReferralDetail;
 
     @Transient
     @JsonProperty
@@ -183,19 +189,22 @@ public class JobCandidateMapping implements Serializable, Comparable {
         return candidateFirstName + " " + candidateLastName;
     }
 
-    public JobCandidateMapping(@NotNull Job job, @NotNull Candidate candidate, @NotNull JobStageStep stage, @NotNull String candidateSource, @NotNull Date createdOn, @NotNull User createdBy, UUID chatbotUuid, String candidateFirstName, String candidateLastName) {
+    public JobCandidateMapping(@NotNull Job job, @NotNull Candidate candidate, @NotNull JobStageStep stage, @NotNull String candidateSource, @NotNull Date createdOn, @NotNull User createdBy, UUID chatbotUuid, String candidateFirstName, String candidateLastName, String cvFileType) {
         this.job = job;
         this.candidate = candidate;
         this.stage = stage;
         this.candidateSource = candidateSource;
         this.email = candidate.getEmail();
-        this.mobile = candidate.getMobile();
+        if(null != candidate.getMobile())
+            this.mobile = candidate.getMobile();
+
         this.countryCode = candidate.getCountryCode();
         this.createdOn = createdOn;
         this.createdBy = createdBy;
         this.chatbotUuid = chatbotUuid;
         this.candidateFirstName = candidateFirstName;
         this.candidateLastName = candidateLastName;
+        this.cvFileType = cvFileType;
     }
 
     public JobCandidateMapping(Long id) {

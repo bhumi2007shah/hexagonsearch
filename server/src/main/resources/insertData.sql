@@ -659,7 +659,7 @@ delete from sms_templates;
 INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
 ('ChatInvite','New Job - [[${commBean.jobtitle}]] at [[${commBean.sendercompany}]]%n[[${commBean.receiverfirstname}]],%n[[${commBean.senderfirstname}]] from [[${commBean.sendercompany}]] has invited you to apply for the [[${commBean.jobtitle}]] position. Click the link below to apply.%n[[${commBean.chatlink}]]'),
 ('ChatCompleted','Congratulations [[${commBean.receiverfirstname}]]!%nYour Profile is now complete for the [[${commBean.jobtitle}]] position. [[${commBean.senderfirstname}]] from [[${commBean.sendercompany}]] will be in touch with you if your profile is shortlisted.%n%nGood luck!'),
-('ChatIncompleteReminder1','Oh no [[${commBean.receiverfirstname}]]!  The Litmus Profile you started creating to for the [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]] was left incomplete. It''s important that you finish the profile to be considered for the job. Continue from where you left last. Just click the link to continue. [[${commBean.chatlink}]]'),
+('ChatIncompleteReminder1','Oh no [[${commBean.receiverfirstname}]]!  The Litmus Profile you started creating for the [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]] was left incomplete. It''s important that you finish the profile to be considered for the job. Continue from where you left last. Just click the link to continue. [[${commBean.chatlink}]]'),
 ('ChatIncompleteReminder2','[[${commBean.receiverfirstname}]],%nThis is your final reminder%n[[${commBean.sendercompany}]] is still waiting to see your profile for the [[${commBean.jobtitle}]] job. Your Litmus Profile is not complete. It will take just a few more minutes to finish it. Please click the link to continue. [[${commBean.chatlink}]]'),
 ('LinkNotVisitedReminder1','[[${commBean.jobtitle}]] Job opportunity at [[${commBean.sendercompany}]]. [[${commBean.receiverfirstname}]], you are being considered for this job. Click the link to apply. [[${commBean.chatlink}]]'),
 ('LinkNotVisitedReminder2','[[${commBean.receiverfirstname}]], are you not interested in this job? [[${commBean.senderfirstname}]] from [[${commBean.sendercompany}]] has invited you to apply for the [[${commBean.jobtitle}]] position. Click the link below to apply. [[${commBean.chatlink}]]'),
@@ -768,7 +768,7 @@ VALUES
 (1, 'candidateName','Candidate Name', 1),
 (1, 'chatbotStatus','Chatbot Status', 2),
 (1, 'keySkillsStrength','Key Skills Strength', 3),
-(1, 'currentCompany','Current Commpany', 4),
+(1, 'currentCompany','Current Company', 4),
 (1, 'currentDesignation','Current Designation', 5),
 (1, 'email','Email', 6),
 (1, 'countryCode','Country Code', 7),
@@ -793,3 +793,10 @@ Insert into MASTER_DATA (TYPE, VALUE) values
 ('reasonForChange','Have been on maternity break'),
 ('reasonForChange','Have been on Sabbatical'),
 ('reasonForChange','Other');
+
+INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
+('callOutCome', 'Connected'),
+('callOutCome', 'No Answer'),
+('callOutCome', 'Busy'),
+('callOutCome', 'Wrong Number'),
+('callOutCome', 'Left Message/VoiceMail');

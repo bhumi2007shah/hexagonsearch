@@ -10,6 +10,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.service.CandidateInteractionHistory;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -28,7 +30,9 @@ import java.util.List;
  * Project Name : server
  */
 @Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "CANDIDATE")
 @JsonFilter("Candidate")
@@ -151,5 +155,9 @@ public class Candidate implements Serializable {
     @JsonProperty
     @Transient
     private String alternateMobile;
+
+    @JsonProperty
+    @Transient
+    private EmployeeReferrer employeeReferrer;
 
 }

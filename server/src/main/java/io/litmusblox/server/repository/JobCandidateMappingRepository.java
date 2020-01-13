@@ -70,8 +70,8 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     JobCandidateMapping findByChatbotUuid(UUID uuid) throws Exception;
 
     @Transactional
-    @Query(value = "select j.id as jobId, j.job_title as jobTitle, (select value from master_data where id = jcm.stage) as currentStatus, \n" +
-            "jcm.created_on as sourcedOn, (select value from master_data where id = jcm.stage) as lastStage, (select CONCAT(first_name, last_name) from users where id=j.hiring_manager) as hiringManager, \n" +
+    @Query(value = "select j.id as jobId, j.job_title as jobTitle, (select step from company_stage_step where id =(select stage_step_id from job_stage_step where id = jcm.stage)) as currentStatus, \n" +
+            "jcm.created_on as sourcedOn, (select step from company_stage_step where id =(select stage_step_id from job_stage_step where id = jcm.stage)) as lastStage, (select CONCAT(first_name, last_name) from users where id=j.hiring_manager) as hiringManager, \n" +
             "(select CONCAT(first_name, last_name) from users where id=j.recruiter) as recruiter\n" +
             "from job_candidate_mapping jcm \n" +
             "inner join job j on j.id = jcm.job_id\n" +
@@ -90,4 +90,18 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Modifying
     @Query(nativeQuery = true, value = "update job_candidate_mapping set rejected=true, updated_by=:updatedBy, updated_on = :updatedOn where id in :jcmList")
     void updateForRejectStage(List<Long> jcmList, Long updatedBy, Date updatedOn);
+
+    @Transactional
+    @Query(value = "select count(jcd.id)\n" +
+            "from jcm_communication_details jcd, job_candidate_mapping jcm\n" +
+            "where jcd.chat_invite_flag is true\n" +
+            "and jcm.updated_by=:userId\n" +
+            "and jcd.jcm_id = jcm.id", nativeQuery = true)
+    Integer getInviteCount(Long userId);
+
+    @Transactional
+    @Query(value = "SELECT sum((chatbot_status LIKE 'Complete')\\:\\:INT) AS completeCount, sum((chatbot_status LIKE 'Incomplete')\\:\\:INT) AS incompleteCount\n" +
+            "FROM job_candidate_mapping\n" +
+            "where updated_by =:userId", nativeQuery = true)
+    List<Object[]> getChatbotCountCompletedAndInCompleted(Long userId);
 }

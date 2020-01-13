@@ -4,20 +4,22 @@
 
 package io.litmusblox.server.controller;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.error.WebException;
-import io.litmusblox.server.model.JobCandidateMapping;
-import io.litmusblox.server.model.JobScreeningQuestions;
-import io.litmusblox.server.model.User;
-import io.litmusblox.server.service.IJobCandidateMappingService;
-import io.litmusblox.server.service.TechChatbotRequestBean;
+import io.litmusblox.server.model.*;
+import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
+import io.litmusblox.server.service.impl.SearchRequestBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -52,6 +54,12 @@ public class NoAuthController {
     @Autowired
     private HttpServletRequest servletRequest;
 
+    @Autowired
+    IMasterDataService masterDataService;
+
+    @Autowired
+    IJobService jobService;
+
     @Value("${scoringEngineIpAddress}")
     private String scoringEngineIpAddress;
 
@@ -78,6 +86,7 @@ public class NoAuthController {
                     put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
                     put("JobScreeningQuestions", Arrays.asList("jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("ScreeningQuestions", new ArrayList<>(0));
+                    put("MasterData", new ArrayList<>(0));
                 }}
         );
         if(response.size() >0 ) {
@@ -113,7 +122,7 @@ public class NoAuthController {
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails","createdOn","createdBy","candidateSource","firstName","lastName","candidateSource","CandidateCompanyDetails"));
                     put("Company", Arrays.asList("companyAddressList", "companyBuList"));
                     put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData"));
-
+                    put("MasterData", new ArrayList<>(0));
             }}
         );
     }
@@ -203,6 +212,8 @@ public class NoAuthController {
                     put("CandidateSkillDetails", Arrays.asList("id","candidateId"));
                     put("CandidateWorkAuthorization", Arrays.asList("id","candidateId"));
                     put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
+                    put("CompanyAddress", new ArrayList<>(0));
                 }});
        // log.info("before call to replace:\n {}",response);
         response = response.replaceAll(Pattern.quote("$companyName"),responseObj.getCreatedBy().getCompany().getCompanyName());
@@ -230,5 +241,93 @@ public class NoAuthController {
         long startTime = System.currentTimeMillis();
         jobCandidateMappingService.updateTechResponseStatus(requestBean);
         log.info("Completed processing request to update tech chatbot status in " + (System.currentTimeMillis() - startTime) + "ms.");
+    }
+
+    /**
+     * REST Api to get masterData for only specific fields, which is used in noAuth call
+     *
+     * @param requestItems (fileType, referrerRelation)
+     * @return MasterData
+     * @throws Exception
+     */
+    @PostMapping(value="/fetch/items")
+    @ResponseStatus(value = HttpStatus.OK)
+    String fetchItems(@RequestBody List<String> requestItems) throws Exception {
+        return Util.stripExtraInfoFromResponseBean(
+                masterDataService.fetchForItemsForNoAuth(requestItems),null,
+                new HashMap<String, List<String>>() {{
+                    put("MasterData", new ArrayList<>(0));
+                }});
+    }
+
+    /**
+     * API to return job details based on job reference id
+     *
+     * @param jobReferenceId job reference id to search for
+     * @return String representation of the job details information
+     * @throws Exception
+     */
+    @GetMapping(value = "/jobDetailsByReferenceId/{jobReferenceId}")
+    String jobDetailsByReferenceId(@PathVariable("jobReferenceId") UUID jobReferenceId) throws Exception {
+        return Util.stripExtraInfoFromResponseBean(jobService.findByJobReferenceId(jobReferenceId),
+                new HashMap<String, List<String>>() {{
+                    put("Job",Arrays.asList("id","jobTitle","jobDescription", "jobLocation" , "function"));
+                    put("MasterData", Arrays.asList("value"));
+                }}, null);
+    }
+
+    /**
+     * API to search jobs for a company based on search criteria
+     *
+     * @param searchRequest the request bean with search criteria
+     * @return the list of jobs matching the search criteria
+     */
+    @PostMapping(value="/searchJobs")
+    String searchJobs(@RequestBody String searchRequest) throws Exception {
+        log.info("Received request to search jobs");
+        long startTime = System.currentTimeMillis();
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<Job> jobsFound = jobService.searchJobs(objectMapper.readValue(searchRequest, SearchRequestBean.class));
+        log.info("Complete processing search operation in {} ms.", (System.currentTimeMillis() - startTime));
+        return Util.stripExtraInfoFromResponseBean(jobsFound,
+                new HashMap<String, List<String>>() {{
+                    put("Job", Arrays.asList("jobTitle", "jobDescription", "jobLocation", "function", "jobReferenceId","jobType"));
+                    put("CompanyAddress", Arrays.asList("address"));
+                    put("MasterData", Arrays.asList("value"));
+                }}, null);
+
+    }
+
+    /**
+     * Rest API to upload candidate via career page, job portal, employee referral
+     *
+     * @param candidateSource From where we source the candidate
+     * @param candidateCv candidate cv
+     * @param candidateString  Candidate all info string
+     * @param jobReferenceId In which job upload candidate
+     * @param employeeReferrerString employee info string
+     * @return UploadResponseBean
+     * @throws Exception
+     */
+    @PostMapping(value = "/addCandidate/{candidateSource}")
+    @ResponseStatus(value = HttpStatus.OK)
+    String uploadCandidate(@PathVariable("candidateSource") String candidateSource, @RequestParam(name = "candidateCv", required = false) MultipartFile candidateCv, @RequestParam("candidate") String candidateString, @RequestParam("jobReferenceId") UUID jobReferenceId, @RequestParam(name = "employeeReferrer", required = false) String employeeReferrerString) throws Exception{
+        EmployeeReferrer employeeReferrer = null;
+        ObjectMapper objectMapper=new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+        Candidate candidate=objectMapper.readValue(candidateString, Candidate.class);
+        if(null != employeeReferrerString)
+            employeeReferrer =objectMapper.readValue(employeeReferrerString, EmployeeReferrer.class);
+
+        long startTime = System.currentTimeMillis();
+        UploadResponseBean responseBean = jobCandidateMappingService.uploadCandidateByNoAuthCall(candidateSource, candidate, jobReferenceId, candidateCv, employeeReferrer);
+        log.info("Candidate upload in " + (System.currentTimeMillis() - startTime) + "ms.");
+        return Util.stripExtraInfoFromResponseBean(responseBean, null,
+                new HashMap<String, List<String>>() {{
+                    put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
+                            "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
+                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
+                }});
     }
 }
