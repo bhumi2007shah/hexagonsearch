@@ -111,10 +111,6 @@ public class CandidateDetails implements Serializable {
     @Transient
     private String textCv;
 
-    @Transient
-    @JsonProperty
-    private String cvLocation;
-
     @JsonProperty
     @Transient
     private String cvFileType;
