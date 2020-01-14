@@ -42,6 +42,7 @@ public interface CvParsingDetailsRepository extends JpaRepository<CvParsingDetai
             "and cpd.cv_rating_api_flag = false \n" +
             "and (cpd.processing_status is null or cpd.processing_status = 'Success')\n" +
             "and jcm.candidate_source not in ('File', 'Individual')\n" +
+            "and cpd.cv_convert_api_flag = false \n" +
             "and (jcm.cv_file_type is not null and trim(jcm.cv_file_type) != '')", nativeQuery = true)
     List<CvParsingDetails> getDataForConvertCvToCvText();
 }
