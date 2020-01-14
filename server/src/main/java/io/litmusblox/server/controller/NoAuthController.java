@@ -338,13 +338,12 @@ public class NoAuthController {
      * REST Api to handle send Otp request from search job page
      * @param mobile mobile number to send otp to
      * @param email email address to send otp to
-     * @param countryCode country code of the mobile
      * @throws Exception
      */
     @GetMapping(value = "/sendOtp")
     @ResponseStatus(value = HttpStatus.OK)
-    void sendOtp(@RequestParam String mobile, @RequestParam String email, @RequestParam Integer countryCode) throws Exception {
-        processOtpService.sendOtp(mobile, email, countryCode);
+    void sendOtp(@RequestParam String mobile, @RequestParam String email) throws Exception {
+        processOtpService.sendOtp(mobile, email);
     }
 
     /**

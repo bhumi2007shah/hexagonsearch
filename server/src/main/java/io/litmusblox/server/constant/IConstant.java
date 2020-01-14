@@ -296,7 +296,7 @@ public interface IConstant {
     //Constants for process otp
     enum OtpMsg91 {
 
-        AUTH_KEY("authkey"), SEND_OTP_URL("sendOtpUrl"), VERIFY_OTP("verifyOtpUrl"), RETRY_OTP("retrySendOtp"), SENDER("sender"), TEMPLATE_ID("template_id"), OTP_LENGTH("otp_length"), RETRY_TYPE("retrytype");
+        AUTH_KEY("authkey"), SEND_OTP_URL("sendOtpUrl"), VERIFY_OTP("verifyOtpUrl"), RETRY_OTP("retrySendOtp"), SENDER("sender"), TEMPLATE_ID("template_id"), OTP_LENGTH("otp_length"), RETRY_TYPE("text");
 
         private String value;
 

@@ -31,11 +31,10 @@ public class ProcessOtpService implements IProcessOtpService {
      * Service method to handle send Otp request from search job page
      * @param mobile mobile number to send otp to
      * @param email email address to send otp to
-     * @param countryCode country code of the mobile
      * @throws Exception
      */
     @Override
-    public void sendOtp(String mobile, String email, int countryCode) throws Exception {
+    public void sendOtp(String mobile, String email) throws Exception {
         log.info("Received request to Send OTP for mobile number {} and email {}", mobile, email);
         long startTime = System.currentTimeMillis();
         try {
@@ -46,10 +45,7 @@ public class ProcessOtpService implements IProcessOtpService {
             stringBuilder.append("&email="+email);
             stringBuilder.append("&template_id="+environment.getProperty(IConstant.OtpMsg91.TEMPLATE_ID.getValue()));
             stringBuilder.append("&sender="+environment.getProperty(IConstant.OtpMsg91.SENDER.getValue()));
-            stringBuilder.append("&otp_expiry=");
             stringBuilder.append("&otp_length="+environment.getProperty(IConstant.OtpMsg91.OTP_LENGTH.getValue()));
-            stringBuilder.append("&country="+countryCode);
-            stringBuilder.append("&otp=");
             String response = rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.GET,null);
             log.info("Response from resend otp api call: {}", response);
         }catch (Exception ex){
@@ -65,7 +61,7 @@ public class ProcessOtpService implements IProcessOtpService {
      * @return boolean indicating whether the otp verification succeeded or failed
      * @throws Exception
      */
-    private static String OTP_MATCH = "{\"message\":\"OTP verified success\",\"type\":\"success\"}\n";
+    //private static String OTP_MATCH = "{\"message\":\"OTP verified success\",\"type\":\"success\"}\n";
     @Override
     public boolean verifyOtp(String mobile, String otp){
         log.info("Received request to Verify OTP for mobile number {} with otp value {}", mobile, otp);
@@ -78,7 +74,8 @@ public class ProcessOtpService implements IProcessOtpService {
             stringBuilder.append("&mobile="+mobile);
             stringBuilder.append("&otp="+otp);
             String response = rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.POST,null);
-            if (!OTP_MATCH.equalsIgnoreCase(response))
+            if (null != response && response.indexOf("success") == -1)
+            //if (!OTP_MATCH.equalsIgnoreCase(response))
                 match = false;
             log.info("Response from msg91\n{}", response);
         }catch (Exception ex){
