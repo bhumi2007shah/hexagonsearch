@@ -43,7 +43,8 @@ public class ScheduledTasks {
     @Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
     public void processEmailApplications() { fetchEmailService.processEmail(); }
 
-    @Scheduled(fixedRate = 120000, initialDelay = 5000)
+    //TODO We stop scheduler, Currently cvToCvText not work fine because if error occurred it picked up again and again so it closed unexpectedly
+    //@Scheduled(fixedRate = 120000, initialDelay = 5000)
     public void convertCvFileToCvText() {
         processUploadedCV.cvToCvText();
     }

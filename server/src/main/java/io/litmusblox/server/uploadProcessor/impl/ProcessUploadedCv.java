@@ -109,7 +109,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     log.info("Processing CV for job id: " + cvToRate.getJobCandidateMappingId().getJob().getId() + " and candidate id: " + cvToRate.getJobCandidateMappingId().getCandidate().getId());
                     List<String> jdKeySkills = jobKeySkillsRepository.findSkillNameByJobId(cvToRate.getJobCandidateMappingId().getJob().getId());
                     if (jdKeySkills.size() == 0)
-                        log.error("Found no key skills for " + cvToRate.getJobCandidateMappingId().getJob().getId());
+                        log.error("Found no key skills for jobId: {}.  Not making api call to rate CV.", cvToRate.getJobCandidateMappingId().getJob().getId());
                     else {
                         try {
                             //TODO currently ML team not handle for industry so we don't send industry, need revisit after ML done implementation for industry
