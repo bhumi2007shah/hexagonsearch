@@ -56,7 +56,7 @@ public class NaukriHtmlParser implements HtmlParser {
         try {
             populateCandidateDetails(candidateFromNaukriEmail, doc);
         } catch (Exception e) {
-            log.error("Error when populating candidate company details {}", e.getMessage());
+            log.error("Error when populating candidate details {}", e.getMessage());
             e.printStackTrace();
         }
         //before at is designation, after at is current company
@@ -79,16 +79,17 @@ public class NaukriHtmlParser implements HtmlParser {
         final String[] mobile = new String[1];
         final String[] email = new String[1];
         links.stream().forEach(link-> {
-            if(link.attributes().asList().get(0).getValue().indexOf("tel:") > -1 && candidate.getMobile() == null) {
-                mobile[0] = link.attributes().asList().get(0).getValue().substring(link.attributes().asList().get(0).getValue().indexOf("tel:")+4);
-                candidate.setMobile(mobile[0]);
-                log.info("found mobile: {}", mobile[0]);
-            }
-            else if(link.attributes().asList().get(0).getValue().indexOf("mailto:") > -1) {
-                if(!"support@naukri.com".equals(link.attributes().asList().get(0).getValue().substring(link.attributes().asList().get(0).getValue().indexOf("mailto:")+7))) {
-                    email[0] = link.attributes().asList().get(0).getValue().substring(link.attributes().asList().get(0).getValue().indexOf("mailto:") + 7);
-                    candidate.setEmail(email[0]);
-                    log.info("found email: {}", email[0]);
+            if (null != link.attributes() && link.attributes().asList().size() > 0) {
+                if (link.attributes().asList().get(0).getValue().indexOf("tel:") > -1 && candidate.getMobile() == null) {
+                    mobile[0] = link.attributes().asList().get(0).getValue().substring(link.attributes().asList().get(0).getValue().indexOf("tel:") + 4);
+                    candidate.setMobile(mobile[0]);
+                    log.info("found mobile: {}", mobile[0]);
+                } else if (link.attributes().asList().get(0).getValue().indexOf("mailto:") > -1) {
+                    if (!"support@naukri.com".equals(link.attributes().asList().get(0).getValue().substring(link.attributes().asList().get(0).getValue().indexOf("mailto:") + 7))) {
+                        email[0] = link.attributes().asList().get(0).getValue().substring(link.attributes().asList().get(0).getValue().indexOf("mailto:") + 7);
+                        candidate.setEmail(email[0]);
+                        log.info("found email: {}", email[0]);
+                    }
                 }
             }
         });
