@@ -14,6 +14,7 @@ package io.litmusblox.server.service.impl;
 
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Candidate;
+import io.litmusblox.server.model.CandidateDetails;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.IJobCandidateMappingService;
@@ -111,8 +112,11 @@ public class FetchEmailService {
 
                             writePart(message, mailData);
                             message.setFlag(Flags.Flag.SEEN, true);
-                            if (null != mailData.getFileName())
+                            if (null != mailData.getFileName()) {
+                                if(null == mailData.getCandidateFromMail().getCandidateDetails())
+                                    mailData.getCandidateFromMail().setCandidateDetails(new CandidateDetails());
                                 mailData.getCandidateFromMail().getCandidateDetails().setCvFileType("." + Util.getFileExtension(mailData.getFileName()));
+                            }
                             UploadResponseBean response = jobCandidateMappingService.uploadCandidateFromPlugin(mailData.getCandidateFromMail(), mailData.getJobFromReference().getId(), null, Optional.of(mailData.getJobFromReference().getCreatedBy()));
                             if (IConstant.UPLOAD_STATUS.Success.name().equals(response.getStatus()) && null != mailData.getFileName())
                                 saveCandidateCv(mailData);

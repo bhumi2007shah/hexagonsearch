@@ -29,5 +29,5 @@ public interface IProcessUploadedCV {
      * Method to convert cv file to cv text
      * In cv_parsing_detail if parsing_response_text is null then convert cv to text and save
      */
-    void CvToCvText();
+    void cvToCvText();
 }

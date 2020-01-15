@@ -4,21 +4,13 @@
 
 package io.litmusblox.server.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
-import io.litmusblox.server.model.Job;
-import io.litmusblox.server.model.JobCandidateMapping;
-import io.litmusblox.server.model.JobScreeningQuestions;
-import io.litmusblox.server.model.User;
-import io.litmusblox.server.service.IJobCandidateMappingService;
-import io.litmusblox.server.service.IJobService;
-import io.litmusblox.server.service.IMasterDataService;
-import io.litmusblox.server.service.TechChatbotRequestBean;
-import io.litmusblox.server.service.UploadResponseBean;
+import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
 import io.litmusblox.server.service.impl.SearchRequestBean;
 import io.litmusblox.server.utils.Util;
@@ -67,6 +59,9 @@ public class NoAuthController {
 
     @Autowired
     IJobService jobService;
+
+    @Autowired
+    IProcessOtpService processOtpService;
 
     @Value("${scoringEngineIpAddress}")
     private String scoringEngineIpAddress;
@@ -290,7 +285,7 @@ public class NoAuthController {
      * @param searchRequest the request bean with search criteria
      * @return the list of jobs matching the search criteria
      */
-    @GetMapping(value="/searchJobs")
+    @PostMapping(value="/searchJobs")
     String searchJobs(@RequestBody String searchRequest) throws Exception {
         log.info("Received request to search jobs");
         long startTime = System.currentTimeMillis();
@@ -337,5 +332,42 @@ public class NoAuthController {
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
                     put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
                 }});
+    }
+
+    /**
+     * REST Api to handle send Otp request from search job page
+     * @param mobile mobile number to send otp to
+     * @param email email address to send otp to
+     * @param countryCode country code of the mobile
+     * @throws Exception
+     */
+    @GetMapping(value = "/sendOtp")
+    @ResponseStatus(value = HttpStatus.OK)
+    void sendOtp(@RequestParam String mobile, @RequestParam String email, @RequestParam Integer countryCode) throws Exception {
+        processOtpService.sendOtp(mobile, email, countryCode);
+    }
+
+    /**
+     * REST Api to validate Otp against a mobile number
+     * @param mobile the mobile number for the otp
+     * @param otp the otp value
+     * @return boolean indicating whether the otp verification succeeded or failed
+     * @throws Exception
+     */
+    @GetMapping(value = "/verifyOtp")
+    @ResponseStatus(value = HttpStatus.OK)
+    boolean verifyOtp(@RequestParam String mobile, @RequestParam String otp) throws Exception {
+        return processOtpService.verifyOtp(mobile, otp);
+    }
+
+    /**
+     * REST Api to request a resend otp for a mobile number
+     * @param mobile the mobile number for which the otp needs to be resent
+     * @throws Exception
+     */
+    @GetMapping(value = "/resendOtp")
+    @ResponseStatus(value = HttpStatus.OK)
+    void resendOtp(@RequestParam String mobile) throws Exception {
+        processOtpService.resendOtp(mobile);
     }
 }

@@ -1398,6 +1398,10 @@ ALTER TABLE CANDIDATE_COMPANY_DETAILS ALTER COLUMN DESIGNATION TYPE VARCHAR(100)
 ALTER TABLE COMPANY
 ADD COLUMN SHORT_NAME VARCHAR(8) UNIQUE;
 
+--For ticket #344
+ALTER TABLE CV_PARSING_DETAILS
+ADD COLUMN CV_CONVERT_API_FLAG BOOL NOT NULL DEFAULT 'f';
+
 --adding flag to identify if job has screening question or not
 ALTER TABLE Job ADD COLUMN HR_QUESTION_AVAILABLE BOOL NOT NULL DEFAULT 'f';
 update job set hr_question_available = 't' where id in (select distinct job_id from job_screening_questions);

@@ -404,7 +404,7 @@ public class LbUserDetailsService implements UserDetailsService {
             workspaceBean.setNumberOfJobsCreated(jobRepository.countByCreatedBy(user));
             workspaceBean.setNumOfInvites(jobCandidateMappingRepository.getInviteCount(user.getId()));
             List<Object[]> object = jobCandidateMappingRepository.getChatbotCountCompletedAndInCompleted(user.getId());
-            if(null != (object.get(0))[1]){
+            if(null != (object.get(0))[0]){
                 workspaceBean.setIncompleteChatbotCount(Integer.parseInt((object.get(0))[1].toString()));
                 workspaceBean.setCompletedChatbotCount(Integer.parseInt((object.get(0))[0].toString()));
             }

@@ -290,4 +290,22 @@ public interface IConstant {
     String SYSTEM_USER_EMAIL = "systemuser@hex.com";
 
     String[] fetchItemsType = new String[]{"referrerRelation", "jobType"};
+
+
+
+    //Constants for process otp
+    enum OtpMsg91 {
+
+        AUTH_KEY("authkey"), SEND_OTP_URL("sendOtpUrl"), VERIFY_OTP("verifyOtpUrl"), RETRY_OTP("retrySendOtp"), SENDER("sender"), TEMPLATE_ID("template_id"), OTP_LENGTH("otp_length"), RETRY_TYPE("retrytype");
+
+        private String value;
+
+        OtpMsg91(String val) {
+            this.value = val;
+        }
+
+        public String getValue() {
+            return this.value;
+        }
+    }
 }
