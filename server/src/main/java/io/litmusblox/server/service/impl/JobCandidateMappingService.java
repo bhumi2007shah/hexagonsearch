@@ -497,7 +497,22 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if (null == objFromDb)
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
         objFromDb.setCandidateInterest(interest);
+
+        //setting chatbot status as complete if both hr and technical chatbot are missing.
+        if(!objFromDb.getJob().getHrQuestionAvailable() && !objFromDb.getJob().getScoringEngineJobAvailable()){
+            objFromDb.setChatbotStatus(IConstant.CHATBOT_STATUS.Complete.name());
+        }
+        else {
+            objFromDb.setChatbotStatus(IConstant.CHATBOT_STATUS.Incomplete.name());
+        }
         objFromDb.setCandidateInterestDate(new Date());
+        //commented below code to not set flags to true.
+        /*if(!objFromDb.getJob().getHrQuestionAvailable()){
+            jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(objFromDb.getId());
+        }
+        if(!objFromDb.getJob().getHrQuestionAvailable() && !objFromDb.getJob().getScoringEngineJobAvailable()){
+            jcmCommunicationDetailsRepository.updateByJcmId(objFromDb.getId());
+        }*/
         jobCandidateMappingRepository.save(objFromDb);
         jcmHistoryRepository.save(new JcmHistory(objFromDb, "Candidate is"+ (interest?" interested.":" not interested."), new Date(), null, objFromDb.getStage()));
     }
@@ -512,6 +527,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void saveScreeningQuestionResponses(UUID uuid, Map<Long, List<String>> candidateResponse) throws Exception {
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
+        JcmCommunicationDetails jcmCommunicationDetailsFromDb = jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId());
         if (null == objFromDb)
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
 
@@ -533,11 +549,21 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         //updating hr_chat_complete_flag
         jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(objFromDb.getId());
 
+        //update chatbot updated date
+        objFromDb.setChatbotUpdatedOn(new Date());
+
+        //set chatbot status to complete if scoring engine does not have job or tech chatbot is complete.
+        if(!objFromDb.getJob().getScoringEngineJobAvailable() || jcmCommunicationDetailsFromDb.isTechChatCompleteFlag()){
+            objFromDb.setChatbotStatus(IConstant.CHATBOT_STATUS.Complete.name());
+        }
+
+        //Commented below code as we are not setting flag to true as per discussion on 10-01-2020
         //updating chat_complete_flag if corresponding job is not available on scoring engine due to lack of ML data,
         // or candidate already filled all the capabilities in some other job and we already have candidate responses for technical chatbot.
-        if(!objFromDb.getJob().getScoringEngineJobAvailable() || (objFromDb.getChatbotStatus()!=null && objFromDb.getChatbotStatus().equals("Complete"))){
+        /*if(!objFromDb.getJob().getScoringEngineJobAvailable() || (objFromDb.getChatbotStatus()!=null && objFromDb.getChatbotStatus().equals("Complete"))){
             jcmCommunicationDetailsRepository.updateByJcmId(objFromDb.getId());
-        }
+        }*/
+        jobCandidateMappingRepository.save(objFromDb);
     }
 
     /**
@@ -607,7 +633,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                                 log.info("Found complete status from scoring engine: " + jcm.getEmail() + " ~ " + jcm.getId());
                                 //Set chatCompleteFlag = true
                                 JcmCommunicationDetails jcmCommunicationDetails = jcmCommunicationDetailsRepository.findByJcmId(jcm.getId());
-                                jcmCommunicationDetails.setChatCompleteFlag(true);
+                                jcmCommunicationDetails.setTechChatCompleteFlag(true);
                                 jcmCommunicationDetailsRepository.save(jcmCommunicationDetails);
 
                                 //If hr chat flag is also complete, set chatstatus = complete
@@ -684,14 +710,15 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         else{
             inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Success.toString(), jcmListWithoutError.size(), 0, failedCandidates);
             jcmCommunicationDetailsRepository.inviteCandidates(jcmListWithoutError);
-            if(null == jobObjToUse && jcmListWithoutError.size() > 0) {
-                log.error("Job stage steps not found. Cannot move candidate from Source to Screen");
-            } else {
-                //set stage = Screening where stage = Source
-                Map<String, Long> stageIdMap = fetchStageStepForJob(jobObjToUse.getId(), true);
-                jobCandidateMappingRepository.updateStageStepId(jcmList, stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), loggedInUser.getId(), new Date());
-                updateJcmHistory(jcmListWithoutError, loggedInUser);
-            }
+        }
+
+        if(null == jobObjToUse && jcmListWithoutError.size() > 0) {
+            log.error("Job stage steps not found. Cannot move candidate from Source to Screen");
+        } else if(jcmListWithoutError.size()>0) {
+            //set stage = Screening where stage = Source
+            Map<String, Long> stageIdMap = fetchStageStepForJob(jobObjToUse.getId(), true);
+            jobCandidateMappingRepository.updateStageStepId(jcmListWithoutError, stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), loggedInUser.getId(), new Date());
+            updateJcmHistory(jcmListWithoutError, loggedInUser);
         }
         return inviteCandidateResponseBean;
     }
