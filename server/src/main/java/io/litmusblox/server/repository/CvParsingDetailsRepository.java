@@ -26,7 +26,7 @@ public interface CvParsingDetailsRepository extends JpaRepository<CvParsingDetai
     List<CvParsingDetails> findByRchilliJsonProcessed(boolean rchilliJsonProcessed);
 
     @Transactional
-    @Query(nativeQuery = true, value = "select * from cv_parsing_details where cv_rating_api_flag is false and (processing_status is null or processing_status = 'Success') and parsing_response_text is not null and length(parsing_response_text)>0 order by id desc limit 10")
+    @Query(nativeQuery = true, value = "select * from cv_parsing_details where cv_rating_api_flag is false and (processing_status is null or processing_status = 'Success') and  parsing_response_text is not null and length(trim(parsing_response_text))>50 order by id desc limit 10")
     List<CvParsingDetails> findCvRatingRecordsToProcess();
 
     @Transactional
