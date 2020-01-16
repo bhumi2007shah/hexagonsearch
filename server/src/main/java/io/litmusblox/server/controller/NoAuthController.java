@@ -314,7 +314,7 @@ public class NoAuthController {
      */
     @PostMapping(value = "/addCandidate/{candidateSource}")
     @ResponseStatus(value = HttpStatus.OK)
-    String uploadCandidate(@PathVariable("candidateSource") String candidateSource, @RequestParam(name = "candidateCv", required = false) MultipartFile candidateCv, @RequestParam("candidate") String candidateString, @RequestParam("jobReferenceId") UUID jobReferenceId, @RequestParam(name = "employeeReferrer", required = false) String employeeReferrerString) throws Exception{
+    String uploadCandidate(@PathVariable("candidateSource") String candidateSource, @RequestParam(name = "candidateCv", required = false) MultipartFile candidateCv, @RequestParam("candidate") String candidateString, @RequestParam("jobReferenceId") UUID jobReferenceId, @RequestParam(name = "employeeReferrer", required = false) String employeeReferrerString, @RequestParam("otp") String otp) throws Exception{
         EmployeeReferrer employeeReferrer = null;
         ObjectMapper objectMapper=new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -324,7 +324,7 @@ public class NoAuthController {
             employeeReferrer =objectMapper.readValue(employeeReferrerString, EmployeeReferrer.class);
 
         long startTime = System.currentTimeMillis();
-        UploadResponseBean responseBean = jobCandidateMappingService.uploadCandidateByNoAuthCall(candidateSource, candidate, jobReferenceId, candidateCv, employeeReferrer);
+        UploadResponseBean responseBean = jobCandidateMappingService.uploadCandidateByNoAuthCall(candidateSource, candidate, jobReferenceId, candidateCv, employeeReferrer, otp);
         log.info("Candidate upload in " + (System.currentTimeMillis() - startTime) + "ms.");
         return Util.stripExtraInfoFromResponseBean(responseBean, null,
                 new HashMap<String, List<String>>() {{

@@ -218,5 +218,5 @@ public interface IJobCandidateMappingService {
      * @return UploadResponseBean
      * @throws Exception
      */
-    UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer) throws Exception;
+    UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception;
 }
