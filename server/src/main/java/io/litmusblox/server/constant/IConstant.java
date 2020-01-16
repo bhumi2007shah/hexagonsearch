@@ -51,6 +51,7 @@ public interface IConstant {
     int MAX_INSTITUTE_LENGTH = 75;
     Integer CANDIDATE_NAME_MAX_LENGTH = 45;
     Integer CANDIDATE_EMAIL_MAX_LENGTH = 50;
+    Integer CV_TEXT_API_RESPONSE_MIN_LENGTH = 50;
 
     String REPO_LOCATION = "repoLocation";
     String TEMP_REPO_LOCATION = "temprepolocation";
