@@ -90,7 +90,8 @@ public class ProcessOtpService implements IProcessOtpService {
      * @param mobile the mobile number for which the otp needs to be resent
      * @throws Exception
      */
-    @Override
+    //Since we are not getting sms and email for a resend request to Msg91, commenting out this api
+    /*@Override
     public void resendOtp(String mobile){
         log.info("Received request to Resend OTP for mobile number {}", mobile);
         long startTime = System.currentTimeMillis();
@@ -106,5 +107,5 @@ public class ProcessOtpService implements IProcessOtpService {
             log.error("Error while retry otp : "+ex.getMessage());
         }
         log.info("Completed processing Resend OTP request in {}",(System.currentTimeMillis() - startTime));
-    }
+    }*/
 }

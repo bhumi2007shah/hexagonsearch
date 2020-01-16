@@ -364,9 +364,11 @@ public class NoAuthController {
      * @param mobile the mobile number for which the otp needs to be resent
      * @throws Exception
      */
-    @GetMapping(value = "/resendOtp")
+    //Since we are not getting sms and email for a resend request to Msg91, commenting out this api
+    /*@GetMapping(value = "/resendOtp")
     @ResponseStatus(value = HttpStatus.OK)
     void resendOtp(@RequestParam String mobile) throws Exception {
         processOtpService.resendOtp(mobile);
     }
+    */
 }

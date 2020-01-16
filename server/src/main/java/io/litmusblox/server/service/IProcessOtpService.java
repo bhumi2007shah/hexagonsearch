@@ -34,5 +34,6 @@ public interface IProcessOtpService {
      * @param mobile the mobile number for which the otp needs to be resent
      * @throws Exception
      */
-    void resendOtp(String mobile);
+    //Since we are not getting sms and email for a resend request to Msg91, commenting out this api
+    //void resendOtp(String mobile);
 }
