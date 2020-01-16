@@ -19,6 +19,7 @@ import io.litmusblox.server.service.impl.MlCvRatingRequestBean;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import io.litmusblox.server.uploadProcessor.RChilliCvProcessor;
 import io.litmusblox.server.utils.RestClient;
+import io.litmusblox.server.utils.SentryUtil;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -143,26 +144,32 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         List<CvParsingDetails> cvParsingDetailsList = new ArrayList<>();
         List<CvParsingDetails> cvParsingDetails = cvParsingDetailsRepository.getDataForConvertCvToCvText();
         if(null != cvParsingDetails && cvParsingDetails.size()>0){
-            cvParsingDetails.forEach(cvParsingDetailsFromDb->{
+            cvParsingDetails.forEach(cvParsingDetailsFromDb-> {
                 String cvText = null;
                 Map<String, String> queryParameters = new HashMap<>();
-                queryParameters.put("file", environment.getProperty("cvStorageUrl")+cvParsingDetailsFromDb.getJobCandidateMappingId().getJob().getId()+"/"+cvParsingDetailsFromDb.getCandidateId()+cvParsingDetailsFromDb.getJobCandidateMappingId().getCvFileType());
-                log.info("CvFile path : {}",queryParameters.get("file"));
+                Map<String, String> breadCrumb = new HashMap<>();
+                breadCrumb.put("cvParsingDetailsId", cvParsingDetailsFromDb.getId().toString());
+                breadCrumb.put("Jcm id", cvParsingDetailsFromDb.getJobCandidateMappingId().getId().toString());
                 try {
+                    queryParameters.put("file", environment.getProperty("cvStorageUrl") + cvParsingDetailsFromDb.getJobCandidateMappingId().getJob().getId() + "/" + cvParsingDetailsFromDb.getCandidateId() + cvParsingDetailsFromDb.getJobCandidateMappingId().getCvFileType());
+                    log.info("CvFile path : {}", queryParameters.get("file"));
+                    breadCrumb.put("FilePath", queryParameters.get("file"));
                     long apiCallStartTime = System.currentTimeMillis();
                     cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), null);
-                    log.info("Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}",(System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
-                    if(null != cvText && !cvText.isEmpty()){
+                    log.info("Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", (System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
+                    if (null != cvText && cvText.trim().length()>20 && !cvText.isEmpty()) {
                         cvParsingDetailsFromDb.setParsingResponseText(cvText);
-                        cvParsingDetailsList.add(cvParsingDetailsFromDb);
+                    }else{
+                        breadCrumb.put("CvText", cvText);
+                        SentryUtil.logWithStaticAPI(null, "Cv convert python response not good", breadCrumb);
                     }
                 } catch (Exception e) {
-                    log.error("Error while convert cv to text cvFilePath : {}, for cvParsingDetailsId  : {}, error message : {}",queryParameters.get("file"),cvParsingDetailsFromDb.getId(), e.getMessage());
-                    /*Map<String, String> breadCrumb = new HashMap<>();
-                    breadCrumb.put("cvParsingDetailsId",cvParsingDetailsFromDb.getId().toString());
-                    breadCrumb.put("Jcm id",cvParsingDetailsFromDb.getJobCandidateMappingId().getId().toString());
-                    breadCrumb.put("FilePath", queryParameters.get("file"));
-                    SentryUtil.logWithStaticAPI(null,"Failed to convert cv to text",breadCrumb);*/
+                    log.error("Error while convert cv to text cvFilePath : {}, for cvParsingDetailsId  : {}, error message : {}", queryParameters.get("file"), cvParsingDetailsFromDb.getId(), e.getMessage());
+                    breadCrumb.put("Error Msg", e.getStackTrace().toString());
+                    SentryUtil.logWithStaticAPI(null, "Failed to convert cv to text", breadCrumb);
+                }finally {
+                    cvParsingDetailsFromDb.setCvConvertApiFlag(true);
+                    cvParsingDetailsList.add(cvParsingDetailsFromDb);
                 }
             });
             if(cvParsingDetailsList.size()>0)
