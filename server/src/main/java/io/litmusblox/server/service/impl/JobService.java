@@ -426,31 +426,33 @@ public class JobService implements IJobService {
             jcmFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(jcmFromDb.getId()));
             jcmFromDb.setCvRating(cvRatingRepository.findByJobCandidateMappingId(jcmFromDb.getId()));
 
-            List<JcmProfileSharingDetails>jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.findByJobCandidateMappingId(jcmFromDb.getId());
-            jcmProfileSharingDetails.forEach(detail->{
-                detail.setHiringManagerName(detail.getProfileSharingMaster().getReceiverName());
-                detail.setHiringManagerEmail(detail.getProfileSharingMaster().getReceiverEmail());
-            });
-            jcmFromDb.setInterestedHiringManagers(
-                    jcmProfileSharingDetails
-                            .stream()
-                            .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()!=null && jcmProfileSharingDetail.getHiringManagerInterest())
-                            .collect(Collectors.toList())
-            );
+            if (IConstant.Stage.ResumeSubmit.getValue().equalsIgnoreCase(stage) || IConstant.Stage.Interview.getValue().equalsIgnoreCase(stage)) {
+                List<JcmProfileSharingDetails>jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.findByJobCandidateMappingId(jcmFromDb.getId());
+                jcmProfileSharingDetails.forEach(detail->{
+                    detail.setHiringManagerName(detail.getProfileSharingMaster().getReceiverName());
+                    detail.setHiringManagerEmail(detail.getProfileSharingMaster().getReceiverEmail());
+                });
+                jcmFromDb.setInterestedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()!=null && jcmProfileSharingDetail.getHiringManagerInterest())
+                                .collect(Collectors.toList())
+                );
 
-            jcmFromDb.setNotInterestedHiringManagers(
-                    jcmProfileSharingDetails
-                            .stream()
-                            .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()!=null && !jcmProfileSharingDetail.getHiringManagerInterest())
-                            .collect(Collectors.toList())
-            );
+                jcmFromDb.setNotInterestedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()!=null && !jcmProfileSharingDetail.getHiringManagerInterest())
+                                .collect(Collectors.toList())
+                );
 
-            jcmFromDb.setNotRespondedHiringManagers(
-                    jcmProfileSharingDetails
-                            .stream()
-                            .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()==null )
-                            .collect(Collectors.toList())
-            );
+                jcmFromDb.setNotRespondedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()==null )
+                                .collect(Collectors.toList())
+                );
+            }
         });
         log.info("****JCM list populated with profile sharing, hiring manager and all details in {} ms", (System.currentTimeMillis() - startTime));
         startTime = System.currentTimeMillis();
