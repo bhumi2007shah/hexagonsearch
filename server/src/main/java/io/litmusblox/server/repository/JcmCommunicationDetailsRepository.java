@@ -26,8 +26,8 @@ import java.util.List;
 public interface JcmCommunicationDetailsRepository extends JpaRepository<JcmCommunicationDetails,Long> {
     @Transactional
     @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query(nativeQuery = true,value = "Update Jcm_Communication_Details set chat_Invite_Flag=true where jcm_Id in :jcmIdList")
-    void inviteCandidates(List<Long> jcmIdList);
+    @Query(nativeQuery = true,value = "Update Jcm_Communication_Details set chat_Invite_Flag=true, chatbot_status=:chatbotStatus  where jcm_Id in :jcmIdList")
+    void inviteCandidates(List<Long> jcmIdList, String chatbotStatus);
 
     @Transactional
     JcmCommunicationDetails findByJcmId(Long jcmId);
