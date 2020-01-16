@@ -730,7 +730,9 @@ public class JobService implements IJobService {
         if (null != oldJob.getJobScreeningQuestionsList() && oldJob.getJobScreeningQuestionsList().size() > 0) {
             historyMsg = "Updated";
             jobScreeningQuestionsRepository.deleteAll(oldJob.getJobScreeningQuestionsList());//delete old job screening question list
+            jobScreeningQuestionsRepository.flush();
         }
+
 
         job.getJobScreeningQuestionsList().forEach(n -> {
             n.setCreatedBy(loggedInUser.getId());
@@ -739,7 +741,16 @@ public class JobService implements IJobService {
             n.setUpdatedOn(new Date());
             n.setUpdatedBy(loggedInUser.getId());
         });
-        jobScreeningQuestionsRepository.saveAll(job.getJobScreeningQuestionsList());
+
+        oldJob.setJobScreeningQuestionsList(job.getJobScreeningQuestionsList());
+        if(job.getJobScreeningQuestionsList().size()>0) {
+            oldJob.setHrQuestionAvailable(true);
+        }
+        else{
+            oldJob.setHrQuestionAvailable(false);
+        }
+
+        jobRepository.save(oldJob);
         saveJobHistory(job.getId(), historyMsg + " screening questions", loggedInUser);
 
         //populate key skills for the job
@@ -1122,6 +1133,10 @@ public class JobService implements IJobService {
                 job.setDatePublished(new Date());
             job.setStatus(status);
         }
+
+        if(job.getJobScreeningQuestionsList().size()>0){
+            job.setHrQuestionAvailable(true);
+        }
         job.setUpdatedOn(new Date());
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         job.setUpdatedBy(loggedInUser);
@@ -1244,7 +1259,7 @@ public class JobService implements IJobService {
         List<LinkedHashMap<String, Object>> exportResponseBean = new ArrayList<>();
 
         exportDataList.forEach(data-> {
-            LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
+                LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
             for (int i = 0; i < data.length; ++i) {
                 candidateData.put(exportHeaderColumnMap.get(columnNames.get(i)), data[i] != null ? data[i].toString() : "");
             }

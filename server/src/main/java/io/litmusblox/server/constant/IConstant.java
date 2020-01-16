@@ -244,7 +244,7 @@ public interface IConstant {
     }
 
     enum CHATBOT_STATUS {
-        Complete
+        Complete, Incomplete
     }
 
     //constants for create candidate if firstName, lastName.

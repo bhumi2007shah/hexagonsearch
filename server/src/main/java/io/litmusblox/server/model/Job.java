@@ -90,6 +90,12 @@ public class Job implements Serializable {
     @Column(name = "SCORING_ENGINE_JOB_AVAILABLE")
     private Boolean scoringEngineJobAvailable  = false;
 
+    @Column(name = "HR_QUESTION_AVAILABLE")
+    private Boolean hrQuestionAvailable = false;
+
+    @Column(name = "RESUBMIT_HR_CHATBOT")
+    private Boolean resubmitHrChatbot = false;
+
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "BU_ID")
     private CompanyBu buId;
