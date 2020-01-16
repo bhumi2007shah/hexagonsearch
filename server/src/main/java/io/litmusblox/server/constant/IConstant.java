@@ -51,6 +51,7 @@ public interface IConstant {
     int MAX_INSTITUTE_LENGTH = 75;
     Integer CANDIDATE_NAME_MAX_LENGTH = 45;
     Integer CANDIDATE_EMAIL_MAX_LENGTH = 50;
+    Integer CV_TEXT_API_RESPONSE_MIN_LENGTH = 50;
 
     String REPO_LOCATION = "repoLocation";
     String TEMP_REPO_LOCATION = "temprepolocation";
@@ -296,7 +297,7 @@ public interface IConstant {
     //Constants for process otp
     enum OtpMsg91 {
 
-        AUTH_KEY("authkey"), SEND_OTP_URL("sendOtpUrl"), VERIFY_OTP("verifyOtpUrl"), RETRY_OTP("retrySendOtp"), SENDER("sender"), TEMPLATE_ID("template_id"), OTP_LENGTH("otp_length"), RETRY_TYPE("retrytype");
+        AUTH_KEY("authkey"), SEND_OTP_URL("sendOtpUrl"), VERIFY_OTP("verifyOtpUrl"), RETRY_OTP("retrySendOtp"), SENDER("sender"), TEMPLATE_ID("template_id"), OTP_LENGTH("otp_length"), RETRY_TYPE("text");
 
         private String value;
 
