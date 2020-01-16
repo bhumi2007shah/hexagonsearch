@@ -150,8 +150,6 @@ public class JobService implements IJobService {
         if(null != job.getStatus() && IConstant.JobStatus.ARCHIVED.equals(job.getStatus()))
             throw new ValidationException("Can't edit job because job in Archived state", HttpStatus.UNPROCESSABLE_ENTITY);
 
-        User recruiter = null;
-        User hiringManager = null;
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         log.info("Received request to add job for page " + pageName + " from user: " + loggedInUser.getEmail());
@@ -168,20 +166,6 @@ public class JobService implements IJobService {
             //get handle to existing job object
             oldJob = jobRepository.findById(job.getId()).orElse(null);
            // oldJob = tempJobObj.isPresent() ? tempJobObj.get() : null;
-        }
-
-        //set recruiter
-        if(null != job.getRecruiter() && null != job.getRecruiter().getId()){
-            recruiter =  userRepository.findById(job.getRecruiter().getId()).orElse(null);
-            if(null != recruiter)
-                job.setRecruiter(recruiter);
-        }
-
-        //set hiringManager
-        if(null != job.getHiringManager() && null != job.getHiringManager().getId()){
-            hiringManager =  userRepository.findById(job.getHiringManager().getId()).orElse(null);
-            if(null != hiringManager)
-                job.setHiringManager(hiringManager);
         }
 
         switch (IConstant.AddJobPages.valueOf(pageName)) {
@@ -495,6 +479,9 @@ public class JobService implements IJobService {
     private void addJobOverview(Job job, Job oldJob, User loggedInUser) { //method for add job for Overview page
         //boolean deleteExistingJobStageStep = (null != job.getId());
 
+        User recruiter = null;
+        User hiringManager = null;
+
         //validate title
         if (job.getJobTitle().length() > IConstant.TITLE_MAX_LENGTH)  //Truncate job title if it is greater than max length
             job.setJobTitle(job.getJobTitle().substring(0, IConstant.TITLE_MAX_LENGTH));
@@ -504,6 +491,29 @@ public class JobService implements IJobService {
 
         if (null == userCompany) {
             throw new ValidationException("Cannot find company for current job", HttpStatus.EXPECTATION_FAILED);
+        }
+
+        //set recruiter
+        if(null != job.getRecruiter() && null != job.getRecruiter().getId()){
+            recruiter =  userRepository.findById(job.getRecruiter().getId()).orElse(null);
+            if(null != recruiter)
+                job.setRecruiter(recruiter);
+            else
+                throw new ValidationException("Recruiter not found for RecruiterId : " +job.getRecruiter().getId(), HttpStatus.BAD_REQUEST);
+        }else{
+            throw new ValidationException("Recruiter is mandatory in add job", HttpStatus.BAD_REQUEST);
+        }
+
+        //set hiringManager
+        if(null != job.getHiringManager() && null != job.getHiringManager().getId()){
+            hiringManager =  userRepository.findById(job.getHiringManager().getId()).orElse(null);
+            if(null != hiringManager)
+                job.setHiringManager(hiringManager);
+            else
+                throw new ValidationException("HiringManager not found for HiringManagerId : " +job.getHiringManager().getId(), HttpStatus.BAD_REQUEST);
+
+        }else{
+            throw new ValidationException("HiringManager is mandatory in add job", HttpStatus.BAD_REQUEST);
         }
 
         job.setCompanyId(userCompany);
