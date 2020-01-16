@@ -767,14 +767,16 @@ INSERT INTO export_format_detail
 VALUES
 (1, 'candidateName','Candidate Name', 1),
 (1, 'chatbotStatus','Chatbot Status', 2),
-(1, 'keySkillsStrength','Key Skills Strength', 3),
-(1, 'currentCompany','Current Company', 4),
-(1, 'currentDesignation','Current Designation', 5),
-(1, 'email','Email', 6),
-(1, 'countryCode','Country Code', 7),
-(1, 'mobile','Mobile', 8),
-(1, 'totalExperience','Total Experience', 9),
-(1, 'createdBy','Created By', 10);
+(1, 'chatbotFilledTimeStamp', 'Chatbot Filled Timestamp', 3),
+(1, 'currentStage','Stage', 4),
+(1, 'keySkillsStrength','Key Skills Strength', 5),
+(1, 'currentCompany','Current Company', 6),
+(1, 'currentDesignation','Current Designation', 7),
+(1, 'email','Email', 8),
+(1, 'countryCode','Country Code', 9),
+(1, 'mobile','Mobile', 10),
+(1, 'totalExperience','Total Experience', 11),
+(1, 'createdBy','Created By', 12);
 
 Insert into MASTER_DATA (TYPE, VALUE) values
 ('reasonForChange','Too much time spent in Commuting to work'),

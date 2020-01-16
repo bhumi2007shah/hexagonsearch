@@ -1474,3 +1474,5 @@ select
 	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId;
 
 ALTER TABLE JCM_COMMUNICATION_DETAILS RENAME COLUMN CHAT_COMPLETE_FLAG TO TECH_CHAT_COMPLETE_FLAG;
+
+update job_candidate_mapping set chatbot_status='Invited' from jcm_communication_details where job_candidate_mapping.candidate_interest_timestamp is null and jcm_communication_details.chat_invite_flag is true;
