@@ -345,30 +345,4 @@ public class NoAuthController {
     void sendOtp(@RequestParam String mobile, @RequestParam String email) throws Exception {
         processOtpService.sendOtp(mobile, email);
     }
-
-    /**
-     * REST Api to validate Otp against a mobile number
-     * @param mobile the mobile number for the otp
-     * @param otp the otp value
-     * @return boolean indicating whether the otp verification succeeded or failed
-     * @throws Exception
-     */
-    @GetMapping(value = "/verifyOtp")
-    @ResponseStatus(value = HttpStatus.OK)
-    boolean verifyOtp(@RequestParam String mobile, @RequestParam String otp) throws Exception {
-        return processOtpService.verifyOtp(mobile, otp);
-    }
-
-    /**
-     * REST Api to request a resend otp for a mobile number
-     * @param mobile the mobile number for which the otp needs to be resent
-     * @throws Exception
-     */
-    //Since we are not getting sms and email for a resend request to Msg91, commenting out this api
-    /*@GetMapping(value = "/resendOtp")
-    @ResponseStatus(value = HttpStatus.OK)
-    void resendOtp(@RequestParam String mobile) throws Exception {
-        processOtpService.resendOtp(mobile);
-    }
-    */
 }

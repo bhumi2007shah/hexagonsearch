@@ -61,7 +61,6 @@ public class ProcessOtpService implements IProcessOtpService {
      * @return boolean indicating whether the otp verification succeeded or failed
      * @throws Exception
      */
-    //private static String OTP_MATCH = "{\"message\":\"OTP verified success\",\"type\":\"success\"}\n";
     @Override
     public boolean verifyOtp(String mobile, String otp){
         log.info("Received request to Verify OTP for mobile number {} with otp value {}", mobile, otp);
@@ -84,28 +83,4 @@ public class ProcessOtpService implements IProcessOtpService {
         log.info("Completed processing Verify OTP request in {}",(System.currentTimeMillis() - startTime));
         return match;
     }
-
-    /**
-     * Service method to handle request for resend otp for a mobile number
-     * @param mobile the mobile number for which the otp needs to be resent
-     * @throws Exception
-     */
-    //Since we are not getting sms and email for a resend request to Msg91, commenting out this api
-    /*@Override
-    public void resendOtp(String mobile){
-        log.info("Received request to Resend OTP for mobile number {}", mobile);
-        long startTime = System.currentTimeMillis();
-        try {
-            RestClient rest = RestClient.getInstance();
-            StringBuilder stringBuilder = new StringBuilder(environment.getProperty(IConstant.OtpMsg91.RETRY_OTP.getValue()));
-            stringBuilder.append("?authkey="+environment.getProperty(IConstant.OtpMsg91.AUTH_KEY.getValue()));
-            stringBuilder.append("&mobile="+mobile);
-            stringBuilder.append("&retrytype="+environment.getProperty(IConstant.OtpMsg91.RETRY_TYPE.getValue()));
-            String response = rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.POST,null);
-            log.info("Response from resend otp api call: {}", response);
-        }catch (Exception ex){
-            log.error("Error while retry otp : "+ex.getMessage());
-        }
-        log.info("Completed processing Resend OTP request in {}",(System.currentTimeMillis() - startTime));
-    }*/
 }
