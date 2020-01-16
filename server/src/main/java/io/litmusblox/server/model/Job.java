@@ -207,7 +207,7 @@ public class Job implements Serializable {
     private List<String> roles;
 
     @Transient
-    private String selectedRole;
+    private List<String> selectedRole;
 
     @Transient
     private String companyDescription;

@@ -565,14 +565,12 @@ public class JobService implements IJobService {
         if(null != oldJob && !IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())){
             //make a call to ML api to obtain skills and capabilities
             if(MasterDataBean.getInstance().getConfigSettings().getMlCall()==1) {
-                if(null == job.getSelectedRole())
-                    job.setSelectedRole(" ");
                 try {
                     RolePredictionBean rolePredictionBean = new RolePredictionBean();
                     RolePredictionBean.RolePrediction rolePrediction= new RolePredictionBean.RolePrediction();
                     rolePrediction.setJobTitle(job.getJobTitle());
                     rolePrediction.setJobDescription(job.getJobDescription());
-                    rolePrediction.setRecruiterRoles(job.getSelectedRole());
+                    rolePrediction.getRecruiterRoles().addAll(job.getSelectedRole());
                     rolePredictionBean.setRolePrediction(rolePrediction);
                     callMl(rolePredictionBean, job.getId(), job);
                     if(null == oldJob) {
@@ -603,8 +601,8 @@ public class JobService implements IJobService {
             ObjectMapper objectMapper = new ObjectMapper();
             List<String> roles = new ArrayList<>();
 
-            if(null != job.getSelectedRole()){
-                requestBean.getRolePrediction().setRecruiterRoles(job.getSelectedRole());
+            if(null != job.getSelectedRole() && job.getSelectedRole().size()>0){
+                requestBean.getRolePrediction().getRecruiterRoles().addAll(job.getSelectedRole());
             }
 
             //TODO currently ML team not handle for industry so we don't send industry, need revisit after ML done implementation for industry
