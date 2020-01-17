@@ -21,6 +21,7 @@ import io.litmusblox.server.uploadProcessor.RChilliCvProcessor;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.SentryUtil;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -97,7 +98,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
      */
    // @Transactional
     public void rateCv() {
-        List<CvParsingDetails> cvToRateList = cvParsingDetailsRepository.findCvRatingRecordsToProcess();
+        List<CvParsingDetails> cvToRateList = cvParsingDetailsRepository.findCvRatingRecordsToProcess(IConstant.CV_TEXT_API_RESPONSE_MIN_LENGTH);
         log.info("Found " + cvToRateList.size() + " records for CV rating process");
 
         cvToRateList.stream().forEach(cvToRate -> {
@@ -112,8 +113,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                         log.error("Found no key skills for jobId: {}.  Not making api call to rate CV.", cvToRate.getJobCandidateMappingId().getJob().getId());
                     else {
                         try {
-                            //TODO currently ML team not handle for industry so we don't send industry, need revisit after ML done implementation for industry
-                            cvRatingApiProcessingTime = callCvRatingApi(new MlCvRatingRequestBean(jdKeySkills, cvToRate.getParsingResponseText(), ""/*cvToRate.getJobCandidateMappingId().getJob().getFunction().getValue()*/), cvToRate.getJobCandidateMappingId().getId());
+                            cvRatingApiProcessingTime = callCvRatingApi(new MlCvRatingRequestBean(jdKeySkills, cvToRate.getParsingResponseText(), cvToRate.getJobCandidateMappingId().getJob().getFunction().getValue()), cvToRate.getJobCandidateMappingId().getId());
                         } catch (Exception e) {
                             log.info("Error while performing CV rating operation " + e.getMessage());
                             processingError = true;
@@ -157,7 +157,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     long apiCallStartTime = System.currentTimeMillis();
                     cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), null);
                     log.info("Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", (System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
-                    if (null != cvText && cvText.trim().length()>20 && !cvText.isEmpty()) {
+                    if (null != cvText && cvText.trim().length()>IConstant.CV_TEXT_API_RESPONSE_MIN_LENGTH && !cvText.isEmpty()) {
                         cvParsingDetailsFromDb.setParsingResponseText(cvText);
                     }else{
                         breadCrumb.put("CvText", cvText);
@@ -165,7 +165,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     }
                 } catch (Exception e) {
                     log.error("Error while convert cv to text cvFilePath : {}, for cvParsingDetailsId  : {}, error message : {}", queryParameters.get("file"), cvParsingDetailsFromDb.getId(), e.getMessage());
-                    breadCrumb.put("Error Msg", e.getStackTrace().toString());
+                    breadCrumb.put("Error Msg", ExceptionUtils.getStackTrace(e));
                     SentryUtil.logWithStaticAPI(null, "Failed to convert cv to text", breadCrumb);
                 }finally {
                     cvParsingDetailsFromDb.setCvConvertApiFlag(true);

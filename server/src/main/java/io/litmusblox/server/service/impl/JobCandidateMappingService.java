@@ -135,6 +135,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Resource
     EmployeeReferrerRepository employeeReferrerRepository;
 
+    @Autowired
+    IProcessOtpService otpService;
+
     @Resource
     UserRepository userRepository;
 
@@ -1704,54 +1707,73 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @throws Exception
      */
     @Transactional
-    public UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer) throws Exception {
+    public UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception {
         log.info("Inside uploadCandidateByNoAuthCall");
         UploadResponseBean responseBean = null;
+        CandidateDetails candidateDetails = null;
+        Boolean isOtpVerify;
         EmployeeReferrer referrerFromDb;
 
-        if(null == candidate.getCandidateName() || candidate.getCandidateName().isEmpty()){
-            candidate.setCandidateName(IConstant.NOT_AVAILABLE);
-            candidate.setFirstName(IConstant.NOT_AVAILABLE);
+        if(null != employeeReferrer)
+            isOtpVerify = otpService.verifyOtp(employeeReferrer.getMobile(), otp);
+        else
+            isOtpVerify = otpService.verifyOtp(candidate.getMobile(), otp);
+
+        if(isOtpVerify){
+            if(null == candidate.getCandidateName() || candidate.getCandidateName().isEmpty()){
+                candidate.setCandidateName(IConstant.NOT_AVAILABLE);
+                candidate.setFirstName(IConstant.NOT_AVAILABLE);
+            }else{
+                //populate the first name and last name of the candidate
+                Util.handleCandidateName(candidate, candidate.getCandidateName());
+            }
+
+            if(!Arrays.asList(IConstant.CandidateSource.values()).contains(IConstant.CandidateSource.valueOf(candidateSource)))
+                throw new ValidationException("Not a valid candidate source : "+candidateSource, HttpStatus.BAD_REQUEST);
+
+            if(null != candidateCv){
+                String cvFileType = Util.getFileExtension(candidateCv.getOriginalFilename());
+                if(null == candidate.getCandidateDetails()){
+                    candidateDetails = new CandidateDetails();
+                    candidate.setCandidateDetails(candidateDetails);
+                }
+                candidate.getCandidateDetails().setCvFileType("."+cvFileType);
+            }
+            Job job = jobRepository.findByJobReferenceId(jobReferenceId);
+            candidate.setCandidateSource(candidateSource);
+
+            if(null != employeeReferrer){
+                referrerFromDb = employeeReferrerRepository.findByEmail(employeeReferrer.getEmail());
+                if(null == referrerFromDb){
+                    referrerFromDb = employeeReferrerRepository.save(new EmployeeReferrer(employeeReferrer.getFirstName(), employeeReferrer.getLastName(), employeeReferrer.getEmail(), employeeReferrer.getEmployeeId(), employeeReferrer.getMobile(), employeeReferrer.getLocation(), employeeReferrer.getCreatedOn()));
+                }
+                referrerFromDb.setReferrerRelation(employeeReferrer.getReferrerRelation());
+                referrerFromDb.setReferrerContactDuration(employeeReferrer.getReferrerContactDuration());
+                candidate.setEmployeeReferrer(referrerFromDb);
+            }
+            //Upload candidate
+            responseBean = uploadIndividualCandidate(Arrays.asList(candidate), job.getId(), false, Optional.ofNullable(userRepository.findByEmail(IConstant.SYSTEM_USER_EMAIL)));
+
+            //Store candidate cv to repository location
+            try{
+                if(null!=candidateCv) {
+                    if (responseBean.getSuccessfulCandidates().size()>0)
+                        StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getSuccessfulCandidates().get(0),null);
+                    else
+                        StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getFailedCandidates().get(0), null);
+
+                    responseBean.setCvStatus(true);
+                }
+            }catch(Exception e){
+                log.error("Resume upload failed :"+e.getMessage());
+                responseBean.setCvErrorMsg(e.getMessage());
+            }
         }else{
-            //populate the first name and last name of the candidate
-            Util.handleCandidateName(candidate, candidate.getCandidateName());
-        }
-
-        if(!Arrays.asList(IConstant.CandidateSource.values()).contains(IConstant.CandidateSource.valueOf(candidateSource)))
-            throw new ValidationException("Not a valid candidate source : "+candidateSource, HttpStatus.BAD_REQUEST);
-
-        if(null != candidateCv){
-            String cvFileType = Util.getFileExtension(candidateCv.getOriginalFilename());
-            candidate.getCandidateDetails().setCvFileType("."+cvFileType);
-        }
-        Job job = jobRepository.findByJobReferenceId(jobReferenceId);
-        candidate.setCandidateSource(candidateSource);
-
-        if(null != employeeReferrer){
-            referrerFromDb = employeeReferrerRepository.findByEmail(employeeReferrer.getEmail());
-            if(null == referrerFromDb){
-                referrerFromDb = employeeReferrerRepository.save(new EmployeeReferrer(employeeReferrer.getFirstName(), employeeReferrer.getLastName(), employeeReferrer.getEmail(), employeeReferrer.getEmployeeId(), employeeReferrer.getMobile(), employeeReferrer.getLocation(), employeeReferrer.getCreatedOn()));
-            }
-            referrerFromDb.setReferrerRelation(employeeReferrer.getReferrerRelation());
-            referrerFromDb.setReferrerContactDuration(employeeReferrer.getReferrerContactDuration());
-            candidate.setEmployeeReferrer(referrerFromDb);
-        }
-        //Upload candidate
-        responseBean = uploadIndividualCandidate(Arrays.asList(candidate), job.getId(), false, Optional.ofNullable(userRepository.findByEmail(IConstant.SYSTEM_USER_EMAIL)));
-
-        //Store candidate cv to repository location
-        try{
-            if(null!=candidateCv) {
-                if (responseBean.getSuccessfulCandidates().size()>0)
-                    StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getSuccessfulCandidates().get(0),null);
-                else
-                    StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getFailedCandidates().get(0), null);
-
-                responseBean.setCvStatus(true);
-            }
-        }catch(Exception e){
-            log.error("Resume upload failed :"+e.getMessage());
-            responseBean.setCvErrorMsg(e.getMessage());
+            responseBean = new UploadResponseBean();
+            responseBean.setFailureCount(1);
+            responseBean.setSuccessCount(0);
+            responseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
+            responseBean.setErrorMessage(IErrorMessages.OTP_VERIFICATION_FAILED);
         }
         return responseBean;
     }

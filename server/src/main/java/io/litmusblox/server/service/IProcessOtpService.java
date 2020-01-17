@@ -16,10 +16,9 @@ public interface IProcessOtpService {
      * Service method to handle send Otp request from search job page
      * @param mobile mobile number to send otp to
      * @param email email address to send otp to
-     * @param countryCode country code of the mobile
      * @throws Exception
      */
-    void sendOtp(String mobile, String email, int countryCode) throws Exception;
+    void sendOtp(String mobile, String email) throws Exception;
 
     /**
      * Service method to validate Otp against a mobile number
@@ -35,5 +34,6 @@ public interface IProcessOtpService {
      * @param mobile the mobile number for which the otp needs to be resent
      * @throws Exception
      */
-    void resendOtp(String mobile);
+    //Since we are not getting sms and email for a resend request to Msg91, commenting out this api
+    //void resendOtp(String mobile);
 }

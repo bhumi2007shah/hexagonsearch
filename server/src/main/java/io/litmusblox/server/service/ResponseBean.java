@@ -26,4 +26,5 @@ public class ResponseBean {
     Date processedOn;
     String status;
     String candidateName;
+    String  errorMessage;
 }
