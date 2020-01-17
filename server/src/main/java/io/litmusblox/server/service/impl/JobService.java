@@ -607,10 +607,10 @@ public class JobService implements IJobService {
                 requestBean.getRolePrediction().getRecruiterRoles().addAll(job.getSelectedRole());
             }
 
-            //TODO currently ML team not handle for industry so we don't send industry, need revisit after ML done implementation for industry
-            /*if(null != function)
+            //Send function to ml
+            if(null != function)
                 requestBean.getRolePrediction().setIndustry(function);
-*/
+
             objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             mlRequest = objectMapper.writeValueAsString(requestBean);
