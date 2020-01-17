@@ -706,14 +706,15 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(jcmListWithoutError.size()==0){
             inviteCandidateResponseBean =  new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Failure.toString(), 0, jcmList.size(), failedCandidates);
         }
-        else if(jcmListWithoutError.size()<jcmList.size()) {
-            inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Partial_Success.toString(),jcmListWithoutError.size(), jcmList.size()-jcmListWithoutError.size(), failedCandidates);
-            jcmCommunicationDetailsRepository.inviteCandidates(jcmListWithoutError, IConstant.ChatbotStatus.INVITED.getValue());
-            updateJcmHistory(jcmListWithoutError, loggedInUser);
-        }
         else{
-            inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Success.toString(), jcmListWithoutError.size(), 0, failedCandidates);
-            jcmCommunicationDetailsRepository.inviteCandidates(jcmListWithoutError, IConstant.ChatbotStatus.INVITED.getValue());
+            if(jcmListWithoutError.size()<jcmList.size()) {
+                inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Partial_Success.toString(),jcmListWithoutError.size(), jcmList.size()-jcmListWithoutError.size(), failedCandidates);
+            }
+            else{
+                inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Success.toString(), jcmListWithoutError.size(), 0, failedCandidates);
+            }
+            jcmCommunicationDetailsRepository.inviteCandidates(jcmListWithoutError);
+            jobCandidateMappingRepository.updateJcmSetStatus(IConstant.ChatbotStatus.INVITED.getValue(), jcmListWithoutError);
         }
 
         if(null == jobObjToUse && jcmListWithoutError.size() > 0) {
