@@ -14,10 +14,7 @@ import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.exportData.ExportData;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
-import io.litmusblox.server.service.IJobService;
-import io.litmusblox.server.service.JobWorspaceResponseBean;
-import io.litmusblox.server.service.MasterDataBean;
-import io.litmusblox.server.service.SingleJobViewResponseBean;
+import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.ml.RolePredictionBean;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.SentryUtil;
@@ -128,6 +125,9 @@ public class JobService implements IJobService {
 
     @Resource
     ExportFormatDetailRepository exportFormatDetailRepository;
+
+    @Autowired
+    ICompanyService companyService;
 
     @PersistenceContext
     EntityManager em;
@@ -615,7 +615,7 @@ public class JobService implements IJobService {
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             mlRequest = objectMapper.writeValueAsString(requestBean);
             log.info("Sending request to ml for LB job id : "+jobId);
-            mlResponse = RestClient.getInstance().consumeRestApi(mlRequest, mlUrl, HttpMethod.POST,null);
+            mlResponse = RestClient.getInstance().consumeRestApi(mlRequest, mlUrl, HttpMethod.POST,null).getResponseBody();
             log.info("Response received: " + mlResponse);
             log.info("Getting response from ml for LB job id : "+jobId);
             long startTime = System.currentTimeMillis();
@@ -1044,6 +1044,10 @@ public class JobService implements IJobService {
         log.info("Received request to publish job with id: " + jobId);
         Job publishedJob = changeJobStatus(jobId,IConstant.JobStatus.PUBLISHED.getValue());
         log.info("Completed publishing job with id: " + jobId);
+        if(null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
+            log.info("Subdomain does not exist for company: {}. Creating one.", publishedJob.getCompanyId().getCompanyName());
+            companyService.createSubdomain(publishedJob.getCompanyId());
+        }
         if(publishedJob.getJobCapabilityList().size() == 0)
             log.info("No capabilities exist for the job: " + jobId + " Scoring engine api call will NOT happen");
         else if(jobCapabilitiesRepository.findByJobIdAndSelected(jobId, true).size() == 0)
@@ -1051,7 +1055,7 @@ public class JobService implements IJobService {
         else {
             log.info("Calling Scoring Engine Api to create a job");
             try {
-                String scoringEngineResponse = RestClient.getInstance().consumeRestApi(convertJobToRequestPayload(jobId, publishedJob), scoringEngineBaseUrl + scoringEngineAddJobUrlSuffix, HttpMethod.POST, null);
+                String scoringEngineResponse = RestClient.getInstance().consumeRestApi(convertJobToRequestPayload(jobId, publishedJob), scoringEngineBaseUrl + scoringEngineAddJobUrlSuffix, HttpMethod.POST, null).getResponseBody();
                 publishedJob.setScoringEngineJobAvailable(true);
                 jobRepository.save(publishedJob);
             } catch (Exception e) {

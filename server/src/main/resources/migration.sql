@@ -1476,3 +1476,8 @@ select
 ALTER TABLE JCM_COMMUNICATION_DETAILS RENAME COLUMN CHAT_COMPLETE_FLAG TO TECH_CHAT_COMPLETE_FLAG;
 
 update job_candidate_mapping set chatbot_status='Invited' from jcm_communication_details where job_candidate_mapping.candidate_interest_timestamp is null and jcm_communication_details.chat_invite_flag is true;
+
+--For ticket #350
+ALTER TABLE COMPANY
+ADD COLUMN SUBDOMAIN_CREATED BOOL NOT NULL DEFAULT 'f',
+ADD COLUMN SUBDOMAIN_CREATED_ON TIMESTAMP;

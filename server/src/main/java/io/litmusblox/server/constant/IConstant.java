@@ -292,7 +292,8 @@ public interface IConstant {
 
     String[] fetchItemsType = new String[]{"referrerRelation", "jobType"};
 
-
+    String REPLACEMENT_KEY_FOR_SHORTNAME = "_shortName_";
+    String GODADDY_SUCCESS_RESPONSE = "\"code\":";
 
     //Constants for process otp
     enum OtpMsg91 {

@@ -156,7 +156,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     log.info("CvFile path : {}", queryParameters.get("file"));
                     breadCrumb.put("FilePath", queryParameters.get("file"));
                     long apiCallStartTime = System.currentTimeMillis();
-                    cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), null);
+                    cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), null).getResponseBody();
                     log.info("Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", (System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
                     if (null != cvText && cvText.trim().length()>IConstant.CV_TEXT_API_RESPONSE_MIN_LENGTH && !cvText.isEmpty()) {
                         cvParsingDetailsFromDb.setParsingResponseText(cvText);
@@ -186,7 +186,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
 
         long apiCallStartTime = System.currentTimeMillis();
-        String mlResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), mlCvRatingUrl, HttpMethod.POST, null);
+        String mlResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), mlCvRatingUrl, HttpMethod.POST, null).getResponseBody();
         log.info("Response received from CV Rating Api: " + mlResponse);
         long apiCallEndTime = System.currentTimeMillis();
 

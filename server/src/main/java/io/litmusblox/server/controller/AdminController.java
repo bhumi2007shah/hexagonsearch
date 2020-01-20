@@ -63,4 +63,11 @@ public class AdminController {
     List<UserWorkspaceBean> fetchUsers(@RequestParam String companyId) throws Exception {
         return userDetailsService.fetchUsers(Long.parseLong(companyId));
     }
+
+    @PutMapping(value = "/createSubdomains")
+    @PreAuthorize(("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "')"))
+    @ResponseStatus(HttpStatus.OK)
+    void createSubdomains() throws Exception {
+        companyService.createSubdomains();
+    }
 }
