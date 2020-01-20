@@ -104,4 +104,9 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
             "FROM job_candidate_mapping\n" +
             "where updated_by =:userId", nativeQuery = true)
     List<Object[]> getChatbotCountCompletedAndInCompleted(Long userId);
+
+    @Transactional
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set chatbot_status=:chatbotStatus where id in :jcmList ")
+    void updateJcmSetStatus(String chatbotStatus, List<Long>jcmList);
 }

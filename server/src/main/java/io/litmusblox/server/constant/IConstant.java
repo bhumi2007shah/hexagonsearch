@@ -244,8 +244,15 @@ public interface IConstant {
         }
     }
 
-    enum CHATBOT_STATUS {
-        Complete, Incomplete
+    enum ChatbotStatus {
+        COMPLETE("Complete"), INCOMPLETE("Incomplete"), NOT_INSTERESTED("Not Interested"), INVITED("Invited");
+        private String value;
+
+        ChatbotStatus(String val){ this.value = val;}
+
+        public String getValue(){
+            return this.value;
+        }
     }
 
     //constants for create candidate if firstName, lastName.

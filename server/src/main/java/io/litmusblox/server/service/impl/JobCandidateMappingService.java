@@ -501,12 +501,16 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
         objFromDb.setCandidateInterest(interest);
 
-        //setting chatbot status as complete if both hr and technical chatbot are missing.
-        if(!objFromDb.getJob().getHrQuestionAvailable() && !objFromDb.getJob().getScoringEngineJobAvailable()){
-            objFromDb.setChatbotStatus(IConstant.CHATBOT_STATUS.Complete.name());
+        if(interest) {
+            //setting chatbot status as complete if both hr and technical chatbot are missing.
+            if (!objFromDb.getJob().getHrQuestionAvailable() && !objFromDb.getJob().getScoringEngineJobAvailable()) {
+                objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
+            } else {
+                objFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
+            }
         }
-        else {
-            objFromDb.setChatbotStatus(IConstant.CHATBOT_STATUS.Incomplete.name());
+        else{
+            objFromDb.setChatbotStatus(IConstant.ChatbotStatus.NOT_INSTERESTED.getValue());
         }
         objFromDb.setCandidateInterestDate(new Date());
         //commented below code to not set flags to true.
@@ -557,7 +561,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         //set chatbot status to complete if scoring engine does not have job or tech chatbot is complete.
         if(!objFromDb.getJob().getScoringEngineJobAvailable() || jcmCommunicationDetailsFromDb.isTechChatCompleteFlag()){
-            objFromDb.setChatbotStatus(IConstant.CHATBOT_STATUS.Complete.name());
+            objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
         }
 
         //Commented below code as we are not setting flag to true as per discussion on 10-01-2020
@@ -632,7 +636,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                             }
 
                             //Candidate has already completed the tech chatbot
-                            if (IConstant.CHATBOT_STATUS.Complete.name().equalsIgnoreCase(techChatbotRequestBean.getChatbotStatus())) {
+                            if (IConstant.ChatbotStatus.COMPLETE.getValue().equalsIgnoreCase(techChatbotRequestBean.getChatbotStatus())) {
                                 log.info("Found complete status from scoring engine: " + jcm.getEmail() + " ~ " + jcm.getId());
                                 //Set chatCompleteFlag = true
                                 JcmCommunicationDetails jcmCommunicationDetails = jcmCommunicationDetailsRepository.findByJcmId(jcm.getId());
@@ -705,14 +709,15 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(jcmListWithoutError.size()==0){
             inviteCandidateResponseBean =  new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Failure.toString(), 0, jcmList.size(), failedCandidates);
         }
-        else if(jcmListWithoutError.size()<jcmList.size()) {
-            inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Partial_Success.toString(),jcmListWithoutError.size(), jcmList.size()-jcmListWithoutError.size(), failedCandidates);
-            jcmCommunicationDetailsRepository.inviteCandidates(jcmListWithoutError);
-            updateJcmHistory(jcmListWithoutError, loggedInUser);
-        }
         else{
-            inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Success.toString(), jcmListWithoutError.size(), 0, failedCandidates);
+            if(jcmListWithoutError.size()<jcmList.size()) {
+                inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Partial_Success.toString(),jcmListWithoutError.size(), jcmList.size()-jcmListWithoutError.size(), failedCandidates);
+            }
+            else{
+                inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Success.toString(), jcmListWithoutError.size(), 0, failedCandidates);
+            }
             jcmCommunicationDetailsRepository.inviteCandidates(jcmListWithoutError);
+            jobCandidateMappingRepository.updateJcmSetStatus(IConstant.ChatbotStatus.INVITED.getValue(), jcmListWithoutError);
         }
 
         if(null == jobObjToUse && jcmListWithoutError.size() > 0) {
@@ -1018,7 +1023,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             objFromDb.getTechResponseData().setTechResponse(requestBean.getTechResponseJson());
         }
         jobCandidateMappingRepository.save(objFromDb);
-        if(IConstant.CHATBOT_STATUS.Complete.name().equals(requestBean.getChatbotStatus())) {
+        if(IConstant.ChatbotStatus.COMPLETE.getValue().equals(requestBean.getChatbotStatus())) {
             log.info("Updated chatbot status for "  + requestBean.getChatbotUuid() + " with status as " + requestBean.getChatbotStatus() + " score: " + requestBean.getScore());
             jcmCommunicationDetailsRepository.updateByJcmId(objFromDb.getId());
         }
