@@ -1343,6 +1343,7 @@ left join master_data education
 on job.education = education.id
 left join jobKeySkillAggregation
 on job.id = jobKeySkillAggregation.jobId
+where job.status = 'Live'
 order by jobId;
 
 --For ticket  #290
