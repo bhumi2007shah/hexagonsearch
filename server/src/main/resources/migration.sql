@@ -1478,7 +1478,7 @@ ALTER TABLE JCM_COMMUNICATION_DETAILS RENAME COLUMN CHAT_COMPLETE_FLAG TO TECH_C
 update job_candidate_mapping
 set chatbot_status='Invited'
 where id in (select jcm_id from jcm_communication_details where jcm_communication_details.chat_invite_flag='t') and
-chatbot_status is NULL;
+chatbot_status is NULL and candidate_interest='f';
 
 update job_candidate_mapping
 set chatbot_status='Not Interested'
