@@ -31,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.File;
+import java.math.BigInteger;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -1776,5 +1777,29 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             responseBean.setErrorMessage(IErrorMessages.OTP_VERIFICATION_FAILED);
         }
         return responseBean;
+    }
+
+    /**
+     * Service method to fetch a list of count of candidate per chatbot status per job
+     *
+     * @param jobId the job id for which data has to be fetched
+     * @param stage the stage, defaulted out to Screening
+     * @return the count of candidate per chatbot status
+     * @throws Exception
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Integer> getCandidateCountPerStatus(Long jobId, String stage) throws Exception {
+
+        Map<String, Integer> countMap = new HashMap<>();
+        List<Object[]> candidateCountList = jobCandidateMappingRepository.getCandidateCountPerStage(jobId, stage);
+
+        if(null != candidateCountList.get(0)[0]) {
+            countMap.put(IConstant.ChatbotStatus.INVITED.getValue(), ((BigInteger)candidateCountList.get(0)[0]).intValue());
+            countMap.put(IConstant.ChatbotStatus.NOT_INSTERESTED.getValue(), ((BigInteger)candidateCountList.get(0)[1]).intValue());
+            countMap.put(IConstant.ChatbotStatus.COMPLETE.getValue(), ((BigInteger)candidateCountList.get(0)[2]).intValue());
+            countMap.put(IConstant.ChatbotStatus.INCOMPLETE.getValue(), ((BigInteger)candidateCountList.get(0)[3]).intValue());
+        }
+
+        return countMap;
     }
 }
