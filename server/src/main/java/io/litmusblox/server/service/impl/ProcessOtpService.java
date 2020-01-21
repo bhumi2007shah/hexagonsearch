@@ -72,6 +72,7 @@ public class ProcessOtpService implements IProcessOtpService {
             stringBuilder.append("?authkey="+environment.getProperty(IConstant.OtpMsg91.AUTH_KEY.getValue()));
             stringBuilder.append("&mobile="+mobile);
             stringBuilder.append("&otp="+otp);
+            log.info("Msg91 request url: {}", stringBuilder.toString());
             String response = rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.POST,null);
             if (null != response && response.indexOf("success") == -1)
             //if (!OTP_MATCH.equalsIgnoreCase(response))
