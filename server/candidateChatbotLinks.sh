@@ -1,10 +1,11 @@
-#export candidateChatbotLinks.csv
-PGPASSWORD="H#X@g0nL1tmu$" psql -U postgres -h localhost -d litmusblox -A -F"," -c "select
+#export candidateChatbotLinks.csv with resubmit hr chat as false
+PGPASSWORD="hexagon" psql -U postgres -h localhost -d litmusblox -A -F"," -c "select
 company.company_name as \"Company Name\",
 job.id as JobId, job.job_title as \"Job Title\",
 concat(jcm.candidate_first_name, ' ',jcm.candidate_last_name) as \"Candidate Name\",
 jcm.chatbot_status as \"Chatbot Status\",
-concat('https://chatbot.litmusblox.io/#/',jcm.chatbot_uuid) as \"Chatbot Link\"
+concat('https://chatbot.litmusblox.io/#/',jcm.chatbot_uuid) as \"Chatbot Link\",
+jcm.chatbot_updated_on as \"Chat filled timestamp\"
 from
 job_candidate_mapping jcm
 inner join
@@ -13,11 +14,32 @@ inner join
 company on job.company_id = company.id
 inner join
 jcm_communication_details jcmCom ON jcmCom.jcm_id = jcm.id
-where jcmCom.chat_invite_flag is true
-order by \"Company Name\", \"Job Title\", \"Chatbot Status\";" > /home/lbprod/serverApplication/FileStore/download/candidateChatbotLinks.csv
+where jcmCom.chat_invite_flag is true and job.resubmit_hr_chatbot is false
+order by \"Company Name\", \"Job Title\", \"Chatbot Status\";" > /home/lbtest/serverApplication/FileStore/download/candidateChatbotLinks.csv
+
+#export candidateChatbotLinks.csv with resubmit hr chat as true
+PGPASSWORD="hexagon" psql -U postgres -h localhost -d litmusblox -A -F"," -c "select
+company.company_name as \"Company Name\",
+job.id as JobId, job.job_title as \"Job Title\",
+concat(jcm.candidate_first_name, ' ',jcm.candidate_last_name) as \"Candidate Name\",
+jcm.email as \"Email\",
+jcm.mobile as \"Mobile\",
+jcm.chatbot_status as \"Chatbot Status\",
+concat('https://chatbot.litmusblox.io/#/',jcm.chatbot_uuid) as \"Chatbot Link\",
+jcm.chatbot_updated_on as \"Chat filled timestamp\"
+from
+job_candidate_mapping jcm
+inner join
+job on job.id = jcm.job_id
+inner join
+company on job.company_id = company.id
+inner join
+jcm_communication_details jcmCom ON jcmCom.jcm_id = jcm.id
+where job.resubmit_hr_chatbot is true
+order by \"Company Name\", \"Job Title\", \"Chatbot Status\";" > /home/lbtest/serverApplication/FileStore/download/candidateChatbotLinksResubmitHrChatbot.csv
 
 #export hrScreeningQuestionResponses.csv
-PGPASSWORD="H#X@g0nL1tmu$" psql -U postgres -h localhost -d litmusblox -U postgres -A -F"," -c "select
+PGPASSWORD="hexagon" psql -U postgres -h localhost -d litmusblox -U postgres -A -F"," -c "select
 company.company_name as \"Company Name\",
 job.id as \"Job Id\", job.job_title as \"Job Title\",
 concat(jcm.candidate_first_name, ' ',jcm.candidate_last_name) as \"Candidate Name\",
@@ -43,5 +65,4 @@ inner join
 on jsq.jsqJobId = jcm.job_id
 inner join candidate_screening_question_response csqr
 on jsq.jsqId = csqr.job_screening_question_id
-order by \"Company Name\", \"Job Id\", \"Candidate Name\", \"Screening Qn\";" > /home/lbprod/serverApplication/FileStore/download/hrScreeningQuestionResponses.csv
-
+order by \"Company Name\", \"Job Id\", \"Candidate Name\", \"Screening Qn\";" > /home/lbtest/serverApplication/FileStore/download/hrScreeningQuestionResponses.csv
