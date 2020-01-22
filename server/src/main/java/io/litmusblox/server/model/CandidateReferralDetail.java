@@ -31,8 +31,8 @@ public class CandidateReferralDetail {
     private Long id;
 
     @NotNull
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "JOB_CANDIDATE_MAPPING_ID")
+    @OneToOne
+    @PrimaryKeyJoinColumn
     private JobCandidateMapping jobCandidateMappingId;
 
     @NotNull
