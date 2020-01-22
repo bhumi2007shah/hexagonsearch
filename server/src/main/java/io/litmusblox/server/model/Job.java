@@ -129,10 +129,12 @@ public class Job implements Serializable {
     @JoinColumn(name = "EXPERTISE")
     private MasterData expertise;
 
+    @NotNull(message = "Hiring Manager " + IErrorMessages.NULL_MESSAGE)
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="HIRING_MANAGER")
     private User hiringManager;
 
+    @NotNull(message = "Recruiter " + IErrorMessages.NULL_MESSAGE)
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="RECRUITER")
     private User recruiter;
