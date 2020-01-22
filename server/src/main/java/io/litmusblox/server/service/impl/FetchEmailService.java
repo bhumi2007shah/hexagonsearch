@@ -167,7 +167,13 @@ public class FetchEmailService {
     private Job findJobForEmailSubject(String subject) {
         String jobReferenceId = subject.substring(subject.indexOf(naukriSubjectString) + naukriSubjectString.length());
         log.info("Extracted jobReferenceId: {}", jobReferenceId.substring(0,jobReferenceId.indexOf(',')));
-        return jobService.findByJobReferenceId(UUID.fromString(jobReferenceId.substring(0,jobReferenceId.indexOf(',')).trim()));
+        try {
+            UUID uuidFromString = UUID.fromString(jobReferenceId.substring(0,jobReferenceId.indexOf(',')).trim());
+            return jobService.findByJobReferenceId(uuidFromString);
+        } catch (Exception e) {
+            log.error("Error while converting job reference to UUID.");
+            return null;
+        }
         //following was for test purpose only
         //return jobService.findByJobReferenceId(UUID.fromString("f3469d73-1662-11ea-92f0-74e5f9b964b9"));
     }
