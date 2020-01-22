@@ -96,10 +96,10 @@ public class FetchEmailService {
 
             for (int i = 0; i < messages.length; i++) {
                 Message message = messages[i];
-                log.info("Subject: {}", message.getSubject());
                 try {
                     //check if the mail is an application from Naukri
                     if (null != message.getSubject() && message.getSubject().indexOf(naukriSubjectString) != -1) {
+                        log.info("Subject: {}", message.getSubject());
                         MailData mailData = new MailData();
                         mailData.setJobFromReference(findJobForEmailSubject(message.getSubject()));
 
