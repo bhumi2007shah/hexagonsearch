@@ -1030,7 +1030,7 @@ public class JobService implements IJobService {
      *
      * @param jobId id of the job to be published
      */
-    @Transactional
+    @Transactional(propagation=Propagation.REQUIRES_NEW)
     public void publishJob(Long jobId) throws Exception {
         log.info("Received request to publish job with id: " + jobId);
         Job publishedJob = changeJobStatus(jobId,IConstant.JobStatus.PUBLISHED.getValue());
