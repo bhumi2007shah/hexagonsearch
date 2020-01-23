@@ -7,6 +7,7 @@ package io.litmusblox.server.controller;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Candidate;
 import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.repository.UserRepository;
@@ -320,4 +321,20 @@ public class JobCandidateMappingController {
         jobCandidateMappingService.uploadResume(multipartFile, jcmId);
         log.info("Resume upload successFully");
     }
+
+    /**
+     * REST API to fetch a list of count of candidate per chatbot status per job
+     * @param jobId the job id for which data has to be fetched
+     * @param stage the stage, defaulted out to Screening
+     * @return the count of candidate per chatbot status
+     * @throws Exception
+     */
+    @GetMapping(value = {"/candidateCountPerStatus/{jobId}", "/candidateCountPerStatus/{jobId}/{stage}"})
+    @ResponseStatus(HttpStatus.OK)
+    String getCandidateCountPerStatus(@PathVariable Long jobId, @PathVariable(required = false, value = "stage") Optional<String> stage) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Integer> countMap = jobCandidateMappingService.getCandidateCountPerStatus(jobId, (stage.isPresent())?stage.get(): IConstant.Stage.Screen.getValue());
+        return objectMapper.writeValueAsString(countMap);
+    }
+
 }

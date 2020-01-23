@@ -109,4 +109,18 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query(nativeQuery = true, value = "update job_candidate_mapping set chatbot_status=:chatbotStatus where id in :jcmList ")
     void updateJcmSetStatus(String chatbotStatus, List<Long>jcmList);
+
+    @Transactional (readOnly = true)
+    @Query(nativeQuery = true, value = "SELECT\n" +
+            "sum((chatbot_status LIKE 'Invited')\\:\\:INT) AS invitedCount,\n" +
+            "sum((chatbot_status LIKE 'Not Interested')\\:\\:INT) AS notInterestedCount,\n" +
+            "sum((chatbot_status LIKE 'Complete')\\:\\:INT) AS completeCount,\n" +
+            "sum((chatbot_status LIKE 'Incomplete')\\:\\:INT) AS incompleteCount\n" +
+            "FROM job_candidate_mapping, job_stage_step, company_stage_step, stage_master\n" +
+            "where job_candidate_mapping.job_id = :jobId\n" +
+            "and job_candidate_mapping.stage = job_stage_step.id\n" +
+            "and job_stage_step.stage_step_id = company_stage_step.id\n" +
+            "and company_stage_step.stage = stage_master.id\n" +
+            "and stage_master.stage_name = :stage")
+    List<Object[]> getCandidateCountPerStage(Long jobId, String stage) throws Exception;
 }

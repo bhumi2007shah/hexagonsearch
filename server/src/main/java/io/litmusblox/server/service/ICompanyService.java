@@ -99,4 +99,18 @@ public interface ICompanyService {
      * @return List of company
      */
     List<Company> getCompanyListByAgency(Long recruitmentAgencyId);
+
+    /**
+     * Method to create a subdomain for a company when the first job is published
+     *
+     * @param company the company for which subdomain is to be created
+     * @throws Exception
+     */
+    void createSubdomain(Company company) throws Exception;
+
+    /**
+     * Method that fetches a list of all companies that have short name and for which a subdomain has not been created
+     * @throws Exception
+     */
+    void createSubdomains() throws Exception;
 }
