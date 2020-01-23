@@ -255,6 +255,8 @@ class JobServiceTest extends AbstractTest {
                     .expertise(MasterData.builder().id(122L).build())
                     .function(MasterData.builder().id(130L).build())
                     .jobReferenceId(UUID.randomUUID())
+                    .recruiter(User.builder().id(1L).build())
+                    .hiringManager(User.builder().id(1L).build())
                     .currency("INR")
                     .usersForCompany(new ArrayList<>())
                     .build();

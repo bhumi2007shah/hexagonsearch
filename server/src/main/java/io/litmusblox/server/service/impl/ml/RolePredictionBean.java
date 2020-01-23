@@ -8,6 +8,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author : Sumit
  * Date : 16/10/19
@@ -25,7 +28,7 @@ public class RolePredictionBean {
     public static class RolePrediction {
         private String jobTitle;
         private String jobDescription;
-        private String recruiterRoles;
+        private List<String> recruiterRoles = new ArrayList<>();
         private String industry;
     }
 }

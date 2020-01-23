@@ -135,6 +135,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Resource
     EmployeeReferrerRepository employeeReferrerRepository;
 
+    @Autowired
+    IProcessOtpService otpService;
+
     @Resource
     UserRepository userRepository;
 
@@ -497,7 +500,26 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if (null == objFromDb)
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
         objFromDb.setCandidateInterest(interest);
+
+        if(interest) {
+            //setting chatbot status as complete if both hr and technical chatbot are missing.
+            if (!objFromDb.getJob().getHrQuestionAvailable() && !objFromDb.getJob().getScoringEngineJobAvailable()) {
+                objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
+            } else {
+                objFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
+            }
+        }
+        else{
+            objFromDb.setChatbotStatus(IConstant.ChatbotStatus.NOT_INSTERESTED.getValue());
+        }
         objFromDb.setCandidateInterestDate(new Date());
+        //commented below code to not set flags to true.
+        /*if(!objFromDb.getJob().getHrQuestionAvailable()){
+            jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(objFromDb.getId());
+        }
+        if(!objFromDb.getJob().getHrQuestionAvailable() && !objFromDb.getJob().getScoringEngineJobAvailable()){
+            jcmCommunicationDetailsRepository.updateByJcmId(objFromDb.getId());
+        }*/
         jobCandidateMappingRepository.save(objFromDb);
         jcmHistoryRepository.save(new JcmHistory(objFromDb, "Candidate is"+ (interest?" interested.":" not interested."), new Date(), null, objFromDb.getStage()));
     }
@@ -512,6 +534,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void saveScreeningQuestionResponses(UUID uuid, Map<Long, List<String>> candidateResponse) throws Exception {
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
+        JcmCommunicationDetails jcmCommunicationDetailsFromDb = jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId());
         if (null == objFromDb)
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
 
@@ -533,11 +556,21 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         //updating hr_chat_complete_flag
         jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(objFromDb.getId());
 
+        //update chatbot updated date
+        objFromDb.setChatbotUpdatedOn(new Date());
+
+        //set chatbot status to complete if scoring engine does not have job or tech chatbot is complete.
+        if(!objFromDb.getJob().getScoringEngineJobAvailable() || jcmCommunicationDetailsFromDb.isTechChatCompleteFlag()){
+            objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
+        }
+
+        //Commented below code as we are not setting flag to true as per discussion on 10-01-2020
         //updating chat_complete_flag if corresponding job is not available on scoring engine due to lack of ML data,
         // or candidate already filled all the capabilities in some other job and we already have candidate responses for technical chatbot.
-        if(!objFromDb.getJob().getScoringEngineJobAvailable() || (objFromDb.getChatbotStatus()!=null && objFromDb.getChatbotStatus().equals("Complete"))){
+        /*if(!objFromDb.getJob().getScoringEngineJobAvailable() || (objFromDb.getChatbotStatus()!=null && objFromDb.getChatbotStatus().equals("Complete"))){
             jcmCommunicationDetailsRepository.updateByJcmId(objFromDb.getId());
-        }
+        }*/
+        jobCandidateMappingRepository.save(objFromDb);
     }
 
     /**
@@ -603,11 +636,11 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                             }
 
                             //Candidate has already completed the tech chatbot
-                            if (IConstant.CHATBOT_STATUS.Complete.name().equalsIgnoreCase(techChatbotRequestBean.getChatbotStatus())) {
+                            if (IConstant.ChatbotStatus.COMPLETE.getValue().equalsIgnoreCase(techChatbotRequestBean.getChatbotStatus())) {
                                 log.info("Found complete status from scoring engine: " + jcm.getEmail() + " ~ " + jcm.getId());
                                 //Set chatCompleteFlag = true
                                 JcmCommunicationDetails jcmCommunicationDetails = jcmCommunicationDetailsRepository.findByJcmId(jcm.getId());
-                                jcmCommunicationDetails.setChatCompleteFlag(true);
+                                jcmCommunicationDetails.setTechChatCompleteFlag(true);
                                 jcmCommunicationDetailsRepository.save(jcmCommunicationDetails);
 
                                 //If hr chat flag is also complete, set chatstatus = complete
@@ -676,22 +709,24 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(jcmListWithoutError.size()==0){
             inviteCandidateResponseBean =  new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Failure.toString(), 0, jcmList.size(), failedCandidates);
         }
-        else if(jcmListWithoutError.size()<jcmList.size()) {
-            inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Partial_Success.toString(),jcmListWithoutError.size(), jcmList.size()-jcmListWithoutError.size(), failedCandidates);
-            jcmCommunicationDetailsRepository.inviteCandidates(jcmListWithoutError);
-            updateJcmHistory(jcmListWithoutError, loggedInUser);
-        }
         else{
-            inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Success.toString(), jcmListWithoutError.size(), 0, failedCandidates);
-            jcmCommunicationDetailsRepository.inviteCandidates(jcmListWithoutError);
-            if(null == jobObjToUse && jcmListWithoutError.size() > 0) {
-                log.error("Job stage steps not found. Cannot move candidate from Source to Screen");
-            } else {
-                //set stage = Screening where stage = Source
-                Map<String, Long> stageIdMap = fetchStageStepForJob(jobObjToUse.getId(), true);
-                jobCandidateMappingRepository.updateStageStepId(jcmList, stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), loggedInUser.getId(), new Date());
-                updateJcmHistory(jcmListWithoutError, loggedInUser);
+            if(jcmListWithoutError.size()<jcmList.size()) {
+                inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Partial_Success.toString(),jcmListWithoutError.size(), jcmList.size()-jcmListWithoutError.size(), failedCandidates);
             }
+            else{
+                inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Success.toString(), jcmListWithoutError.size(), 0, failedCandidates);
+            }
+            jcmCommunicationDetailsRepository.inviteCandidates(jcmListWithoutError);
+            jobCandidateMappingRepository.updateJcmSetStatus(IConstant.ChatbotStatus.INVITED.getValue(), jcmListWithoutError);
+        }
+
+        if(null == jobObjToUse && jcmListWithoutError.size() > 0) {
+            log.error("Job stage steps not found. Cannot move candidate from Source to Screen");
+        } else if(jcmListWithoutError.size()>0) {
+            //set stage = Screening where stage = Source
+            Map<String, Long> stageIdMap = fetchStageStepForJob(jobObjToUse.getId(), true);
+            jobCandidateMappingRepository.updateStageStepId(jcmListWithoutError, stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), loggedInUser.getId(), new Date());
+            updateJcmHistory(jcmListWithoutError, loggedInUser);
         }
         return inviteCandidateResponseBean;
     }
@@ -988,7 +1023,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             objFromDb.getTechResponseData().setTechResponse(requestBean.getTechResponseJson());
         }
         jobCandidateMappingRepository.save(objFromDb);
-        if(IConstant.CHATBOT_STATUS.Complete.name().equals(requestBean.getChatbotStatus())) {
+        if(IConstant.ChatbotStatus.COMPLETE.getValue().equals(requestBean.getChatbotStatus())) {
             log.info("Updated chatbot status for "  + requestBean.getChatbotUuid() + " with status as " + requestBean.getChatbotStatus() + " score: " + requestBean.getScore());
             jcmCommunicationDetailsRepository.updateByJcmId(objFromDb.getId());
         }
@@ -1672,54 +1707,73 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @throws Exception
      */
     @Transactional
-    public UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer) throws Exception {
+    public UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception {
         log.info("Inside uploadCandidateByNoAuthCall");
         UploadResponseBean responseBean = null;
+        CandidateDetails candidateDetails = null;
+        Boolean isOtpVerify;
         EmployeeReferrer referrerFromDb;
 
-        if(null == candidate.getCandidateName() || candidate.getCandidateName().isEmpty()){
-            candidate.setCandidateName(IConstant.NOT_AVAILABLE);
-            candidate.setFirstName(IConstant.NOT_AVAILABLE);
+        if(null != employeeReferrer)
+            isOtpVerify = otpService.verifyOtp(employeeReferrer.getMobile(), otp);
+        else
+            isOtpVerify = otpService.verifyOtp(candidate.getMobile(), otp);
+
+        if(isOtpVerify){
+            if(null == candidate.getCandidateName() || candidate.getCandidateName().isEmpty()){
+                candidate.setCandidateName(IConstant.NOT_AVAILABLE);
+                candidate.setFirstName(IConstant.NOT_AVAILABLE);
+            }else{
+                //populate the first name and last name of the candidate
+                Util.handleCandidateName(candidate, candidate.getCandidateName());
+            }
+
+            if(!Arrays.asList(IConstant.CandidateSource.values()).contains(IConstant.CandidateSource.valueOf(candidateSource)))
+                throw new ValidationException("Not a valid candidate source : "+candidateSource, HttpStatus.BAD_REQUEST);
+
+            if(null != candidateCv){
+                String cvFileType = Util.getFileExtension(candidateCv.getOriginalFilename());
+                if(null == candidate.getCandidateDetails()){
+                    candidateDetails = new CandidateDetails();
+                    candidate.setCandidateDetails(candidateDetails);
+                }
+                candidate.getCandidateDetails().setCvFileType("."+cvFileType);
+            }
+            Job job = jobRepository.findByJobReferenceId(jobReferenceId);
+            candidate.setCandidateSource(candidateSource);
+
+            if(null != employeeReferrer){
+                referrerFromDb = employeeReferrerRepository.findByEmail(employeeReferrer.getEmail());
+                if(null == referrerFromDb){
+                    referrerFromDb = employeeReferrerRepository.save(new EmployeeReferrer(employeeReferrer.getFirstName(), employeeReferrer.getLastName(), employeeReferrer.getEmail(), employeeReferrer.getEmployeeId(), employeeReferrer.getMobile(), employeeReferrer.getLocation(), employeeReferrer.getCreatedOn()));
+                }
+                referrerFromDb.setReferrerRelation(employeeReferrer.getReferrerRelation());
+                referrerFromDb.setReferrerContactDuration(employeeReferrer.getReferrerContactDuration());
+                candidate.setEmployeeReferrer(referrerFromDb);
+            }
+            //Upload candidate
+            responseBean = uploadIndividualCandidate(Arrays.asList(candidate), job.getId(), false, Optional.ofNullable(userRepository.findByEmail(IConstant.SYSTEM_USER_EMAIL)));
+
+            //Store candidate cv to repository location
+            try{
+                if(null!=candidateCv) {
+                    if (responseBean.getSuccessfulCandidates().size()>0)
+                        StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getSuccessfulCandidates().get(0),null);
+                    else
+                        StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getFailedCandidates().get(0), null);
+
+                    responseBean.setCvStatus(true);
+                }
+            }catch(Exception e){
+                log.error("Resume upload failed :"+e.getMessage());
+                responseBean.setCvErrorMsg(e.getMessage());
+            }
         }else{
-            //populate the first name and last name of the candidate
-            Util.handleCandidateName(candidate, candidate.getCandidateName());
-        }
-
-        if(!Arrays.asList(IConstant.CandidateSource.values()).contains(IConstant.CandidateSource.valueOf(candidateSource)))
-            throw new ValidationException("Not a valid candidate source : "+candidateSource, HttpStatus.BAD_REQUEST);
-
-        if(null != candidateCv){
-            String cvFileType = Util.getFileExtension(candidateCv.getOriginalFilename());
-            candidate.getCandidateDetails().setCvFileType("."+cvFileType);
-        }
-        Job job = jobRepository.findByJobReferenceId(jobReferenceId);
-        candidate.setCandidateSource(candidateSource);
-
-        if(null != employeeReferrer){
-            referrerFromDb = employeeReferrerRepository.findByEmail(employeeReferrer.getEmail());
-            if(null == referrerFromDb){
-                referrerFromDb = employeeReferrerRepository.save(new EmployeeReferrer(employeeReferrer.getFirstName(), employeeReferrer.getLastName(), employeeReferrer.getEmail(), employeeReferrer.getEmployeeId(), employeeReferrer.getMobile(), employeeReferrer.getLocation(), employeeReferrer.getCreatedOn()));
-            }
-            referrerFromDb.setReferrerRelation(employeeReferrer.getReferrerRelation());
-            referrerFromDb.setReferrerContactDuration(employeeReferrer.getReferrerContactDuration());
-            candidate.setEmployeeReferrer(referrerFromDb);
-        }
-        //Upload candidate
-        responseBean = uploadIndividualCandidate(Arrays.asList(candidate), job.getId(), false, Optional.ofNullable(userRepository.findByEmail(IConstant.SYSTEM_USER_EMAIL)));
-
-        //Store candidate cv to repository location
-        try{
-            if(null!=candidateCv) {
-                if (responseBean.getSuccessfulCandidates().size()>0)
-                    StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getSuccessfulCandidates().get(0),null);
-                else
-                    StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getFailedCandidates().get(0), null);
-
-                responseBean.setCvStatus(true);
-            }
-        }catch(Exception e){
-            log.error("Resume upload failed :"+e.getMessage());
-            responseBean.setCvErrorMsg(e.getMessage());
+            responseBean = new UploadResponseBean();
+            responseBean.setFailureCount(1);
+            responseBean.setSuccessCount(0);
+            responseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
+            responseBean.setErrorMessage(IErrorMessages.OTP_VERIFICATION_FAILED);
         }
         return responseBean;
     }

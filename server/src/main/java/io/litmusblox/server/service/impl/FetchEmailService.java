@@ -96,10 +96,10 @@ public class FetchEmailService {
 
             for (int i = 0; i < messages.length; i++) {
                 Message message = messages[i];
-                log.info("Subject: {}", message.getSubject());
                 try {
                     //check if the mail is an application from Naukri
                     if (null != message.getSubject() && message.getSubject().indexOf(naukriSubjectString) != -1) {
+                        log.info("Subject: {}", message.getSubject());
                         MailData mailData = new MailData();
                         mailData.setJobFromReference(findJobForEmailSubject(message.getSubject()));
 
@@ -167,7 +167,13 @@ public class FetchEmailService {
     private Job findJobForEmailSubject(String subject) {
         String jobReferenceId = subject.substring(subject.indexOf(naukriSubjectString) + naukriSubjectString.length());
         log.info("Extracted jobReferenceId: {}", jobReferenceId.substring(0,jobReferenceId.indexOf(',')));
-        return jobService.findByJobReferenceId(UUID.fromString(jobReferenceId.substring(0,jobReferenceId.indexOf(',')).trim()));
+        try {
+            UUID uuidFromString = UUID.fromString(jobReferenceId.substring(0,jobReferenceId.indexOf(',')).trim());
+            return jobService.findByJobReferenceId(uuidFromString);
+        } catch (Exception e) {
+            log.error("Error while converting job reference to UUID.");
+            return null;
+        }
         //following was for test purpose only
         //return jobService.findByJobReferenceId(UUID.fromString("f3469d73-1662-11ea-92f0-74e5f9b964b9"));
     }

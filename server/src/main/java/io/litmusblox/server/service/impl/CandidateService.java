@@ -153,7 +153,7 @@ public class CandidateService implements ICandidateService {
             Matcher matcher = pattern.matcher(profileToSearch.get().getUrl());
             if(matcher.find()) {
                 candidateFromDB = candidateRepository.findCandidateByProfileTypeAndUniqueId(
-                        IConstant.CandidateSource.LinkedIn.toString().toLowerCase(), matcher.group()
+                        IConstant.CandidateSource.LinkedIn.toString().toLowerCase(), matcher.group().contains("/")?matcher.group().substring(0, matcher.group().length()):matcher.group()
                 );
             }
         }

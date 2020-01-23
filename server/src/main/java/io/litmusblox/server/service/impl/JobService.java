@@ -426,31 +426,33 @@ public class JobService implements IJobService {
             jcmFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(jcmFromDb.getId()));
             jcmFromDb.setCvRating(cvRatingRepository.findByJobCandidateMappingId(jcmFromDb.getId()));
 
-            List<JcmProfileSharingDetails>jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.findByJobCandidateMappingId(jcmFromDb.getId());
-            jcmProfileSharingDetails.forEach(detail->{
-                detail.setHiringManagerName(detail.getProfileSharingMaster().getReceiverName());
-                detail.setHiringManagerEmail(detail.getProfileSharingMaster().getReceiverEmail());
-            });
-            jcmFromDb.setInterestedHiringManagers(
-                    jcmProfileSharingDetails
-                            .stream()
-                            .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()!=null && jcmProfileSharingDetail.getHiringManagerInterest())
-                            .collect(Collectors.toList())
-            );
+            if (IConstant.Stage.ResumeSubmit.getValue().equalsIgnoreCase(stage) || IConstant.Stage.Interview.getValue().equalsIgnoreCase(stage)) {
+                List<JcmProfileSharingDetails>jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.findByJobCandidateMappingId(jcmFromDb.getId());
+                jcmProfileSharingDetails.forEach(detail->{
+                    detail.setHiringManagerName(detail.getProfileSharingMaster().getReceiverName());
+                    detail.setHiringManagerEmail(detail.getProfileSharingMaster().getReceiverEmail());
+                });
+                jcmFromDb.setInterestedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()!=null && jcmProfileSharingDetail.getHiringManagerInterest())
+                                .collect(Collectors.toList())
+                );
 
-            jcmFromDb.setNotInterestedHiringManagers(
-                    jcmProfileSharingDetails
-                            .stream()
-                            .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()!=null && !jcmProfileSharingDetail.getHiringManagerInterest())
-                            .collect(Collectors.toList())
-            );
+                jcmFromDb.setNotInterestedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()!=null && !jcmProfileSharingDetail.getHiringManagerInterest())
+                                .collect(Collectors.toList())
+                );
 
-            jcmFromDb.setNotRespondedHiringManagers(
-                    jcmProfileSharingDetails
-                            .stream()
-                            .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()==null )
-                            .collect(Collectors.toList())
-            );
+                jcmFromDb.setNotRespondedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()==null )
+                                .collect(Collectors.toList())
+                );
+            }
         });
         log.info("****JCM list populated with profile sharing, hiring manager and all details in {} ms", (System.currentTimeMillis() - startTime));
         startTime = System.currentTimeMillis();
@@ -555,14 +557,12 @@ public class JobService implements IJobService {
         if(null != oldJob && !IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())){
             //make a call to ML api to obtain skills and capabilities
             if(MasterDataBean.getInstance().getConfigSettings().getMlCall()==1) {
-                if(null == job.getSelectedRole())
-                    job.setSelectedRole(" ");
                 try {
                     RolePredictionBean rolePredictionBean = new RolePredictionBean();
                     RolePredictionBean.RolePrediction rolePrediction= new RolePredictionBean.RolePrediction();
                     rolePrediction.setJobTitle(job.getJobTitle());
                     rolePrediction.setJobDescription(job.getJobDescription());
-                    rolePrediction.setRecruiterRoles(job.getSelectedRole());
+                    rolePrediction.getRecruiterRoles().addAll(job.getSelectedRole());
                     rolePredictionBean.setRolePrediction(rolePrediction);
                     callMl(rolePredictionBean, job.getId(), job);
                     if(null == oldJob) {
@@ -593,14 +593,14 @@ public class JobService implements IJobService {
             ObjectMapper objectMapper = new ObjectMapper();
             List<String> roles = new ArrayList<>();
 
-            if(null != job.getSelectedRole()){
-                requestBean.getRolePrediction().setRecruiterRoles(job.getSelectedRole());
+            if(null != job.getSelectedRole() && job.getSelectedRole().size()>0){
+                requestBean.getRolePrediction().getRecruiterRoles().addAll(job.getSelectedRole());
             }
 
-            //TODO currently ML team not handle for industry so we don't send industry, need revisit after ML done implementation for industry
-            /*if(null != function)
+            //Send function to ml
+            if(null != function)
                 requestBean.getRolePrediction().setIndustry(function);
-*/
+
             objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             mlRequest = objectMapper.writeValueAsString(requestBean);
@@ -730,7 +730,9 @@ public class JobService implements IJobService {
         if (null != oldJob.getJobScreeningQuestionsList() && oldJob.getJobScreeningQuestionsList().size() > 0) {
             historyMsg = "Updated";
             jobScreeningQuestionsRepository.deleteAll(oldJob.getJobScreeningQuestionsList());//delete old job screening question list
+            jobScreeningQuestionsRepository.flush();
         }
+
 
         job.getJobScreeningQuestionsList().forEach(n -> {
             n.setCreatedBy(loggedInUser.getId());
@@ -739,7 +741,16 @@ public class JobService implements IJobService {
             n.setUpdatedOn(new Date());
             n.setUpdatedBy(loggedInUser.getId());
         });
-        jobScreeningQuestionsRepository.saveAll(job.getJobScreeningQuestionsList());
+
+        oldJob.setJobScreeningQuestionsList(job.getJobScreeningQuestionsList());
+        if(job.getJobScreeningQuestionsList().size()>0) {
+            oldJob.setHrQuestionAvailable(true);
+        }
+        else{
+            oldJob.setHrQuestionAvailable(false);
+        }
+
+        jobRepository.save(oldJob);
         saveJobHistory(job.getId(), historyMsg + " screening questions", loggedInUser);
 
         //populate key skills for the job
@@ -1122,6 +1133,10 @@ public class JobService implements IJobService {
                 job.setDatePublished(new Date());
             job.setStatus(status);
         }
+
+        if(job.getJobScreeningQuestionsList().size()>0){
+            job.setHrQuestionAvailable(true);
+        }
         job.setUpdatedOn(new Date());
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         job.setUpdatedBy(loggedInUser);
@@ -1244,7 +1259,7 @@ public class JobService implements IJobService {
         List<LinkedHashMap<String, Object>> exportResponseBean = new ArrayList<>();
 
         exportDataList.forEach(data-> {
-            LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
+                LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
             for (int i = 0; i < data.length; ++i) {
                 candidateData.put(exportHeaderColumnMap.get(columnNames.get(i)), data[i] != null ? data[i].toString() : "");
             }

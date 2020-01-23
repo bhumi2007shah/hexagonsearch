@@ -314,7 +314,7 @@ public class NoAuthController {
      */
     @PostMapping(value = "/addCandidate/{candidateSource}")
     @ResponseStatus(value = HttpStatus.OK)
-    String uploadCandidate(@PathVariable("candidateSource") String candidateSource, @RequestParam(name = "candidateCv", required = false) MultipartFile candidateCv, @RequestParam("candidate") String candidateString, @RequestParam("jobReferenceId") UUID jobReferenceId, @RequestParam(name = "employeeReferrer", required = false) String employeeReferrerString) throws Exception{
+    String uploadCandidate(@PathVariable("candidateSource") String candidateSource, @RequestParam(name = "candidateCv", required = false) MultipartFile candidateCv, @RequestParam("candidate") String candidateString, @RequestParam("jobReferenceId") UUID jobReferenceId, @RequestParam(name = "employeeReferrer", required = false) String employeeReferrerString, @RequestParam("otp") String otp) throws Exception{
         EmployeeReferrer employeeReferrer = null;
         ObjectMapper objectMapper=new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -324,7 +324,7 @@ public class NoAuthController {
             employeeReferrer =objectMapper.readValue(employeeReferrerString, EmployeeReferrer.class);
 
         long startTime = System.currentTimeMillis();
-        UploadResponseBean responseBean = jobCandidateMappingService.uploadCandidateByNoAuthCall(candidateSource, candidate, jobReferenceId, candidateCv, employeeReferrer);
+        UploadResponseBean responseBean = jobCandidateMappingService.uploadCandidateByNoAuthCall(candidateSource, candidate, jobReferenceId, candidateCv, employeeReferrer, otp);
         log.info("Candidate upload in " + (System.currentTimeMillis() - startTime) + "ms.");
         return Util.stripExtraInfoFromResponseBean(responseBean, null,
                 new HashMap<String, List<String>>() {{
@@ -338,36 +338,11 @@ public class NoAuthController {
      * REST Api to handle send Otp request from search job page
      * @param mobile mobile number to send otp to
      * @param email email address to send otp to
-     * @param countryCode country code of the mobile
      * @throws Exception
      */
     @GetMapping(value = "/sendOtp")
     @ResponseStatus(value = HttpStatus.OK)
-    void sendOtp(@RequestParam String mobile, @RequestParam String email, @RequestParam Integer countryCode) throws Exception {
-        processOtpService.sendOtp(mobile, email, countryCode);
-    }
-
-    /**
-     * REST Api to validate Otp against a mobile number
-     * @param mobile the mobile number for the otp
-     * @param otp the otp value
-     * @return boolean indicating whether the otp verification succeeded or failed
-     * @throws Exception
-     */
-    @GetMapping(value = "/verifyOtp")
-    @ResponseStatus(value = HttpStatus.OK)
-    boolean verifyOtp(@RequestParam String mobile, @RequestParam String otp) throws Exception {
-        return processOtpService.verifyOtp(mobile, otp);
-    }
-
-    /**
-     * REST Api to request a resend otp for a mobile number
-     * @param mobile the mobile number for which the otp needs to be resent
-     * @throws Exception
-     */
-    @GetMapping(value = "/resendOtp")
-    @ResponseStatus(value = HttpStatus.OK)
-    void resendOtp(@RequestParam String mobile) throws Exception {
-        processOtpService.resendOtp(mobile);
+    void sendOtp(@RequestParam String mobile, @RequestParam String email) throws Exception {
+        processOtpService.sendOtp(mobile, email);
     }
 }

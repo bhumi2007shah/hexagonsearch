@@ -90,6 +90,12 @@ public class Job implements Serializable {
     @Column(name = "SCORING_ENGINE_JOB_AVAILABLE")
     private Boolean scoringEngineJobAvailable  = false;
 
+    @Column(name = "HR_QUESTION_AVAILABLE")
+    private Boolean hrQuestionAvailable = false;
+
+    @Column(name = "RESUBMIT_HR_CHATBOT")
+    private Boolean resubmitHrChatbot = false;
+
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "BU_ID")
     private CompanyBu buId;
@@ -123,10 +129,12 @@ public class Job implements Serializable {
     @JoinColumn(name = "EXPERTISE")
     private MasterData expertise;
 
+    @NotNull(message = "Hiring Manager " + IErrorMessages.NULL_MESSAGE)
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="HIRING_MANAGER")
     private User hiringManager;
 
+    @NotNull(message = "Recruiter " + IErrorMessages.NULL_MESSAGE)
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="RECRUITER")
     private User recruiter;
@@ -201,7 +209,7 @@ public class Job implements Serializable {
     private List<String> roles;
 
     @Transient
-    private String selectedRole;
+    private List<String> selectedRole;
 
     @Transient
     private String companyDescription;
