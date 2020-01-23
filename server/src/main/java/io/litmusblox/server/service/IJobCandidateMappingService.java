@@ -219,4 +219,13 @@ public interface IJobCandidateMappingService {
      * @throws Exception
      */
     UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception;
+
+    /**
+     * Service method to fetch a list of count of candidate per chatbot status per job
+     * @param jobId the job id for which data has to be fetched
+     * @param stage the stage, defaulted out to Screening
+     * @return the count of candidate per chatbot status
+     * @throws Exception
+     */
+    Map<String, Integer> getCandidateCountPerStatus(Long jobId, String stage) throws Exception;
 }

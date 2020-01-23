@@ -4,6 +4,9 @@
 
 package io.litmusblox.server.service.impl;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.maps.model.LatLng;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
@@ -14,23 +17,33 @@ import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.CompanyWorspaceBean;
 import io.litmusblox.server.service.ICompanyService;
 import io.litmusblox.server.service.MasterDataBean;
-import io.litmusblox.server.utils.GoogleMapsCoordinates;
-import io.litmusblox.server.utils.StoreFileUtil;
-import io.litmusblox.server.utils.Util;
+import io.litmusblox.server.utils.*;
 import lombok.extern.log4j.Log4j2;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Service class to perform various operations on a company
@@ -68,6 +81,21 @@ public class CompanyService implements ICompanyService {
 
     @Resource
     CompanyStageStepRepository companyStageStepRepository;
+
+    @Value("${subdomainTemplateName}")
+    String subdomainTemplateName;
+
+    @Value("${createSubdomainApi}")
+    String createSubdomainApi;
+
+    @Value("${createSubdomainKey}")
+    String createSubdomainKey;
+
+    @Value("${createSubdomainSecret}")
+    String createSubdomainSecret;
+
+    @Value("${createSubdomainIp}")
+    String createSubdomainIp;
 
     /**
      * Service method to create a new company
@@ -597,5 +625,77 @@ public class CompanyService implements ICompanyService {
         }else{
             return false;
         }
+    }
+
+    /**
+     * Method to create a subdomain for a company when the first job is published
+     *
+     * @param company the company for which subdomain is to be created
+     * @throws Exception
+     */
+    @Override
+    public void createSubdomain(Company company) throws Exception {
+        log.info("Received request to create subdomain for company: {} shortName: {}", company.getCompanyName(), company.getShortName());
+        long startTime = System.currentTimeMillis();
+
+        if(null == company.getShortName())
+            throw new WebException("Company short name not found for " + company.getCompanyName(), HttpStatus.UNPROCESSABLE_ENTITY);
+
+        //REST API Call to GoDaddy to register subdomain
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        List<GoDaddyRequestBean> requestObj = Arrays.asList(new GoDaddyRequestBean(company.getShortName(), createSubdomainIp));
+        RestClientResponseBean responseFromGoDaddy = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestObj), createSubdomainApi, HttpMethod.PATCH,new StringBuffer("sso-key ").append(createSubdomainKey).append(":").append(createSubdomainSecret).toString());
+        log.info("Response from GoDaddy:: {} ::",responseFromGoDaddy);
+        if (null != responseFromGoDaddy && HttpStatus.OK.value() == responseFromGoDaddy.getStatusCode()) {
+
+            company.setSubdomainCreated(true);
+            company.setSubdomainCreatedOn(new Date());
+            companyRepository.save(company);
+
+            ClassPathResource resource = new ClassPathResource(subdomainTemplateName);
+
+            String templateData = FileCopyUtils.copyToString(new FileReader(((ClassPathResource) resource).getFile(), UTF_8));
+            //replace key with company short name
+            templateData.replaceAll(IConstant.REPLACEMENT_KEY_FOR_SHORTNAME, company.getShortName());
+            log.info("Created template data to be written to file \n{}", templateData);
+            //create conf in apache folder
+            File configFile = new File("/etc/apache2/sites-available/"+company.getShortName()+".conf");
+            FileWriter fw = new FileWriter(configFile);
+            fw.write(templateData);
+            fw.close();
+
+            //create symbolic link
+            Path link = Paths.get("/etc/apache2/sites-enabled/",company.getShortName()+".conf");
+            if (Files.exists(link)) {
+                Files.delete(link);
+            }
+            Files.createSymbolicLink(link, Paths.get("/etc/apache2/sites-available/"+company.getShortName()+".conf"));
+        }
+        else {
+            log.error("Error creating subdomain on GoDaddy for company {}", company.getCompanyName());
+        }
+        log.info("Completed processing request to create subdomain for company {} in {} ms.",company.getCompanyName(), (System.currentTimeMillis() - startTime));
+    }
+
+    /**
+     * Method that fetches a list of all companies that have short name and for which a subdomain has not been created
+     *
+     * @throws Exception
+     */
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void createSubdomains() throws Exception {
+        log.info("Received request to create subdomains from Super Admin");
+        long startTime = System.currentTimeMillis();
+        List<Company> companyList = companyRepository.findBySubdomainCreatedIsFalseAndShortNameIsNotNull();
+        companyList.stream().forEach(company -> {
+            try {
+                createSubdomain(company);
+            } catch (Exception e) {
+                log.error("Error creating subdomain for company {}:\n {}", company.getCompanyName(), e.getMessage());
+            }
+        });
+        log.info("Completed processing request to create subdomains in {} ms.", (System.currentTimeMillis() - startTime));
     }
 }

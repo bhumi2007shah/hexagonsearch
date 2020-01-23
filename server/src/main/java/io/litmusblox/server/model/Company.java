@@ -113,6 +113,13 @@ public class Company implements Serializable {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "companyId")
     private List<CompanyBu> companyBuList;
 
+    @Column(name = "SUBDOMAIN_CREATED")
+    private boolean subdomainCreated = false;
+
+    @Column(name = "SUBDOMAIN_CREATED_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date subdomainCreatedOn;
+
     @Transient
     private Set<String> newCompanyBu;
 

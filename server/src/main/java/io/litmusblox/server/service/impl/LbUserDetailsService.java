@@ -194,12 +194,24 @@ public class LbUserDetailsService implements UserDetailsService {
         //add CompanyAddressId and CompanyBuId in user
         if(null != user.getCompanyAddressId()){
             Boolean isCompanyPresent = false;
-            if(null != loggedInUser.getCompany().getCompanyAddressList() && loggedInUser.getCompany().getCompanyAddressList().size()>0) {
-                List<Long> companyAddressList = new ArrayList<>();
-                loggedInUser.getCompany().getCompanyAddressList().forEach(companyAddress -> companyAddressList.add(companyAddress.getId()));
-                if(companyAddressList.contains(user.getCompanyAddressId())){
-                    u.setCompanyAddressId(user.getCompanyAddressId());
-                    isCompanyPresent = true;
+            if(companyObjToUse.getRecruitmentAgencyId() != null && !companyObjToUse.getId().equals(loggedInUser.getCompany().getId())){
+                if(null != companyObjToUse.getCompanyAddressList() && companyObjToUse.getCompanyAddressList().size()>0){
+                    List<Long> companyAddressList = new ArrayList<>();
+                    companyObjToUse.getCompanyAddressList().forEach(companyAddress -> companyAddressList.add(companyAddress.getId()));
+                    if(companyAddressList.contains(user.getCompanyAddressId())){
+                        u.setCompanyAddressId(user.getCompanyAddressId());
+                        isCompanyPresent = true;
+                    }
+                }
+            }
+            else {
+                if (null != loggedInUser.getCompany().getCompanyAddressList() && loggedInUser.getCompany().getCompanyAddressList().size() > 0) {
+                    List<Long> companyAddressList = new ArrayList<>();
+                    loggedInUser.getCompany().getCompanyAddressList().forEach(companyAddress -> companyAddressList.add(companyAddress.getId()));
+                    if (companyAddressList.contains(user.getCompanyAddressId())) {
+                        u.setCompanyAddressId(user.getCompanyAddressId());
+                        isCompanyPresent = true;
+                    }
                 }
             }
             if(!isCompanyPresent)
@@ -207,12 +219,24 @@ public class LbUserDetailsService implements UserDetailsService {
         }
         if(null != user.getCompanyBuId()){
             Boolean isCompanyPresent = false;
-            if(null != loggedInUser.getCompany().getCompanyBuList() && loggedInUser.getCompany().getCompanyBuList().size()>0){
-                List<Long> companyBuList = new ArrayList<>();
-                loggedInUser.getCompany().getCompanyBuList().forEach(companyBu -> companyBuList.add(companyBu.getId()));
-                if(companyBuList.contains(user.getCompanyBuId())){
-                    u.setCompanyBuId(user.getCompanyBuId());
-                    isCompanyPresent = true;
+            if(companyObjToUse.getRecruitmentAgencyId() != null && !companyObjToUse.getId().equals(loggedInUser.getCompany().getId())){
+                if(null != companyObjToUse.getCompanyBuList() && companyObjToUse.getCompanyBuList().size()>0){
+                    List<Long> companyBuList = new ArrayList<>();
+                    companyObjToUse.getCompanyBuList().forEach(companyBu -> companyBuList.add(companyBu.getId()));
+                    if(companyBuList.contains(user.getCompanyBuId())){
+                        u.setCompanyBuId(user.getCompanyBuId());
+                        isCompanyPresent = true;
+                    }
+                }
+            }
+            else {
+                if (null != loggedInUser.getCompany().getCompanyBuList() && loggedInUser.getCompany().getCompanyBuList().size() > 0) {
+                    List<Long> companyBuList = new ArrayList<>();
+                    loggedInUser.getCompany().getCompanyBuList().forEach(companyBu -> companyBuList.add(companyBu.getId()));
+                    if (companyBuList.contains(user.getCompanyBuId())) {
+                        u.setCompanyBuId(user.getCompanyBuId());
+                        isCompanyPresent = true;
+                    }
                 }
             }
             if(!isCompanyPresent)
@@ -222,7 +246,12 @@ public class LbUserDetailsService implements UserDetailsService {
         u.setCompany(companyObjToUse);
         if (null == user.getRole()) {
             //If user role is null then set default role is Recruiter
-           u.setRole(IConstant.UserRole.Names.RECRUITER);
+            if(null != user.getCompany().getRecruitmentAgencyId() && !user.getCompany().getId().equals(loggedInUser.getCompany().getId())){
+                u.setRole(IConstant.UserRole.Names.BUSINESS_USER);
+            }
+            else {
+                u.setRole(IConstant.UserRole.Names.RECRUITER);
+            }
         }
         else {
 

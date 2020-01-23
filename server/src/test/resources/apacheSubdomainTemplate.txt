@@ -1,0 +1,20 @@
+<VirtualHost *:443>
+  ServerName _shortName_.litmusblox.net
+  ServerAlias _shortName_.litmusblox.net
+  Redirect permanent / http://_shortName_.litmusblox.net/
+</VirtualHost>
+<VirtualHost *:80>
+    ServerAdmin admin@litmusblox.net
+    ServerName  _shortName_.litmusblox.net
+    ServerAlias _shortName_.litmusblox.net
+
+    ProxyRequests on
+    ProxyPreserveHost On
+
+    ProxyPass / http://localhost:8080/
+    ProxyPassReverse / http://localhost:8080/
+
+       ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+</VirtualHost>

@@ -7,7 +7,7 @@ package io.litmusblox.server.utils;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -55,10 +55,10 @@ public class RestClient {
      * @param apiUrl the url to connect to
      * @param requestType GET / POST / PUT
      * @param authToken authorization information
-     * @return JSON representation of the response
+     * @return response
      * @throws Exception
      */
-    public String consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken) throws Exception {
+    public RestClientResponseBean consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken) throws Exception {
         return consumeRestApi(requestObj, apiUrl, requestType, authToken, null, null);
     }
 
@@ -71,18 +71,20 @@ public class RestClient {
      * @param authToken authorization information
      * @param queryParameters Map of query parameters if any
      * @param customTimeout use this parameter when the rest client's connection should wait for a longer duration than the default value
-     * @return
+     * @return response
      * @throws Exception
      */
-    public String consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken, Optional<Map> queryParameters, Optional<Integer> customTimeout) throws Exception {
+    public RestClientResponseBean consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken, Optional<Map> queryParameters, Optional<Integer> customTimeout) throws Exception {
         RestTemplate restTemplate = new RestTemplate();
-        SimpleClientHttpRequestFactory requestFactory = (SimpleClientHttpRequestFactory)restTemplate.getRequestFactory();
+        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         if(null != customTimeout && customTimeout.isPresent())
             requestFactory.setConnectTimeout(customTimeout.get().intValue());
         else
             requestFactory.setConnectTimeout(connectionTimeout);
 
         requestFactory.setReadTimeout(readTimeout);
+
+        restTemplate.setRequestFactory(requestFactory);
 
         //log.info("Request object sent: " + requestObj);
 
@@ -105,7 +107,8 @@ public class RestClient {
 
             ResponseEntity<String> response = restTemplate.exchange(uriBuilder.toUriString(), requestType, entity, String.class);
             log.info("Time taken to retrieve response from REST api: " + (System.currentTimeMillis() - startTime) + "ms.");
-            return response.getBody();
+            log.info("Rest client response code: {}", response.getStatusCodeValue());
+            return new RestClientResponseBean(response.getStatusCodeValue(),response.getBody());
         } catch(HttpStatusCodeException e ) {
             List<String> customHeader = e.getResponseHeaders().get("x-app-err-id");
             String svcErrorMessageID = "";
@@ -115,6 +118,7 @@ public class RestClient {
             log.error("Error response from REST call: " + svcErrorMessageID + " :: " + e.getResponseBodyAsString());
             throw e;
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("Exception while making a REST call: " + e.getMessage());
             throw e;
         }
