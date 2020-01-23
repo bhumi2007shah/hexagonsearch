@@ -99,4 +99,11 @@ public interface ICompanyService {
      * @return List of company
      */
     List<Company> getCompanyListByAgency(Long recruitmentAgencyId);
+
+    /**
+     * Service method to get boolean value as per company exist or not for short name
+     * @param shortName Company short name
+     * @return boolean value
+     */
+    Boolean isCompanyExistForShortName(String shortName);
 }

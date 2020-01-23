@@ -1491,5 +1491,6 @@ set chatbot_status='Incomplete'
 where
 candidate_interest_timestamp is not null and candidate_interest='t' and chatbot_status is null;
 
-
+--For ticket #336
+ALTER TABLE COMPANY ALTER COLUMN SHORT_NAME TYPE VARCHAR(25);
 

@@ -135,11 +135,12 @@ public class Company implements Serializable {
         this.createdBy = createdBy;
     }
 
-    public Company(@NotNull(message = "COMPANY_NAME " + IErrorMessages.NULL_MESSAGE) @NotBlank(message = "COMPANY_NAME " + IErrorMessages.BLANK_MESSAGE) @Pattern(message = "COMPANY_NAME " + IErrorMessages.COMPANY_NAME_NOT_VALID, regexp = IConstant.REGEX_FOR_COMPANY_NAME) String companyName, @NotNull Boolean active, @NotNull String companyType, Long recruitmentAgencyId, @NotNull Date createdOn, @NotNull Long createdBy) {
+    public Company(@NotNull(message = "COMPANY_NAME " + IErrorMessages.NULL_MESSAGE) @NotBlank(message = "COMPANY_NAME " + IErrorMessages.BLANK_MESSAGE) @Pattern(message = "COMPANY_NAME " + IErrorMessages.COMPANY_NAME_NOT_VALID, regexp = IConstant.REGEX_FOR_COMPANY_NAME) String companyName, @NotNull Boolean active, @NotNull String companyType, Long recruitmentAgencyId, String shortName, @NotNull Date createdOn, @NotNull Long createdBy) {
         this.companyName = companyName;
         this.active = active;
         this.companyType = companyType;
         this.recruitmentAgencyId = recruitmentAgencyId;
+        this.shortName = shortName;
         this.createdOn = createdOn;
         this.createdBy = createdBy;
     }
