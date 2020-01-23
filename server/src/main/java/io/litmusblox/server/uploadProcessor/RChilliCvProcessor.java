@@ -126,7 +126,7 @@ public class RChilliCvProcessor {
                 RestClient rest = RestClient.getInstance();
                 String jsonString = "{\"url\":\"" + environment.getProperty(IConstant.FILE_STORAGE_URL) + fileName + "\",\"userkey\":\"" + environment.getProperty(IConstant.USER_KEY) + "\",\"version\":\"" + environment.getProperty(IConstant.VERSION)
                         + "\",\"subuserid\":\"" + environment.getProperty(IConstant.SUB_USER_ID) + "\"}";
-                rchilliJsonResponse = rest.consumeRestApi(jsonString, environment.getProperty(IConstant.RCHILLI_API_URL), HttpMethod.POST, null);
+                rchilliJsonResponse = rest.consumeRestApi(jsonString, environment.getProperty(IConstant.RCHILLI_API_URL), HttpMethod.POST, null).getResponseBody();
                 rchilliResponseTime = System.currentTimeMillis() - startTime;
                 log.info("Recevied response from RChilli in " + rchilliResponseTime + "ms.");
             }

@@ -46,7 +46,7 @@ public class ProcessOtpService implements IProcessOtpService {
             stringBuilder.append("&template_id="+environment.getProperty(IConstant.OtpMsg91.TEMPLATE_ID.getValue()));
             stringBuilder.append("&sender="+environment.getProperty(IConstant.OtpMsg91.SENDER.getValue()));
             stringBuilder.append("&otp_length="+environment.getProperty(IConstant.OtpMsg91.OTP_LENGTH.getValue()));
-            String response = rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.GET,null);
+            String response = rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.GET,null).getResponseBody();
             log.info("Response from resend otp api call: {}", response);
         }catch (Exception ex){
             log.error("Error while send otp : "+ex.getMessage());
@@ -73,7 +73,7 @@ public class ProcessOtpService implements IProcessOtpService {
             stringBuilder.append("&mobile="+mobile);
             stringBuilder.append("&otp="+otp);
             log.info("Msg91 request url: {}", stringBuilder.toString());
-            String response = rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.POST,null);
+            String response = rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.POST,null).getResponseBody();
             if (null != response && response.indexOf("success") == -1)
             //if (!OTP_MATCH.equalsIgnoreCase(response))
                 match = false;

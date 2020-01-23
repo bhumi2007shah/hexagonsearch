@@ -43,7 +43,7 @@ public class ScheduledTasks {
     @Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
     public void processEmailApplications() { fetchEmailService.processEmail(); }
 
-    @Scheduled(fixedRate = 120000, initialDelay = 5000)
+    //@Scheduled(fixedRate = 120000, initialDelay = 5000)
     public void convertCvFileToCvText() {
         processUploadedCV.cvToCvText();
     }

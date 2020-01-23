@@ -1491,5 +1491,23 @@ set chatbot_status='Incomplete'
 where
 candidate_interest_timestamp is not null and candidate_interest='t' and chatbot_status is null;
 
+-- #355 set role="Hiring Manager" i.e: BusinessUser for users of clients of recruitment agency.
+update users set role='BusinessUser'
+where
+company_id in
+(
+    select id from company where recruitment_agency_id in
+    (
+        select id from company where company_type = 'Agency'
+    )
+    and company_type != 'Agency'
+);
 
 
+
+
+
+--For ticket #350
+ALTER TABLE COMPANY
+ADD COLUMN SUBDOMAIN_CREATED BOOL NOT NULL DEFAULT 'f',
+ADD COLUMN SUBDOMAIN_CREATED_ON TIMESTAMP;
