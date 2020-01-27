@@ -319,4 +319,8 @@ public interface IConstant {
             return this.value;
         }
     }
+
+    String PARSING_RESPONSE_JSON = "PARSING_RESPONSE_JSON";
+    String PARSING_RESPONSE_PYTHON = "PARSING_RESPONSE_PYTHON";
+    String PARSING_RESPONSE_ML = "PARSING_RESPONSE_ML";
 }
