@@ -923,7 +923,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if (null == objFromDb)
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
 
-        objFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId()));
         objFromDb.getJob().setCompanyName(objFromDb.getJob().getCompanyId().getCompanyName());
         objFromDb.getJob().setCompanyDescription(objFromDb.getJob().getCompanyId().getCompanyDescription());
         return objFromDb;
@@ -1824,6 +1823,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         ChatbotResponseBean chatbotResponseBean = new ChatbotResponseBean();
         chatbotResponseBean.setJobCandidateMapping(objFromDb);
+        //set jcm communication details in jcm
+        objFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId()));
 
         if(objFromDb.getJob().getCustomizedChatbot()){
             CustomizedChatbotPageContent customizedChatbotPageContent = customizedChatbotPageContentRepository.findByCompanyId(objFromDb.getJob().getCompanyId());

@@ -120,4 +120,12 @@ public interface ICompanyService {
      * @throws Exception
      */
     void createSubdomains() throws Exception;
+
+    /**
+     * Method to fetch company address by company id
+     *
+     * @param companyId company id for which we find addresses
+     * @return List of CompanyAddresses
+     */
+    List<CompanyAddress> getCompanyAddress(Long companyId);
 }
