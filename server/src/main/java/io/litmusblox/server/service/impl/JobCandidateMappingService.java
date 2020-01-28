@@ -142,6 +142,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Resource
     UserRepository userRepository;
 
+    @Resource
+    CustomizedChatbotPageContentRepository customizedChatbotPageContentRepository;
+
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
         return jobRepository.findById(jobId).get();
@@ -1801,5 +1804,33 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
 
         return countMap;
+    }
+
+    /**
+     *REST Api to fetch data related to job like job detail, screening questions and corresponding candidate
+     *Merge two api getScreeningQuestions and getCandidateAndJobDetails in current api
+     *
+     * @param uuid the uuid corresponding to a unique jcm record
+     * @throws Exception
+     * return ChatbotResponseBean String
+     */
+    @Transactional
+    public ChatbotResponseBean getChatbotDetailsByUuid(UUID uuid) throws Exception {
+        log.info("Inside getChatbotDetailsByUuid");
+        JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
+        if (null == objFromDb)
+            throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        ChatbotResponseBean chatbotResponseBean = new ChatbotResponseBean();
+        chatbotResponseBean.setJobCandidateMapping(objFromDb);
+
+        if(objFromDb.getJob().getCustomizedChatbot()){
+            CustomizedChatbotPageContent customizedChatbotPageContent = customizedChatbotPageContentRepository.findByCompanyId(objFromDb.getJob().getCompanyId());
+            //check customize chatbot flag true then send customized page data
+            if(null != customizedChatbotPageContent && !customizedChatbotPageContent.getPageInfo().isEmpty())
+                chatbotResponseBean.getChatbotContent().putAll(customizedChatbotPageContent.getPageInfo());
+
+        }
+        return chatbotResponseBean;
     }
 }

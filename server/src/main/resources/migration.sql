@@ -1541,3 +1541,18 @@ INSERT INTO CV_PARSING_API_DETAILS (API_URL, API_SEQUENCE, ACTIVE, COLUMN_TO_UPD
 ('https://cia1z4r0d4.execute-api.ap-south-1.amazonaws.com/Test/resumeParser-Test', 3, true, 'PARSING_RESPONSE_ML',
 null
 );
+
+--For ticket #374
+CREATE TABLE CUSTOMIZED_CHATBOT_PAGE_CONTENT(
+ID serial PRIMARY KEY NOT NULL,
+COMPANY_ID INTEGER REFERENCES COMPANY(ID) NOT NULL,
+PAGE_INFO hstore NOT NULL,
+CONSTRAINT UNIQUE_PAGE_INFO_COMPANY UNIQUE(COMPANY_ID)
+);
+
+ALTER TABLE JOB
+ADD COLUMN CUSTOMIZED_CHATBOT bool default 'f' NOT NULL;
+
+INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUE
+(80, '"introText" => "text", "showCompanyLogo" => true, "thankYouText" => "<p>text to be displayed</p>", "showFollowSection" => true');
+
