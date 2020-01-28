@@ -922,7 +922,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if (null == objFromDb)
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
 
-        objFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId()));
         objFromDb.getJob().setCompanyName(objFromDb.getJob().getCompanyId().getCompanyName());
         objFromDb.getJob().setCompanyDescription(objFromDb.getJob().getCompanyId().getCompanyDescription());
         return objFromDb;

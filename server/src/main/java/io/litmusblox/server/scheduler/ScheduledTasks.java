@@ -8,6 +8,7 @@ import io.litmusblox.server.service.impl.FetchEmailService;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
  * Class Name : ScheduledTasks
  * Project Name : server
  */
+@Profile({"prod","testServer"})
 @Component
 @Log4j2
 public class ScheduledTasks {
