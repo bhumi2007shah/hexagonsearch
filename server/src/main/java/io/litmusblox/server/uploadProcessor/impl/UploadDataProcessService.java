@@ -225,7 +225,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             savedObj.setTechResponseData(new CandidateTechResponseData(savedObj));
             jobCandidateMappingRepository.save(savedObj);
             //create an empty record in jcm Communication details table
-            jcmCommunicationDetailsRepository.save(new JcmCommunicationDetails(savedObj.getId()));
+            jcmCommunicationDetailsRepository.save(new JcmCommunicationDetails(savedObj));
         }
 
         if(null!=uploadResponseBean){
