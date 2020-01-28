@@ -319,4 +319,6 @@ public interface IConstant {
             return this.value;
         }
     }
+
+    int SCHEDULER_THREAD_POOL_SIZE = 5;
 }
