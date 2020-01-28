@@ -63,6 +63,9 @@ public class NoAuthController {
     @Autowired
     IProcessOtpService processOtpService;
 
+    @Autowired
+    ICompanyService companyService;
+
     @Value("${scoringEngineIpAddress}")
     private String scoringEngineIpAddress;
 
@@ -322,4 +325,17 @@ public class NoAuthController {
         }
         return responseStr;
     }
+
+    /**
+     * Rest API to fetch company address by company id
+     *
+     * @param companyId company id for which we find addresses
+     * @return List of CompanyAddresses
+     */
+    @GetMapping(value = "/getCompanyAddress/{companyId}")
+    @ResponseStatus(value = HttpStatus.OK)
+    List<CompanyAddress> getCompanyAddress(@PathVariable("companyId") Long companyId) throws Exception {
+        return companyService.getCompanyAddress(companyId);
+    }
+
 }

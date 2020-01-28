@@ -699,4 +699,14 @@ public class CompanyService implements ICompanyService {
         });
         log.info("Completed processing request to create subdomains in {} ms.", (System.currentTimeMillis() - startTime));
     }
+
+    @Transactional
+    public List<CompanyAddress> getCompanyAddress(Long companyId) {
+        log.info("Inside getCompanyAddress");
+        long startTime = System.currentTimeMillis();
+        List<CompanyAddress> companyAddressList = companyAddressRepository.findByCompanyId(companyId);
+        log.info("Get Company address list by company id in {} ms.", (System.currentTimeMillis() - startTime));
+        return companyAddressList;
+    }
+
 }
