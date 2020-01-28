@@ -32,19 +32,29 @@ public class ScheduledTasks {
 
     @Scheduled(fixedRate = 30000, initialDelay = 5000)
     public void parseAndProcessCv() {
+        log.info("started parse and process cv. Thread: {}", Thread.currentThread().getId());
         processUploadedCV.processCv();
+        log.info("completed parse and process cv. Thread: {}", Thread.currentThread().getId());
     }
 
     @Scheduled(fixedRate = 120000, initialDelay = 5000)
     public void rateAndProcessCv() {
+        log.info("started rate and process cv. Thread: {}", Thread.currentThread().getId());
         processUploadedCV.rateCv();
+        log.info("completed rate and process cv. Thread: {}", Thread.currentThread().getId());
     }
 
     @Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
-    public void processEmailApplications() { fetchEmailService.processEmail(); }
+    public void processEmailApplications() {
+        log.info("started process email applications. Thread: {}", Thread.currentThread().getId());
+        fetchEmailService.processEmail();
+        log.info("completed process email applications. Thread: {}", Thread.currentThread().getId());
+    }
 
     @Scheduled(fixedRate = 120000, initialDelay = 5000)
     public void convertCvFileToCvText() {
+        log.info("started convert cv file to cv text. Thread: {}", Thread.currentThread().getId());
         processUploadedCV.cvToCvText();
+        log.info("completed convert cv file to cv text. Thread: {}", Thread.currentThread().getId());
     }
 }
