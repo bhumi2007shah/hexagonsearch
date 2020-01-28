@@ -1822,8 +1822,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         ChatbotResponseBean chatbotResponseBean = new ChatbotResponseBean();
         chatbotResponseBean.setJobCandidateMapping(objFromDb);
-        //set jcm communication details in jcm
-        objFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId()));
 
         if(objFromDb.getJob().getCustomizedChatbot()){
             CustomizedChatbotPageContent customizedChatbotPageContent = customizedChatbotPageContentRepository.findByCompanyId(objFromDb.getJob().getCompanyId());
