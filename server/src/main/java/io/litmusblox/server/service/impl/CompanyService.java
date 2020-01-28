@@ -617,8 +617,9 @@ public class CompanyService implements ICompanyService {
     @Transactional
     public Boolean isCompanyExistForShortName(String shortName) {
         log.info("inside isCompanyExistForShortName");
+        long startTime = System.currentTimeMillis();
         Company company = companyRepository.findByShortNameIgnoreCase(shortName);
-        log.info("");
+        log.info("Find company by shortName in " + (System.currentTimeMillis() - startTime) + "ms.");
         if(null != company){
             log.info("Company already exist, CompanyId : "+company.getId());
             return true;
