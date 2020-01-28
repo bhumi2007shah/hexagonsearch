@@ -74,6 +74,12 @@ public class CvParsingDetails {
     @Column(name = "CV_CONVERT_API_FLAG")
     private boolean cvConvertApiFlag = false;
 
+    @Column(name = "PARSING_RESPONSE_ML")
+    private String parsingResponseMl;
+
+    @Column(name = "PARSING_RESPONSE_PYTHON")
+    private String parsingResponsePython;
+
     public CvParsingDetails(Date processedOn, String parsingResponseText, Long candidateId, JobCandidateMapping jobCandidateMappingId) {
         this.processedOn = processedOn;
         this.parsingResponseText = parsingResponseText;

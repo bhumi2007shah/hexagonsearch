@@ -43,6 +43,7 @@ public interface IConstant {
     String REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_NAME = "[^\\w\\s\\-]*";
     String REGEX_FOR_DOT_IN_NAME = "(?<=[a.zA-Z\\.]\\s)+";
     String REGEX_TO_FIND_ONLINE_PROFILE_UNIQUE_ID = "(?<=\\/)(?:[\\w\\-]+)(?:\\/)?$";
+    String REGEX_TO_VALIDATE_COMPANY_SHORT_NAME = "^[a-zA-Z]+[a-zA-Z0-9]+$";
 
 
     // lengths
@@ -52,6 +53,7 @@ public interface IConstant {
     Integer CANDIDATE_NAME_MAX_LENGTH = 45;
     Integer CANDIDATE_EMAIL_MAX_LENGTH = 50;
     Integer CV_TEXT_API_RESPONSE_MIN_LENGTH = 50;
+    Integer COMPANY_SHORT_NAME = 25;
 
     String REPO_LOCATION = "repoLocation";
     String TEMP_REPO_LOCATION = "temprepolocation";
@@ -320,4 +322,10 @@ public interface IConstant {
 
     String NAUKRI_SUBJECT_STRING = "Naukri.com -";
     String REF_ID_MATCH_REGEX = "[a-fA-F0-9]{8}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{12}";
+
+    String PARSING_RESPONSE_JSON = "PARSING_RESPONSE_JSON";
+    String PARSING_RESPONSE_PYTHON = "PARSING_RESPONSE_PYTHON";
+    String PARSING_RESPONSE_ML = "PARSING_RESPONSE_ML";
+
+    int SCHEDULER_THREAD_POOL_SIZE = 5;
 }

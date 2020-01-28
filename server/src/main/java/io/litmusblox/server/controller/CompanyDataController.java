@@ -179,4 +179,17 @@ public class CompanyDataController {
         log.info("inside getCompanyListByAgency method");
         return companyService.getCompanyListByAgency(recruitmentAgencyId);
     }
+
+    /**
+     * Rest api to verify company short time already exist or not
+     * @param shortName company short name
+     * @return boolean value for company
+     */
+    @GetMapping("/isDuplicateShortName/{shortName}")
+    @ResponseBody
+    @ResponseStatus(HttpStatus.OK)
+    Boolean isShortNameDuplicate(@PathVariable("shortName") String shortName){
+        log.info("inside isShortNameDuplicate");
+        return companyService.isCompanyExistForShortName(shortName);
+    }
 }

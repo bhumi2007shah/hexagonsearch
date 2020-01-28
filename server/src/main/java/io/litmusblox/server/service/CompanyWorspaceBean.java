@@ -24,11 +24,13 @@ public class CompanyWorspaceBean {
     Date accountActiveSince;
     boolean blocked;
     int numberOfUsers;
+    String companyShortName;
 
-    public CompanyWorspaceBean(Long companyId, String companyName, Date accountActiveSince, boolean blocked) {
+    public CompanyWorspaceBean(Long companyId, String companyName, Date accountActiveSince, boolean blocked, String companyShortName) {
         this.companyId = companyId;
         this.companyName = companyName;
         this.accountActiveSince = accountActiveSince;
         this.blocked = blocked;
+        this.companyShortName = companyShortName;
     }
 }

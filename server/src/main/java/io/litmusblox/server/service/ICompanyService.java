@@ -101,6 +101,13 @@ public interface ICompanyService {
     List<Company> getCompanyListByAgency(Long recruitmentAgencyId);
 
     /**
+     * Service method to get boolean value as per company exist or not for short name
+     * @param shortName Company short name
+     * @return boolean value
+     */
+    Boolean isCompanyExistForShortName(String shortName);
+
+    /**
      * Method to create a subdomain for a company when the first job is published
      *
      * @param company the company for which subdomain is to be created

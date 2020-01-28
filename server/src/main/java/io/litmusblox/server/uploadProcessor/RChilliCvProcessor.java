@@ -88,6 +88,9 @@ public class RChilliCvProcessor {
     @Resource
     CvRatingRepository cvRatingRepository;
 
+    @Resource
+    CvParsingApiDetailsRepository cvParsingApiDetailsRepository;
+
     @Transactional(readOnly = true)
     User getUser(long userId) {
         return userRepository.findById(userId).get();
@@ -105,7 +108,6 @@ public class RChilliCvProcessor {
      */
     public void processFile(String filePath, String rchilliJson) {
         log.info("Inside processFile method");
-        // remove task steps
         log.info("Temp file path : "+filePath);
         String fileName = filePath.substring(filePath.lastIndexOf(File.separator) + 1);
         String[] s = fileName.split("_");
@@ -114,21 +116,51 @@ public class RChilliCvProcessor {
         Job job = getJob(Long.parseLong(s[1]));
 
         Candidate candidate = null;
-        String rchilliFormattedJson = null, rchilliJsonResponse = null;
+        String rchilliFormattedJson = null, rchilliJsonResponse = null, pythonJsonResponse = null, mlJsonResponse = null;
         ResumeParserDataRchilliBean bean = null;
         long rchilliResponseTime = 0L, candidateId=0L;
         boolean isCandidateFailedToProcess = false, rChilliErrorResponse = false;
         CvParsingDetails cvParsingDetails = null;
 
+        List<CvParsingApiDetails> cvParsingApiDetailsList = cvParsingApiDetailsRepository.findAll();
         try {
-            long startTime = System.currentTimeMillis();
             if(rchilliJson==null) {
                 RestClient rest = RestClient.getInstance();
-                String jsonString = "{\"url\":\"" + environment.getProperty(IConstant.FILE_STORAGE_URL) + fileName + "\",\"userkey\":\"" + environment.getProperty(IConstant.USER_KEY) + "\",\"version\":\"" + environment.getProperty(IConstant.VERSION)
-                        + "\",\"subuserid\":\"" + environment.getProperty(IConstant.SUB_USER_ID) + "\"}";
-                rchilliJsonResponse = rest.consumeRestApi(jsonString, environment.getProperty(IConstant.RCHILLI_API_URL), HttpMethod.POST, null).getResponseBody();
-                rchilliResponseTime = System.currentTimeMillis() - startTime;
-                log.info("Recevied response from RChilli in " + rchilliResponseTime + "ms.");
+                for (CvParsingApiDetails cvParsingApiDetails : cvParsingApiDetailsList){
+                    if(IConstant.PARSING_RESPONSE_JSON.equals(cvParsingApiDetails.getColumnToUpdate())){
+                        long startTime = System.currentTimeMillis();
+                        cvParsingApiDetails.getQueryAttributes().put("url", environment.getProperty(IConstant.FILE_STORAGE_URL) + fileName);
+                        String jsonString = cvParsingApiDetails.getQueryAttributes().keySet().stream()
+                                .map(key -> '"' + key + '"' + ":" + '"' + cvParsingApiDetails.getQueryAttributes().get(key) + '"')
+                                .collect(Collectors.joining(", ", "{", "}"));
+                        rchilliJsonResponse = rest.consumeRestApi(jsonString, cvParsingApiDetails.getApiUrl(), HttpMethod.POST, null).getResponseBody();
+                        rchilliResponseTime = System.currentTimeMillis() - startTime;
+                        log.info("Received response from RChilli in " + rchilliResponseTime + "ms.");
+                    }else if(IConstant.PARSING_RESPONSE_PYTHON.equals(cvParsingApiDetails.getColumnToUpdate())){
+                        long startTime = System.currentTimeMillis();
+                        StringBuffer queryString = new StringBuffer(cvParsingApiDetails.getApiUrl());
+                        queryString.append("?file=");
+                        queryString.append(environment.getProperty(IConstant.FILE_STORAGE_URL) + fileName);
+                        try {
+                            pythonJsonResponse = rest.consumeRestApi(null, queryString.toString(), HttpMethod.GET, null).getResponseBody();
+                            log.info("Received response from Python parser in " + (System.currentTimeMillis() - startTime) + "ms.");
+                        }catch (Exception e){
+                            log.error("Error while parse resume by Python parser : "+e.getMessage());
+                        }
+                    }else if(IConstant.PARSING_RESPONSE_ML.equals(cvParsingApiDetails.getColumnToUpdate())){
+                        long startTime = System.currentTimeMillis();
+                        StringBuffer queryObjectString = new StringBuffer("{");
+                        queryObjectString.append("\"link\":");
+                        queryObjectString.append("\""+environment.getProperty(IConstant.FILE_STORAGE_URL) + fileName+"\"");
+                        queryObjectString.append("}");
+                        try {
+                            mlJsonResponse = rest.consumeRestApi(queryObjectString.toString(), cvParsingApiDetails.getApiUrl(), HttpMethod.POST, null).getResponseBody();
+                            log.info("Received response from ML parser in " + (System.currentTimeMillis() - startTime) + "ms.");
+                        }catch (Exception e){
+                            log.error("Error while parse resume by ML parser : "+e.getMessage());
+                        }
+                    }
+                }
             }
             else{
                 rchilliJsonResponse = rchilliJson;
@@ -209,7 +241,7 @@ public class RChilliCvProcessor {
             log.error("Error while save candidate resume in drag and drop : " + fileName + " : " + ex.getMessage(), HttpStatus.BAD_REQUEST);
             log.error("For CandidateId : "+candidateId+", Email : "+candidate.getEmail()+", Mobile : "+candidate.getMobile());
         }
-        addUpdateCvParsingDetails(cvParsingDetails, fileName, rchilliResponseTime, (null!=rchilliFormattedJson)?rchilliFormattedJson:rchilliJsonResponse, isCandidateFailedToProcess, bean, (candidate != null)?candidate.getUploadErrorMessage():null, candidateId, job.getId());
+        addUpdateCvParsingDetails(cvParsingDetails, fileName, rchilliResponseTime, (null!=rchilliFormattedJson)?rchilliFormattedJson:rchilliJsonResponse, isCandidateFailedToProcess, bean, (candidate != null)?candidate.getUploadErrorMessage():null, candidateId, job.getId(), pythonJsonResponse, mlJsonResponse);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -317,7 +349,7 @@ public class RChilliCvProcessor {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private void addUpdateCvParsingDetails(CvParsingDetails cvParsingDetails, String fileName, long rchilliResponseTime, String rchilliFormattedJson, Boolean isCandidateFailedToProcess, ResumeParserDataRchilliBean bean, String errorMessage, Long candidateId, Long jobId) {
+    private void addUpdateCvParsingDetails(CvParsingDetails cvParsingDetails, String fileName, long rchilliResponseTime, String rchilliFormattedJson, Boolean isCandidateFailedToProcess, ResumeParserDataRchilliBean bean, String errorMessage, Long candidateId, Long jobId, String pythonResponseString, String mlResponseString) {
         log.info("Inside addCvParsingDetails method");
         try {
             //Add cv_parsing_details
@@ -328,6 +360,8 @@ public class RChilliCvProcessor {
             }
 
             cvParsingDetails.setProcessingTime(rchilliResponseTime);
+            cvParsingDetails.setParsingResponsePython(pythonResponseString);
+            cvParsingDetails.setParsingResponseMl(mlResponseString);
 
             if(null != candidateId || candidateId != 0)
                 cvParsingDetails.setCandidateId(candidateId);

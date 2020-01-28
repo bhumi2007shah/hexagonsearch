@@ -125,6 +125,7 @@ public class CompanyService implements ICompanyService {
             throw new ValidationException("Company not found for this name "+company.getCompanyName(), HttpStatus.BAD_REQUEST);
 
         company.setId(companyFromDb.getId());
+        company.setShortName(companyFromDb.getShortName());
 
         if(company.getNewCompanyBu()!=null || company.getDeletedCompanyBu()!=null) {
             updateBusinessUnit(company, loggedInUser);
@@ -473,7 +474,7 @@ public class CompanyService implements ICompanyService {
 
         companies.forEach(company -> {
             CompanyWorspaceBean worspaceBean = new CompanyWorspaceBean(company.getId(), company.getCompanyName(),
-                    company.getCreatedOn(), !company.getActive());
+                    company.getCreatedOn(), !company.getActive(), company.getShortName());
             worspaceBean.setNumberOfUsers(userRepository.countByCompanyId(company.getId()));
             responseBeans.add(worspaceBean);
         });
@@ -606,6 +607,24 @@ public class CompanyService implements ICompanyService {
     public List<Company> getCompanyListByAgency(Long recruitmentAgencyId) {
         log.info("Inside getCompanyListByAgency "+companyRepository.findByRecruitmentAgencyId(recruitmentAgencyId).size());
         return companyRepository.findByRecruitmentAgencyId(recruitmentAgencyId);
+    }
+
+    /**
+     * Service method to get boolean value as per company exist or not for short name
+     * @param shortName Company short name
+     * @return
+     */
+    @Transactional
+    public Boolean isCompanyExistForShortName(String shortName) {
+        log.info("inside isCompanyExistForShortName");
+        Company company = companyRepository.findByShortNameIgnoreCase(shortName);
+        log.info("");
+        if(null != company){
+            log.info("Company already exist, CompanyId : "+company.getId());
+            return true;
+        }else{
+            return false;
+        }
     }
 
     /**
