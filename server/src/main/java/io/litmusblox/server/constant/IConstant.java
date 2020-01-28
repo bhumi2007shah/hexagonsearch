@@ -317,4 +317,7 @@ public interface IConstant {
             return this.value;
         }
     }
+
+    String NAUKRI_SUBJECT_STRING = "Naukri.com -";
+    String REF_ID_MATCH_REGEX = "[a-fA-F0-9]{8}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{12}";
 }

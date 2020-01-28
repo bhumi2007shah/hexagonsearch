@@ -563,6 +563,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         //set chatbot status to complete if scoring engine does not have job or tech chatbot is complete.
         if(!objFromDb.getJob().getScoringEngineJobAvailable() || jcmCommunicationDetailsFromDb.isTechChatCompleteFlag()){
             objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
+
         }
 
         //Commented below code as we are not setting flag to true as per discussion on 10-01-2020
