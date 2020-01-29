@@ -1,5 +1,6 @@
 SET session_replication_role TO 'replica';
 
+CREATE EXTENSION hstore;
 
 DROP TABLE IF EXISTS COUNTRY;
 CREATE TABLE COUNTRY(

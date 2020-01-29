@@ -4,7 +4,6 @@
 
 package io.litmusblox.server.model;
 
-import com.fasterxml.jackson.annotation.JsonFilter;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -22,7 +21,6 @@ import java.util.Date;
 @Entity
 @Table(name = "JCM_COMMUNICATION_DETAILS")
 @NoArgsConstructor
-@JsonFilter("JcmCommunicationDetails")
 public class JcmCommunicationDetails {
 
     private static final long serialVersionUID = 6868521896546285046L;
@@ -32,9 +30,8 @@ public class JcmCommunicationDetails {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    @PrimaryKeyJoinColumn
-    private JobCandidateMapping jcmId;
+    @Column(name = "JCM_ID")
+    private Long jcmId;
 
     @Column(name="CHAT_INVITE_TIMESTAMP_EMAIL")
     @Temporal(TemporalType.TIMESTAMP)
@@ -93,7 +90,7 @@ public class JcmCommunicationDetails {
     @Column(name="HR_CHAT_COMPLETE_FLAG")
     private boolean hrChatCompleteFlag;
 
-    public JcmCommunicationDetails(JobCandidateMapping jcmId) {
+    public JcmCommunicationDetails(Long jcmId) {
         this.jcmId = jcmId;
         chatInviteFlag = false;
         techChatCompleteFlag = false;
