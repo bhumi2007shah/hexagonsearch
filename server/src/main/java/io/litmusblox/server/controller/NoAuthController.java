@@ -320,7 +320,7 @@ public class NoAuthController {
                 }}
         );
         if(null != response) {
-            User jobCreatedBy = userDetailsService.findById(response.getJobCandidateMapping().getJob().getCompanyId().getId());
+            User jobCreatedBy = userDetailsService.findById(response.getJobCandidateMapping().getJob().getCreatedBy().getId());
             responseStr.replaceAll("`$companyName`",jobCreatedBy.getCompany().getCompanyName());
         }
         return responseStr;
