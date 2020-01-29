@@ -174,7 +174,7 @@ public class Job implements Serializable {
     private UUID jobReferenceId;
 
     @Column(name = "CUSTOMIZED_CHATBOT")
-    private Boolean customizedChatbot = false;
+    private boolean customizedChatbot;
 
     @OneToMany(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY,mappedBy = "jobId")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})

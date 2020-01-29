@@ -1807,7 +1807,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     /**
-     *REST Api to fetch data related to job like job detail, screening questions and corresponding candidate
+     *Service method to fetch data related to job like job detail, screening questions and corresponding candidate
      *Merge two api getScreeningQuestions and getCandidateAndJobDetails in current api
      *
      * @param uuid the uuid corresponding to a unique jcm record
@@ -1826,7 +1826,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         objFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId()));
 
-        if(objFromDb.getJob().getCustomizedChatbot()){
+        if(objFromDb.getJob().isCustomizedChatbot()){
             CustomizedChatbotPageContent customizedChatbotPageContent = customizedChatbotPageContentRepository.findByCompanyId(objFromDb.getJob().getCompanyId());
             //check customize chatbot flag true then send customized page data
             if(null != customizedChatbotPageContent && !customizedChatbotPageContent.getPageInfo().isEmpty())
