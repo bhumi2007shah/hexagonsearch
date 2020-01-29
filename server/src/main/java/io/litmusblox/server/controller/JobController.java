@@ -119,7 +119,6 @@ public class JobController {
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateCompanyDetails", Arrays.asList("candidateId"));
                     put("MasterData", new ArrayList<>(0));
-                    put("JcmCommunicationDetails", Arrays.asList("id", "jcmId"));
                 }})
         );
     }
