@@ -317,7 +317,6 @@ public class NoAuthController {
                     put("JobScreeningQuestions", Arrays.asList("jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("MasterData", new ArrayList<>(0));
                     put("ScreeningQuestions", new ArrayList<>(0));
-
                 }}
         );
         if(null != response) {
