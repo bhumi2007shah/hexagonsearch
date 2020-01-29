@@ -63,6 +63,9 @@ public class NoAuthController {
     @Autowired
     IProcessOtpService processOtpService;
 
+    @Autowired
+    ICompanyService companyService;
+
     @Value("${scoringEngineIpAddress}")
     private String scoringEngineIpAddress;
 
@@ -307,9 +310,10 @@ public class NoAuthController {
                 new HashMap<String, List<String>>() {{
                     put("Job",Arrays.asList("jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy","companyJobId","noOfPositions","mlDataAvailable","status","createdOn","createdBy","userEnteredKeySkill"));
                     put("Company", Arrays.asList("companyAddressList", "companyBuList"));
-                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData","jcmCommunicationDetails"));
+                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData"));
                     put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
                     put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
+                    put("JcmCommunicationDetails", Arrays.asList("id","jcmId"));
                     put("JobScreeningQuestions", Arrays.asList("jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("MasterData", new ArrayList<>(0));
                     put("ScreeningQuestions", new ArrayList<>(0));
@@ -322,4 +326,17 @@ public class NoAuthController {
         }
         return responseStr;
     }
+
+    /**
+     * Rest API to fetch company address by company id
+     *
+     * @param companyId company id for which we find addresses
+     * @return List of CompanyAddresses
+     */
+    @GetMapping(value = "/getCompanyAddress/{companyId}")
+    @ResponseStatus(value = HttpStatus.OK)
+    List<CompanyAddress> getCompanyAddress(@PathVariable("companyId") Long companyId) throws Exception {
+        return companyService.getCompanyAddress(companyId);
+    }
+
 }
