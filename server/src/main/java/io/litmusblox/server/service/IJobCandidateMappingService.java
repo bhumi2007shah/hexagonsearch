@@ -214,7 +214,7 @@ public interface IJobCandidateMappingService {
     Map<String, Integer> getCandidateCountPerStatus(Long jobId, String stage) throws Exception;
 
     /**
-     *REST Api to fetch data related to job like job detail, screening questions and corresponding candidate
+     *Service method to fetch data related to job like job detail, screening questions and corresponding candidate
      *Merge two api getScreeningQuestions and getCandidateAndJobDetails in current api
      *
      * @param uuid the uuid corresponding to a unique jcm record
