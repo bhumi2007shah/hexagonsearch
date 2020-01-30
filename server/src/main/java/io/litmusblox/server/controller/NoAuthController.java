@@ -296,10 +296,10 @@ public class NoAuthController {
     @GetMapping(value = "/chatbotDetails")
     @ResponseStatus(value = HttpStatus.OK)
     String getChatbotDetail(@RequestParam("uuid") UUID uuid) throws Exception {
-        log.info("Received request to retrieve chatbot details for chatbotUuId: " + uuid);
+        log.info("Received request to retrieve chatbot details for chatbotUuId: {}", uuid);
         long startTime = System.currentTimeMillis();
         ChatbotResponseBean response = jobCandidateMappingService.getChatbotDetailsByUuid(uuid);
-        log.info("Completed fetching chatbot detail in " + (System.currentTimeMillis() - startTime) + "ms.");
+        log.info("Completed fetching chatbot detail in {}ms.", (System.currentTimeMillis() - startTime));
         String responseStr = Util.stripExtraInfoFromResponseBean(response,
                 (new HashMap<String, List<String>>(){{
                     put("User", Arrays.asList("id", "displayName"));
@@ -317,11 +317,10 @@ public class NoAuthController {
                     put("JobScreeningQuestions", Arrays.asList("jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("MasterData", new ArrayList<>(0));
                     put("ScreeningQuestions", new ArrayList<>(0));
-
                 }}
         );
         if(null != response) {
-            User jobCreatedBy = userDetailsService.findById(response.getJobCandidateMapping().getJob().getCompanyId().getId());
+            User jobCreatedBy = userDetailsService.findById(response.getJobCandidateMapping().getJob().getCreatedBy().getId());
             responseStr.replaceAll("`$companyName`",jobCreatedBy.getCompany().getCompanyName());
         }
         return responseStr;
