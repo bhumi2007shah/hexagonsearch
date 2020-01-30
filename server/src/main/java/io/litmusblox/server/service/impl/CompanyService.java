@@ -328,10 +328,7 @@ public class CompanyService implements ICompanyService {
 
                 if(addressTitleExists){
                     errorResponse.put(address.getAddressTitle(), "Title Already exist");
-                }
-
-                //add error to errorResponse if no cordinates are found.
-                if(null==coordinates){
+                }else if (null==coordinates){         //add error to errorResponse if no cordinates are found.
                     errorResponse.put(address.getAddressTitle(), "coordinates not found");
                 }
                 else {
