@@ -1559,3 +1559,14 @@ INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUE
 ALTER TABLE USER_SCREENING_QUESTION
 ALTER COLUMN QUESTION TYPE VARCHAR(250),
 ALTER COLUMN OPTIONS TYPE VARCHAR(200)[];
+
+
+INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
+('callOutCome', 'Connected'),
+('callOutCome', 'No Answer'),
+('callOutCome', 'Busy'),
+('callOutCome', 'Wrong Number'),
+('callOutCome', 'Left Message/VoiceMail');
+
+UPDATE MASTER_DATA SET VALUE = 'Left Message or Voicemail' WHERE VALUE = 'Left Message/VoiceMail';
+
