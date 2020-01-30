@@ -1560,13 +1560,6 @@ ALTER TABLE USER_SCREENING_QUESTION
 ALTER COLUMN QUESTION TYPE VARCHAR(250),
 ALTER COLUMN OPTIONS TYPE VARCHAR(200)[];
 
-
-INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
-('callOutCome', 'Connected'),
-('callOutCome', 'No Answer'),
-('callOutCome', 'Busy'),
-('callOutCome', 'Wrong Number'),
-('callOutCome', 'Left Message/VoiceMail');
-
+--For ticket #389
 UPDATE MASTER_DATA SET VALUE = 'Left Message or Voicemail' WHERE VALUE = 'Left Message/VoiceMail';
 
