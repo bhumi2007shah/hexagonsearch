@@ -63,72 +63,11 @@ public class NoAuthController {
     @Autowired
     IProcessOtpService processOtpService;
 
+    @Autowired
+    ICompanyService companyService;
+
     @Value("${scoringEngineIpAddress}")
     private String scoringEngineIpAddress;
-
-    /**
-     * Rest api to get all screening questions for the job
-     * @param uuid the uuid corresponding to a unique jcm record
-     * @return the list of job screening questions
-     * @throws Exception
-     */
-    @GetMapping("/screeningQuestion")
-    @ResponseBody
-    @ResponseStatus(HttpStatus.OK)
-    String screeningQuestionsForUuid(@RequestParam("uuid") UUID uuid) throws Exception {
-        log.info("Received request to retrieve screening questions for candidate: " + uuid);
-        long startTime = System.currentTimeMillis();
-        List<JobScreeningQuestions> response = jobCandidateMappingService.getJobScreeningQuestions(uuid);
-        log.info("Completed fetching screening questions in " + (System.currentTimeMillis() - startTime) + "ms.");
-        String responseStr = Util.stripExtraInfoFromResponseBean(response,
-                (new HashMap<String, List<String>>(){{
-                    put("User", Arrays.asList("id"));
-                }}),
-                new HashMap<String, List<String>>() {{
-                    put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
-                    put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
-                    put("JobScreeningQuestions", Arrays.asList("jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
-                    put("ScreeningQuestions", new ArrayList<>(0));
-                    put("MasterData", new ArrayList<>(0));
-                }}
-        );
-        if(response.size() >0 ) {
-            User jobCreatedBy = userDetailsService.findById(response.get(0).getCreatedBy());
-            responseStr.replaceAll("`$companyName`",jobCreatedBy.getCompany().getCompanyName());
-        }
-        return responseStr;
-    }
-
-    /**
-     * Rest api to get all candidate and job details for the uuid provided
-     * @param uuid the uuid corresponding to a unique jcm record
-     * @return the list of job screening questions
-     * @throws Exception
-     */
-    @GetMapping("/candidateAndJobDetails")
-    @ResponseBody
-    @ResponseStatus(HttpStatus.OK)
-    String candidateAndJobDetailsForUuid(@RequestParam("uuid") UUID uuid) throws Exception {
-        log.info("Received request to retrieve candidate & job information based on uuid : " + uuid);
-        long startTime = System.currentTimeMillis();
-        JobCandidateMapping mappingObj = jobCandidateMappingService.getJobCandidateMapping(uuid);
-        log.info("Completed fetching JobCandidateMapping in " + (System.currentTimeMillis() - startTime) + "ms.");
-        return Util.stripExtraInfoFromResponseBean(mappingObj,
-                (new HashMap<String, List<String>>(){{
-                    put("User", Arrays.asList("displayName"));
-                    put("CandidateCompanyDetails", new ArrayList<>(0));
-                    put("JobStageStep", new ArrayList<>(0));
-                }}),
-                new HashMap<String, List<String>>() {{
-                    put("Job",Arrays.asList("jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy","companyJobId","noOfPositions","mlDataAvailable","status","createdOn","createdBy","userEnteredKeySkill"));
-                    put("Candidate", Arrays.asList("CandidateDetails","candidateDetails","candidateEducationDetails","candidateProjectDetails",
-                            "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails","createdOn","createdBy","candidateSource","firstName","lastName","candidateSource","CandidateCompanyDetails"));
-                    put("Company", Arrays.asList("companyAddressList", "companyBuList"));
-                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData"));
-                    put("MasterData", new ArrayList<>(0));
-            }}
-        );
-    }
 
     /**
      * Rest api to capture candidate consent from chatbot
@@ -345,4 +284,58 @@ public class NoAuthController {
     void sendOtp(@RequestParam String mobile, @RequestParam String email) throws Exception {
         processOtpService.sendOtp(mobile, email);
     }
+
+
+    /**
+     *REST Api to fetch data related to job like job detail, screening questions and corresponding candidate
+     *Merge two api getScreeningQuestions and getCandidateAndJobDetails in current api
+     * @param uuid the uuid corresponding to a unique jcm record
+     * @throws Exception
+     * return ChatbotResponseBean String
+     */
+    @GetMapping(value = "/chatbotDetails")
+    @ResponseStatus(value = HttpStatus.OK)
+    String getChatbotDetail(@RequestParam("uuid") UUID uuid) throws Exception {
+        log.info("Received request to retrieve chatbot details for chatbotUuId: {}", uuid);
+        long startTime = System.currentTimeMillis();
+        ChatbotResponseBean response = jobCandidateMappingService.getChatbotDetailsByUuid(uuid);
+        log.info("Completed fetching chatbot detail in {}ms.", (System.currentTimeMillis() - startTime));
+        String responseStr = Util.stripExtraInfoFromResponseBean(response,
+                (new HashMap<String, List<String>>(){{
+                    put("User", Arrays.asList("id", "displayName"));
+                    put("CandidateCompanyDetails", new ArrayList<>(0));
+                    put("JobStageStep", new ArrayList<>(0));
+                    put("Candidate",new ArrayList<>(0));
+                }}),
+                new HashMap<String, List<String>>() {{
+                    put("Job",Arrays.asList("jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy","companyJobId","noOfPositions","mlDataAvailable","status","createdOn","createdBy","userEnteredKeySkill"));
+                    put("Company", Arrays.asList("companyAddressList", "companyBuList"));
+                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData"));
+                    put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
+                    put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
+                    put("JcmCommunicationDetails", Arrays.asList("id","jcmId"));
+                    put("JobScreeningQuestions", Arrays.asList("jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
+                    put("ScreeningQuestions", new ArrayList<>(0));
+                }}
+        );
+        if(null != response) {
+            User jobCreatedBy = userDetailsService.findById(response.getJobCandidateMapping().getJob().getCreatedBy().getId());
+            responseStr.replaceAll("`$companyName`",jobCreatedBy.getCompany().getCompanyName());
+        }
+        return responseStr;
+    }
+
+    /**
+     * Rest API to fetch company address by company id
+     *
+     * @param companyId company id for which we find addresses
+     * @return List of CompanyAddresses
+     */
+    @GetMapping(value = "/getCompanyAddress/{companyId}")
+    @ResponseStatus(value = HttpStatus.OK)
+    List<CompanyAddress> getCompanyAddress(@PathVariable("companyId") Long companyId) throws Exception {
+        return companyService.getCompanyAddress(companyId);
+    }
+
 }

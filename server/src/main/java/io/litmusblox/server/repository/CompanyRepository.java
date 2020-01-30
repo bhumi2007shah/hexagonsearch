@@ -35,4 +35,7 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     @Transactional(readOnly = true)
     Company findByShortNameIgnoreCase(String shortName);
+
+    @Transactional
+    List<Company> findBySubdomainCreatedIsFalseAndShortNameIsNotNull();
 }

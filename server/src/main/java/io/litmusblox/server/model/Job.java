@@ -173,12 +173,16 @@ public class Job implements Serializable {
     @org.hibernate.annotations.Type(type = "pg-uuid")
     private UUID jobReferenceId;
 
+    @Column(name = "CUSTOMIZED_CHATBOT")
+    private boolean customizedChatbot;
+
     @OneToMany(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY,mappedBy = "jobId")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private List<JobHiringTeam> jobHiringTeamList=new ArrayList<>();
 
     @OneToMany(cascade = {CascadeType.MERGE},fetch= FetchType.LAZY, mappedBy = "jobId")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @OrderBy("id ASC")
     private List<JobScreeningQuestions> jobScreeningQuestionsList=new ArrayList<>();
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "jobId")

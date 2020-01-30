@@ -76,4 +76,5 @@ public interface IErrorMessages {
 
     String USER_DESIGNATION_NOT_VALID= "User designation not valid";
     String OTP_VERIFICATION_FAILED = "OTP verification failed";
+    String INVALID_COMPANY_SHORT_NAME = "Company short name contain only alpha numeric value start with character";
 }

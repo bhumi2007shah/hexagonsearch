@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>io.litmusblox</groupId>
 	<artifactId>server</artifactId>
-	<version>0.0.15-SNAPSHOT</version>
+	<version>0.0.16-SNAPSHOT</version>
 	<name>server</name>
 	<description>Backend implementation for LitmusBlox</description>
 
@@ -204,7 +204,11 @@
 			<artifactId>javax.mail</artifactId>
 			<version>1.6.2</version>
 		</dependency>
-
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.4.1</version>
+		</dependency>
 
 	</dependencies>
 

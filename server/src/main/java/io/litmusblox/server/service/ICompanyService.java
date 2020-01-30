@@ -99,4 +99,33 @@ public interface ICompanyService {
      * @return List of company
      */
     List<Company> getCompanyListByAgency(Long recruitmentAgencyId);
+
+    /**
+     * Service method to get boolean value as per company exist or not for short name
+     * @param shortName Company short name
+     * @return boolean value
+     */
+    Boolean isCompanyExistForShortName(String shortName);
+
+    /**
+     * Method to create a subdomain for a company when the first job is published
+     *
+     * @param company the company for which subdomain is to be created
+     * @throws Exception
+     */
+    void createSubdomain(Company company) throws Exception;
+
+    /**
+     * Method that fetches a list of all companies that have short name and for which a subdomain has not been created
+     * @throws Exception
+     */
+    void createSubdomains() throws Exception;
+
+    /**
+     * Method to fetch company address by company id
+     *
+     * @param companyId company id for which we find addresses
+     * @return List of CompanyAddresses
+     */
+    List<CompanyAddress> getCompanyAddress(Long companyId);
 }

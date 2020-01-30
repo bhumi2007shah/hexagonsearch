@@ -31,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.File;
+import java.math.BigInteger;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -140,6 +141,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
     @Resource
     UserRepository userRepository;
+
+    @Resource
+    CustomizedChatbotPageContentRepository customizedChatbotPageContentRepository;
 
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
@@ -618,7 +622,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                         queryParams.put("candidateId", jcm.getCandidate().getId());
                         queryParams.put("candidateUuid", jcm.getChatbotUuid());
                         log.info("Calling Scoring Engine api to add candidate to job");
-                        String scoringEngineResponse = RestClient.getInstance().consumeRestApi(null, scoringEngineBaseUrl + scoringEngineAddCandidateUrlSuffix, HttpMethod.PUT, null, Optional.of(queryParams), null);
+                        String scoringEngineResponse = RestClient.getInstance().consumeRestApi(null, scoringEngineBaseUrl + scoringEngineAddCandidateUrlSuffix, HttpMethod.PUT, null, Optional.of(queryParams), null).getResponseBody();
                         log.info(scoringEngineResponse);
 
                         try {
@@ -1776,5 +1780,59 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             responseBean.setErrorMessage(IErrorMessages.OTP_VERIFICATION_FAILED);
         }
         return responseBean;
+    }
+
+    /**
+     * Service method to fetch a list of count of candidate per chatbot status per job
+     *
+     * @param jobId the job id for which data has to be fetched
+     * @param stage the stage, defaulted out to Screening
+     * @return the count of candidate per chatbot status
+     * @throws Exception
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Integer> getCandidateCountPerStatus(Long jobId, String stage) throws Exception {
+
+        Map<String, Integer> countMap = new HashMap<>();
+        List<Object[]> candidateCountList = jobCandidateMappingRepository.getCandidateCountPerStage(jobId, stage);
+
+        if(null != candidateCountList.get(0)[0]) {
+            countMap.put(IConstant.ChatbotStatus.INVITED.getValue(), ((BigInteger)candidateCountList.get(0)[0]).intValue());
+            countMap.put(IConstant.ChatbotStatus.NOT_INSTERESTED.getValue(), ((BigInteger)candidateCountList.get(0)[1]).intValue());
+            countMap.put(IConstant.ChatbotStatus.COMPLETE.getValue(), ((BigInteger)candidateCountList.get(0)[2]).intValue());
+            countMap.put(IConstant.ChatbotStatus.INCOMPLETE.getValue(), ((BigInteger)candidateCountList.get(0)[3]).intValue());
+        }
+
+        return countMap;
+    }
+
+    /**
+     *Service method to fetch data related to job like job detail, screening questions and corresponding candidate
+     *Merge two api getScreeningQuestions and getCandidateAndJobDetails in current api
+     *
+     * @param uuid the uuid corresponding to a unique jcm record
+     * @throws Exception
+     * return ChatbotResponseBean String
+     */
+    @Transactional
+    public ChatbotResponseBean getChatbotDetailsByUuid(UUID uuid) throws Exception {
+        log.info("Inside getChatbotDetailsByUuid");
+        JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
+        if (null == objFromDb)
+            throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        ChatbotResponseBean chatbotResponseBean = new ChatbotResponseBean();
+        chatbotResponseBean.setJobCandidateMapping(objFromDb);
+
+        objFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId()));
+
+        if(objFromDb.getJob().isCustomizedChatbot()){
+            CustomizedChatbotPageContent customizedChatbotPageContent = customizedChatbotPageContentRepository.findByCompanyId(objFromDb.getJob().getCompanyId());
+            //check customize chatbot flag true then send customized page data
+            if(null != customizedChatbotPageContent && !customizedChatbotPageContent.getPageInfo().isEmpty())
+                chatbotResponseBean.getChatbotContent().putAll(customizedChatbotPageContent.getPageInfo());
+
+        }
+        return chatbotResponseBean;
     }
 }
