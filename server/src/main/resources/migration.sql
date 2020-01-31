@@ -1432,48 +1432,6 @@ VALUES
 (1, 'totalExperience','Total Experience', 11),
 (1, 'createdBy','Created By', 12);
 
---updated view for export data
-drop view if exists exportDataView;
-create view exportDataView AS
-select
-	jcm.job_id as jobId,
-	concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidateName,
-	jcm.chatbot_status as chatbotStatus,
-	jcm.chatbot_updated_on as chatbotFilledTimeStamp,
-	cvr.overall_rating as keySkillsStrength,
-	sm.stage_name as currentStage,
-	currentCompany.company_name as currentCompany,
-	currentCompany.designation as currentDesignation,
-	jcm.email,
-	jcm.country_code as countryCode,
-	jcm.mobile,
-	cd.total_experience as totalExperience,
-	concat(users.first_name, ' ', users.last_name) as createdBy,
-	jsq.ScreeningQn as screeningQuestion
-	, csqr.response as candidateResponse
-	from job_candidate_mapping jcm
-	left join cv_rating cvr ON cvr.job_candidate_mapping_id = jcm.id
-	left join (
-		select candidate_id, company_name, designation from candidate_company_details where id in (
-				select min(id) from candidate_company_details
-				group by candidate_id
-			)
-	) as currentCompany on jcm.candidate_id = currentCompany.candidate_id
-	left join candidate_details cd on cd.candidate_id = jcm.candidate_id
-	inner join users ON users.id = jcm.created_by
-	inner join job_stage_step jss on jss.id=jcm.stage
-	inner join company_stage_step css on css.id = jss.stage_step_id
-	inner join stage_master sm on sm.id = css.stage
-	left join (
-		select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
-		union
-		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.user_screening_question_id=usq.id
-		union
-		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
-	) as jsq on jsq.jsqJobId = jcm.job_id
-	left join
-	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId;
-
 ALTER TABLE JCM_COMMUNICATION_DETAILS RENAME COLUMN CHAT_COMPLETE_FLAG TO TECH_CHAT_COMPLETE_FLAG;
 
 update job_candidate_mapping
@@ -1561,3 +1519,53 @@ ALTER COLUMN QUESTION TYPE VARCHAR(250),
 ALTER COLUMN OPTIONS TYPE VARCHAR(200)[];
 
 UPDATE job_candidate_mapping SET candidate_source = 'NaukriJobPosting' WHERE candidate_source = 'NaukriMail';
+
+--updated view for export data #387
+drop view if exists exportDataView;
+create view exportDataView AS
+select
+	jcm.job_id as jobId,
+	concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidateName,
+	jcm.chatbot_status as chatbotStatus,
+	jcm.chatbot_updated_on as chatbotFilledTimeStamp,
+	cvr.overall_rating as keySkillsStrength,
+	sm.stage_name as currentStage,
+	currentCompany.company_name as currentCompany,
+	currentCompany.designation as currentDesignation,
+	jcm.email,
+	jcm.country_code as countryCode,
+	jcm.mobile,
+	cd.total_experience as totalExperience,
+	concat(users.first_name, ' ', users.last_name) as createdBy,
+	jcm.created_on as createdOn,
+	jcm.score as capabilityScore,
+	jsq.ScreeningQn as screeningQuestion
+	, csqr.response as candidateResponse
+	from job_candidate_mapping jcm
+	left join cv_rating cvr ON cvr.job_candidate_mapping_id = jcm.id
+	left join (
+		select candidate_id, company_name, designation from candidate_company_details where id in (
+				select min(id) from candidate_company_details
+				group by candidate_id
+			)
+	) as currentCompany on jcm.candidate_id = currentCompany.candidate_id
+	left join candidate_details cd on cd.candidate_id = jcm.candidate_id
+	inner join users ON users.id = jcm.created_by
+	inner join job_stage_step jss on jss.id=jcm.stage
+	inner join company_stage_step css on css.id = jss.stage_step_id
+	inner join stage_master sm on sm.id = css.stage
+	left join (
+		select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
+		union
+		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.user_screening_question_id=usq.id
+		union
+		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
+	) as jsq on jsq.jsqJobId = jcm.job_id
+	left join
+	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId;
+
+INSERT INTO export_format_detail
+(format_id, column_name, header, "position")
+VALUES
+(1, 'createdOn','Created On', 13),
+(1, 'capabilityScore', 'Capability Score', 14);
