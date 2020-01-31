@@ -136,7 +136,7 @@ public interface IConstant {
     }
 
     enum CandidateSource {
-        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriEmail("NaukriMail"), EmployeeReferral("EmployeeReferral"), CareerPage("CareerPage"), JobPosting("JobPosting");
+        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriMassMail("NaukriMassMail"), NaukriJobPosting("NaukriJobPosting"), EmployeeReferral("EmployeeReferral"), CareerPage("CareerPage"), JobPosting("JobPosting");
         private String value;
 
         CandidateSource(String val) {
@@ -328,4 +328,6 @@ public interface IConstant {
     String PARSING_RESPONSE_ML = "PARSING_RESPONSE_ML";
 
     int SCHEDULER_THREAD_POOL_SIZE = 5;
+
+    String COMPANY_NAME_VARIABLE = "$companyName";
 }
