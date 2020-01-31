@@ -1234,6 +1234,12 @@ public class JobService implements IJobService {
         long startTime = System.currentTimeMillis();
         //get default export format master
         ExportFormatMaster exportFormatMaster = exportFormatMasterRepository.getOne(formatId!=null?formatId:1L);
+        Job job= jobRepository.getOne(jobId);
+        Company company = null;
+
+        if(null != job){
+            company = job.getCompanyId();
+        }
 
         //if default format is not available in db then throw exception
         if(null==exportFormatMaster){
@@ -1255,7 +1261,7 @@ public class JobService implements IJobService {
         String columnsToExport = String.join(", ", columnNames);
 
         //list of objects from db to create export data json
-        List<Object[]> exportDataList = ExportData.exportDataList(jobId, stage, columnsToExport, em);
+        List<Object[]> exportDataList = ExportData.exportDataList(jobId,  stage, columnsToExport, em);
 
         if(exportDataList.size()==0){
             throw new WebException("No Export data available for jobId: "+jobId, HttpStatus.UNPROCESSABLE_ENTITY);
@@ -1263,6 +1269,7 @@ public class JobService implements IJobService {
 
         List<LinkedHashMap<String, Object>> exportResponseBean = new ArrayList<>();
 
+        Company finalCompany = company;
         exportDataList.forEach(data-> {
                 LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
             for (int i = 0; i < data.length; ++i) {
@@ -1271,7 +1278,7 @@ public class JobService implements IJobService {
             if (exportResponseBean.stream().filter(object -> {
                 return object.get("Email").toString().equalsIgnoreCase(candidateData.get("Email").toString());
             }).collect(Collectors.toList()).size() == 0){
-                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), jobId, em);
+                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), jobId, finalCompany, em);
                 questionAnswerMapForCandidate = questionAnswerMapForCandidate.entrySet().stream().sorted(comparingByKey())
                         .collect(toMap(e->e.getKey(), e->e.getValue(), (e1, e2)-> e2, LinkedHashMap::new));
                 if(questionAnswerMapForCandidate.size()!=0){
