@@ -8,6 +8,7 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.service.IDetectTextInImage;
 import io.litmusblox.server.uploadProcessor.HtmlParser;
+import io.litmusblox.server.utils.SentryUtil;
 import lombok.extern.log4j.Log4j2;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -40,24 +41,42 @@ public class NaukriMassMailParser implements HtmlParser {
         long startTime = System.currentTimeMillis();
         log.info("Parsing HTML data from Naukri mass mail email");
         Candidate candidateFromNaukriEmail = Candidate.builder().
-                candidateSource(IConstant.CandidateSource.NaukriEmail.getValue()).
+                candidateSource(IConstant.CandidateSource.NaukriMassMail.getValue()).
                 createdOn(new Date()).
                 createdBy(createdBy).build();
 
         Document doc = Jsoup.parse(htmlData);
-        populateCandidateName(candidateFromNaukriEmail, doc);
-        populateMobileAndEmail(candidateFromNaukriEmail, doc);
+
+        try {
+            populateCandidateName(candidateFromNaukriEmail, doc);
+        }
+        catch (Exception e){
+            log.error("error while processing candidate name {}", e.getMessage());
+            SentryUtil.logWithStaticAPI(null, "error while processing candidate name, "+e.getMessage(), null);
+            e.printStackTrace();
+        }
+
+        try {
+            populateMobileAndEmail(candidateFromNaukriEmail, doc);
+        }
+        catch (Exception e){
+            log.error("error while processing candidate mobile and email {}", e.getMessage());
+            SentryUtil.logWithStaticAPI(null, "error while processing candidate email and mobile, "+e.getMessage(), null);
+            e.printStackTrace();
+        }
 
         try {
             candidateFromNaukriEmail.setCandidateCompanyDetails(new ArrayList<CandidateCompanyDetails>(1));
         } catch (Exception e) {
             log.error("Error when populating candidate company details {}", e.getMessage());
+            SentryUtil.logWithStaticAPI(null, "error while processing candidate company details, "+e.getMessage(), null);
             e.printStackTrace();
         }
         try {
             populateCandidateCompanyDetails(candidateFromNaukriEmail, doc);
         } catch (Exception e) {
             log.error("Error when populating candidate company details {}", e.getMessage());
+            SentryUtil.logWithStaticAPI(null, "error while processing candidate company details "+e.getMessage(), null);
             e.printStackTrace();
         }
 
@@ -65,6 +84,7 @@ public class NaukriMassMailParser implements HtmlParser {
             populateCandidateDetails(candidateFromNaukriEmail, doc);
         } catch (Exception e) {
             log.error("Error when populating candidate details {}", e.getMessage());
+            SentryUtil.logWithStaticAPI(null, "error while processing candidate details, "+e.getMessage(), null);
             e.printStackTrace();
         }
         //before at is designation, after at is current company
@@ -74,8 +94,15 @@ public class NaukriMassMailParser implements HtmlParser {
     }
 
     private void populateCandidateName(Candidate candidate, Document doc) {
-        if(doc.getElementsByAttributeValueContaining("src", "UserPic").get(0).parent().parent().parent().parent().parent().previousSibling().previousSibling().childNode(1).childNode(1).childNode(0).childNode(1).childNode(1).childNode(0).toString()!=null) {
-            candidate.setCandidateName(doc.getElementsByAttributeValueContaining("src", "UserPic").get(0).parent().parent().parent().parent().parent().previousSibling().previousSibling().childNode(1).childNode(1).childNode(0).childNode(1).childNode(1).childNode(0).toString().trim());
+        if(doc.getElementsByAttributeValueContaining("src", "UserPic").size()!=0){
+            if(doc.getElementsByAttributeValueContaining("src", "UserPic").get(0).parent().parent().parent().parent().parent().previousSibling().previousSibling().childNode(1).childNode(1).childNode(0).childNode(1).childNode(1).childNode(0).toString()!=null) {
+                candidate.setCandidateName(doc.getElementsByAttributeValueContaining("src", "UserPic").get(0).parent().parent().parent().parent().parent().previousSibling().previousSibling().childNode(1).childNode(1).childNode(0).childNode(1).childNode(1).childNode(0).toString().trim());
+            }
+        }
+        else{
+            if(doc.getElementsByAttributeValueContaining("style", "font-size:22px").text()!=null){
+                candidate.setCandidateName(doc.getElementsByAttributeValueContaining("style", "font-size:22px").text());
+            }
         }
     }
 
@@ -172,8 +199,8 @@ public class NaukriMassMailParser implements HtmlParser {
         //set experience
         if(
                 doc.getElementsContainingOwnText("Exp").get(0).text().equals("Exp") &&
-                doc.getElementsContainingOwnText("Exp").get(0).parent().parent().nextElementSibling().childNode(0)
-                .childNode(0).toString().trim()!=null
+                        doc.getElementsContainingOwnText("Exp").get(0).parent().parent().nextElementSibling().childNode(0)
+                                .childNode(0).toString().trim()!=null
         ) {
             String experience = doc.getElementsContainingOwnText("Exp")
                     .get(0)

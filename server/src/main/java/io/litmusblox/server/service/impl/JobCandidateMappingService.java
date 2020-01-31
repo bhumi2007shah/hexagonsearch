@@ -432,8 +432,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             }
 
             //check source of candidate and set source as coorect one from IConstant
-            if (candidate.getCandidateSource().contains(IConstant.CandidateSource.NaukriEmail.getValue()))
-                candidate.setCandidateSource(IConstant.CandidateSource.NaukriEmail.getValue());
+            if (candidate.getCandidateSource().contains(IConstant.CandidateSource.NaukriMassMail.getValue()))
+                candidate.setCandidateSource(IConstant.CandidateSource.NaukriMassMail.getValue());
+            else if (candidate.getCandidateSource().contains(IConstant.CandidateSource.NaukriJobPosting.getValue()))
+                candidate.setCandidateSource(IConstant.CandidateSource.NaukriJobPosting.getValue());
             else if(candidate.getCandidateSource().contains(IConstant.CandidateSource.Naukri.getValue())){
                 candidate.setCandidateSource(IConstant.CandidateSource.Naukri.getValue());
             }
