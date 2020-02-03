@@ -1276,7 +1276,7 @@ public class JobService implements IJobService {
             if (exportResponseBean.stream().filter(object -> {
                 return object.get("Email").toString().equalsIgnoreCase(candidateData.get("Email").toString());
             }).collect(Collectors.toList()).size() == 0){
-                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), jobId, em);
+                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), jobId, finalCompany, em);
                 /*questionAnswerMapForCandidate = questionAnswerMapForCandidate.entrySet().stream().sorted(comparingByKey())
                         .collect(toMap(e->e.getKey(), e->e.getValue(), (e1, e2)-> e2, LinkedHashMap::new));*/
                 if(questionAnswerMapForCandidate.size()!=0){

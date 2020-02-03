@@ -1611,3 +1611,8 @@ INSERT INTO export_format_detail
 VALUES
 (1, 'createdOn','Created On', 13),
 (1, 'capabilityScore', 'Capability Score', 14);
+
+
+-- #42 litusblox-chatbot
+INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
+(4080, '"introText"=>"Automation premier League requires you to get tested on", "thankYouText"=>"The score of your test will be communicated to you via email tomorrow", "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false"');
