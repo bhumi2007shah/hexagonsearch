@@ -39,9 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * Implementation class for JobService
@@ -1261,7 +1259,7 @@ public class JobService implements IJobService {
         String columnsToExport = String.join(", ", columnNames);
 
         //list of objects from db to create export data json
-        List<Object[]> exportDataList = ExportData.exportDataList(jobId,  stage, columnsToExport, em);
+        List<Object[]> exportDataList = ExportData.exportDataList(jobId, stage, columnsToExport, em);
 
         if(exportDataList.size()==0){
             throw new WebException("No Export data available for jobId: "+jobId, HttpStatus.UNPROCESSABLE_ENTITY);
@@ -1278,9 +1276,9 @@ public class JobService implements IJobService {
             if (exportResponseBean.stream().filter(object -> {
                 return object.get("Email").toString().equalsIgnoreCase(candidateData.get("Email").toString());
             }).collect(Collectors.toList()).size() == 0){
-                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), jobId, finalCompany, em);
-                questionAnswerMapForCandidate = questionAnswerMapForCandidate.entrySet().stream().sorted(comparingByKey())
-                        .collect(toMap(e->e.getKey(), e->e.getValue(), (e1, e2)-> e2, LinkedHashMap::new));
+                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), jobId, em);
+                /*questionAnswerMapForCandidate = questionAnswerMapForCandidate.entrySet().stream().sorted(comparingByKey())
+                        .collect(toMap(e->e.getKey(), e->e.getValue(), (e1, e2)-> e2, LinkedHashMap::new));*/
                 if(questionAnswerMapForCandidate.size()!=0){
                     questionAnswerMapForCandidate.forEach(candidateData::put);
                 }
