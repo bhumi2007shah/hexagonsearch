@@ -91,9 +91,6 @@ public class JobService implements IJobService {
     CompanyBuRepository companyBuRepository;
 
     @Resource
-    CompanyStageStepRepository companyStageStepRepository;
-
-    @Resource
     JobHiringTeamRepository jobHiringTeamRepository;
 
     @Resource
@@ -118,7 +115,7 @@ public class JobService implements IJobService {
     CvRatingRepository cvRatingRepository;
 
     @Resource
-    JobStageStepRepository jobStageStepRepository;
+    StageStepMasterRepository stageStepMasterRepository;
 
     @Resource
     ExportFormatMasterRepository exportFormatMasterRepository;
@@ -417,7 +414,7 @@ public class JobService implements IJobService {
         if(IConstant.Stage.Reject.getValue().equals(stage))
             jcmList = jobCandidateMappingRepository.findByJobAndRejectedIsTrue(job);
         else
-            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, jobStageStepRepository.findStageIdForJob(jobId, stage));
+            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, stageStepMasterRepository.findAll());
 
         log.info("****Time to fetch jcmList {} ms", (System.currentTimeMillis() - startTime));
         startTime = System.currentTimeMillis();
@@ -467,12 +464,12 @@ public class JobService implements IJobService {
         //log.info("****Populated list of candidates in {} ms", (System.currentTimeMillis() - startTime));
         //startTime = System.currentTimeMillis();
 
-        Map<Long, String> stagesForJob = convertObjectArrayToMap(jobRepository.findStagesForJob(jobId));
+        Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
 
         List<Object[]> stageCountList = jobCandidateMappingRepository.findCandidateCountByStage(jobId);
 
         stageCountList.stream().forEach(objArray -> {
-            String key = stagesForJob.get(((Integer) objArray[0]).longValue());
+            String key = stageStepMasterMap.get(((Integer) objArray[0]).longValue()).getStage();
             if (null == responseBean.getCandidateCountByStage().get(key))
                 responseBean.getCandidateCountByStage().put(key, ((BigInteger) objArray[1]).intValue());
             else //stage exists in response bean, add the count of the other step to existing value
@@ -484,14 +481,6 @@ public class JobService implements IJobService {
         log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.", jobId, stage ,(System.currentTimeMillis() - startTimeMethod));
 
         return responseBean;
-    }
-
-    private Map<Long, String> convertObjectArrayToMap(List<Object[]> stagesForJob) {
-        Map<Long, String> convertedMap = new HashMap<>(stagesForJob.size());
-        stagesForJob.stream().forEach(objArray -> {
-            convertedMap.put(((Integer) objArray[0]).longValue(), objArray[1].toString());
-        });
-        return convertedMap;
     }
 
     private void addJobOverview(Job job, Job oldJob, User loggedInUser) { //method for add job for Overview page
@@ -545,8 +534,6 @@ public class JobService implements IJobService {
             job.setJobReferenceId(UUID.randomUUID());
             //End of code to be removed
             oldJob = jobRepository.save(job);
-            //Add job stage step for this job
-            addJobStageStep(oldJob);
         }
         //TODO: remove one JobRepository call
         //Add Job details
@@ -999,10 +986,11 @@ public class JobService implements IJobService {
             jobHiringTeamRepository.flush();
         }
         AtomicLong i = new AtomicLong();
-        if(null != job.getHiringTeamStepMapping() && job.getHiringTeamStepMapping().size()>0) {
+        Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
+        if(null != job.getHiringTeamStageStepMapping() && job.getHiringTeamStageStepMapping().size()>0) {
             List<JobHiringTeam> jobHiringTeamList = new ArrayList<>(job.getJobHiringTeamList().size());
-            job.getHiringTeamStepMapping().forEach(stageStep -> {
-                jobHiringTeamList.add(new JobHiringTeam(oldJob.getId(), JobStageStep.builder().id(stageStep.get(0)).build(), User.builder().id(stageStep.get(1)).build(), i.longValue(), new Date(), loggedInUser));
+            job.getHiringTeamStageStepMapping().forEach(stageStep -> {
+                jobHiringTeamList.add(new JobHiringTeam(oldJob.getId(), stageStepMasterMap.get(stageStep.get(0)), User.builder().id(stageStep.get(1)).build(), i.longValue(), new Date(), loggedInUser));
                 i.getAndIncrement();
             });
             jobHiringTeamRepository.saveAll(jobHiringTeamList);
@@ -1054,16 +1042,6 @@ public class JobService implements IJobService {
             }
         }
     }
-
-    private void addJobStageStep(Job job) {
-        List<CompanyStageStep> companyStageSteps = companyStageStepRepository.findByCompanyId(job.getCompanyId());
-        List<JobStageStep> jobStageSteps = new ArrayList<>(companyStageSteps.size());
-        for(CompanyStageStep companyStageStep: companyStageSteps) {
-            jobStageSteps.add(JobStageStep.builder().jobId(job.getId()).stageStepId(companyStageStep).createdBy(job.getCreatedBy()).createdOn(new Date()).build());
-        }
-        jobStageStepRepository.saveAll(jobStageSteps);
-    }
-
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     private String convertJobToRequestPayload(Long jobId, Job publishedJob) throws Exception {
@@ -1169,22 +1147,6 @@ public class JobService implements IJobService {
             throw new WebException("Job with id " + jobId + "does not exist ", HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return jobHistoryRepository.findByJobIdOrderByIdDesc(jobId);
-    }
-
-    /**
-     * Service method to return the stage steps for a job
-     *
-     * @param jobId the job id for which stage steps are to be returned
-     * @return list of stage steps
-     * @throws Exception
-     */
-    @Transactional(readOnly = true)
-    public List<JobStageStep> getJobStageStep(Long jobId) throws Exception {
-        log.info("Received request to find stage steps for job with id {}", jobId);
-        long startTime = System.currentTimeMillis();
-        List<JobStageStep> returnList = jobStageStepRepository.findByJobId(jobId);
-        log.info("Completed finding stage steps for jobId {} in {} ms", jobId, (System.currentTimeMillis() - startTime));
-        return returnList;
     }
 
     /**

@@ -55,7 +55,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
     JcmHistoryRepository jcmHistoryRepository;
 
     @Resource
-    JobStageStepRepository jobStageStepRepository;
+    StageStepMasterRepository stageStepMasterRepository;
 
     @Resource
     CandidateReferralDetailRepository candidateReferralDetailRepository;
@@ -212,7 +212,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             candidateObjToUse.setEmail(candidate.getEmail());
             candidateObjToUse.setMobile(candidate.getMobile());
 
-            JobStageStep stageStepForSource = jobStageStepRepository.findStageIdForJob(job.getId(), IConstant.Stage.Source.getValue()).get(0);
+            StageStepMaster stageStepForSource = stageStepMasterRepository.findByStage(IConstant.Stage.Source.getValue());
             JobCandidateMapping savedObj = jobCandidateMappingRepository.save(new JobCandidateMapping(job,candidateObjToUse,stageStepForSource, candidate.getCandidateSource(), new Date(),loggedInUser, UUID.randomUUID(), candidate.getFirstName(), candidate.getLastName(), (null != candidate.getCandidateDetails())?candidate.getCandidateDetails().getCvFileType():null));
 
             if(savedObj.getCandidateSource().equals(IConstant.CandidateSource.EmployeeReferral.getValue())){
