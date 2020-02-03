@@ -49,6 +49,7 @@ public class ExportData {
         query.append("select screeningQuestion, candidateResponse from exportDataView where email='");
         query.append(email);
         query.append("' and jobId='"+jobId+"'");
+        query.append(" order by jsqId");
 
         List<Object[]> exportDataList= new ArrayList<>();
 
