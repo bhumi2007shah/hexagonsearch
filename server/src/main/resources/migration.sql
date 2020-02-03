@@ -1581,8 +1581,9 @@ select
 	concat(users.first_name, ' ', users.last_name) as createdBy,
 	jcm.created_on as createdOn,
 	jcm.score as capabilityScore,
-	jsq.ScreeningQn as screeningQuestion
-	, csqr.response as candidateResponse
+	jsq.ScreeningQn as screeningQuestion,
+	jsq.jsqId as jsqId,
+	csqr.response as candidateResponse
 	from job_candidate_mapping jcm
 	left join cv_rating cvr ON cvr.job_candidate_mapping_id = jcm.id
 	left join (
@@ -1604,8 +1605,7 @@ select
 		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
 	) as jsq on jsq.jsqJobId = jcm.job_id
 	left join
-	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId;
-
+	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId, candidateName, jsq.jsqId;
 INSERT INTO export_format_detail
 (format_id, column_name, header, "position")
 VALUES
