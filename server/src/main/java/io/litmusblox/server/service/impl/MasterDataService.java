@@ -224,7 +224,7 @@ public class MasterDataService implements IMasterDataService {
         //populate data for each of the required items
         fetchItemList.stream().forEach(item -> {
             if(!Arrays.asList(IConstant.fetchItemsType).contains(item))
-                throw new ValidationException("You can not access masterData for " +item+" Item", HttpStatus.FORBIDDEN);
+                throw new ValidationException("You can not access masterData for " +item+" Item", HttpStatus.UNAUTHORIZED);
 
             getMasterData(master, item);
         });
