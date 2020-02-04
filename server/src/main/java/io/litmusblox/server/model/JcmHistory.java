@@ -54,9 +54,9 @@ public class JcmHistory {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "STAGE")
-    private JobStageStep stage;
+    private StageStepMaster stage;
 
-    public JcmHistory(JobCandidateMapping jcmId, @NotNull String comment, Date updatedOn, User userId, JobStageStep stage) {
+    public JcmHistory(JobCandidateMapping jcmId, @NotNull String comment, Date updatedOn, User userId, StageStepMaster stage) {
         this.jcmId = jcmId;
         this.comment = comment;
         this.updatedOn = updatedOn;
@@ -64,7 +64,7 @@ public class JcmHistory {
         this.stage = stage;
     }
 
-    public JcmHistory(JobCandidateMapping jcmId, @NotNull String comment, String callLogOutCome, Boolean systemGenerated, Date updatedOn, JobStageStep stage, User userId) {
+    public JcmHistory(JobCandidateMapping jcmId, @NotNull String comment, String callLogOutCome, Boolean systemGenerated, Date updatedOn, StageStepMaster stage, User userId) {
         this.jcmId = jcmId;
         this.comment = comment;
         this.callLogOutCome = callLogOutCome;

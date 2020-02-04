@@ -4,10 +4,7 @@
 
 package io.litmusblox.server.service;
 
-import io.litmusblox.server.model.Country;
-import io.litmusblox.server.model.CreateJobPageSequence;
-import io.litmusblox.server.model.MasterData;
-import io.litmusblox.server.model.ScreeningQuestions;
+import io.litmusblox.server.model.*;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -48,4 +45,7 @@ public class MasterDataResponse {
     private List<String> callOutCome = new ArrayList<>();
     private Map<Long, String> referrerRelation = new HashMap<>();
     private Map<Long, String> jobType = new HashMap<>();
+    private Map<String, Long> stageStepMasterMap = new HashMap<>();
+    private Map<Long, StageStepMaster> stageStepMap = new HashMap<>();
+
 }

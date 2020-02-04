@@ -131,7 +131,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     CandidateRepository candidateRepository;
 
     @Resource
-    JobStageStepRepository jobStageStepRepository;
+    StageStepMasterRepository stageStepMasterRepository;
 
     @Resource
     EmployeeReferrerRepository employeeReferrerRepository;
@@ -731,7 +731,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             log.error("Job stage steps not found. Cannot move candidate from Source to Screen");
         } else if(jcmListWithoutError.size()>0) {
             //set stage = Screening where stage = Source
-            Map<String, Long> stageIdMap = fetchStageStepForJob(jobObjToUse.getId(), true);
+            Map<String, Long> stageIdMap = MasterDataBean.getInstance().getStageStepMasterMap();
             jobCandidateMappingRepository.updateStageStepId(jcmListWithoutError, stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), loggedInUser.getId(), new Date());
             updateJcmHistory(jcmListWithoutError, loggedInUser);
         }
@@ -1567,22 +1567,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         jobCandidateMappingRepository.save(jcmFromDb);
     }
 
-    private Map<String, Long> fetchStageStepForJob(Long jobId, boolean callForInvite) throws Exception {
-        List<JobStageStep> jobStageStepList = jobStageStepRepository.findByJobId(jobId);
-        Map<String, Long> stageIdMap = new HashMap<>();
-
-        jobStageStepList.stream().forEach(jobStageStep-> {
-            if(callForInvite) {
-                if (IConstant.Stage.Source.getValue().equals(jobStageStep.getStageStepId().getStage().getStageName()) || IConstant.Stage.Screen.getValue().equals(jobStageStep.getStageStepId().getStage().getStageName()))
-                    stageIdMap.put(jobStageStep.getStageStepId().getStage().getStageName(), jobStageStep.getId());
-            }
-            else {
-                stageIdMap.put(jobStageStep.getStageStepId().getStage().getStageName(), jobStageStep.getId());
-            }
-        });
-        return stageIdMap;
-    }
-
     /**
      * Service to set a specific stage like Interview, Offer etc
      *
@@ -1608,12 +1592,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         else {
 
             JobCandidateMapping jobCandidateMappingObj = jobCandidateMappingRepository.getOne(jcmList.get(0));
-            Map<String, Long> jobStageIds = fetchStageStepForJob(jobCandidateMappingObj.getJob().getId(), false);
+            Map<String, Long> jobStageIds = MasterDataBean.getInstance().getStageStepMasterMap();
             jobCandidateMappingRepository.updateStageStepId(jcmList, jobCandidateMappingObj.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
         }
         jcmList.stream().forEach(jcm -> {
             JobCandidateMapping mappingObj = jobCandidateMappingRepository.getOne(jcm);
-            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStageStepId().getStage().getStageName() + " stage":"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage()));
+            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage":"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage()));
 
         });
         jcmHistoryRepository.saveAll(jcmHistoryList);

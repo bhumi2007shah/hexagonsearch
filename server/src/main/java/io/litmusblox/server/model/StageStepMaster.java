@@ -4,25 +4,22 @@
 
 package io.litmusblox.server.model;
 
-import com.fasterxml.jackson.annotation.JsonFilter;
 import lombok.Data;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
- * @author : Shital Raval
- * Date : 19/11/19
- * Time : 12:53 PM
- * Class Name : StageMaster
+ * @author : Sumit
+ * Date : 02/02/20
+ * Time : 7:51 PM
+ * Class Name : StageStepMaster
  * Project Name : server
  */
-@Entity
-@Table(name = "STAGE_MASTER")
 @Data
-@JsonFilter("StageMaster")
-public class StageMaster implements Serializable {
+@Entity
+@Table(name = "STAGE_STEP_MASTER")
+public class StageStepMaster implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
 
@@ -31,7 +28,9 @@ public class StageMaster implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
-    @Column(name = "STAGE_NAME")
-    private String stageName;
+    @Column(name = "STAGE")
+    private String stage;
+
+    @Column(name = "STEP")
+    private String step;
 }

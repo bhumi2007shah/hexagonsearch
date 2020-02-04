@@ -79,9 +79,6 @@ public class CompanyService implements ICompanyService {
     @Resource
     CompanyAddressRepository companyAddressRepository;
 
-    @Resource
-    CompanyStageStepRepository companyStageStepRepository;
-
     @Value("${subdomainTemplateName}")
     String subdomainTemplateName;
 
@@ -108,7 +105,6 @@ public class CompanyService implements ICompanyService {
     public Company addCompany(Company company, User loggedInUser) throws Exception {
         companyRepository.save(company);
         saveCompanyHistory(company.getId(), "New company, "+company.getCompanyName()+", created", loggedInUser);
-        addStageStepsForCompany(company, loggedInUser);
         return company;
     }
 
@@ -328,10 +324,7 @@ public class CompanyService implements ICompanyService {
 
                 if(addressTitleExists){
                     errorResponse.put(address.getAddressTitle(), "Title Already exist");
-                }
-
-                //add error to errorResponse if no cordinates are found.
-                if(null==coordinates){
+                }else if (null==coordinates){         //add error to errorResponse if no cordinates are found.
                     errorResponse.put(address.getAddressTitle(), "coordinates not found");
                 }
                 else {
@@ -588,20 +581,8 @@ public class CompanyService implements ICompanyService {
         company.setCreatedBy(loggedInUser.getId());
         company = truncateField(company);
         Company newCompany = companyRepository.save(company);
-
-        addStageStepsForCompany(company, loggedInUser);
         return newCompany;
     }
-
-    private void addStageStepsForCompany(Company company, User loggedInUser) {
-        //add default list of STEPS_PER_STAGE for the new company
-        List<CompanyStageStep> companyStageSteps = new ArrayList<>(MasterDataBean.getInstance().getDefaultStepsPerStage().size());
-        for(StepsPerStage stepsPerStage : MasterDataBean.getInstance().getDefaultStepsPerStage()) {
-            companyStageSteps.add(CompanyStageStep.builder().companyId(company).stage(stepsPerStage.getStageId()).step(stepsPerStage.getStepName()).createdOn(new Date()).createdBy(loggedInUser).build());
-        }
-        companyStageStepRepository.saveAll(companyStageSteps);
-    }
-
 
     @Override
     public List<Company> getCompanyListByAgency(Long recruitmentAgencyId) {

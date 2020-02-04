@@ -53,7 +53,7 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @NotNull
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "STAGE")
-    private JobStageStep stage;
+    private StageStepMaster stage;
 
     @NotNull
     @Column(name = "CANDIDATE_SOURCE")
@@ -193,7 +193,7 @@ public class JobCandidateMapping implements Serializable, Comparable {
         return candidateFirstName + " " + candidateLastName;
     }
 
-    public JobCandidateMapping(@NotNull Job job, @NotNull Candidate candidate, @NotNull JobStageStep stage, @NotNull String candidateSource, @NotNull Date createdOn, @NotNull User createdBy, UUID chatbotUuid, String candidateFirstName, String candidateLastName, String cvFileType) {
+    public JobCandidateMapping(@NotNull Job job, @NotNull Candidate candidate, @NotNull StageStepMaster stage, @NotNull String candidateSource, @NotNull Date createdOn, @NotNull User createdBy, UUID chatbotUuid, String candidateFirstName, String candidateLastName, String cvFileType) {
         this.job = job;
         this.candidate = candidate;
         this.stage = stage;
