@@ -1618,3 +1618,15 @@ select
 	) as jsq on jsq.jsqJobId = jcm.job_id
 	left join
 	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId, candidateName, jsq.jsqId;
+
+
+--For ticket #377
+ALTER TABLE COMPANY
+ADD COLUMN COUNTRY_ID INTEGER REFERENCES COUNTRY(ID);
+
+--Update existing record's
+UPDATE COMPANY
+SET COUNTRY_ID = (SELECT ID FROM COUNTRY WHERE COUNTRY_NAME = 'India');
+
+ALTER TABLE COMPANY
+ALTER COLUMN COUNTRY_ID SET NOT NULL;

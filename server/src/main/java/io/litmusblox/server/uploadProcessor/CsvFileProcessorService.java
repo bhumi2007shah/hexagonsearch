@@ -41,7 +41,7 @@ public class CsvFileProcessorService implements IUploadFileProcessorService {
     IUploadDataProcessService uploadDataProcessor;
 
     @Transactional
-    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation) {
+    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation, String countryCode) {
         List<Candidate> candidateList = new ArrayList<>();
         try {
             Reader fileReader = new FileReader(repoLocation + File.separator + fileName);
@@ -70,7 +70,7 @@ public class CsvFileProcessorService implements IUploadFileProcessorService {
                             Util.toSentenceCase(record.get(IConstant.LITMUSBLOX_FILE_COLUMNS.LastName.getValue()).trim()),
                             record.get(IConstant.LITMUSBLOX_FILE_COLUMNS.Email.getValue()).trim(),
                             record.get(IConstant.LITMUSBLOX_FILE_COLUMNS.Mobile.getValue()).trim(),
-                            loggedInUser.getCountryId().getCountryCode(),
+                            countryCode,
                             new Date(),
                             loggedInUser);
                     candidate.setCandidateSource(IConstant.CandidateSource.File.getValue());

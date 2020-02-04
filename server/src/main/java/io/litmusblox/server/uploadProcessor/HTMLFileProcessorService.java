@@ -31,7 +31,7 @@ import java.util.*;
 public class HTMLFileProcessorService extends AbstractNaukriProcessor implements IUploadFileProcessorService {
 
     @Override
-    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation) {
+    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation, String countryCode) {
         List<Candidate> candidateList = new ArrayList<>(0);
         try {
             Document doc = Jsoup.parse(new File(repoLocation + File.separator + fileName), "utf-8");
