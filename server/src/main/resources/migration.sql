@@ -1630,3 +1630,15 @@ SET COUNTRY_ID = (SELECT ID FROM COUNTRY WHERE COUNTRY_NAME = 'India');
 
 ALTER TABLE COMPANY
 ALTER COLUMN COUNTRY_ID SET NOT NULL;
+UPDATE job_candidate_mapping SET candidate_source = 'NaukriJobPosting' WHERE candidate_source = 'NaukriMail';
+
+INSERT INTO export_format_detail
+(format_id, column_name, header, "position")
+VALUES
+(1, 'createdOn','Created On', 13),
+(1, 'capabilityScore', 'Capability Score', 14);
+
+
+-- #42 litmusblox-chatbot
+INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
+(4080, '"introText"=>"Automation premier League requires you to get tested on", "thankYouText"=>"The score of your test will be communicated to you via email tomorrow", "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false"');

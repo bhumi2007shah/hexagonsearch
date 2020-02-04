@@ -60,8 +60,8 @@ public class AdminController {
     @PreAuthorize(("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.RECRUITMENT_AGENCY +"')"))
     @ResponseBody
     @ResponseStatus(value = HttpStatus.OK)
-    List<UserWorkspaceBean> fetchUsers(@RequestParam String companyId) throws Exception {
-        return userDetailsService.fetchUsers(Long.parseLong(companyId));
+    List<UserWorkspaceBean> fetchUsers(@RequestParam Long companyId) throws Exception {
+        return userDetailsService.fetchUsers(companyId);
     }
 
     @PutMapping(value = "/createSubdomains")
