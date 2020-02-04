@@ -559,10 +559,13 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @param jcmList list of jcm ids for chatbot invitation
      * @throws Exception
      */
-    public InviteCandidateResponseBean inviteCandidates(List<Long> jcmList) throws Exception {
-        InviteCandidateResponseBean inviteCandidateResponseBean = performInvitationAndHistoryUpdation(jcmList);
+    @Async("asyncTaskExecutor")
+    public void inviteCandidates(List<Long> jcmList, User loggedInUser) throws Exception {
+        log.info("Thread - {} : Started invite candidates method", Thread.currentThread().getName());
+        InviteCandidateResponseBean inviteCandidateResponseBean = performInvitationAndHistoryUpdation(jcmList, loggedInUser);
         callScoringEngineToAddCandidates(jcmList);
-        return inviteCandidateResponseBean;
+        //TODO: for all error records in inviteCandidateResponseBean insert records in async_operations_error_records with IConstant.ASYNC_OPERATIONS.InviteCandidates.name()
+        log.info("Thread - {} : Completed invite candidates method", Thread.currentThread().getName());
     }
 
     @Transactional(readOnly = true)
@@ -629,15 +632,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    private InviteCandidateResponseBean performInvitationAndHistoryUpdation(List<Long> jcmList) throws Exception {
-        if(jcmList == null || jcmList.size() == 0)
-            throw new WebException("Select candidates to invite",HttpStatus.UNPROCESSABLE_ENTITY);
-
-        //make sure all candidates are at the same stage
-        if(!areCandidatesInSameStage(jcmList))
-            throw new WebException("Select candidates that are all in Source stage", HttpStatus.UNPROCESSABLE_ENTITY);
-
-        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    private InviteCandidateResponseBean performInvitationAndHistoryUpdation(List<Long> jcmList, User loggedInUser) throws Exception {
 
         //list to store candidates for which email contains "@notavailable.io" or mobile is null
         List<Candidate>failedCandidates = new ArrayList<>();
@@ -711,13 +706,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         log.info("Added jmcHistory data");
     }
-
-    private boolean areCandidatesInSameStage(List<Long> jcmList) throws Exception{
-        if(jobCandidateMappingRepository.countDistinctStageForJcmList(jcmList) != 1)
-            return false;
-        return true;
-    }
-
 
     /**
      * Service method to process sharing of candidate profiles with Hiring managers
@@ -1560,6 +1548,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         jcmHistoryRepository.saveAll(jcmHistoryList);
 
         log.info("Completed moving candidates to {} stage in {} ms", stage, (System.currentTimeMillis() - startTime));
+    }
+
+    private boolean areCandidatesInSameStage(List<Long> jcmList) throws Exception{
+        if(jobCandidateMappingRepository.countDistinctStageForJcmList(jcmList) != 1)
+            return false;
+        return true;
     }
 
     /**

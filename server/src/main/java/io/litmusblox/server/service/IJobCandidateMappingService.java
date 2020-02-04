@@ -78,9 +78,10 @@ public interface IJobCandidateMappingService {
      * Service method to invite candidates to fill chatbot for a job
      *
      * @param jcmList list of jcm ids for chatbot invitation
+     * @param loggedInUser the logged in user
      * @throws Exception
      */
-    InviteCandidateResponseBean inviteCandidates(List<Long> jcmList) throws Exception;
+    void inviteCandidates(List<Long> jcmList, User loggedInUser) throws Exception;
 
     /**
      * Service method to process sharing of candidate profiles with Hiring managers

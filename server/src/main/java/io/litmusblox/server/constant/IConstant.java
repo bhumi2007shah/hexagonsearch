@@ -327,4 +327,9 @@ public interface IConstant {
     int SCHEDULER_THREAD_POOL_SIZE = 5;
     int ASYNC_CORE_THREAD_POOL_SIZE = 5;
     int ASYNC_MAX_THREAD_POOL_SIZE = 10;
+
+    enum ASYNC_OPERATIONS {
+        FileUpload, InviteCandidates
+    }
+
 }

@@ -131,15 +131,11 @@ public class JobCandidateMappingController {
      */
     @PostMapping(value = "/inviteCandidates")
     @ResponseStatus(value = HttpStatus.OK)
-    String inviteCandidates(@RequestBody List<Long> jcmList) throws Exception {
+    void inviteCandidates(@RequestBody List<Long> jcmList) throws Exception {
         log.info("Received request to invite candidates");
         long startTime = System.currentTimeMillis();
-        InviteCandidateResponseBean inviteCandidateResponseBean = jobCandidateMappingService.inviteCandidates(jcmList);
-        log.info("Completed inviting candidates in " + (System.currentTimeMillis()-startTime)+"ms.");
-        return Util.stripExtraInfoFromResponseBean(inviteCandidateResponseBean,
-                new HashMap<String, List<String>>() {{
-                    put("Candidate", new ArrayList<>(0));
-                }}, null);
+        asyncServicesWrapper.inviteCandidates(jcmList);
+        log.info("Thread - {} : Completed inviting candidates in {} ms.",Thread.currentThread().getName(),(System.currentTimeMillis()-startTime));
     }
 
     /**

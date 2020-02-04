@@ -28,10 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author : Shital Raval
@@ -123,5 +120,30 @@ public class AsyncServicesWrapper implements IAsyncServicesWrapper {
     @Transactional(readOnly = true)
     int getUploadCount(Date createdOn, User loggedInUser) {
         return jobCandidateMappingRepository.getUploadedCandidateCount(createdOn, loggedInUser);
+    }
+
+    /**
+     * Service method to invite candidates to fill chatbot for a job
+     *
+     * @param jcmList list of jcm ids for chatbot invitation
+     * @throws Exception
+     */
+    @Override
+    public void inviteCandidates(List<Long> jcmList) throws Exception {
+        if(jcmList == null || jcmList.size() == 0)
+            throw new WebException("Select candidates to invite",HttpStatus.UNPROCESSABLE_ENTITY);
+
+        //make sure all candidates are at the same stage
+        if(!areCandidatesInSameStage(jcmList))
+            throw new WebException("Select candidates that are all in Source stage", HttpStatus.UNPROCESSABLE_ENTITY);
+
+        log.info("Callling async invite candidate service from thread {}", Thread.currentThread().getName());
+        jobCandidateMappingService.inviteCandidates(jcmList, getUser());
+    }
+
+    private boolean areCandidatesInSameStage(List<Long> jcmList) throws Exception{
+        if(jobCandidateMappingRepository.countDistinctStageForJcmList(jcmList) != 1)
+            return false;
+        return true;
     }
 }

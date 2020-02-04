@@ -6,6 +6,8 @@ package io.litmusblox.server.service;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 /**
  * @author : Shital Raval
  * Date : 3/2/20
@@ -16,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 public interface IAsyncServicesWrapper {
 
     /**
-     * Service method to add candidates from a file in one of the supported formats
+     * Wrapper method to asynchronously add candidates from a file in one of the supported formats
      *
      * @param multipartFile the file with candidate information
      * @param jobId the job for which the candidates have to be added
@@ -26,4 +28,12 @@ public interface IAsyncServicesWrapper {
      */
     void uploadCandidatesFromFile(MultipartFile multipartFile, Long jobId, String fileFormat) throws Exception;
 
+
+    /**
+     * Wrapper method to asynchronously invite candidates to fill chatbot for a job
+     *
+     * @param jcmList list of jcm ids for chatbot invitation
+     * @throws Exception
+     */
+    void inviteCandidates(List<Long> jcmList) throws Exception;
 }
