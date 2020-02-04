@@ -75,8 +75,8 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
             "(select CONCAT(first_name, ' ', last_name) from users where id=j.recruiter) as recruiter\n" +
             "from job_candidate_mapping jcm \n" +
             "inner join job j on j.id = jcm.job_id\n" +
-            "where jcm.candidate_id =:candidateId order by jcm.created_on desc", nativeQuery = true)
-    List<CandidateInteractionHistory> getCandidateInteractionHistoryByCandidateId(Long candidateId);
+            "where jcm.candidate_id =:candidateId and j.company_id =:companyId order by jcm.created_on desc", nativeQuery = true)
+    List<CandidateInteractionHistory> getCandidateInteractionHistoryByCandidateId(Long candidateId, Long companyId);
 
     @Transactional
     @Modifying
