@@ -36,13 +36,14 @@ public interface IJobCandidateMappingService {
     /**
      * Service method to add candidates from a file in one of the supported formats
      *
-     * @param multipartFile the file with candidate information
+     * @param fileName the file with candidate information
      * @param jobId the job for which the candidates have to be added
      * @param fileFormat the format of file, for e.g. Naukri, LB format
-     * @return the status of upload operation
+     * @param loggedInUser the logged in user
+     * @param candidatesProcessed candidates processed by the user for the current day
      * @throws Exception
      */
-    UploadResponseBean uploadCandidatesFromFile(MultipartFile multipartFile, Long jobId, String fileFormat) throws Exception;
+    void uploadCandidatesFromFile(String fileName, Long jobId, String fileFormat, User loggedInUser, int candidatesProcessed) throws Exception;
 
     /**
      * Service method to source and add a candidate from a plugin, for example Naukri plugin

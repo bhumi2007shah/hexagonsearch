@@ -325,4 +325,6 @@ public interface IConstant {
     String PARSING_RESPONSE_ML = "PARSING_RESPONSE_ML";
 
     int SCHEDULER_THREAD_POOL_SIZE = 5;
+    int ASYNC_CORE_THREAD_POOL_SIZE = 5;
+    int ASYNC_MAX_THREAD_POOL_SIZE = 10;
 }

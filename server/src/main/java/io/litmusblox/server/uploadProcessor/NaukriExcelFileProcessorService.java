@@ -8,6 +8,7 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.Candidate;
+import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
@@ -32,7 +33,7 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
 
     private static final String XLSX = "xlsx";
     @Override
-    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation) {
+    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation, User loggedInUser) {
         List<Candidate> candidateList = new ArrayList<>();
         try {
             DataFormatter dataFormatter = new DataFormatter();
@@ -122,7 +123,7 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
         } catch(IOException ioe) {
             log.error("Error while parsing file " + fileName + " :: " + ioe.getMessage());
             log.info("Trying to parse as an html file now. Specific handling for Naukri xls files.");
-            return new HTMLFileProcessorService().process(fileName, responseBean, ignoreMobile, repoLocation);
+            return new HTMLFileProcessorService().process(fileName, responseBean, ignoreMobile, repoLocation, loggedInUser);
         } catch (InvalidFormatException e) {
             log.error("Error while parsing file " + fileName + " :: " + e.getMessage());
             responseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());

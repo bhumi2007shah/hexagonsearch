@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -152,9 +153,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
     @Transactional(readOnly = true)
     User getUser(){return (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();}
-
-    @Transactional(readOnly = true)
-    int getUploadCount(Date createdOn, User loggedInUser){return jobCandidateMappingRepository.getUploadedCandidateCount(createdOn, loggedInUser);}
 
     @Value("${scoringEngineBaseUrl}")
     private String scoringEngineBaseUrl;
@@ -311,54 +309,17 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     /**
      * Service method to add candidates from a file in one of the supported formats
      *
-     * @param multipartFile the file with candidate information
+     * @param fileName the file with candidate information
      * @param jobId         the job for which the candidates have to be added
      * @param fileFormat    the format of file, for e.g. Naukri, LB format
      * @return the status of upload operation
      * @throws Exception
      */
     // @Transactional(propagation = Propagation.REQUIRED)
-    public UploadResponseBean uploadCandidatesFromFile(MultipartFile multipartFile, Long jobId, String fileFormat) throws Exception {
-
-        //validate the file source is supported by application
-        if(!Arrays.asList(IConstant.UPLOAD_FORMATS_SUPPORTED.values()).contains(IConstant.UPLOAD_FORMATS_SUPPORTED.valueOf(fileFormat))) {
-            log.error(IErrorMessages.UNSUPPORTED_FILE_SOURCE + fileFormat);
-            StringBuffer info = new StringBuffer("Unsupported file source : ").append(multipartFile.getName());
-            Map<String, String> breadCrumb = new HashMap<>();
-            breadCrumb.put("Job Id", jobId.toString());
-            breadCrumb.put("File Name", multipartFile.getName());
-            breadCrumb.put("detail", info.toString());
-            throw new WebException(IErrorMessages.UNSUPPORTED_FILE_SOURCE + fileFormat, HttpStatus.UNPROCESSABLE_ENTITY, breadCrumb);
-        }
-
-        //verify that the job is live before processing candidates
-        Job job = getJob(jobId);
-        if(null == job || !IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus())) {
-            StringBuffer info = new StringBuffer("Selected job is not live ").append("JobId-").append(jobId);
-            Map<String, String> breadCrumb = new HashMap<>();
-            breadCrumb.put("Job Id", jobId.toString());
-            breadCrumb.put("detail", info.toString());
-            throw new WebException(IErrorMessages.JOB_NOT_LIVE, HttpStatus.UNPROCESSABLE_ENTITY, breadCrumb);
-        }
-
-        //validate that the file has an extension that is supported by the application
-        Util.validateUploadFileType(multipartFile.getOriginalFilename());
-
-        User loggedInUser = getUser();
-        Date createdOn=Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
-
+    @Async("asyncTaskExecutor")
+    public void uploadCandidatesFromFile(String fileName, Long jobId, String fileFormat, User loggedInUser, int candidatesProcessed) throws Exception {
+        log.info("Thread - {} : Started processing uploadCandidatesFromFile in JobCandidateMappingService", Thread.currentThread().getName());
         UploadResponseBean uploadResponseBean = new UploadResponseBean();
-
-        int candidatesProcessed = getUploadCount(createdOn, loggedInUser);
-
-        if (candidatesProcessed >= MasterDataBean.getInstance().getConfigSettings().getDailyCandidateUploadPerUserLimit()) {
-            log.error(IErrorMessages.MAX_CANDIDATE_PER_FILE_EXCEEDED + " :: user id : " + loggedInUser.getId() + " : not saving file " + multipartFile);
-            throw new WebException(IErrorMessages.MAX_CANDIDATES_PER_USER_PER_DAY_EXCEEDED, HttpStatus.UNPROCESSABLE_ENTITY);
-        }
-
-        //Save file
-        String fileName = StoreFileUtil.storeFile(multipartFile, loggedInUser.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.Candidates.toString(),null,null);
-        log.info("User " + loggedInUser.getDisplayName() + " uploaded " + fileName);
         List<Candidate> candidateList = processUploadedFile(fileName, uploadResponseBean, loggedInUser, fileFormat, environment.getProperty(IConstant.REPO_LOCATION));
 
         try {
@@ -368,8 +329,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             log.error("Error while processing file " + fileName + " :: " + ex.getMessage());
             uploadResponseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
         }
-
-        return uploadResponseBean;
+        log.info("Thread - {} : Completed processing uploadCandidatesFromFile in JobCandidateMappingService", Thread.currentThread().getName());
     }
 
     private List<Candidate> processUploadedFile(String fileName, UploadResponseBean responseBean, User user, String fileSource, String repoLocation) {
@@ -378,17 +338,17 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         List<Candidate> candidateList = null;
         switch (fileExtension) {
             case "csv":
-                candidateList = new CsvFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation);
+                candidateList = new CsvFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user);
                 break;
             case "xls":
             case "xlsx":
                 switch (IConstant.UPLOAD_FORMATS_SUPPORTED.valueOf(fileSource)) {
                     case LitmusBlox:
-                        candidateList = new ExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation);
+                        candidateList = new ExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user);
                         break;
                     case Naukri:
                         log.info("Reached the naukri parser");
-                        candidateList = new NaukriExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation);
+                        candidateList = new NaukriExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user);
 
                         break;
                 }

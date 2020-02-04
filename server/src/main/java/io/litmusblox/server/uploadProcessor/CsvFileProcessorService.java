@@ -17,7 +17,6 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
@@ -41,7 +40,7 @@ public class CsvFileProcessorService implements IUploadFileProcessorService {
     IUploadDataProcessService uploadDataProcessor;
 
     @Transactional
-    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation) {
+    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation, User loggedInUser) {
         List<Candidate> candidateList = new ArrayList<>();
         try {
             Reader fileReader = new FileReader(repoLocation + File.separator + fileName);
@@ -63,7 +62,6 @@ public class CsvFileProcessorService implements IUploadFileProcessorService {
                 throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY, breadCrumb);
             }
 
-            User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             for (CSVRecord record : parser.getRecords()) {
                 try {
                     Candidate candidate = new Candidate(Util.toSentenceCase(record.get(IConstant.LITMUSBLOX_FILE_COLUMNS.FirstName.getValue()).trim()),
@@ -98,6 +96,7 @@ public class CsvFileProcessorService implements IUploadFileProcessorService {
             log.error("Error while parsing file " + fileName + " :: " + ioe.getMessage());
             responseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
         } catch (Exception ex) {
+            ex.printStackTrace();
             log.error("Error while processing file " + fileName + " :: " + ex.getMessage());
             responseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
         }
