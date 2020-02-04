@@ -1033,10 +1033,11 @@ public class JobService implements IJobService {
         log.info("Received request to publish job with id: " + jobId);
         Job publishedJob = changeJobStatus(jobId,IConstant.JobStatus.PUBLISHED.getValue());
         log.info("Completed publishing job with id: " + jobId);
-        if(null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
+        //TODO:Currently issue in create domain so comment it now
+        /*if(null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
             log.info("Subdomain does not exist for company: {}. Creating one.", publishedJob.getCompanyId().getCompanyName());
             companyService.createSubdomain(publishedJob.getCompanyId());
-        }
+        }*/
         if(publishedJob.getJobCapabilityList().size() == 0)
             log.info("No capabilities exist for the job: " + jobId + " Scoring engine api call will NOT happen");
         else if(jobCapabilitiesRepository.findByJobIdAndSelected(jobId, true).size() == 0)
