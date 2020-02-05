@@ -809,7 +809,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             jcmProfileSharingDetailsRepository.saveAll(detailsSet);
             recieverEmails.add(array[1]);
         }
-        
+
         JobCandidateMapping tempObj = jobCandidateMappingRepository.getOne(requestBean.getJcmId().get(0));
         jcmHistoryRepository.save(new JcmHistory(tempObj, "Profiles shared with : "+String.join(", ", recieverEmails)+".", new Date(), loggedInUser, tempObj.getStage()));
 
