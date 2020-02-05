@@ -651,7 +651,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                                 jcmCommunicationDetailsRepository.save(jcmCommunicationDetails);
 
                                 //If hr chat flag is also complete, set chatstatus = complete
-                                if (jcmCommunicationDetails.isHrChatCompleteFlag()) {
+                                if (!jcm.getJob().getHrQuestionAvailable() || jcmCommunicationDetails.isHrChatCompleteFlag()) {
                                     log.info("Found complete status for hr chat: " + jcm.getEmail() + " ~ " + jcm.getId());
                                     jcm.setChatbotStatus(techChatbotRequestBean.getChatbotStatus());
                                 }
