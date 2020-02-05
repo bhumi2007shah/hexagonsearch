@@ -809,9 +809,15 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             jcmProfileSharingDetailsRepository.saveAll(detailsSet);
             recieverEmails.add(array[1]);
         }
-
+        
         JobCandidateMapping tempObj = jobCandidateMappingRepository.getOne(requestBean.getJcmId().get(0));
         jcmHistoryRepository.save(new JcmHistory(tempObj, "Profiles shared with : "+String.join(", ", recieverEmails)+".", new Date(), loggedInUser, tempObj.getStage()));
+
+        //move to Submit stage
+        if(IConstant.Stage.Source.getValue().equals(tempObj.getStage().getStage()) || IConstant.Stage.Screen.getValue().equals(tempObj.getStage().getStage())){
+            jobCandidateMappingRepository.updateStageStepId(requestBean.getJcmId(), tempObj.getStage().getId(), MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.ResumeSubmit.getValue()), loggedInUser.getId(), new Date());
+        }
+
     }
 
     /**
