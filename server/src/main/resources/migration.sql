@@ -1519,6 +1519,9 @@ ALTER TABLE USER_SCREENING_QUESTION
 ALTER COLUMN QUESTION TYPE VARCHAR(250),
 ALTER COLUMN OPTIONS TYPE VARCHAR(200)[];
 
+-- to update custom chatbot detail for tricentis.
+update CUSTOMIZED_CHATBOT_PAGE_CONTENT set PAGE_INFO='"introText"=>"Automation premier League requires you to get tested on", "thankYouText"=>"The sore of your test will be communicated to you via email tomorrow from tricentis_apl@litmusblox.io", "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false"' where company_id=43;
+
 --For ticket #389
 UPDATE MASTER_DATA SET VALUE = 'Left Message or Voicemail' WHERE VALUE = 'Left Message/VoiceMail';
 
@@ -1595,6 +1598,8 @@ select
 	jcm.mobile,
 	cd.total_experience as totalExperience,
 	concat(users.first_name, ' ', users.last_name) as createdBy,
+	jcm.created_on as createdOn,
+	jcm.score as capabilityScore,
 	jsq.jsqId as jsqId,
 	jsq.ScreeningQn as screeningQuestion,
 	csqr.response as candidateResponse

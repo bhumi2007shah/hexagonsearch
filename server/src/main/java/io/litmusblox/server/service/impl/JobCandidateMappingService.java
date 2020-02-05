@@ -890,7 +890,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null != hiringManagerInterestDate)
             objFromDb.setHiringManagerInterestDate(hiringManagerInterestDate);
 
-        List<CandidateInteractionHistory> candidateInteractionHistoryList = jobCandidateMappingRepository.getCandidateInteractionHistoryByCandidateId(objFromDb.getCandidate().getId());
+        List<CandidateInteractionHistory> candidateInteractionHistoryList = jobCandidateMappingRepository.getCandidateInteractionHistoryByCandidateId(objFromDb.getCandidate().getId(), objFromDb.getJob().getCompanyId().getId());
         if(!candidateInteractionHistoryList.isEmpty()){
             objFromDb.getCandidate().setCandidateInteractionHistoryList(candidateInteractionHistoryList);
         }
