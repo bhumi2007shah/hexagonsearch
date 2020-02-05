@@ -1562,3 +1562,6 @@ INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUE
 ALTER TABLE USER_SCREENING_QUESTION
 ALTER COLUMN QUESTION TYPE VARCHAR(250),
 ALTER COLUMN OPTIONS TYPE VARCHAR(200)[];
+
+-- to update custom chatbot detail for tricentis.
+update CUSTOMIZED_CHATBOT_PAGE_CONTENT set PAGE_INFO='"introText"=>"Automation premier League requires you to get tested on", "thankYouText"=>"The sore of your test will be communicated to you via email tomorrow from tricentis_apl@litmusblox.io", "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false"' where company_id=43;
