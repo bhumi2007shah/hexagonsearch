@@ -120,6 +120,11 @@ public class Company implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date subdomainCreatedOn;
 
+    @NotNull
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="COUNTRY_ID")
+    private Country countryId;
+
     @Transient
     private Set<String> newCompanyBu;
 

@@ -16,8 +16,8 @@ ALTER TABLE users DISABLE TRIGGER ALL;
 insert into users (id, email, password, first_name, last_name, mobile, company_id, role, country_id, created_on, status)
 values(1, 'test@litmusblox.io', '$2a$10$BwQoXoB2b9A9XE8Xc2KQbOdTGWVXYQ3QiiklqZBi/nYSRzvCPfJo.', 'Lb', 'Test', '9090909090', 2, 'Recruiter', 3, current_date, 'Active');
 
-insert into company (id, company_name, created_on, created_by)
-values(2, 'LB', current_date, 1);
+insert into company (id, company_name, created_on, created_by, country_id)
+values(2, 'LB', current_date, 1, (select id from country where country_name = 'India'));
 
 ALTER TABLE users ENABLE TRIGGER ALL;
 -- end of inserts only for unit tests
@@ -729,25 +729,14 @@ INSERT INTO public.currency(currency_full_name, currency_short_name, country) VA
 ('Pound Sterling', 'GBP', 'gb'),
 ('US Dollar', 'USD', 'us');
 
-INSERT INTO STAGE_MASTER(ID, STAGE_NAME) VALUES
-(1, 'Sourcing'),
-(2, 'Screening'),
-(3, 'Submitted'),
-(4, 'Interview'),
-(5, 'Make Offer'),
-(6, 'Offer'),
-(7, 'Hired');
-
-INSERT INTO STEPS_PER_STAGE (STAGE_ID, STEP_NAME) VALUES
-(1, 'Sourcing'),
-(2, 'Screening'),
-(3, 'Submitted'),
-(4, 'L1'),
-(4, 'L2'),
-(4, 'L3'),
-(5, 'Make Offer'),
-(6, 'Offer'),
-(7, 'Hired');
+Insert into STAGE_STEP_MASTER(STAGE, STEP)
+VALUES ('Sourcing','Sourcing'),
+('Screening','Screening'),
+('Submitted','Submitted'),
+('Interview','L1'),
+('Make Offer','Make Offer'),
+('Offer','Offer'),
+('Hired','Hired');
 
 INSERT INTO public.master_data(type, value, value_to_use) VALUES
 ('role', 'HR Recruiter', 'Recruiter'),

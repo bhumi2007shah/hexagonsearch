@@ -113,9 +113,6 @@ public class JobService implements IJobService {
     CvRatingRepository cvRatingRepository;
 
     @Resource
-    StageStepMasterRepository stageStepMasterRepository;
-
-    @Resource
     ExportFormatMasterRepository exportFormatMasterRepository;
 
     @Resource
@@ -412,7 +409,7 @@ public class JobService implements IJobService {
         if(IConstant.Stage.Reject.getValue().equals(stage))
             jcmList = jobCandidateMappingRepository.findByJobAndRejectedIsTrue(job);
         else
-            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, stageStepMasterRepository.findAll());
+            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, new ArrayList<>(MasterDataBean.getInstance().getStageStepMap().values()));
 
         log.info("****Time to fetch jcmList {} ms", (System.currentTimeMillis() - startTime));
         startTime = System.currentTimeMillis();

@@ -46,6 +46,5 @@ public class MasterDataResponse {
     private Map<Long, String> referrerRelation = new HashMap<>();
     private Map<Long, String> jobType = new HashMap<>();
     private Map<String, Long> stageStepMasterMap = new HashMap<>();
-    private Map<Long, StageStepMaster> stageStepMap = new HashMap<>();
 
 }
