@@ -1455,11 +1455,7 @@ update users set role='BusinessUser'
 where
 company_id in
 (
-    select id from company where recruitment_agency_id in
-    (
-        select id from company where company_type = 'Agency'
-    )
-    and company_type != 'Agency'
+    select id from company where recruitment_agency_id is not null
 );
 
 --For ticket #336
