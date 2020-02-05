@@ -409,7 +409,7 @@ public class JobService implements IJobService {
         if(IConstant.Stage.Reject.getValue().equals(stage))
             jcmList = jobCandidateMappingRepository.findByJobAndRejectedIsTrue(job);
         else
-            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, new ArrayList<>(MasterDataBean.getInstance().getStageStepMap().values()));
+            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage)));
 
         log.info("****Time to fetch jcmList {} ms", (System.currentTimeMillis() - startTime));
         startTime = System.currentTimeMillis();

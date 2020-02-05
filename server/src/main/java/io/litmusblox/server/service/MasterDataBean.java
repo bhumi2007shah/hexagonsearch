@@ -5,10 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.litmusblox.server.model.*;
 import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author : Shital Raval
@@ -68,7 +65,7 @@ public class MasterDataBean {
 
     private Map<Long, String> referrerRelation = new HashMap<>();
     private Map<Long, String> jobType = new HashMap<>();
-    private Map<String, Long> stageStepMasterMap = new HashMap<>();
+    private Map<String, Long> stageStepMasterMap = new LinkedHashMap<>();
     private Map<Long, StageStepMaster> stageStepMap = new HashMap<>();
     private MasterData defaultJobType = null;
 
