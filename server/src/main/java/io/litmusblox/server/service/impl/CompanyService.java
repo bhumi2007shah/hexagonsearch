@@ -35,8 +35,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -638,7 +638,7 @@ public class CompanyService implements ICompanyService {
 
             ClassPathResource resource = new ClassPathResource(subdomainTemplateName);
 
-            String templateData = FileCopyUtils.copyToString(new FileReader(((ClassPathResource) resource).getFile(), UTF_8));
+            String templateData = FileCopyUtils.copyToString(new InputStreamReader(((ClassPathResource) resource).getInputStream(), UTF_8));
             //replace key with company short name
             templateData.replaceAll(IConstant.REPLACEMENT_KEY_FOR_SHORTNAME, company.getShortName());
             log.info("Created template data to be written to file \n{}", templateData);
