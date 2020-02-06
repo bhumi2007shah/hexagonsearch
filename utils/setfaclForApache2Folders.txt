@@ -1,0 +1,47 @@
+lbprod@LBProd:~$ cd /etc/apache2/
+lbprod@LBProd:/etc/apache2$ getfacl /etc/apache2/sites-enabled/
+getfacl: Removing leading '/' from absolute path names
+# file: etc/apache2/sites-enabled/
+# owner: root
+# group: root
+user::rwx
+group::r-x
+other::r-x
+
+lbprod@LBProd:/etc/apache2$ getfacl /etc/apache2/sites-available/
+getfacl: Removing leading '/' from absolute path names
+# file: etc/apache2/sites-available/
+# owner: root
+# group: root
+user::rwx
+group::r-x
+other::r-x
+
+lbprod@LBProd:/etc/apache2$ setfacl -m u:lbprod:w /etc/apache2/sites-available/
+setfacl: /etc/apache2/sites-available/: Operation not permitted
+lbprod@LBProd:/etc/apache2$ sudo setfacl -m u:lbprod:w /etc/apache2/sites-available/
+lbprod@LBProd:/etc/apache2$ sudo setfacl -m u:lbprod:w /etc/apache2/sites-enabled/
+lbprod@LBProd:/etc/apache2$ getfacl /etc/apache2/sites-available/
+getfacl: Removing leading '/' from absolute path names
+# file: etc/apache2/sites-available/
+# owner: root
+# group: root
+user::rwx
+user:lbprod:-w-
+group::r-x
+mask::rwx
+other::r-x
+
+lbprod@LBProd:/etc/apache2$ getfacl /etc/apache2/sites-enabled/
+getfacl: Removing leading '/' from absolute path names
+# file: etc/apache2/sites-enabled/
+# owner: root
+# group: root
+user::rwx
+user:lbprod:-w-
+group::r-x
+mask::rwx
+other::r-x
+
+lbprod@LBProd:/etc/apache2$ 
+
