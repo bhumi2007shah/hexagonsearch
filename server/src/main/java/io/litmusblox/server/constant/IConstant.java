@@ -4,6 +4,9 @@
 
 package io.litmusblox.server.constant;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * @author : Sumit
  * Date : 4/7/19
@@ -147,6 +150,8 @@ public interface IConstant {
             return this.value;
         }
     }
+
+    List AUTOSOURCED_TYPE = Arrays.asList(CandidateSource.NaukriMassMail.getValue(), CandidateSource.NaukriJobPosting.getValue(),CandidateSource.CareerPage.getValue(), CandidateSource.EmployeeReferral.getValue());
 
     enum LITMUSBLOX_FILE_COLUMNS {
         FirstName("First Name"), LastName("Last Name"), Email("Email"), Mobile("Mobile");
