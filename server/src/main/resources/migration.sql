@@ -1643,3 +1643,6 @@ VALUES
 -- #42 litmusblox-chatbot
 INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 (4080, '"introText"=>"Automation premier League requires you to get tested on", "thankYouText"=>"The score of your test will be communicated to you via email tomorrow", "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false"');
+
+-- #399 litmusblox-backend Screening questions: Increase length of input field response
+ALTER TABLE candidate_screening_question_response alter column response type varchar(300);
