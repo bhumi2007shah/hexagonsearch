@@ -53,7 +53,7 @@ public class ExportData {
         query.append("' and jobId='"+jobId+"'");
         query.append(" order by jsqId");
 
-        List<Object[]> exportDataList= new ArrayList<>();
+        List<Object[]> exportDataList = null;
 
         try{
             exportDataList = em.createNativeQuery(query.toString()).getResultList();
@@ -62,13 +62,14 @@ public class ExportData {
             throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        if(exportDataList.size()!=0){
+        if(exportDataList!=null){
             exportDataList.forEach(exportData->{
-                if(null!=exportData[0])
-                    if(exportData[0].toString().contains(IConstant.COMPANY_NAME_VARIABLE)){
+                if(null!=exportData[0]) {
+                    if (exportData[0].toString().contains(IConstant.COMPANY_NAME_VARIABLE)) {
                         exportData[0] = exportData[0].toString().replace(IConstant.COMPANY_NAME_VARIABLE, company.getCompanyName());
                     }
-                    questionAnswerMapForCandidate.put(exportData[0].toString(), exportData[1]!=null?exportData[1].toString():"");
+                    questionAnswerMapForCandidate.put(exportData[0].toString(), exportData[1] != null ? exportData[1].toString() : "");
+                }
             });
         }
 
