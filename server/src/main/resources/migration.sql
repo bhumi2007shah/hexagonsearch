@@ -1646,3 +1646,6 @@ INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 
 -- #399 litmusblox-backend Screening questions: Increase length of input field response
 ALTER TABLE candidate_screening_question_response alter column response type varchar(300);
+
+INSERT INTO COUNTRY (COUNTRY_NAME, COUNTRY_CODE, MAX_MOBILE_LENGTH, COUNTRY_SHORT_CODE) VALUES
+('Norway','+47', 8,'no');
