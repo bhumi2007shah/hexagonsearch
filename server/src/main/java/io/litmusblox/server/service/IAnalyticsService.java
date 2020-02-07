@@ -4,7 +4,6 @@
 
 package io.litmusblox.server.service;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -24,5 +23,5 @@ public interface IAnalyticsService {
      * @return
      * @throws Exception
      */
-    List<AnalyticsResponseBean> analyticsByCompany (Date startDate, Date endDate) throws Exception;
+    List<AnalyticsResponseBean> analyticsByCompany (String startDate, String endDate) throws Exception;
 }

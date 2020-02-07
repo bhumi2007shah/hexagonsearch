@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,7 +50,7 @@ public class AnalyticsService implements IAnalyticsService {
      * @throws Exception
      */
     @Override
-    public List<AnalyticsResponseBean> analyticsByCompany(Date startDate, Date endDate) throws Exception {
+    public List<AnalyticsResponseBean> analyticsByCompany(String startDate, String endDate) throws Exception {
         log.info("Received request to find analytics");
         long startTime = System.currentTimeMillis();
         List<Long> companyIds = new ArrayList<>();

@@ -13,7 +13,6 @@ import javax.annotation.Resource;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,9 +53,16 @@ public class CustomQueryExecutor {
             "where job.company_id = company.id\n" +
             "and job.company_id in (";
     private static final String groupByClause = "group by company.id";
+    private static final String selectionStartDate = " and job.date_published >= '";
+    private static final String selectionEndDate = " and job.date_published <= '";
     @Transactional(readOnly = true)
-    public List<AnalyticsResponseBean> analyticsByCompany(Date startDate, Date endDate, String companyIdList) throws Exception {
-        StringBuffer queryString = new StringBuffer(analyticsMainQuery).append(companyIdList).append(") ").append(groupByClause);
+    public List<AnalyticsResponseBean> analyticsByCompany(String startDate, String endDate, String companyIdList) throws Exception {
+        StringBuffer queryString = new StringBuffer(analyticsMainQuery).append(companyIdList).append(") ");
+        if (null != startDate)
+            queryString.append(selectionStartDate).append(startDate).append("' ");
+        if (null != endDate)
+            queryString.append(selectionEndDate).append(endDate).append("' ");
+        queryString.append(groupByClause);
         Query query =  entityManager.createNativeQuery(queryString.toString(), AnalyticsResponseBean.class);
         return query.getResultList();
     }

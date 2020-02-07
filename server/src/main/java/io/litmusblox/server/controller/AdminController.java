@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -76,7 +75,7 @@ public class AdminController {
     @GetMapping(value = "/analytics")
     @PreAuthorize(("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "')"))
     @ResponseStatus(HttpStatus.OK)
-    List<AnalyticsResponseBean> companyWiseAnalytics(@RequestParam(value = "startDate", required=false) Date startDate, @RequestParam(value = "endDate", required=false) Date endDate) throws Exception {
+    List<AnalyticsResponseBean> companyWiseAnalytics(@RequestParam(value = "startDate", required=false) String startDate, @RequestParam(value = "endDate", required=false) String endDate) throws Exception {
         return analyticsService.analyticsByCompany(startDate, endDate);
     }
 }
