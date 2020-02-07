@@ -1661,29 +1661,3 @@ insert into sms_templates(template_name, template_content) values
 ('autosourceAcknowledgement', '[[${commBean.sendercompany}]] thanks you for your application for [[${commBean.jobtitle}]] position. We will be in touch with you for further action if your profile is shortlisted. Good luck!'),
 ('autosourceApplicationShortlisted', '[[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Please click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]'),
 ('autosourceLinkNotVisited', 'Last Reminder: [[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]');
-
-CREATE OR REPLACE FUNCTION invite_autosource_candidate()
-    RETURNS trigger AS
-$invite_autosource_candidate$
-BEGIN
-    IF (select jcm.autosourced from job_candidate_mapping jcm where jcm.id=NEW.jcm_id) THEN
-        UPDATE jcm_communication_details set chat_invite_flag = 't' where id = NEW.id;
-        UPDATE job_candidate_mapping set stage=(select id from stage_step_master where stage='Screening'), chatbot_status='Invited' where id=NEW.jcm_id;
-    END IF;
-
-    RETURN NULL;
-END;
-$invite_autosource_candidate$
-LANGUAGE 'plpgsql';
-
-
-CREATE TRIGGER invite_autosource_candidate
-AFTER INSERT
-  ON jcm_communication_details
-FOR EACH ROW
-EXECUTE PROCEDURE invite_autosource_candidate();
-
-
-
-
-

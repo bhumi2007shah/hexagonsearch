@@ -146,7 +146,7 @@ public class JobCandidateMapping implements Serializable, Comparable {
     private String cvFileType;
 
     @Column(name = "AUTOSOURCED")
-    private Boolean autoSourced;
+    private boolean autoSourced;
 
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
@@ -196,7 +196,7 @@ public class JobCandidateMapping implements Serializable, Comparable {
         return candidateFirstName + " " + candidateLastName;
     }
 
-    public JobCandidateMapping(@NotNull Job job, @NotNull Candidate candidate, @NotNull StageStepMaster stage, @NotNull String candidateSource, @NotNull Boolean autosourced, @NotNull Date createdOn, @NotNull User createdBy, UUID chatbotUuid, String candidateFirstName, String candidateLastName, String cvFileType) {
+    public JobCandidateMapping(@NotNull Job job, @NotNull Candidate candidate, @NotNull StageStepMaster stage, @NotNull String candidateSource, @NotNull boolean autosourced, @NotNull Date createdOn, @NotNull User createdBy, UUID chatbotUuid, String candidateFirstName, String candidateLastName, String cvFileType) {
         this.job = job;
         this.candidate = candidate;
         this.stage = stage;
