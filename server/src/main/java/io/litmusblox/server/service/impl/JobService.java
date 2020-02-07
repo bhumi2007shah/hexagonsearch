@@ -982,9 +982,9 @@ public class JobService implements IJobService {
         }
         AtomicLong i = new AtomicLong();
         Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
-        if(null != job.getHiringTeamStageStepMapping() && job.getHiringTeamStageStepMapping().size()>0) {
+        if(null != job.getHiringTeamStepMapping() && job.getHiringTeamStepMapping().size()>0) {
             List<JobHiringTeam> jobHiringTeamList = new ArrayList<>(job.getJobHiringTeamList().size());
-            job.getHiringTeamStageStepMapping().forEach(stageStep -> {
+            job.getHiringTeamStepMapping().forEach(stageStep -> {
                 jobHiringTeamList.add(new JobHiringTeam(oldJob.getId(), stageStepMasterMap.get(stageStep.get(0)), User.builder().id(stageStep.get(1)).build(), i.longValue(), new Date(), loggedInUser));
                 i.getAndIncrement();
             });

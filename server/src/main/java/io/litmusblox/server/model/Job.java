@@ -219,7 +219,7 @@ public class Job implements Serializable {
     private String companyDescription;
 
     @Transient
-    private List<List<Long>> hiringTeamStageStepMapping = new ArrayList<>();
+    private List<List<Long>> hiringTeamStepMapping = new ArrayList<>();
 
     //Remove minExperience, maxExperience, experienceRange because add masterdata for experience
     //Also add jobdetail model in job
