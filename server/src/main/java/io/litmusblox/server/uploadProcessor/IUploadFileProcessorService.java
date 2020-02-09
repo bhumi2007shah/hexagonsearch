@@ -18,6 +18,6 @@ import java.util.List;
  */
 public interface IUploadFileProcessorService {
 
-    List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation);
+    List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation, String countryCode);
 
 }

@@ -11,8 +11,8 @@
     ProxyRequests on
     ProxyPreserveHost On
 
-    ProxyPass / https://localhost:8443/
-    ProxyPassReverse / https://localhost:8443/
+    ProxyPass / https://localhost:4500/
+    ProxyPassReverse / https://localhost:4500/
 
        ErrorLog ${APACHE_LOG_DIR}/error.log
         CustomLog ${APACHE_LOG_DIR}/access.log combined

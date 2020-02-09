@@ -69,10 +69,7 @@ public class MasterDataService implements IMasterDataService {
     CurrencyRepository currencyRepository;
 
     @Resource
-    StageMasterRepository stageMasterRepository;
-
-    @Resource
-    StepsPerStageRepository stepsPerStageRepository;
+    StageStepMasterRepository stageStepMasterRepository;
 
     @Resource
     ExportFormatMasterRepository exportFormatMasterRepository;
@@ -97,8 +94,11 @@ public class MasterDataService implements IMasterDataService {
             MasterDataBean.getInstance().getJobPageNamesInOrder().add(page.getPageName());
         });
 
-        stageMasterRepository.findAllByOrderByIdAsc().stream().forEach(stageMaster -> MasterDataBean.getInstance().getStage().add(stageMaster.getStageName()));
-        MasterDataBean.getInstance().getDefaultStepsPerStage().addAll(stepsPerStageRepository.findAllByOrderByIdAsc());
+       stageStepMasterRepository.findAllByOrderByIdAsc().forEach(stageStepMaster -> {
+            MasterDataBean.getInstance().getStage().add(stageStepMaster.getStage());
+            MasterDataBean.getInstance().getStageStepMasterMap().put(stageStepMaster.getStage(), stageStepMaster.getId());
+            MasterDataBean.getInstance().getStageStepMap().put(stageStepMaster.getId(), stageStepMaster);
+        });
 
         currencyRepository.findAll().stream().forEach(currency -> {
             MasterDataBean.getInstance().getCurrencyList().add(currency.getCurrencyShortName());
@@ -224,7 +224,7 @@ public class MasterDataService implements IMasterDataService {
         //populate data for each of the required items
         fetchItemList.stream().forEach(item -> {
             if(!Arrays.asList(IConstant.fetchItemsType).contains(item))
-                throw new ValidationException("You can not access masterData for " +item+" Item", HttpStatus.FORBIDDEN);
+                throw new ValidationException("You can not access masterData for " +item+" Item", HttpStatus.UNAUTHORIZED);
 
             getMasterData(master, item);
         });
@@ -261,13 +261,14 @@ public class MasterDataService implements IMasterDataService {
     private static final String CONFIG_SETTINGS = "configSettings";
     private static final String SUPPORTED_FILE_FORMATS = "supportedFileFormats";
     private static final String SUPPORTED_CV_FILE_FORMATS = "supportedCvFileFormats";
-    private static final String STAGE_MASTER_DATA = "stage";
+    private static final String STAGE_STEP_MASTER_DATA = "stageStepMaster";
     private static final String ADD_JOB_PAGES = "addJobPages";
     private static final String CURRENCY_LIST = "currencyList";
     private static final String ROLE = "role";
     private static final String REASON_FOR_CHANGE = "reasonForChange";
     private static final String DEFAULT_EXPORT_FORMAT = "defaultExportFormats";
     private static final String CALL_OUT_COME = "callOutCome";
+    private static final String STAGE_MASTER_DATA = "stage";
 
 
     /**
@@ -282,8 +283,8 @@ public class MasterDataService implements IMasterDataService {
             case COUNTRY_MASTER_DATA:
                 master.getCountries().addAll(MasterDataBean.getInstance().getCountryList());
                 break;
-            case STAGE_MASTER_DATA:
-                master.getStage().addAll(MasterDataBean.getInstance().getStage());
+            case STAGE_STEP_MASTER_DATA:
+                master.getStageStepMasterMap().putAll(MasterDataBean.getInstance().getStageStepMasterMap());
                 break;
             case ADD_JOB_PAGES:
                 master.getAddJobPages().addAll(MasterDataBean.getInstance().getAddJobPages());
@@ -313,6 +314,9 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case CALL_OUT_COME:
                 master.getCallOutCome().addAll(MasterDataBean.getInstance().getCallOutCome());
+                break;
+            case STAGE_MASTER_DATA:
+                master.getStage().addAll(MasterDataBean.getInstance().getStage());
                 break;
             default: //for all other properties, use reflection
 

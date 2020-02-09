@@ -1432,50 +1432,6 @@ VALUES
 (1, 'totalExperience','Total Experience', 11),
 (1, 'createdBy','Created By', 12);
 
---updated view for export data
-drop view if exists exportDataView;
-create view exportDataView AS
-select
-	jcm.job_id as jobId,
-	concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidateName,
-	jcm.chatbot_status as chatbotStatus,
-	jcm.chatbot_updated_on as chatbotFilledTimeStamp,
-	cvr.overall_rating as keySkillsStrength,
-	sm.stage_name as currentStage,
-	currentCompany.company_name as currentCompany,
-	currentCompany.designation as currentDesignation,
-	jcm.email,
-	jcm.country_code as countryCode,
-	jcm.mobile,
-	cd.total_experience as totalExperience,
-	concat(users.first_name, ' ', users.last_name) as createdBy,
-	jcm.created_on as createdOn,
-	jcm.score as capabilityScore,
-	jsq.jsqId as jsqId,
-	jsq.ScreeningQn as screeningQuestion,
-	csqr.response as candidateResponse
-	from job_candidate_mapping jcm
-	left join cv_rating cvr ON cvr.job_candidate_mapping_id = jcm.id
-	left join (
-		select candidate_id, company_name, designation from candidate_company_details where id in (
-				select min(id) from candidate_company_details
-				group by candidate_id
-			)
-	) as currentCompany on jcm.candidate_id = currentCompany.candidate_id
-	left join candidate_details cd on cd.candidate_id = jcm.candidate_id
-	inner join users ON users.id = jcm.created_by
-	inner join job_stage_step jss on jss.id=jcm.stage
-	inner join company_stage_step css on css.id = jss.stage_step_id
-	inner join stage_master sm on sm.id = css.stage
-	left join (
-		select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
-		union
-		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.user_screening_question_id=usq.id
-		union
-		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
-	) as jsq on jsq.jsqJobId = jcm.job_id
-	left join
-	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId, candidateName, jsq.jsqId;
 
 ALTER TABLE JCM_COMMUNICATION_DETAILS RENAME COLUMN CHAT_COMPLETE_FLAG TO TECH_CHAT_COMPLETE_FLAG;
 
@@ -1499,11 +1455,7 @@ update users set role='BusinessUser'
 where
 company_id in
 (
-    select id from company where recruitment_agency_id in
-    (
-        select id from company where company_type = 'Agency'
-    )
-    and company_type != 'Agency'
+    select id from company where recruitment_agency_id is not null
 );
 
 --For ticket #336
@@ -1556,9 +1508,149 @@ CONSTRAINT UNIQUE_PAGE_INFO_COMPANY UNIQUE(COMPANY_ID)
 ALTER TABLE JOB
 ADD COLUMN CUSTOMIZED_CHATBOT bool default 'f' NOT NULL;
 
-INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUE
+INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 (80, '"introText" => "text", "showCompanyLogo" => true, "thankYouText" => "<p>text to be displayed</p>", "showFollowSection" => true');
 
 ALTER TABLE USER_SCREENING_QUESTION
 ALTER COLUMN QUESTION TYPE VARCHAR(250),
 ALTER COLUMN OPTIONS TYPE VARCHAR(200)[];
+
+-- to update custom chatbot detail for tricentis.
+update CUSTOMIZED_CHATBOT_PAGE_CONTENT set PAGE_INFO='"introText"=>"Automation premier League requires you to get tested on", "thankYouText"=>"The sore of your test will be communicated to you via email tomorrow from tricentis_apl@litmusblox.io", "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false"' where company_id=43;
+
+--For ticket #389
+UPDATE MASTER_DATA SET VALUE = 'Left Message or Voicemail' WHERE VALUE = 'Left Message/VoiceMail';
+
+--For ticket #373
+CREATE TABLE STAGE_STEP_MASTER (
+ID serial PRIMARY KEY NOT NULL,
+STAGE varchar(15) NOT NULL,
+STEP varchar(25) NOT NULL,
+CONSTRAINT UNIQUE_STAGE_STEP_KEY UNIQUE(STAGE, STEP)
+);
+
+Insert into STAGE_STEP_MASTER(STAGE, STEP)
+VALUES ('Sourcing','Sourcing'),
+('Screening','Screening'),
+('Submitted','Submitted'),
+('Interview','L1'),
+('Make Offer','Make Offer'),
+('Offer','Offer'),
+('Hired','Hired');
+
+ALTER TABLE JCM_HISTORY DROP CONSTRAINT jcm_history_stage_fkey;
+ALTER TABLE JOB_CANDIDATE_MAPPING DROP CONSTRAINT job_candidate_mapping_stage_fkey;
+ALTER TABLE JOB_HIRING_TEAM DROP CONSTRAINT job_hiring_team_stage_step_id_fkey;
+
+update job_candidate_mapping set stage = stageMaster.stageStepId from (select stageStepId, jobStageStep from (select jst.job_id, jst.id as jobStageStep, sm.stage_name as stageName, ssm."id" as stageStepId from stage_master sm
+inner join company_stage_step cst on
+sm."id" = cst.stage
+inner join stage_step_master ssm on
+sm.stage_name = ssm.stage
+inner join job_stage_step jst on
+cst.id = jst.stage_step_id) as stageMaster) as stageMaster where stage=stageMaster.jobStageStep;
+
+update job_hiring_team set stage_step_id = stageMaster.stageStepId from (select stageStepId, jobStageStep from (select jst.job_id, jst.id as jobStageStep, sm.stage_name as stageName, ssm."id" as stageStepId from stage_master sm
+inner join company_stage_step cst on
+sm."id" = cst.stage
+inner join stage_step_master ssm on
+sm.stage_name = ssm.stage
+inner join job_stage_step jst on
+cst.id = jst.stage_step_id) as stageMaster) as stageMaster where stage_step_id=stageMaster.jobStageStep;
+
+update jcm_history set stage = stageMaster.stageStepId from (select stageStepId, jobStageStep from (select jst.job_id, jst.id as jobStageStep, sm.stage_name as stageName, ssm."id" as stageStepId from stage_master sm
+inner join company_stage_step cst on
+sm."id" = cst.stage
+inner join stage_step_master ssm on
+sm.stage_name = ssm.stage
+inner join job_stage_step jst on
+cst.id = jst.stage_step_id) as stageMaster) as stageMaster where stage=stageMaster.jobStageStep;
+
+ALTER TABLE job_candidate_mapping
+ADD CONSTRAINT job_candidate_mapping_stage_step_fkey FOREIGN KEY(stage) REFERENCES stage_step_master(id);
+
+ALTER TABLE job_hiring_team
+ADD CONSTRAINT job_hiring_team_stage_step_fkey FOREIGN KEY(stage_step_id) REFERENCES stage_step_master(id);
+
+ALTER TABLE jcm_history
+ADD CONSTRAINT jcm_history_stage_step_fkey FOREIGN KEY(stage) REFERENCES stage_step_master(id);
+
+DROP TABLE company_stage_step, job_stage_step, steps_per_stage, stage_master;
+
+--updated view for export data
+drop view if exists exportDataView;
+create view exportDataView AS
+select
+	jcm.job_id as jobId,
+	concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidateName,
+	jcm.chatbot_status as chatbotStatus,
+	jcm.chatbot_updated_on as chatbotFilledTimeStamp,
+	cvr.overall_rating as keySkillsStrength,
+	ssm.stage as currentStage,
+	currentCompany.company_name as currentCompany,
+	currentCompany.designation as currentDesignation,
+	jcm.email,
+	jcm.country_code as countryCode,
+	jcm.mobile,
+	cd.total_experience as totalExperience,
+	concat(users.first_name, ' ', users.last_name) as createdBy,
+	jcm.created_on as createdOn,
+	jcm.score as capabilityScore,
+	jsq.jsqId as jsqId,
+	jsq.ScreeningQn as screeningQuestion,
+	csqr.response as candidateResponse
+	from job_candidate_mapping jcm
+	left join cv_rating cvr ON cvr.job_candidate_mapping_id = jcm.id
+	left join (
+		select candidate_id, company_name, designation from candidate_company_details where id in (
+				select min(id) from candidate_company_details
+				group by candidate_id
+			)
+	) as currentCompany on jcm.candidate_id = currentCompany.candidate_id
+	left join candidate_details cd on cd.candidate_id = jcm.candidate_id
+	inner join users ON users.id = jcm.created_by
+	inner join stage_step_master ssm on ssm.id=jcm.stage
+	left join (
+		select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
+		union
+		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.user_screening_question_id=usq.id
+		union
+		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
+	) as jsq on jsq.jsqJobId = jcm.job_id
+	left join
+	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId, candidateName, jsq.jsqId;
+
+
+--For ticket #377
+ALTER TABLE COMPANY
+ADD COLUMN COUNTRY_ID INTEGER REFERENCES COUNTRY(ID);
+
+--Update existing record's
+UPDATE COMPANY
+SET COUNTRY_ID = (SELECT ID FROM COUNTRY WHERE COUNTRY_NAME = 'India');
+
+ALTER TABLE COMPANY
+ALTER COLUMN COUNTRY_ID SET NOT NULL;
+UPDATE job_candidate_mapping SET candidate_source = 'NaukriJobPosting' WHERE candidate_source = 'NaukriMail';
+
+INSERT INTO export_format_detail
+(format_id, column_name, header, "position")
+VALUES
+(1, 'createdOn','Created On', 13),
+(1, 'capabilityScore', 'Capability Score', 14);
+
+
+-- #42 litmusblox-chatbot
+INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
+(4080, '"introText"=>"Automation premier League requires you to get tested on", "thankYouText"=>"The score of your test will be communicated to you via email tomorrow", "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false"');
+
+-- #399 litmusblox-backend Screening questions: Increase length of input field response
+ALTER TABLE candidate_screening_question_response alter column response type varchar(300);
+
+INSERT INTO COUNTRY (COUNTRY_NAME, COUNTRY_CODE, MAX_MOBILE_LENGTH, COUNTRY_SHORT_CODE) VALUES
+('Norway','+47', 8,'no');
+
+
+--For ticket #383
+ALTER TABLE COMPANY_ADDRESS DROP CONSTRAINT company_address_address_title_key;
+Alter table COMPANY_ADDRESS add constraint company_address_address_title_company_id_key unique(address_title, company_id);

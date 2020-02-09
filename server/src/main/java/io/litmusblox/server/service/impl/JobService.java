@@ -89,9 +89,6 @@ public class JobService implements IJobService {
     CompanyBuRepository companyBuRepository;
 
     @Resource
-    CompanyStageStepRepository companyStageStepRepository;
-
-    @Resource
     JobHiringTeamRepository jobHiringTeamRepository;
 
     @Resource
@@ -114,9 +111,6 @@ public class JobService implements IJobService {
 
     @Resource
     CvRatingRepository cvRatingRepository;
-
-    @Resource
-    JobStageStepRepository jobStageStepRepository;
 
     @Resource
     ExportFormatMasterRepository exportFormatMasterRepository;
@@ -415,7 +409,7 @@ public class JobService implements IJobService {
         if(IConstant.Stage.Reject.getValue().equals(stage))
             jcmList = jobCandidateMappingRepository.findByJobAndRejectedIsTrue(job);
         else
-            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, jobStageStepRepository.findStageIdForJob(jobId, stage));
+            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage)));
 
         log.info("****Time to fetch jcmList {} ms", (System.currentTimeMillis() - startTime));
         startTime = System.currentTimeMillis();
@@ -465,12 +459,12 @@ public class JobService implements IJobService {
         //log.info("****Populated list of candidates in {} ms", (System.currentTimeMillis() - startTime));
         //startTime = System.currentTimeMillis();
 
-        Map<Long, String> stagesForJob = convertObjectArrayToMap(jobRepository.findStagesForJob(jobId));
+        Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
 
         List<Object[]> stageCountList = jobCandidateMappingRepository.findCandidateCountByStage(jobId);
 
         stageCountList.stream().forEach(objArray -> {
-            String key = stagesForJob.get(((Integer) objArray[0]).longValue());
+            String key = stageStepMasterMap.get(((Integer) objArray[0]).longValue()).getStage();
             if (null == responseBean.getCandidateCountByStage().get(key))
                 responseBean.getCandidateCountByStage().put(key, ((BigInteger) objArray[1]).intValue());
             else //stage exists in response bean, add the count of the other step to existing value
@@ -482,14 +476,6 @@ public class JobService implements IJobService {
         log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.", jobId, stage ,(System.currentTimeMillis() - startTimeMethod));
 
         return responseBean;
-    }
-
-    private Map<Long, String> convertObjectArrayToMap(List<Object[]> stagesForJob) {
-        Map<Long, String> convertedMap = new HashMap<>(stagesForJob.size());
-        stagesForJob.stream().forEach(objArray -> {
-            convertedMap.put(((Integer) objArray[0]).longValue(), objArray[1].toString());
-        });
-        return convertedMap;
     }
 
     private void addJobOverview(Job job, Job oldJob, User loggedInUser) { //method for add job for Overview page
@@ -543,8 +529,6 @@ public class JobService implements IJobService {
             job.setJobReferenceId(UUID.randomUUID());
             //End of code to be removed
             oldJob = jobRepository.save(job);
-            //Add job stage step for this job
-            addJobStageStep(oldJob);
         }
         //TODO: remove one JobRepository call
         //Add Job details
@@ -997,10 +981,11 @@ public class JobService implements IJobService {
             jobHiringTeamRepository.flush();
         }
         AtomicLong i = new AtomicLong();
+        Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
         if(null != job.getHiringTeamStepMapping() && job.getHiringTeamStepMapping().size()>0) {
             List<JobHiringTeam> jobHiringTeamList = new ArrayList<>(job.getJobHiringTeamList().size());
             job.getHiringTeamStepMapping().forEach(stageStep -> {
-                jobHiringTeamList.add(new JobHiringTeam(oldJob.getId(), JobStageStep.builder().id(stageStep.get(0)).build(), User.builder().id(stageStep.get(1)).build(), i.longValue(), new Date(), loggedInUser));
+                jobHiringTeamList.add(new JobHiringTeam(oldJob.getId(), stageStepMasterMap.get(stageStep.get(0)), User.builder().id(stageStep.get(1)).build(), i.longValue(), new Date(), loggedInUser));
                 i.getAndIncrement();
             });
             jobHiringTeamRepository.saveAll(jobHiringTeamList);
@@ -1033,11 +1018,10 @@ public class JobService implements IJobService {
         log.info("Received request to publish job with id: " + jobId);
         Job publishedJob = changeJobStatus(jobId,IConstant.JobStatus.PUBLISHED.getValue());
         log.info("Completed publishing job with id: " + jobId);
-        //TODO:Currently issue in create domain so comment it now
-        /*if(null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
+        if(null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
             log.info("Subdomain does not exist for company: {}. Creating one.", publishedJob.getCompanyId().getCompanyName());
             companyService.createSubdomain(publishedJob.getCompanyId());
-        }*/
+        }
         if(publishedJob.getJobCapabilityList().size() == 0)
             log.info("No capabilities exist for the job: " + jobId + " Scoring engine api call will NOT happen");
         else if(jobCapabilitiesRepository.findByJobIdAndSelected(jobId, true).size() == 0)
@@ -1053,16 +1037,6 @@ public class JobService implements IJobService {
             }
         }
     }
-
-    private void addJobStageStep(Job job) {
-        List<CompanyStageStep> companyStageSteps = companyStageStepRepository.findByCompanyId(job.getCompanyId());
-        List<JobStageStep> jobStageSteps = new ArrayList<>(companyStageSteps.size());
-        for(CompanyStageStep companyStageStep: companyStageSteps) {
-            jobStageSteps.add(JobStageStep.builder().jobId(job.getId()).stageStepId(companyStageStep).createdBy(job.getCreatedBy()).createdOn(new Date()).build());
-        }
-        jobStageStepRepository.saveAll(jobStageSteps);
-    }
-
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     private String convertJobToRequestPayload(Long jobId, Job publishedJob) throws Exception {
@@ -1171,22 +1145,6 @@ public class JobService implements IJobService {
     }
 
     /**
-     * Service method to return the stage steps for a job
-     *
-     * @param jobId the job id for which stage steps are to be returned
-     * @return list of stage steps
-     * @throws Exception
-     */
-    @Transactional(readOnly = true)
-    public List<JobStageStep> getJobStageStep(Long jobId) throws Exception {
-        log.info("Received request to find stage steps for job with id {}", jobId);
-        long startTime = System.currentTimeMillis();
-        List<JobStageStep> returnList = jobStageStepRepository.findByJobId(jobId);
-        log.info("Completed finding stage steps for jobId {} in {} ms", jobId, (System.currentTimeMillis() - startTime));
-        return returnList;
-    }
-
-    /**
      * Service method to return supported export formats for a company.
      *
      * @param jobId the job id for which supported formats to be returned
@@ -1233,6 +1191,12 @@ public class JobService implements IJobService {
         long startTime = System.currentTimeMillis();
         //get default export format master
         ExportFormatMaster exportFormatMaster = exportFormatMasterRepository.getOne(formatId!=null?formatId:1L);
+        Job job= jobRepository.getOne(jobId);
+        Company company = null;
+
+        if(null != job){
+            company = job.getCompanyId();
+        }
 
         //if default format is not available in db then throw exception
         if(null==exportFormatMaster){
@@ -1262,6 +1226,7 @@ public class JobService implements IJobService {
 
         List<LinkedHashMap<String, Object>> exportResponseBean = new ArrayList<>();
 
+        Company finalCompany = company;
         exportDataList.forEach(data-> {
                 LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
             for (int i = 0; i < data.length; ++i) {
@@ -1270,7 +1235,7 @@ public class JobService implements IJobService {
             if (exportResponseBean.stream().filter(object -> {
                 return object.get("Email").toString().equalsIgnoreCase(candidateData.get("Email").toString());
             }).collect(Collectors.toList()).size() == 0){
-                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), jobId, em);
+                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), jobId, finalCompany, em);
                 /*questionAnswerMapForCandidate = questionAnswerMapForCandidate.entrySet().stream().sorted(comparingByKey())
                         .collect(toMap(e->e.getKey(), e->e.getValue(), (e1, e2)-> e2, LinkedHashMap::new));*/
                 if(questionAnswerMapForCandidate.size()!=0){

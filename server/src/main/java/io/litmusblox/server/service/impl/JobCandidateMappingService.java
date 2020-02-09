@@ -131,7 +131,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     CandidateRepository candidateRepository;
 
     @Resource
-    JobStageStepRepository jobStageStepRepository;
+    StageStepMasterRepository stageStepMasterRepository;
 
     @Resource
     EmployeeReferrerRepository employeeReferrerRepository;
@@ -359,7 +359,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         //Save file
         String fileName = StoreFileUtil.storeFile(multipartFile, loggedInUser.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.Candidates.toString(),null,null);
         log.info("User " + loggedInUser.getDisplayName() + " uploaded " + fileName);
-        List<Candidate> candidateList = processUploadedFile(fileName, uploadResponseBean, loggedInUser, fileFormat, environment.getProperty(IConstant.REPO_LOCATION));
+        List<Candidate> candidateList = processUploadedFile(fileName, uploadResponseBean, loggedInUser, fileFormat, environment.getProperty(IConstant.REPO_LOCATION), job.getCompanyId().getCountryId().getCountryCode());
 
         try {
             processCandidateData(candidateList, uploadResponseBean, loggedInUser, jobId, candidatesProcessed, false);
@@ -372,23 +372,23 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         return uploadResponseBean;
     }
 
-    private List<Candidate> processUploadedFile(String fileName, UploadResponseBean responseBean, User user, String fileSource, String repoLocation) {
+    private List<Candidate> processUploadedFile(String fileName, UploadResponseBean responseBean, User user, String fileSource, String repoLocation, String countryCode) {
         //code to parse through the records and save data in database
         String fileExtension = Util.getFileExtension(fileName).toLowerCase();
         List<Candidate> candidateList = null;
         switch (fileExtension) {
             case "csv":
-                candidateList = new CsvFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation);
+                candidateList = new CsvFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, countryCode);
                 break;
             case "xls":
             case "xlsx":
                 switch (IConstant.UPLOAD_FORMATS_SUPPORTED.valueOf(fileSource)) {
                     case LitmusBlox:
-                        candidateList = new ExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation);
+                        candidateList = new ExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, countryCode);
                         break;
                     case Naukri:
                         log.info("Reached the naukri parser");
-                        candidateList = new NaukriExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation);
+                        candidateList = new NaukriExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, countryCode);
 
                         break;
                 }
@@ -432,8 +432,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             }
 
             //check source of candidate and set source as coorect one from IConstant
-            if (candidate.getCandidateSource().contains(IConstant.CandidateSource.NaukriEmail.getValue()))
-                candidate.setCandidateSource(IConstant.CandidateSource.NaukriEmail.getValue());
+            if (candidate.getCandidateSource().contains(IConstant.CandidateSource.NaukriMassMail.getValue()))
+                candidate.setCandidateSource(IConstant.CandidateSource.NaukriMassMail.getValue());
+            else if (candidate.getCandidateSource().contains(IConstant.CandidateSource.NaukriJobPosting.getValue()))
+                candidate.setCandidateSource(IConstant.CandidateSource.NaukriJobPosting.getValue());
             else if(candidate.getCandidateSource().contains(IConstant.CandidateSource.Naukri.getValue())){
                 candidate.setCandidateSource(IConstant.CandidateSource.Naukri.getValue());
             }
@@ -549,9 +551,13 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             String[] valuesToSave = new String[value.size()];
             for(int i=0;i<value.size();i++) {
                 valuesToSave[i] = value.get(i);
-                if(valuesToSave[i].length() > 100) {
-                    log.error("Length of user response is greater than 100 " + value);
-                    valuesToSave[i] = valuesToSave[i].substring(0,100);
+                if(i==0 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH) {
+                    log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH, value);
+                    valuesToSave[i] = valuesToSave[i].substring(0,IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH);
+                }
+                if(i==1 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH){
+                    log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH, value);
+                    valuesToSave[i] = valuesToSave[i].substring(0,IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH);
                 }
             }
             candidateScreeningQuestionResponseRepository.save(new CandidateScreeningQuestionResponse(objFromDb.getId(),key, valuesToSave[0], (valuesToSave.length > 1)?valuesToSave[1]:null));
@@ -566,6 +572,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         //set chatbot status to complete if scoring engine does not have job or tech chatbot is complete.
         if(!objFromDb.getJob().getScoringEngineJobAvailable() || jcmCommunicationDetailsFromDb.isTechChatCompleteFlag()){
             objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
+
         }
 
         //Commented below code as we are not setting flag to true as per discussion on 10-01-2020
@@ -648,7 +655,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                                 jcmCommunicationDetailsRepository.save(jcmCommunicationDetails);
 
                                 //If hr chat flag is also complete, set chatstatus = complete
-                                if (jcmCommunicationDetails.isHrChatCompleteFlag()) {
+                                if (!jcm.getJob().getHrQuestionAvailable() || jcmCommunicationDetails.isHrChatCompleteFlag()) {
                                     log.info("Found complete status for hr chat: " + jcm.getEmail() + " ~ " + jcm.getId());
                                     jcm.setChatbotStatus(techChatbotRequestBean.getChatbotStatus());
                                 }
@@ -728,7 +735,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             log.error("Job stage steps not found. Cannot move candidate from Source to Screen");
         } else if(jcmListWithoutError.size()>0) {
             //set stage = Screening where stage = Source
-            Map<String, Long> stageIdMap = fetchStageStepForJob(jobObjToUse.getId(), true);
+            Map<String, Long> stageIdMap = MasterDataBean.getInstance().getStageStepMasterMap();
             jobCandidateMappingRepository.updateStageStepId(jcmListWithoutError, stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), loggedInUser.getId(), new Date());
             updateJcmHistory(jcmListWithoutError, loggedInUser);
         }
@@ -809,6 +816,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         JobCandidateMapping tempObj = jobCandidateMappingRepository.getOne(requestBean.getJcmId().get(0));
         jcmHistoryRepository.save(new JcmHistory(tempObj, "Profiles shared with : "+String.join(", ", recieverEmails)+".", new Date(), loggedInUser, tempObj.getStage()));
+
+        //move to Submit stage
+        if(IConstant.Stage.Source.getValue().equals(tempObj.getStage().getStage()) || IConstant.Stage.Screen.getValue().equals(tempObj.getStage().getStage())){
+            jobCandidateMappingRepository.updateStageStepId(requestBean.getJcmId(), tempObj.getStage().getId(), MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.ResumeSubmit.getValue()), loggedInUser.getId(), new Date());
+        }
+
     }
 
     /**
@@ -1564,22 +1577,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         jobCandidateMappingRepository.save(jcmFromDb);
     }
 
-    private Map<String, Long> fetchStageStepForJob(Long jobId, boolean callForInvite) throws Exception {
-        List<JobStageStep> jobStageStepList = jobStageStepRepository.findByJobId(jobId);
-        Map<String, Long> stageIdMap = new HashMap<>();
-
-        jobStageStepList.stream().forEach(jobStageStep-> {
-            if(callForInvite) {
-                if (IConstant.Stage.Source.getValue().equals(jobStageStep.getStageStepId().getStage().getStageName()) || IConstant.Stage.Screen.getValue().equals(jobStageStep.getStageStepId().getStage().getStageName()))
-                    stageIdMap.put(jobStageStep.getStageStepId().getStage().getStageName(), jobStageStep.getId());
-            }
-            else {
-                stageIdMap.put(jobStageStep.getStageStepId().getStage().getStageName(), jobStageStep.getId());
-            }
-        });
-        return stageIdMap;
-    }
-
     /**
      * Service to set a specific stage like Interview, Offer etc
      *
@@ -1605,12 +1602,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         else {
 
             JobCandidateMapping jobCandidateMappingObj = jobCandidateMappingRepository.getOne(jcmList.get(0));
-            Map<String, Long> jobStageIds = fetchStageStepForJob(jobCandidateMappingObj.getJob().getId(), false);
+            Map<String, Long> jobStageIds = MasterDataBean.getInstance().getStageStepMasterMap();
             jobCandidateMappingRepository.updateStageStepId(jcmList, jobCandidateMappingObj.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
         }
         jcmList.stream().forEach(jcm -> {
             JobCandidateMapping mappingObj = jobCandidateMappingRepository.getOne(jcm);
-            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStageStepId().getStage().getStageName() + " stage":"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage()));
+            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage":"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage()));
 
         });
         jcmHistoryRepository.saveAll(jcmHistoryList);

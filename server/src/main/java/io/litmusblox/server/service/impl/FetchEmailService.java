@@ -21,6 +21,7 @@ import io.litmusblox.server.service.IJobCandidateMappingService;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.uploadProcessor.impl.NaukriHtmlParser;
+import io.litmusblox.server.uploadProcessor.impl.NaukriMassMailParser;
 import io.litmusblox.server.utils.SentryUtil;
 import io.litmusblox.server.utils.Util;
 import lombok.Data;
@@ -39,6 +40,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @Log4j2
@@ -56,7 +59,8 @@ public class FetchEmailService {
     @Autowired
     NaukriHtmlParser naukriHtmlParser;
 
-    private static String naukriSubjectString = "Naukri.com -";
+    @Autowired
+    NaukriMassMailParser naukriMassMailParser;
 
     @Value("${spring.mail.host}")
     String mailServerHost;
@@ -69,6 +73,8 @@ public class FetchEmailService {
 
     @Value("${spring.mail.protocol}")
     String protocol;
+
+    Pattern pattern = Pattern.compile(IConstant.REF_ID_MATCH_REGEX);
 
     public void processEmail() {
         try {
@@ -87,50 +93,51 @@ public class FetchEmailService {
             emailStore.connect(mailServerHost,userName, password);
 
             //3) create the folder object and open it
-            Folder emailFolder = emailStore.getFolder("INBOX");
+            Folder emailFolder = emailStore.getFolder("Naukri");
             emailFolder.open(Folder.READ_WRITE);
 
             //4) retrieve the messages from the folder in an array and print it
             Message[] messages = emailFolder.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
             log.info("Number of unread messages: " + messages.length);
 
-            for (int i = 0; i < messages.length; i++) {
-                Message message = messages[i];
+            for (Message message : messages) {
                 try {
-                    //check if the mail is an application from Naukri
-                    if (null != message.getSubject() && message.getSubject().indexOf(naukriSubjectString) != -1) {
-                        log.info("Subject: {}", message.getSubject());
-                        MailData mailData = new MailData();
-                        mailData.setJobFromReference(findJobForEmailSubject(message.getSubject()));
+                    //check if mail is from an application from Naukri Massmail
+                    if (null != message.getSubject() && ((Matcher)pattern.matcher(message.getSubject())).find()) {
+                        //check if the mail is an application from Naukri
+                        if (null != message.getSubject()) {
+                            log.info("Subject: {}", message.getSubject());
+                            MailData mailData = new MailData();
+                            mailData.setJobFromReference(findJobForEmailSubject(message.getSubject()));
 
-                        if(null == mailData.getJobFromReference()) {
-                            log.error("Could not find job to process email with subject: {}", message.getSubject());
-                            //mark the mail as read to skip processing it in the next round
-                            message.setFlag(Flags.Flag.SEEN, true);
-                        }
-                        else {
+                            if (null == mailData.getJobFromReference()) {
+                                log.error("Could not find job to process email with subject: {}", message.getSubject());
+                                //mark the mail as read to skip processing it in the next round
+                                message.setFlag(Flags.Flag.SEEN, true);
+                            } else {
 
-                            writePart(message, mailData);
-                            message.setFlag(Flags.Flag.SEEN, true);
-                            if (null != mailData.getFileName()) {
-                                if(null == mailData.getCandidateFromMail().getCandidateDetails())
-                                    mailData.getCandidateFromMail().setCandidateDetails(new CandidateDetails());
-                                mailData.getCandidateFromMail().getCandidateDetails().setCvFileType("." + Util.getFileExtension(mailData.getFileName()));
+                                writePart(message, mailData, !(message.getSubject().contains(IConstant.NAUKRI_SUBJECT_STRING)));
+                                message.setFlag(Flags.Flag.SEEN, true);
+                                if (null != mailData.getFileName()) {
+                                    if (null == mailData.getCandidateFromMail().getCandidateDetails())
+                                        mailData.getCandidateFromMail().setCandidateDetails(new CandidateDetails());
+                                    mailData.getCandidateFromMail().getCandidateDetails().setCvFileType("." + Util.getFileExtension(mailData.getFileName()));
+                                }
+                                UploadResponseBean response = jobCandidateMappingService.uploadCandidateFromPlugin(mailData.getCandidateFromMail(), mailData.getJobFromReference().getId(), null, Optional.of(mailData.getJobFromReference().getCreatedBy()));
+                                if (IConstant.UPLOAD_STATUS.Success.name().equals(response.getStatus()) && null != mailData.getFileName())
+                                    saveCandidateCv(mailData);
                             }
-                            UploadResponseBean response = jobCandidateMappingService.uploadCandidateFromPlugin(mailData.getCandidateFromMail(), mailData.getJobFromReference().getId(), null, Optional.of(mailData.getJobFromReference().getCreatedBy()));
-                            if (IConstant.UPLOAD_STATUS.Success.name().equals(response.getStatus()) && null != mailData.getFileName())
-                                saveCandidateCv(mailData);
-                        }
 
+                        }
                     }
-                } catch(Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     log.error("Error processing mail with subject: {} \n Error message: {}", message.getSubject(), e.getMessage());
 
                     Map<String, String> breadCrumb = new HashMap<>();
-                    breadCrumb.put("Mail Subject",message.getSubject());
+                    breadCrumb.put("Mail Subject", message.getSubject());
                     breadCrumb.put("Error", e.getMessage());
-                    SentryUtil.logWithStaticAPI(null,"Error processing Naukri application mail",breadCrumb);
+                    SentryUtil.logWithStaticAPI(null, "Error processing Naukri application mail", breadCrumb);
                 }
             }
 
@@ -165,11 +172,21 @@ public class FetchEmailService {
     }
 
     private Job findJobForEmailSubject(String subject) {
-        String jobReferenceId = subject.substring(subject.indexOf(naukriSubjectString) + naukriSubjectString.length());
-        log.info("Extracted jobReferenceId: {}", jobReferenceId.substring(0,jobReferenceId.indexOf(',')));
+        Matcher matcher = pattern.matcher(subject);
+        String jobReferenceId = null;
+        if(matcher.find()){
+            jobReferenceId = matcher.group();
+            log.info("Extracted jobReferenceId: {}", jobReferenceId);
+        }
+        else{
+            log.error("Reference Id not found in subject : {}", subject);
+        }
         try {
-            UUID uuidFromString = UUID.fromString(jobReferenceId.substring(0,jobReferenceId.indexOf(',')).trim());
-            return jobService.findByJobReferenceId(uuidFromString);
+            //UUID uuidFromString = UUID.fromString(jobReferenceId.substring(0,jobReferenceId.indexOf(',')).trim());
+            assert jobReferenceId != null;
+            // job reference id for testing perpose
+            jobReferenceId = "6aa11e4d-3e5f-4f6f-ae3b-61fbc49f8ab2";
+            return jobService.findByJobReferenceId(UUID.fromString(jobReferenceId));
         } catch (Exception e) {
             log.error("Error while converting job reference to UUID.");
             return null;
@@ -179,7 +196,7 @@ public class FetchEmailService {
     }
 
 
-    public void writePart(Part p, MailData mailData) throws Exception {
+    public void writePart(Part p, MailData mailData, boolean naukriMassMail) throws Exception {
 
         log.info("CONTENT-TYPE: " + p.getContentType());
 
@@ -193,19 +210,23 @@ public class FetchEmailService {
             Multipart mp = (Multipart) p.getContent();
             int count = mp.getCount();
             for (int i = 0; i < count; i++)
-                writePart(mp.getBodyPart(i), mailData);
+                writePart(mp.getBodyPart(i), mailData, naukriMassMail);
         }
         //check if the content is a nested message
         else if (p.isMimeType("message/rfc822")) {
             log.info("In Nested Message block");
-            writePart((Part) p.getContent(), mailData);
+            writePart((Part) p.getContent(), mailData, naukriMassMail);
         }
         else {
             log.info("In else block");
             Object o = p.getContent();
             if (o instanceof String) {
                 //log.info("String Message:\n {}", (String)o);
-                mailData.setCandidateFromMail(naukriHtmlParser.parseData((String)o, mailData.getJobFromReference().getCreatedBy()));
+                if(naukriMassMail){
+                    mailData.setCandidateFromMail(naukriMassMailParser.parseData((String) o, mailData.getJobFromReference().getCreatedBy()));
+                }else {
+                    mailData.setCandidateFromMail(naukriHtmlParser.parseData((String) o, mailData.getJobFromReference().getCreatedBy()));
+                }
             } else if (o instanceof InputStream) {
                 log.info("Input stream: File");
                 mailData.setFileName(p.getContentType().substring(p.getContentType().indexOf("name=") + 5).replaceAll("\"",""));

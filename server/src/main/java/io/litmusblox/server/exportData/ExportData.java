@@ -4,7 +4,9 @@
 
 package io.litmusblox.server.exportData;
 
+import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.error.WebException;
+import io.litmusblox.server.model.Company;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -43,7 +45,7 @@ public class ExportData {
         return exportDataList;
     }
 
-    public static LinkedHashMap<String, String> getQuestionAnswerForCandidate(String email, Long jobId, EntityManager em){
+    public static LinkedHashMap<String, String> getQuestionAnswerForCandidate(String email, Long jobId, Company company, EntityManager em){
         LinkedHashMap<String, String> questionAnswerMapForCandidate = new LinkedHashMap<>();
         StringBuffer query = new StringBuffer("");
         query.append("select screeningQuestion, candidateResponse from exportDataView where email='");
@@ -51,7 +53,7 @@ public class ExportData {
         query.append("' and jobId='"+jobId+"'");
         query.append(" order by jsqId");
 
-        List<Object[]> exportDataList= new ArrayList<>();
+        List<Object[]> exportDataList = null;
 
         try{
             exportDataList = em.createNativeQuery(query.toString()).getResultList();
@@ -60,10 +62,14 @@ public class ExportData {
             throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        if(exportDataList.size()!=0){
+        if(exportDataList!=null){
             exportDataList.forEach(exportData->{
-                if(null!=exportData[0])
-                questionAnswerMapForCandidate.put(exportData[0].toString(), exportData[1]!=null?exportData[1].toString():"");
+                if(null!=exportData[0]) {
+                    if (exportData[0].toString().contains(IConstant.COMPANY_NAME_VARIABLE)) {
+                        exportData[0] = exportData[0].toString().replace(IConstant.COMPANY_NAME_VARIABLE, company.getCompanyName());
+                    }
+                    questionAnswerMapForCandidate.put(exportData[0].toString(), exportData[1] != null ? exportData[1].toString() : "");
+                }
             });
         }
 

@@ -32,7 +32,7 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
 
     private static final String XLSX = "xlsx";
     @Override
-    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation) {
+    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation, String countryCode) {
         List<Candidate> candidateList = new ArrayList<>();
         try {
             DataFormatter dataFormatter = new DataFormatter();
@@ -122,7 +122,7 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
         } catch(IOException ioe) {
             log.error("Error while parsing file " + fileName + " :: " + ioe.getMessage());
             log.info("Trying to parse as an html file now. Specific handling for Naukri xls files.");
-            return new HTMLFileProcessorService().process(fileName, responseBean, ignoreMobile, repoLocation);
+            return new HTMLFileProcessorService().process(fileName, responseBean, ignoreMobile, repoLocation, countryCode);
         } catch (InvalidFormatException e) {
             log.error("Error while parsing file " + fileName + " :: " + e.getMessage());
             responseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());

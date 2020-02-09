@@ -29,7 +29,7 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     //find by job and stage id
     @Transactional (readOnly = true)
-    List<JobCandidateMapping> findByJobAndStageInAndRejectedIsFalse(Job job, List<JobStageStep> stage) throws Exception;
+    List<JobCandidateMapping> findByJobAndStageInAndRejectedIsFalse(Job job, StageStepMaster stage) throws Exception;
 
     //find all rejected candidates
     List<JobCandidateMapping> findByJobAndRejectedIsTrue(Job job) throws Exception;
@@ -45,14 +45,11 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     //find count of candidates per stage
     @Transactional
-    @Query(value = "select job_candidate_mapping.job_id, stage_name, count(candidate_id) from job_candidate_mapping, job_stage_step, company_stage_step, stage_master\n" +
-            "where job_candidate_mapping.job_id in :jobIds " +
-            "and job_candidate_mapping.stage = job_stage_step.id\n" +
+    @Query(value = "select job_candidate_mapping.job_id, stage_step_master.stage, count(candidate_id) from job_candidate_mapping, stage_step_master\n" +
+            "where job_candidate_mapping.job_id in :jobIds\n" +
+            "and job_candidate_mapping.stage = stage_step_master.id\n" +
             "and job_candidate_mapping.rejected=:rejected\n" +
-            "and job_stage_step.stage_step_id = company_stage_step.id\n" +
-            "and company_stage_step.stage = stage_master.id\n" +
-            "and job_stage_step.job_id=job_candidate_mapping.job_id\n" +
-            "group by job_candidate_mapping.job_id, stage_name order by job_candidate_mapping.job_id", nativeQuery = true)
+            "group by job_candidate_mapping.job_id, stage_step_master.stage order by job_candidate_mapping.job_id", nativeQuery = true)
     List<Object[]> findCandidateCountByStageJobIds(List<Long> jobIds, boolean rejected) throws Exception;
 
     //find by job and Candidate
@@ -70,10 +67,10 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     JobCandidateMapping findByChatbotUuid(UUID uuid) throws Exception;
 
     @Transactional
-    @Query(value = "select j.id as jobId, j.job_title as jobTitle, (select step from company_stage_step where id =(select stage_step_id from job_stage_step where id = jcm.stage)) as currentStatus, \n" +
-            "jcm.created_on as sourcedOn, (select step from company_stage_step where id =(select stage_step_id from job_stage_step where id = jcm.stage)) as lastStage, (select CONCAT(first_name,' ', last_name) from users where id=j.hiring_manager) as hiringManager, \n" +
+    @Query(value = "select j.id as jobId, j.job_title as jobTitle, (select step from stage_step_master where id = jcm.stage) as currentStatus,\n" +
+            "jcm.created_on as sourcedOn, (select step from stage_step_master where id = jcm.stage) as lastStage, (select CONCAT(first_name,' ', last_name) from users where id=j.hiring_manager) as hiringManager, \n" +
             "(select CONCAT(first_name, ' ', last_name) from users where id=j.recruiter) as recruiter\n" +
-            "from job_candidate_mapping jcm \n" +
+            "from job_candidate_mapping jcm\n" +
             "inner join job j on j.id = jcm.job_id\n" +
             "where jcm.candidate_id =:candidateId and j.company_id =:companyId order by jcm.created_on desc", nativeQuery = true)
     List<CandidateInteractionHistory> getCandidateInteractionHistoryByCandidateId(Long candidateId, Long companyId);
@@ -111,16 +108,13 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     void updateJcmSetStatus(String chatbotStatus, List<Long>jcmList);
 
     @Transactional (readOnly = true)
-    @Query(nativeQuery = true, value = "SELECT\n" +
-            "sum((chatbot_status LIKE 'Invited')\\:\\:INT) AS invitedCount,\n" +
+    @Query(nativeQuery = true, value = "SELECT  sum((chatbot_status LIKE 'Invited')\\:\\:INT) AS invitedCount,\n" +
             "sum((chatbot_status LIKE 'Not Interested')\\:\\:INT) AS notInterestedCount,\n" +
             "sum((chatbot_status LIKE 'Complete')\\:\\:INT) AS completeCount,\n" +
             "sum((chatbot_status LIKE 'Incomplete')\\:\\:INT) AS incompleteCount\n" +
-            "FROM job_candidate_mapping, job_stage_step, company_stage_step, stage_master\n" +
+            "FROM job_candidate_mapping, stage_step_master\n" +
             "where job_candidate_mapping.job_id = :jobId\n" +
-            "and job_candidate_mapping.stage = job_stage_step.id\n" +
-            "and job_stage_step.stage_step_id = company_stage_step.id\n" +
-            "and company_stage_step.stage = stage_master.id\n" +
-            "and stage_master.stage_name = :stage")
+            "and job_candidate_mapping.stage = stage_step_master.id\n" +
+            "and stage_step_master.stage = :stage")
     List<Object[]> getCandidateCountPerStage(Long jobId, String stage) throws Exception;
 }
