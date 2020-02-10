@@ -409,7 +409,7 @@ public class JobService implements IJobService {
         if(IConstant.Stage.Reject.getValue().equals(stage))
             jcmList = jobCandidateMappingRepository.findByJobAndRejectedIsTrue(job);
         else
-            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, new ArrayList<>(MasterDataBean.getInstance().getStageStepMap().values()));
+            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage)));
 
         log.info("****Time to fetch jcmList {} ms", (System.currentTimeMillis() - startTime));
         startTime = System.currentTimeMillis();
@@ -982,9 +982,9 @@ public class JobService implements IJobService {
         }
         AtomicLong i = new AtomicLong();
         Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
-        if(null != job.getHiringTeamStageStepMapping() && job.getHiringTeamStageStepMapping().size()>0) {
+        if(null != job.getHiringTeamStepMapping() && job.getHiringTeamStepMapping().size()>0) {
             List<JobHiringTeam> jobHiringTeamList = new ArrayList<>(job.getJobHiringTeamList().size());
-            job.getHiringTeamStageStepMapping().forEach(stageStep -> {
+            job.getHiringTeamStepMapping().forEach(stageStep -> {
                 jobHiringTeamList.add(new JobHiringTeam(oldJob.getId(), stageStepMasterMap.get(stageStep.get(0)), User.builder().id(stageStep.get(1)).build(), i.longValue(), new Date(), loggedInUser));
                 i.getAndIncrement();
             });

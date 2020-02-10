@@ -551,9 +551,13 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             String[] valuesToSave = new String[value.size()];
             for(int i=0;i<value.size();i++) {
                 valuesToSave[i] = value.get(i);
-                if(valuesToSave[i].length() > 100) {
-                    log.error("Length of user response is greater than 100 " + value);
-                    valuesToSave[i] = valuesToSave[i].substring(0,100);
+                if(i==0 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH) {
+                    log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH, value);
+                    valuesToSave[i] = valuesToSave[i].substring(0,IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH);
+                }
+                if(i==1 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH){
+                    log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH, value);
+                    valuesToSave[i] = valuesToSave[i].substring(0,IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH);
                 }
             }
             candidateScreeningQuestionResponseRepository.save(new CandidateScreeningQuestionResponse(objFromDb.getId(),key, valuesToSave[0], (valuesToSave.length > 1)?valuesToSave[1]:null));
@@ -651,7 +655,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                                 jcmCommunicationDetailsRepository.save(jcmCommunicationDetails);
 
                                 //If hr chat flag is also complete, set chatstatus = complete
-                                if (jcmCommunicationDetails.isHrChatCompleteFlag()) {
+                                if (!jcm.getJob().getHrQuestionAvailable() || jcmCommunicationDetails.isHrChatCompleteFlag()) {
                                     log.info("Found complete status for hr chat: " + jcm.getEmail() + " ~ " + jcm.getId());
                                     jcm.setChatbotStatus(techChatbotRequestBean.getChatbotStatus());
                                 }

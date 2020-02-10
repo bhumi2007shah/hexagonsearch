@@ -29,7 +29,7 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     //find by job and stage id
     @Transactional (readOnly = true)
-    List<JobCandidateMapping> findByJobAndStageInAndRejectedIsFalse(Job job, List<StageStepMaster> stage) throws Exception;
+    List<JobCandidateMapping> findByJobAndStageInAndRejectedIsFalse(Job job, StageStepMaster stage) throws Exception;
 
     //find all rejected candidates
     List<JobCandidateMapping> findByJobAndRejectedIsTrue(Job job) throws Exception;

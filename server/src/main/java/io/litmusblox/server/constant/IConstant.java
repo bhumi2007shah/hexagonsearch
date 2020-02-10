@@ -330,4 +330,7 @@ public interface IConstant {
     int SCHEDULER_THREAD_POOL_SIZE = 5;
 
     String COMPANY_NAME_VARIABLE = "$companyName";
+
+    Integer SCREENING_QUESTION_RESPONSE_MAX_LENGTH = 300;
+    Integer SCREENING_QUESTION_COMMENT_MAX_LENGTH = 100;
 }
