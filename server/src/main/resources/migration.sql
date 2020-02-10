@@ -1696,14 +1696,13 @@ Insert into MASTER_DATA (TYPE, VALUE) values
 ('noShowReasons','Not reachable'),
 ('noShowReasons','Client Cancellation');
 
+-- #399 litmusblox-backend Screening questions: Increase length of input field response
+ALTER TABLE candidate_screening_question_response alter column response type varchar(300);
+
+INSERT INTO COUNTRY (COUNTRY_NAME, COUNTRY_CODE, MAX_MOBILE_LENGTH, COUNTRY_SHORT_CODE) VALUES
+('Norway','+47', 8,'no');
 
 
-
-
-
-
-
-
-
-
-
+--For ticket #383
+ALTER TABLE COMPANY_ADDRESS DROP CONSTRAINT company_address_address_title_key;
+Alter table COMPANY_ADDRESS add constraint company_address_address_title_company_id_key unique(address_title, company_id);

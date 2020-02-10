@@ -122,6 +122,7 @@ public class CompanyService implements ICompanyService {
 
         company.setId(companyFromDb.getId());
         company.setShortName(companyFromDb.getShortName());
+        company.setCountryId(companyFromDb.getCountryId());
 
         if(company.getNewCompanyBu()!=null || company.getDeletedCompanyBu()!=null) {
             updateBusinessUnit(company, loggedInUser);
@@ -642,7 +643,7 @@ public class CompanyService implements ICompanyService {
 
             String templateData = FileCopyUtils.copyToString(new InputStreamReader(((ClassPathResource) resource).getInputStream(), UTF_8));
             //replace key with company short name
-            templateData.replaceAll(IConstant.REPLACEMENT_KEY_FOR_SHORTNAME, company.getShortName());
+            templateData = templateData.replaceAll(IConstant.REPLACEMENT_KEY_FOR_SHORTNAME, company.getShortName());
             log.info("Created template data to be written to file \n{}", templateData);
             //create conf in apache folder
             File configFile = new File("/etc/apache2/sites-available/"+company.getShortName()+".conf");
