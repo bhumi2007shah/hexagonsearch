@@ -612,6 +612,16 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         return inviteCandidateResponseBean;
     }
 
+    /**
+     * Service method to call inviteCandidates with jcm which are autosourced and currently in sourcing stage
+     * @throws Exception
+     */
+    public void inviteAutoSourcedCandidate()throws Exception{
+        List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getNewAutoSourcedJcmList();
+        log.info("Find {} autosourced candidates to be invited", jobCandidateMappings.size());
+        inviteCandidates(jobCandidateMappings.stream().map(JobCandidateMapping::getId).collect(Collectors.toList()));
+    }
+
     @Transactional(readOnly = true)
     private void callScoringEngineToAddCandidates(List<Long> jcmList) {
         //make an api call to scoring engine for each of the jcm

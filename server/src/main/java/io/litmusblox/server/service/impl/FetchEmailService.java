@@ -184,7 +184,6 @@ public class FetchEmailService {
         try {
             //UUID uuidFromString = UUID.fromString(jobReferenceId.substring(0,jobReferenceId.indexOf(',')).trim());
             assert jobReferenceId != null;
-            // job reference id for testing perpose
             return jobService.findByJobReferenceId(UUID.fromString(jobReferenceId));
         } catch (Exception e) {
             log.error("Error while converting job reference to UUID.");
