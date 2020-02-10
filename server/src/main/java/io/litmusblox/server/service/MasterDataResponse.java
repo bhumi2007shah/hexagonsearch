@@ -43,5 +43,8 @@ public class MasterDataResponse {
     private Map<Long, String> referrerRelation = new HashMap<>();
     private Map<Long, String> jobType = new HashMap<>();
     private Map<String, Long> stageStepMasterMap = new LinkedHashMap<>();
-
+    private List<String> interviewType = new ArrayList<>();
+    private List<String> interviewMode = new ArrayList<>();
+    private Map<Long, String> cancellationReasons = new HashMap<>();
+    private Map<Long, String> noShowReasons = new HashMap<>();
 }

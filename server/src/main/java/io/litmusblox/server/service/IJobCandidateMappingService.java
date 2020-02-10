@@ -223,5 +223,35 @@ public interface IJobCandidateMappingService {
      */
     ChatbotResponseBean getChatbotDetailsByUuid(UUID uuid) throws Exception;
 
+    /**
+     * Service method to schedule interview for jcm list
+     *
+     * @param interviewDetails interview details
+     * @return List of schedule interview for list of jcm
+     */
+    List<InterviewDetails> scheduleInterview(InterviewDetails interviewDetails);
+
+    /**
+     * Service method to cancel interview
+     *
+     * @param cancellationDetails interview cancellation details
+     */
+    void cancelInterview(InterviewDetails cancellationDetails);
+
+    /**
+     * Service method to mark show noShow for interview
+     *
+     * @param showNoShowDetails interview showNoShowDetails
+     */
+    void markShowNoShow(InterviewDetails showNoShowDetails);
+
+    /**
+     * Service method to set candidate confirmation for interview
+     *
+     * @param interviewReferenceId interview reference id
+     * @param confirmationValue boolean value for candidate confirm or not for interview
+     */
+    void candidateConfirmationForInterview(UUID interviewReferenceId, Boolean confirmationValue);
+
 
 }

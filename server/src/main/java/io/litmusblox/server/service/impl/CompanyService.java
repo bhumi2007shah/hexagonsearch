@@ -498,7 +498,7 @@ public class CompanyService implements ICompanyService {
     }
 
     @Override
-    public Map<String, List<CompanyAddress>>getCompanyAddresses(Long companyId)throws Exception{
+    public Map<String, List<CompanyAddress>>getCompanyAddresses(Long companyId, Boolean isInterviewLocation)throws Exception{
         //find company by companyId
         Company company = companyRepository.findById(companyId).orElse(null);
 
@@ -538,7 +538,9 @@ public class CompanyService implements ICompanyService {
         }
 
         companyAddressListByType.put("Interview Location", interviewAddersses);
-        companyAddressListByType.put("Job Location", jobAddresses);
+
+        if(!isInterviewLocation)
+            companyAddressListByType.put("Job Location", jobAddresses);
 
         log.info("Completed processing list of Addresses for companyId: "+ companyId +" in " + (System.currentTimeMillis() - startTime) + "ms.");
         return companyAddressListByType;

@@ -37,6 +37,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -144,6 +145,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
     @Resource
     CustomizedChatbotPageContentRepository customizedChatbotPageContentRepository;
+    
+    @Resource
+    InterviewDetailsRepository interviewDetailsRepository;
+
+    @Resource
+    InterviewerDetailsRepository interviewerDetailsRepository;
 
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
@@ -1828,4 +1835,147 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
         return chatbotResponseBean;
     }
+
+    /**
+     * Service method to schedule interview for jcm list
+     *
+     * @param interviewDetails interview details
+     * @return List of schedule interview for list of jcm
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public List<InterviewDetails> scheduleInterview(InterviewDetails interviewDetails) {
+        log.info("Inside scheduleInterview");
+        if(IConstant.InterviewMode.IN_PERSION.getValue().equals(interviewDetails.getInterviewMode()) && null == interviewDetails.getInterviewLocation())
+            throw new ValidationException("Interview location must not be null", HttpStatus.BAD_REQUEST);
+
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        
+        if(!Util.validateInterviewDate(interviewDetails.getInterviewDate())){
+            throw new ValidationException("Interview date : "+interviewDetails.getInterviewDate()+ " is greater than current date", HttpStatus.BAD_REQUEST);
+        }
+
+        AtomicReference<InterviewDetails> interviewDetailsFromDb = new AtomicReference<>();
+        interviewDetails.getJobCandidateMappingList().forEach(jobCandidateMapping -> {
+            if(null != interviewDetails.getComments() && interviewDetails.getComments().length()>IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue())
+                interviewDetails.setComments(Util.truncateField(jobCandidateMapping.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue(), interviewDetails.getComments()));
+            interviewDetails.setJobCandidateMappingId(jobCandidateMapping.getId());
+            interviewDetails.setCreatedOn(new Date());
+            interviewDetails.setInterviewReferenceId(UUID.randomUUID());
+            interviewDetails.setCreatedBy(loggedInUser);
+            interviewDetailsFromDb.set(interviewDetailsRepository.save(interviewDetails));
+            interviewDetails.getInterviewerDetails().forEach(interviewerDetails -> {
+                interviewerDetails.setCreatedBy(loggedInUser);
+                interviewerDetails.setCreatedOn(new Date());
+                interviewerDetails.setInterviewId(interviewDetailsFromDb.get().getId());
+                interviewerDetailsRepository.save(interviewerDetails);
+            });
+
+            interviewDetails.getInterviewIdList().add(interviewDetailsFromDb.get().getId());
+            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, "Interview scheduled :"+ new Date()+" ,address :"+interviewDetails.getInterviewLocation().getAddress() , new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+        });
+        return interviewDetailsRepository.findByIdIn(interviewDetails.getInterviewIdList());
+    }
+
+    /**
+     * Service method to cancel interview
+     *
+     * @param cancellationDetails interview cancellation details
+     * @return Boolean value interview cancel or not
+     */
+    @Transactional
+    public void cancelInterview(InterviewDetails cancellationDetails) {
+        log.info("Inside cancelInterview");
+        long startTime = System.currentTimeMillis();
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        InterviewDetails interviewDetailsFromDb = interviewDetailsRepository.findById(cancellationDetails.getId()).orElse(null);
+        if(null == interviewDetailsFromDb)
+            throw new ValidationException("Interview details not found for id : "+cancellationDetails.getId(), HttpStatus.BAD_REQUEST);
+
+        JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null);
+        if(null == jcmFromDb)
+            throw new ValidationException("Job Candidate Mapping not found for id : "+interviewDetailsFromDb.getJobCandidateMappingId(), HttpStatus.BAD_REQUEST);
+
+
+        interviewDetailsFromDb.setCancelled(true);
+        interviewDetailsFromDb.setUpdatedBy(loggedInUser);
+        interviewDetailsFromDb.setUpdatedOn(new Date());
+        if(null != cancellationDetails.getCancellationComments() && cancellationDetails.getCancellationComments().length()>IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue())
+            interviewDetailsFromDb.setCancellationComments(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue(), cancellationDetails.getCancellationComments()));
+        else
+            interviewDetailsFromDb.setCancellationComments(cancellationDetails.getCancellationComments());
+
+        if(null == cancellationDetails.getCancellationReason())
+            throw new ValidationException("For Interview cancel cancellation reason should not be null : "+cancellationDetails.getId(), HttpStatus.BAD_REQUEST);
+
+        interviewDetailsFromDb.setCancellationReason(cancellationDetails.getCancellationReason());
+        interviewDetailsRepository.save(interviewDetailsFromDb);
+        jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview cancelled :"+ new Date()+ " ~ "+cancellationDetails.getCancellationComments(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+        log.info("Interview cancelled in " + (System.currentTimeMillis()-startTime) + "ms.");
+    }
+
+    /**
+     * Service method to mark show noShow for interview
+     *
+     * @param showNoShowDetails interview showNoShowDetails
+     * @return Boolean value is interview mark showNoShow
+     */
+    @Transactional
+    public void markShowNoShow(InterviewDetails showNoShowDetails) {
+        log.info("Inside markShowNoShow");
+        long startTime = System.currentTimeMillis();
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        InterviewDetails interviewDetailsFromDb = interviewDetailsRepository.findById(showNoShowDetails.getId()).orElse(null);
+        if(null == interviewDetailsFromDb)
+            throw new ValidationException("Interview details not found for id : "+showNoShowDetails.getId(), HttpStatus.BAD_REQUEST);
+
+        if(Util.validateInterviewDate(interviewDetailsFromDb.getInterviewDate())){
+            throw new ValidationException("Interview date : "+interviewDetailsFromDb.getInterviewDate()+ " is older or equal to current date", HttpStatus.BAD_REQUEST);
+        }
+
+        JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null);
+        if(null == jcmFromDb)
+            throw new ValidationException("Job Candidate Mapping not found for id : "+interviewDetailsFromDb.getJobCandidateMappingId(), HttpStatus.BAD_REQUEST);
+
+        if(!showNoShowDetails.isShowNoShow() && null == showNoShowDetails.getNoShowReason())
+            throw new ValidationException("Interview NoShowReason should not be null : "+showNoShowDetails.getId(), HttpStatus.BAD_REQUEST);
+
+        if(null != showNoShowDetails.getShowNoShowComments() && showNoShowDetails.getShowNoShowComments().length()>IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue())
+            interviewDetailsFromDb.setShowNoShowComments(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue(), showNoShowDetails.getShowNoShowComments()));
+        else
+            interviewDetailsFromDb.setShowNoShowComments(showNoShowDetails.getShowNoShowComments());
+
+        interviewDetailsFromDb.setShowNoShow(showNoShowDetails.isShowNoShow());
+        interviewDetailsFromDb.setUpdatedBy(loggedInUser);
+        interviewDetailsFromDb.setUpdatedOn(new Date());
+        interviewDetailsFromDb.setNoShowReason(showNoShowDetails.getNoShowReason());
+        interviewDetailsRepository.save(interviewDetailsFromDb);
+        if(!showNoShowDetails.isShowNoShow())
+            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview no show("+MasterDataBean.getInstance().getNoShowReasons().get(showNoShowDetails.getNoShowReason().getId())+") : "+ new Date()+" ~ "+interviewDetailsFromDb.getShowNoShowComments(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+        else
+            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview show : "+ new Date()+" ~ "+interviewDetailsFromDb.getShowNoShowComments(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+
+        log.info("Interview marked Show NoShow in " + (System.currentTimeMillis()-startTime) + "ms.");
+    }
+
+    /**
+     * Service method to set candidate confirmation for interview
+     *
+     * @param interviewReferenceId interview reference id
+     * @param confirmationValue boolean value for candidate confirm or not for interview
+     */
+    @Transactional
+    public void candidateConfirmationForInterview(UUID interviewReferenceId, Boolean confirmationValue) {
+        log.info("Inside candidateConfirmationForInterview");
+        InterviewDetails interviewDetailsFromDb = interviewDetailsRepository.findByInterviewReferenceId(interviewReferenceId);
+        if(null == interviewDetailsFromDb)
+            throw new ValidationException("Interview details not found for refId : "+interviewReferenceId, HttpStatus.BAD_REQUEST);
+
+        interviewDetailsFromDb.setCandidateConfirmation(confirmationValue);
+        interviewDetailsFromDb.setCandidateConfirmationTime(new Date());
+        interviewDetailsRepository.save(interviewDetailsFromDb);
+        jcmHistoryRepository.save(new JcmHistory(jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null), "Candidate confirmation for interview : "+ new Date(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+    }
+
 }

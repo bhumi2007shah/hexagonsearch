@@ -192,7 +192,7 @@ public interface IConstant {
 
 
     enum MAX_FIELD_LENGTHS {
-        INSTITUTE_NAME(75), COMPANY_NAME(75), DESIGNATION(100), ADDRESS(255), KEY_SKILLS(255), ONLINE_PROFILE_URL(255), ONLINE_PROFILE_TYPE(20), WORK_SUMMARY(255), GENDER(1), DEGREE(100), SKILL(50), ROLE(40), YEAR_OF_PASSING(4), REASON_FOR_CHANGE(100), SPECIALIZATION(50);
+        INSTITUTE_NAME(75), COMPANY_NAME(75), DESIGNATION(100), ADDRESS(255), KEY_SKILLS(255), ONLINE_PROFILE_URL(255), ONLINE_PROFILE_TYPE(20), WORK_SUMMARY(255), GENDER(1), DEGREE(100), SKILL(50), ROLE(40), YEAR_OF_PASSING(4), REASON_FOR_CHANGE(100), SPECIALIZATION(50), INTERVIEW_COMMENTS(250);
 
         private int value;
 
@@ -221,10 +221,26 @@ public interface IConstant {
         rar, zip, other
     }
 
-    String USER_KEY = "userKey";
-    String VERSION = "version";
-    String SUB_USER_ID = "subUserId";
-    String RCHILLI_API_URL = "rchilliApiUrl";
+    enum InterviewType {
+        SINGLE_INTERVIEW("Single Interview"), RECRUITMENT_DRIVE("Recruitment Drive");
+
+        private String interviewType;
+
+        InterviewType(String val) { this.interviewType = val; }
+
+        public String getValue() { return this.interviewType; }
+    }
+
+    enum InterviewMode {
+        TELEPHONIC("Telephonic"), IN_PERSION("In Person"), VIDEO_CONFERENCE("Video Conference");
+
+        private String interviewMode;
+
+        InterviewMode(String val) { this.interviewMode = val; }
+
+        public String getValue() { return this.interviewMode; }
+    }
+
     String FILE_STORAGE_URL = "fileStorageUrl";
     String ERROR_FILES = "error_files";
     String NOT_AVAILABLE = "Not Available";

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Candidate;
+import io.litmusblox.server.model.InterviewDetails;
 import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.repository.UserRepository;
 import io.litmusblox.server.service.*;
@@ -335,6 +336,51 @@ public class JobCandidateMappingController {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Integer> countMap = jobCandidateMappingService.getCandidateCountPerStatus(jobId, (stage.isPresent())?stage.get(): IConstant.Stage.Screen.getValue());
         return objectMapper.writeValueAsString(countMap);
+    }
+
+    /**
+     *Rest Api to schedule interview for jcm list
+     *
+     * @param interviewDetails interview details
+     * @return List of schedule interview for list of jcm
+     */
+    @PostMapping(value = "/scheduleInterview")
+    @ResponseStatus(value = HttpStatus.OK)
+    String scheduleInterview(@RequestBody InterviewDetails interviewDetails) throws Exception {
+        log.info("Received request to schedule interview");
+        long startTime = System.currentTimeMillis();
+        String response = Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.scheduleInterview(interviewDetails),
+                new HashMap<String, List<String>>() {{
+                    put("User", Arrays.asList("displayName"));
+                }},
+                new HashMap<String, List<String>>() {{
+                    put("InterviewDetails", Arrays.asList("id", "createdOn","createdBy","updatedOn","updatedBy"));
+                    put("InterviewerDetails", Arrays.asList("id", "createdOn","createdBy","updatedOn","updatedBy"));
+                }});
+        log.info("Schedule interview for candidates " + (System.currentTimeMillis()-startTime) + "ms.");
+        return response;
+    }
+
+    /**
+     * Rest Api method to cancel interview
+     *
+     * @param cancellationDetails interview cancellation details
+     */
+    @PutMapping(value = "/cancelInterview")
+    @ResponseStatus(value = HttpStatus.OK)
+    void cancelInterview(@RequestBody InterviewDetails cancellationDetails) throws Exception {
+        jobCandidateMappingService.cancelInterview(cancellationDetails);
+    }
+
+    /**
+     * Rest Api method to mark show noShow in interview for candidate
+     *
+     * @param showNoShowDetails interview show noShow details
+     */
+    @PutMapping(value = "/markShowNoShow")
+    @ResponseStatus(value = HttpStatus.OK)
+    void markShowNoShow( @RequestBody InterviewDetails showNoShowDetails) throws Exception {
+        jobCandidateMappingService.markShowNoShow(showNoShowDetails);
     }
 
 }
