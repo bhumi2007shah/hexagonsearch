@@ -8,13 +8,11 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
+import io.litmusblox.server.model.Candidate;
 import io.litmusblox.server.model.CvParsingDetails;
 import io.litmusblox.server.model.CvRating;
 import io.litmusblox.server.model.CvRatingSkillKeywordDetails;
-import io.litmusblox.server.repository.CvParsingDetailsRepository;
-import io.litmusblox.server.repository.CvRatingRepository;
-import io.litmusblox.server.repository.CvRatingSkillKeywordDetailsRepository;
-import io.litmusblox.server.repository.JobKeySkillsRepository;
+import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.impl.MlCvRatingRequestBean;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import io.litmusblox.server.uploadProcessor.RChilliCvProcessor;
@@ -31,10 +29,12 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 /**
@@ -71,6 +71,14 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
     @Resource
     CvRatingSkillKeywordDetailsRepository cvRatingSkillKeywordDetailsRepository;
 
+    @Resource
+    CvParsingApiDetailsRepository cvParsingApiDetailsRepository;
+
+    private static final String PARSING_RESPONSE_JSON = "PARSING_RESPONSE_JSON";
+    private static final String PARSING_RESPONSE_PYTHON = "PARSING_RESPONSE_PYTHON";
+    private static final String PARSING_RESPONSE_ML = "PARSING_RESPONSE_ML";
+
+
     /**
      * Method that will be called by scheduler
      *
@@ -83,7 +91,44 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             filePathStream.forEach(filePath -> {
                     if (Files.isRegularFile(filePath)) {
                         log.info("Temp folder Cv path : "+filePath.getFileName());
-                        rChilliCvProcessor.processFile(filePath.toString(), null);
+                        AtomicReference<Candidate> candidate = new AtomicReference<>();
+                        RestClient rest = RestClient.getInstance();
+                        String fileName = filePath.toString().substring(filePath.toString().lastIndexOf(File.separator) + 1);
+                        cvParsingApiDetailsRepository.findAllByOrderByApiSequenceAsc().forEach(cvParsingApiDetails -> {
+                            switch (cvParsingApiDetails.getColumnToUpdate()) {
+                                case PARSING_RESPONSE_JSON:
+                                    candidate.set(rChilliCvProcessor.processFile(filePath.toString(), null, cvParsingApiDetails));
+                                    break;
+                                case PARSING_RESPONSE_PYTHON:
+                                    long PythonStartTime = System.currentTimeMillis();
+                                    StringBuffer queryString = new StringBuffer(cvParsingApiDetails.getApiUrl());
+                                    queryString.append("?file=");
+                                    queryString.append(environment.getProperty(IConstant.FILE_STORAGE_URL) + fileName);
+                                    try {
+                                        candidate.get().getCvParsingDetails().setParsingResponsePython(rest.consumeRestApi(null, queryString.toString(), HttpMethod.GET, null).getResponseBody());
+                                        log.info("Received response from Python parser in " + (System.currentTimeMillis() - PythonStartTime) + "ms.");
+                                    }catch (Exception e){
+                                        log.error("Error while parse resume by Python parser : "+e.getMessage());
+                                    }
+                                    break;
+                                case PARSING_RESPONSE_ML:
+                                    long mlStartTime = System.currentTimeMillis();
+                                    StringBuffer queryObjectString = new StringBuffer("{");
+                                    queryObjectString.append("\"link\":");
+                                    queryObjectString.append("\""+environment.getProperty(IConstant.FILE_STORAGE_URL) + fileName+"\"");
+                                    queryObjectString.append("}");
+                                    try {
+                                        candidate.get().getCvParsingDetails().setParsingResponseMl(rest.consumeRestApi(queryObjectString.toString(), cvParsingApiDetails.getApiUrl(), HttpMethod.POST, null).getResponseBody());
+                                        log.info("Received response from ML parser in " + (System.currentTimeMillis() - mlStartTime) + "ms.");
+                                    }catch (Exception e){
+                                        log.error("Error while parse resume by ML parser : "+e.getMessage());
+                                    }
+                                    break;
+                            }
+                        });
+                        if(null != candidate.get() && null != candidate.get().getCvParsingDetails())
+                            cvParsingDetailsRepository.save(candidate.get().getCvParsingDetails());
+
                         log.info("Completed processing " + filePath.toString());
                     }
                 });
