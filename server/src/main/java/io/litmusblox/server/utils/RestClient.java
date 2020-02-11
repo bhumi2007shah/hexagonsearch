@@ -116,7 +116,8 @@ public class RestClient {
                 svcErrorMessageID = customHeader.get(0);
             }
             log.error("Error response from REST call: " + svcErrorMessageID + " :: " + e.getResponseBodyAsString());
-            throw e;
+            return new RestClientResponseBean(e.getRawStatusCode(), e.getResponseBodyAsString());
+            //throw e;
         } catch (Exception e) {
             e.printStackTrace();
             log.error("Exception while making a REST call: " + e.getMessage());
