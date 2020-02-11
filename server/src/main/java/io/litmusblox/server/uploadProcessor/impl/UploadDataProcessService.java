@@ -211,9 +211,11 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             candidateObjToUse.setCountryCode(Util.isNull(candidate.getCountryCode())?job.getCompanyId().getCountryId().getCountryCode():candidate.getCountryCode());
             candidateObjToUse.setEmail(candidate.getEmail());
             candidateObjToUse.setMobile(candidate.getMobile());
+            candidateObjToUse.setCandidateSource(candidate.getCandidateSource());
 
             StageStepMaster stageStepForSource = stageStepMasterRepository.findByStage(IConstant.Stage.Source.getValue());
-            JobCandidateMapping savedObj = jobCandidateMappingRepository.save(new JobCandidateMapping(job,candidateObjToUse,stageStepForSource, candidate.getCandidateSource(), new Date(),loggedInUser, UUID.randomUUID(), candidate.getFirstName(), candidate.getLastName(), (null != candidate.getCandidateDetails())?candidate.getCandidateDetails().getCvFileType():null));
+
+            JobCandidateMapping savedObj = jobCandidateMappingRepository.save(new JobCandidateMapping(job,candidateObjToUse,stageStepForSource, candidate.getCandidateSource(), IConstant.AUTOSOURCED_TYPE.contains(candidateObjToUse.getCandidateSource()), new Date(),loggedInUser, UUID.randomUUID(), candidate.getFirstName(), candidate.getLastName(), (null != candidate.getCandidateDetails())?candidate.getCandidateDetails().getCvFileType():null));
 
             if(savedObj.getCandidateSource().equals(IConstant.CandidateSource.EmployeeReferral.getValue())){
                 candidateReferralDetailRepository.save(new CandidateReferralDetail(savedObj, candidate.getEmployeeReferrer(), candidate.getEmployeeReferrer().getReferrerRelation(), candidate.getEmployeeReferrer().getReferrerContactDuration()));
