@@ -619,7 +619,7 @@ public class CompanyService implements ICompanyService {
      * @throws Exception
      */
     @Override
-    public void createSubdomain(Company company) throws Exception {
+    public void createSubdomain(Company company) {
         log.info("Received request to create subdomain for company: {} shortName: {}", company.getCompanyName(), company.getShortName());
         long startTime = System.currentTimeMillis();
 
@@ -631,35 +631,47 @@ public class CompanyService implements ICompanyService {
         objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         List<GoDaddyRequestBean> requestObj = Arrays.asList(new GoDaddyRequestBean(company.getShortName(), createSubdomainIp));
-        RestClientResponseBean responseFromGoDaddy = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestObj), createSubdomainApi, HttpMethod.PATCH,new StringBuffer("sso-key ").append(createSubdomainKey).append(":").append(createSubdomainSecret).toString());
-        log.info("Response from GoDaddy:: {} ::",responseFromGoDaddy);
-        if (null != responseFromGoDaddy && HttpStatus.OK.value() == responseFromGoDaddy.getStatusCode()) {
-
-            company.setSubdomainCreated(true);
-            company.setSubdomainCreatedOn(new Date());
-            companyRepository.save(company);
-
-            ClassPathResource resource = new ClassPathResource(subdomainTemplateName);
-
-            String templateData = FileCopyUtils.copyToString(new InputStreamReader(((ClassPathResource) resource).getInputStream(), UTF_8));
-            //replace key with company short name
-            templateData = templateData.replaceAll(IConstant.REPLACEMENT_KEY_FOR_SHORTNAME, company.getShortName());
-            log.info("Created template data to be written to file \n{}", templateData);
-            //create conf in apache folder
-            File configFile = new File("/etc/apache2/sites-available/"+company.getShortName()+".conf");
-            FileWriter fw = new FileWriter(configFile);
-            fw.write(templateData);
-            fw.close();
-
-            //create symbolic link
-            Path link = Paths.get("/etc/apache2/sites-enabled/",company.getShortName()+".conf");
-            if (Files.exists(link)) {
-                Files.delete(link);
+        try {
+            RestClientResponseBean responseFromGoDaddy = null;
+            try {
+                responseFromGoDaddy = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestObj), createSubdomainApi, HttpMethod.PATCH, new StringBuffer("sso-key ").append(createSubdomainKey).append(":").append(createSubdomainSecret).toString());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                log.error("Error while creating subdomain for {}.\n{}", company, ex.getMessage());
+                log.info("Duplicate subdomain creation attempt. Setting flag and creating conf files.");
             }
-            Files.createSymbolicLink(link, Paths.get("/etc/apache2/sites-available/"+company.getShortName()+".conf"));
-        }
-        else {
-            log.error("Error creating subdomain on GoDaddy for company {}", company.getCompanyName());
+            log.info("Response from GoDaddy:: {} ::", responseFromGoDaddy);
+            if (null != responseFromGoDaddy && (HttpStatus.OK.value() == responseFromGoDaddy.getStatusCode() || responseFromGoDaddy.getResponseBody().indexOf("\"code\":\"DUPLICATE_RECORD\"") != -1) ){
+
+                company.setSubdomainCreated(true);
+                company.setSubdomainCreatedOn(new Date());
+                companyRepository.save(company);
+
+                ClassPathResource resource = new ClassPathResource(subdomainTemplateName);
+
+                String templateData = FileCopyUtils.copyToString(new InputStreamReader(((ClassPathResource) resource).getInputStream(), UTF_8));
+                //replace key with company short name
+                templateData = templateData.replaceAll(IConstant.REPLACEMENT_KEY_FOR_SHORTNAME, company.getShortName());
+                log.info("Created template data to be written to file \n{}", templateData);
+                //create conf in apache folder
+                File configFile = new File("/etc/apache2/sites-available/" + company.getShortName() + ".conf");
+                FileWriter fw = new FileWriter(configFile);
+                fw.write(templateData);
+                fw.close();
+
+                //create symbolic link
+                Path link = Paths.get("/etc/apache2/sites-enabled/", company.getShortName() + ".conf");
+                if (Files.exists(link)) {
+                    Files.delete(link);
+                }
+                Files.createSymbolicLink(link, Paths.get("/etc/apache2/sites-available/" + company.getShortName() + ".conf"));
+            } else {
+                log.error("Error creating subdomain on GoDaddy for company {}", company.getCompanyName());
+            }
+        } catch (Exception e) {
+            log.error("Error while creating sub-domain: {}", e.getMessage());
+            Map breadCrumb = new HashMap<String, String>();
+            SentryUtil.logWithStaticAPI(null, "Error while creating sub-domain: "+e.getMessage(), breadCrumb);
         }
         log.info("Completed processing request to create subdomain for company {} in {} ms.",company.getCompanyName(), (System.currentTimeMillis() - startTime));
     }

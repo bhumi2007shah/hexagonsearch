@@ -113,7 +113,7 @@ public interface ICompanyService {
      * @param company the company for which subdomain is to be created
      * @throws Exception
      */
-    void createSubdomain(Company company) throws Exception;
+    void createSubdomain(Company company);
 
     /**
      * Method that fetches a list of all companies that have short name and for which a subdomain has not been created
