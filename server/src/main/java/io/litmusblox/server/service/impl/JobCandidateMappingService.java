@@ -1855,7 +1855,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         
         if(!Util.validateInterviewDate(interviewDetails.getInterviewDate())){
-            throw new ValidationException("Interview date : "+interviewDetails.getInterviewDate()+ " is greater than current date", HttpStatus.BAD_REQUEST);
+            throw new ValidationException("Interview date : "+interviewDetails.getInterviewDate()+ " should be future date", HttpStatus.BAD_REQUEST);
         }
 
         AtomicReference<InterviewDetails> interviewDetailsFromDb = new AtomicReference<>();
@@ -1900,6 +1900,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null == jcmFromDb)
             throw new ValidationException("Job Candidate Mapping not found for id : "+interviewDetailsFromDb.getJobCandidateMappingId(), HttpStatus.BAD_REQUEST);
 
+        if(null == cancellationDetails.getCancellationReason())
+            throw new ValidationException("For Interview cancel, cancellation reason should not be null : "+cancellationDetails.getId(), HttpStatus.BAD_REQUEST);
 
         interviewDetailsFromDb.setCancelled(true);
         interviewDetailsFromDb.setUpdatedBy(loggedInUser);
@@ -1908,9 +1910,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             interviewDetailsFromDb.setCancellationComments(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue(), cancellationDetails.getCancellationComments()));
         else
             interviewDetailsFromDb.setCancellationComments(cancellationDetails.getCancellationComments());
-
-        if(null == cancellationDetails.getCancellationReason())
-            throw new ValidationException("For Interview cancel cancellation reason should not be null : "+cancellationDetails.getId(), HttpStatus.BAD_REQUEST);
 
         interviewDetailsFromDb.setCancellationReason(cancellationDetails.getCancellationReason());
         interviewDetailsRepository.save(interviewDetailsFromDb);
@@ -1935,7 +1934,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             throw new ValidationException("Interview details not found for id : "+showNoShowDetails.getId(), HttpStatus.BAD_REQUEST);
 
         if(Util.validateInterviewDate(interviewDetailsFromDb.getInterviewDate())){
-            throw new ValidationException("Interview date : "+interviewDetailsFromDb.getInterviewDate()+ " is older or equal to current date", HttpStatus.BAD_REQUEST);
+            throw new ValidationException("Interview date : "+interviewDetailsFromDb.getInterviewDate()+ " should be older or equal to current date", HttpStatus.BAD_REQUEST);
         }
 
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null);
