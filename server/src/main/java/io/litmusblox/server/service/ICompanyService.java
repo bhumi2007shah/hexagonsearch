@@ -69,7 +69,7 @@ public interface ICompanyService {
      */
     List<CompanyBu> getCompanyBuList(Long companyId) throws Exception;
 
-    Map<String, List<CompanyAddress>> getCompanyAddresses(Long companyId) throws Exception;
+    Map<String, List<CompanyAddress>> getCompanyAddresses(Long companyId, Boolean isInterviewLocation) throws Exception;
 
     /**
      * Service method to save company history. Need a service method because needs to be called from LbUserDetailsService on company create

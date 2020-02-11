@@ -5,9 +5,7 @@
 package io.litmusblox.server.controller;
 
 import io.litmusblox.server.constant.IConstant;
-import io.litmusblox.server.service.CompanyWorspaceBean;
-import io.litmusblox.server.service.ICompanyService;
-import io.litmusblox.server.service.UserWorkspaceBean;
+import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,6 +30,9 @@ public class AdminController {
 
     @Autowired
     ICompanyService companyService;
+
+    @Autowired
+    IAnalyticsService analyticsService;
 
     @Autowired
     LbUserDetailsService userDetailsService;
@@ -69,5 +70,12 @@ public class AdminController {
     @ResponseStatus(HttpStatus.OK)
     void createSubdomains() throws Exception {
         companyService.createSubdomains();
+    }
+
+    @GetMapping(value = "/analytics")
+    @PreAuthorize(("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "')"))
+    @ResponseStatus(HttpStatus.OK)
+    List<AnalyticsResponseBean> companyWiseAnalytics(@RequestParam(value = "startDate", required=false) String startDate, @RequestParam(value = "endDate", required=false) String endDate) throws Exception {
+        return analyticsService.analyticsByCompany(startDate, endDate);
     }
 }

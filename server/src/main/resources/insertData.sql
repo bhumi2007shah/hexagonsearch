@@ -791,3 +791,18 @@ INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
 ('callOutCome', 'Busy'),
 ('callOutCome', 'Wrong Number'),
 ('callOutCome', 'Left Message/VoiceMail');
+
+Insert into MASTER_DATA (TYPE, VALUE) values
+('cancellationReasons','Client cancelled iv 1'),
+('cancellationReasons','Candidate no show 1'),
+('cancellationReasons','Panel not available 1'),
+('cancellationReasons','Client cancelled iv 2'),
+('cancellationReasons','Candidate no show 2'),
+('cancellationReasons','Panel not available 2'),
+
+('noShowReasons','Personal/Family'),
+('noShowReasons','Professional'),
+('noShowReasons','Medical'),
+('noShowReasons','Logistics'),
+('noShowReasons','Not reachable'),
+('noShowReasons','Client Cancellation');

@@ -269,7 +269,10 @@ public class MasterDataService implements IMasterDataService {
     private static final String DEFAULT_EXPORT_FORMAT = "defaultExportFormats";
     private static final String CALL_OUT_COME = "callOutCome";
     private static final String STAGE_MASTER_DATA = "stage";
-
+    private static final String INTERVIEW_TYPE = "interviewType";
+    private static final String INTERVIEW_MODE = "interviewMode";
+    private static final String INTERVIEW_CANCELLATION_REASONS = "cancellationReasons";
+    private static final String INTERVIEW_NO_SHOW_REASONS = "noShowReasons";
 
     /**
      * Method to fetch specific master data from cache
@@ -317,6 +320,22 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case STAGE_MASTER_DATA:
                 master.getStage().addAll(MasterDataBean.getInstance().getStage());
+                break;
+            case INTERVIEW_TYPE:
+                master.getInterviewType().addAll(Stream.of(IConstant.InterviewType.values())
+                        .map(IConstant.InterviewType::getValue)
+                        .collect(Collectors.toList()));
+                break;
+            case INTERVIEW_MODE:
+                master.getInterviewMode().addAll(Stream.of(IConstant.InterviewMode.values())
+                        .map(IConstant.InterviewMode::getValue)
+                        .collect(Collectors.toList()));
+                break;
+            case INTERVIEW_CANCELLATION_REASONS:
+                master.getCancellationReasons().putAll(MasterDataBean.getInstance().getCancellationReasons());
+                break;
+            case INTERVIEW_NO_SHOW_REASONS:
+                master.getNoShowReasons().putAll(MasterDataBean.getInstance().getNoShowReasons());
                 break;
             default: //for all other properties, use reflection
 

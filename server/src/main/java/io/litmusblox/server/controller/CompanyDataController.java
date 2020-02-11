@@ -110,7 +110,7 @@ public class CompanyDataController {
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
     List<UserWorkspaceBean> findUserList(@RequestParam Long companyId) throws Exception {
-       //we already have a method in LbUserDetailsService.java which returns list of users for a compay with extra data like no. of jobs created. reusing that.
+       //we already have a method in LbUserDetailsService.java which returns list of users for a company with extra data like no. of jobs created. reusing that.
        return lbUserDetailsService.fetchUsers(companyId);
     }
 
@@ -138,8 +138,8 @@ public class CompanyDataController {
     @GetMapping("/addressByCompany")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    Map<String, List<CompanyAddress>> findAddressByCompanyByType(@RequestParam Long companyId) throws Exception {
-        return companyService.getCompanyAddresses(companyId);
+    Map<String, List<CompanyAddress>> findAddressByCompanyByType(@RequestParam Long companyId, @RequestParam(required = false, value = "isInterviewLocation") Optional<Boolean> isInterviewLocation) throws Exception {
+        return companyService.getCompanyAddresses(companyId, isInterviewLocation.isPresent()?isInterviewLocation.get():false);
     }
 
     /**
