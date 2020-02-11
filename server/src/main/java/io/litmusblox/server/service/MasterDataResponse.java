@@ -47,4 +47,5 @@ public class MasterDataResponse {
     private List<String> interviewMode = new ArrayList<>();
     private Map<Long, String> cancellationReasons = new HashMap<>();
     private Map<Long, String> noShowReasons = new HashMap<>();
+    private List<String> interviewConfirmation = new ArrayList<>();
 }

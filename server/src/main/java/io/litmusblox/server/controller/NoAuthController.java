@@ -341,14 +341,13 @@ public class NoAuthController {
     /**
      * REST Api to set candidate confirmation for interview
      *
-     * @param interviewReferenceId interview reference id
-     * @param confirmationValue boolean value for candidate confirm or not for interview
+     * @param confirmationDetails interviewDetails model for confirmation
      */
-    @PutMapping(value = "/candidateConfirmation/{interviewReferenceId}/{confirmationValue}")
+    @PutMapping(value = "/candidateConfirmation")
     @ResponseStatus(value = HttpStatus.OK)
-    void candidateConfirmationForInterview(@PathVariable("interviewReferenceId") UUID interviewReferenceId, @PathVariable("confirmationValue") Boolean confirmationValue) throws Exception {
+    void candidateConfirmationForInterview(@RequestBody InterviewDetails confirmationDetails) throws Exception {
         long startTime = System.currentTimeMillis();
-        jobCandidateMappingService.candidateConfirmationForInterview(interviewReferenceId, confirmationValue);
+        jobCandidateMappingService.candidateConfirmationForInterview(confirmationDetails);
         log.info("Candidate Interview confirmation done in " + (System.currentTimeMillis()-startTime) + "ms.");
     }
 

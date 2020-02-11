@@ -248,10 +248,9 @@ public interface IJobCandidateMappingService {
     /**
      * Service method to set candidate confirmation for interview
      *
-     * @param interviewReferenceId interview reference id
-     * @param confirmationValue boolean value for candidate confirm or not for interview
+     *  @param confirmationDetails interviewDetails model for confirmation
      */
-    void candidateConfirmationForInterview(UUID interviewReferenceId, Boolean confirmationValue);
+    void candidateConfirmationForInterview(InterviewDetails confirmationDetails);
 
 
 }

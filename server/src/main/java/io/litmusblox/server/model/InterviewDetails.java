@@ -107,6 +107,10 @@ public class InterviewDetails implements Serializable {
     @Column(name = "SHOW_NO_SHOW_COMMENTS")
     private String showNoShowComments;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="CANDIDATE_CONFIRMATION_VALUE")
+    private MasterData candidateConfirmationValue;
+
     @NotNull
     @Column(name = "CREATED_ON")
     @Temporal(TemporalType.TIMESTAMP)
@@ -135,4 +139,8 @@ public class InterviewDetails implements Serializable {
 
     @Transient
     private List<Long> interviewIdList = new ArrayList<>();
+
+    @Transient
+    @JsonProperty
+    private String confirmationText;
 }
