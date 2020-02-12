@@ -255,10 +255,13 @@ public class CompanyService implements ICompanyService {
                 CompanyBu companyBuFromDb = companyBuRepository.findByBusinessUnitIgnoreCaseAndCompanyId(businessUnit, company.getId());
                 if(null!=companyBuFromDb) {
                     int jobsCount = jobRepository.countByBuId(companyBuFromDb);
-                    if (jobsCount == 0) {
+                    int userCount = userRepository.countByCompanyBuId(companyBuFromDb.getId());
+                    if (jobsCount == 0 && userCount == 0) {
                         companyBuRepository.delete(companyBuFromDb);
-                    } else {
+                    } else if(jobsCount>0) {
                         errorResponse.put(businessUnit, jobsCount + "jobs available for this BU");
+                    } else if(userCount>0){
+                        errorResponse.put(businessUnit, userCount + "Users available for this BU");
                     }
                 }
                 else{
