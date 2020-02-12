@@ -1992,20 +1992,23 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     /**
      * Service method to set candidate confirmation for interview
      *
-     * @param interviewReferenceId interview reference id
-     * @param confirmationValue boolean value for candidate confirm or not for interview
+     *@param confirmationDetails interviewDetails model for confirmation
      */
     @Transactional
-    public void candidateConfirmationForInterview(UUID interviewReferenceId, Boolean confirmationValue) {
+    public void candidateConfirmationForInterview(InterviewDetails confirmationDetails) {
         log.info("Inside candidateConfirmationForInterview");
-        InterviewDetails interviewDetailsFromDb = interviewDetailsRepository.findByInterviewReferenceId(interviewReferenceId);
+        InterviewDetails interviewDetailsFromDb = interviewDetailsRepository.findByInterviewReferenceId(confirmationDetails.getInterviewReferenceId());
         if(null == interviewDetailsFromDb)
-            throw new ValidationException("Interview details not found for refId : "+interviewReferenceId, HttpStatus.BAD_REQUEST);
+            throw new ValidationException("Interview details not found for refId : "+confirmationDetails.getInterviewReferenceId(), HttpStatus.BAD_REQUEST);
 
-        interviewDetailsFromDb.setCandidateConfirmation(confirmationValue);
+        interviewDetailsFromDb.setCandidateConfirmationValue(MasterDataBean.getInstance().getInterviewConfirmation().get(confirmationDetails.getConfirmationText()));
+
+        if(confirmationDetails.getConfirmationText().contains("Yes"))
+            interviewDetailsFromDb.setCandidateConfirmation(true);
+
         interviewDetailsFromDb.setCandidateConfirmationTime(new Date());
         interviewDetailsRepository.save(interviewDetailsFromDb);
-        jcmHistoryRepository.save(new JcmHistory(jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null), "Candidate confirmation for interview : "+ new Date(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+        jcmHistoryRepository.save(new JcmHistory(jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null), "Candidate response for interview on "+ interviewDetailsFromDb.getInterviewDate()+" : "+confirmationDetails.getConfirmationText()+" "+new Date(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
     }
 
 }

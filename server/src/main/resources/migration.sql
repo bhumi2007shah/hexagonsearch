@@ -1724,3 +1724,14 @@ Insert into MASTER_DATA (TYPE, VALUE) values
 ('noShowReasons','Not reachable'),
 ('noShowReasons','Client Cancellation');
 
+-- For ticket #406
+Insert into MASTER_DATA (TYPE, VALUE) values
+('interviewConfirmation','Yes, I will attend the interview'),
+('interviewConfirmation','I wish to reschedule the interview'),
+('interviewConfirmation','No, I am not able to attend the interview');
+
+ALTER TABLE INTERVIEW_DETAILS
+ADD COLUMN CANDIDATE_CONFIRMATION_VALUE INTEGER REFERENCES MASTER_DATA(ID);
+
+
+
