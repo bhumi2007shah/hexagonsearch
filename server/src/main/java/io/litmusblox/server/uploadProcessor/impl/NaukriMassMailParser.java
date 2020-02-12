@@ -197,51 +197,31 @@ public class NaukriMassMailParser implements HtmlParser {
     public void populateCandidateDetails(Candidate candidate, Document doc) throws Exception {
         log.info("setting experince");
         //set experience
-        if(
-                doc.getElementsContainingOwnText("Exp").get(0).text().equals("Exp") &&
-                        doc.getElementsContainingOwnText("Exp").get(0).parent().parent().nextElementSibling().childNode(0)
-                                .childNode(0).toString().trim()!=null
-        ) {
-            String experience = doc.getElementsContainingOwnText("Exp")
-                    .get(0)
-                    .parent()
-                    .parent()
-                    .nextElementSibling()
-                    .childNode(0)
-                    .childNode(0)
-                    .toString().trim();
-            if(!experience.equals("Not Mentioned")) {
-                String years = experience.substring(0, experience.indexOf("Yrs")).trim();
-                String months = experience.substring((experience.indexOf("Yrs") + 3), experience.indexOf("M")).trim();
-                candidate.setCandidateDetails(CandidateDetails.builder().totalExperience(Double.parseDouble(years + "." + months)).build());
-            }
-        }
-        else if(
-                doc.getElementsContainingOwnText("Exp").get(1).text().equals("Exp") &&
-                        doc.getElementsContainingOwnText("Exp").get(1).parent().parent().nextElementSibling().childNode(1)
-                                .childNode(1).toString().trim()!=null
-        ){
-            String experience = doc.getElementsContainingOwnText("Exp")
-                    .get(1)
-                    .parent()
-                    .parent()
-                    .nextElementSibling()
-                    .childNode(1)
-                    .childNode(1)
-                    .childNode(0)
-                    .toString().trim();
-            if(!experience.equals("Not Mentioned")) {
-                String years = "";
-                String months = "";
-                if(experience.contains("Yrs")) {
-                    years = experience.substring(0, experience.indexOf("Yrs")).trim();
+
+        doc.getElementsContainingOwnText("Exp").forEach(element -> {
+            if(element.text().equals("Exp") && element.parent().parent().nextElementSibling().childNode(1)
+                    .childNode(1).childNode(0).toString().trim()!=null){
+                String experience = element
+                        .parent()
+                        .parent()
+                        .nextElementSibling()
+                        .childNode(1)
+                        .childNode(1)
+                        .childNode(0)
+                        .toString().trim();
+                if(!experience.equals("Not Mentioned")) {
+                    String years = "";
+                    String months = "";
+                    if(experience.contains("Yrs")) {
+                        years = experience.substring(0, experience.indexOf("Yrs")).trim();
+                    }
+                    if(experience.contains("M")) {
+                        months = experience.substring((experience.indexOf("Yrs") + 3), experience.indexOf("M")).trim();
+                    }
+                    candidate.setCandidateDetails(CandidateDetails.builder().totalExperience(Double.parseDouble(years + "." + months)).build());
                 }
-                if(experience.contains("M")) {
-                    months = experience.substring((experience.indexOf("Yrs") + 3), experience.indexOf("M")).trim();
-                }
-                candidate.setCandidateDetails(CandidateDetails.builder().totalExperience(Double.parseDouble(years + "." + months)).build());
             }
-        }
+        });
         log.info("set experince");
 
 

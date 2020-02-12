@@ -102,8 +102,10 @@ public class LbUserDetailsService implements UserDetailsService {
         final User userDetails = (User)loadUserByUsername(user.getEmail());
 
         //check if company is active
-        if(!userDetails.getCompany().getActive())
-            throw new WebException("Company blocked", HttpStatus.FORBIDDEN);
+        if(!userDetails.getCompany().getActive()){
+            log.error("Company is blocked, LoggedIn user email : {}", user.getEmail());
+            throw new WebException("Litmusblox cannot log you in right now. Please contact Litmusblox for further details", HttpStatus.FORBIDDEN);
+        }
 
         authenticate(user.getEmail(), user.getPassword());
 
@@ -392,8 +394,8 @@ public class LbUserDetailsService implements UserDetailsService {
         if (null == objFromDb)
             throw new ValidationException("Invalid user", HttpStatus.UNPROCESSABLE_ENTITY);
 
-        //if user is client admin, block the company
-        if(IConstant.UserRole.Names.CLIENT_ADMIN.equals(objFromDb.getRole())) {
+        //Currently company block functionality not depend on the client admin status
+        /*if(IConstant.UserRole.Names.CLIENT_ADMIN.equals(objFromDb.getRole())) {
             if(blockUser) {
                 Company companyToBlock = objFromDb.getCompany();
                 companyToBlock.setActive(false);
@@ -408,21 +410,21 @@ public class LbUserDetailsService implements UserDetailsService {
                     throw new ValidationException("Cannot unblock user of a blocked company", HttpStatus.BAD_REQUEST);
             }
         }
-        else {
-            if (blockUser)
-                objFromDb.setStatus(IConstant.UserStatus.Blocked.name());
-            else {
-                if (null == objFromDb.getPassword())
-                    objFromDb.setStatus(IConstant.UserStatus.Inactive.name());
-                else
-                    objFromDb.setStatus(IConstant.UserStatus.Active.name());
-            }
-            objFromDb.setUpdatedBy(getLoggedInUser().getId());
-            objFromDb.setUpdatedOn(new Date());
+        else {*/
 
-            userRepository.save(objFromDb);
-            companyService.saveCompanyHistory(objFromDb.getCompany().getId(), "Status of user with email, " +objFromDb.getEmail()+ ", changed to " + objFromDb.getStatus(), getLoggedInUser());
+        if (blockUser)
+            objFromDb.setStatus(IConstant.UserStatus.Blocked.name());
+        else {
+            if (null == objFromDb.getPassword())
+                objFromDb.setStatus(IConstant.UserStatus.Inactive.name());
+            else
+                objFromDb.setStatus(IConstant.UserStatus.Active.name());
         }
+        objFromDb.setUpdatedBy(getLoggedInUser().getId());
+        objFromDb.setUpdatedOn(new Date());
+
+        userRepository.save(objFromDb);
+        companyService.saveCompanyHistory(objFromDb.getCompany().getId(), "Status of user with email, " +objFromDb.getEmail()+ ", changed to " + objFromDb.getStatus(), getLoggedInUser());
     }
 
     /**

@@ -139,7 +139,7 @@ public class JobCandidateMappingController {
     String inviteCandidates(@RequestBody List<Long> jcmList) throws Exception {
         log.info("Received request to invite candidates");
         long startTime = System.currentTimeMillis();
-        InviteCandidateResponseBean inviteCandidateResponseBean = jobCandidateMappingService.inviteCandidates(jcmList);
+        InviteCandidateResponseBean inviteCandidateResponseBean = jobCandidateMappingService.inviteCandidates(jcmList, null);
         log.info("Completed inviting candidates in " + (System.currentTimeMillis()-startTime)+"ms.");
         return Util.stripExtraInfoFromResponseBean(inviteCandidateResponseBean,
                 new HashMap<String, List<String>>() {{

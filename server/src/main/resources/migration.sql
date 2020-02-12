@@ -1646,7 +1646,24 @@ INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 
 
 -- #399 litmusblox-backend Screening questions: Increase length of input field response
-ALTER TABLE candidate_screening_question_response alter column response type varchar(300);
+alter table candidate_screening_question_response alter column response type varchar(300);
+
+-- #382 Design & Implement: Emails/SMS for job postings/mass mailing
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN AUTOSOURCED bool NOT NULL default 'f';
+
+UPDATE job_candidate_mapping set autosourced='t' where candidate_source in ('NaukriJobPosting','NaukriMassMail', 'EmployeeReferral', 'CareerPage');
+
+ALTER TABLE JCM_COMMUNICATION_DETAILS
+ADD COLUMN autosource_acknowledgement_timestamp_email TIMESTAMP DEFAULT NULL,
+ADD COLUMN autosource_acknowledgement_timestamp_sms TIMESTAMP DEFAULT NULL;
+
+insert into sms_templates(template_name, template_content) values
+('autosourceAcknowledgement', '[[${commBean.sendercompany}]] thanks you for your application for [[${commBean.jobtitle}]] position. We will be in touch with you for further action if your profile is shortlisted. Good luck!'),
+('autosourceApplicationShortlisted', '[[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Please click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]'),
+('autosourceLinkNotVisited', 'Last Reminder: [[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]');
+
+ALTER TABLE email_log ALTER COLUMN template_name TYPE VARCHAR(35);
 
 INSERT INTO COUNTRY (COUNTRY_NAME, COUNTRY_CODE, MAX_MOBILE_LENGTH, COUNTRY_SHORT_CODE) VALUES
 ('Norway','+47', 8,'no');
@@ -1706,4 +1723,15 @@ Insert into MASTER_DATA (TYPE, VALUE) values
 ('noShowReasons','Logistics'),
 ('noShowReasons','Not reachable'),
 ('noShowReasons','Client Cancellation');
+
+-- For ticket #406
+Insert into MASTER_DATA (TYPE, VALUE) values
+('interviewConfirmation','Yes, I will attend the interview'),
+('interviewConfirmation','I wish to reschedule the interview'),
+('interviewConfirmation','No, I am not able to attend the interview');
+
+ALTER TABLE INTERVIEW_DETAILS
+ADD COLUMN CANDIDATE_CONFIRMATION_VALUE INTEGER REFERENCES MASTER_DATA(ID);
+
+
 

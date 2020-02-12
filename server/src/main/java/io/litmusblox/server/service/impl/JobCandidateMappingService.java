@@ -613,10 +613,35 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @param jcmList list of jcm ids for chatbot invitation
      * @throws Exception
      */
-    public InviteCandidateResponseBean inviteCandidates(List<Long> jcmList) throws Exception {
-        InviteCandidateResponseBean inviteCandidateResponseBean = performInvitationAndHistoryUpdation(jcmList);
+    public InviteCandidateResponseBean inviteCandidates(List<Long> jcmList, User loggedInUser) throws Exception {
+        InviteCandidateResponseBean inviteCandidateResponseBean = performInvitationAndHistoryUpdation(jcmList, loggedInUser);
         callScoringEngineToAddCandidates(jcmList);
         return inviteCandidateResponseBean;
+    }
+
+    /**
+     * Service method to call inviteCandidates with jcm which are autosourced and currently in sourcing stage
+     * @throws Exception
+     */
+    public void inviteAutoSourcedCandidate()throws Exception{
+        List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getNewAutoSourcedJcmList();
+        if(jobCandidateMappings.size()>0) {
+            log.info("Found {} autosourced candidates to be auto invited", jobCandidateMappings.size());
+            Map<User, List<Long>> userJcmMap = jobCandidateMappings.stream()
+                    .collect(
+                            Collectors.groupingBy(JobCandidateMapping::getCreatedBy, Collectors.mapping(JobCandidateMapping::getId, Collectors.toList()))
+                    );
+            userJcmMap.entrySet().forEach(userListEntry -> {
+                try {
+                    inviteCandidates(userListEntry.getValue(), userListEntry.getKey());
+                } catch (Exception e) {
+                    log.error("Some error occured while auto inviting candidate");
+                }
+            });
+        }
+        else{
+            log.info("Found 0 candidates to be auto invited");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -683,7 +708,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    private InviteCandidateResponseBean performInvitationAndHistoryUpdation(List<Long> jcmList) throws Exception {
+    private InviteCandidateResponseBean performInvitationAndHistoryUpdation(List<Long> jcmList, User loggedInUser) throws Exception {
         if(jcmList == null || jcmList.size() == 0)
             throw new WebException("Select candidates to invite",HttpStatus.UNPROCESSABLE_ENTITY);
 
@@ -691,7 +716,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(!areCandidatesInSameStage(jcmList))
             throw new WebException("Select candidates that are all in Source stage", HttpStatus.UNPROCESSABLE_ENTITY);
 
-        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(loggedInUser == null) {
+            loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        }
 
         //list to store candidates for which email contains "@notavailable.io" or mobile is null
         List<Candidate>failedCandidates = new ArrayList<>();
@@ -1855,7 +1882,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         
         if(!Util.validateInterviewDate(interviewDetails.getInterviewDate())){
-            throw new ValidationException("Interview date : "+interviewDetails.getInterviewDate()+ " is greater than current date", HttpStatus.BAD_REQUEST);
+            throw new ValidationException("Interview date : "+interviewDetails.getInterviewDate()+ " should be future date", HttpStatus.BAD_REQUEST);
         }
 
         AtomicReference<InterviewDetails> interviewDetailsFromDb = new AtomicReference<>();
@@ -1900,6 +1927,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null == jcmFromDb)
             throw new ValidationException("Job Candidate Mapping not found for id : "+interviewDetailsFromDb.getJobCandidateMappingId(), HttpStatus.BAD_REQUEST);
 
+        if(null == cancellationDetails.getCancellationReason())
+            throw new ValidationException("For Interview cancel, cancellation reason should not be null : "+cancellationDetails.getId(), HttpStatus.BAD_REQUEST);
 
         interviewDetailsFromDb.setCancelled(true);
         interviewDetailsFromDb.setUpdatedBy(loggedInUser);
@@ -1908,9 +1937,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             interviewDetailsFromDb.setCancellationComments(Util.truncateField(jcmFromDb.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue(), cancellationDetails.getCancellationComments()));
         else
             interviewDetailsFromDb.setCancellationComments(cancellationDetails.getCancellationComments());
-
-        if(null == cancellationDetails.getCancellationReason())
-            throw new ValidationException("For Interview cancel cancellation reason should not be null : "+cancellationDetails.getId(), HttpStatus.BAD_REQUEST);
 
         interviewDetailsFromDb.setCancellationReason(cancellationDetails.getCancellationReason());
         interviewDetailsRepository.save(interviewDetailsFromDb);
@@ -1935,7 +1961,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             throw new ValidationException("Interview details not found for id : "+showNoShowDetails.getId(), HttpStatus.BAD_REQUEST);
 
         if(Util.validateInterviewDate(interviewDetailsFromDb.getInterviewDate())){
-            throw new ValidationException("Interview date : "+interviewDetailsFromDb.getInterviewDate()+ " is older or equal to current date", HttpStatus.BAD_REQUEST);
+            throw new ValidationException("Interview date : "+interviewDetailsFromDb.getInterviewDate()+ " should be older or equal to current date", HttpStatus.BAD_REQUEST);
         }
 
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null);
@@ -1966,20 +1992,23 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     /**
      * Service method to set candidate confirmation for interview
      *
-     * @param interviewReferenceId interview reference id
-     * @param confirmationValue boolean value for candidate confirm or not for interview
+     *@param confirmationDetails interviewDetails model for confirmation
      */
     @Transactional
-    public void candidateConfirmationForInterview(UUID interviewReferenceId, Boolean confirmationValue) {
+    public void candidateConfirmationForInterview(InterviewDetails confirmationDetails) {
         log.info("Inside candidateConfirmationForInterview");
-        InterviewDetails interviewDetailsFromDb = interviewDetailsRepository.findByInterviewReferenceId(interviewReferenceId);
+        InterviewDetails interviewDetailsFromDb = interviewDetailsRepository.findByInterviewReferenceId(confirmationDetails.getInterviewReferenceId());
         if(null == interviewDetailsFromDb)
-            throw new ValidationException("Interview details not found for refId : "+interviewReferenceId, HttpStatus.BAD_REQUEST);
+            throw new ValidationException("Interview details not found for refId : "+confirmationDetails.getInterviewReferenceId(), HttpStatus.BAD_REQUEST);
 
-        interviewDetailsFromDb.setCandidateConfirmation(confirmationValue);
+        interviewDetailsFromDb.setCandidateConfirmationValue(MasterDataBean.getInstance().getInterviewConfirmation().get(confirmationDetails.getConfirmationText()));
+
+        if(confirmationDetails.getConfirmationText().contains("Yes"))
+            interviewDetailsFromDb.setCandidateConfirmation(true);
+
         interviewDetailsFromDb.setCandidateConfirmationTime(new Date());
         interviewDetailsRepository.save(interviewDetailsFromDb);
-        jcmHistoryRepository.save(new JcmHistory(jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null), "Candidate confirmation for interview : "+ new Date(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+        jcmHistoryRepository.save(new JcmHistory(jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null), "Candidate response for interview on "+ interviewDetailsFromDb.getInterviewDate()+" : "+confirmationDetails.getConfirmationText()+" "+new Date(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
     }
 
 }

@@ -74,12 +74,18 @@ public interface IJobCandidateMappingService {
     void saveScreeningQuestionResponses(UUID uuid, Map<Long, List<String>> candidateResponse) throws Exception;
 
     /**
+     * Service method to call inviteCandidates with jcm which are autosourced and currently in sourcing stage
+     * @throws Exception
+     */
+    void inviteAutoSourcedCandidate()throws Exception;
+
+    /**
      * Service method to invite candidates to fill chatbot for a job
      *
      * @param jcmList list of jcm ids for chatbot invitation
      * @throws Exception
      */
-    InviteCandidateResponseBean inviteCandidates(List<Long> jcmList) throws Exception;
+    InviteCandidateResponseBean inviteCandidates(List<Long> jcmList, User loggedInUser) throws Exception;
 
     /**
      * Service method to process sharing of candidate profiles with Hiring managers
@@ -248,10 +254,9 @@ public interface IJobCandidateMappingService {
     /**
      * Service method to set candidate confirmation for interview
      *
-     * @param interviewReferenceId interview reference id
-     * @param confirmationValue boolean value for candidate confirm or not for interview
+     *  @param confirmationDetails interviewDetails model for confirmation
      */
-    void candidateConfirmationForInterview(UUID interviewReferenceId, Boolean confirmationValue);
+    void candidateConfirmationForInterview(InterviewDetails confirmationDetails);
 
 
 }
