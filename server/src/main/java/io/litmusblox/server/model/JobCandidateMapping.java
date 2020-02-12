@@ -253,6 +253,9 @@ public class JobCandidateMapping implements Serializable, Comparable {
     }
 
     public InterviewDetails getCurrentInterviewDetail(){
-        return this.getInterviewDetails().get(0);
+        if(this.getInterviewDetails().size()>0)
+            return this.getInterviewDetails().get(0);
+
+        return null;
     }
 }
