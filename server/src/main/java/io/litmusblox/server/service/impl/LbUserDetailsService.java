@@ -395,7 +395,7 @@ public class LbUserDetailsService implements UserDetailsService {
             throw new ValidationException("Invalid user", HttpStatus.UNPROCESSABLE_ENTITY);
 
         //Currently company block functionality not depend on the client admin status
-       /* if(IConstant.UserRole.Names.CLIENT_ADMIN.equals(objFromDb.getRole())) {
+        /*if(IConstant.UserRole.Names.CLIENT_ADMIN.equals(objFromDb.getRole())) {
             if(blockUser) {
                 Company companyToBlock = objFromDb.getCompany();
                 companyToBlock.setActive(false);
@@ -409,22 +409,22 @@ public class LbUserDetailsService implements UserDetailsService {
                 if(!objFromDb.getCompany().getActive())
                     throw new ValidationException("Cannot unblock user of a blocked company", HttpStatus.BAD_REQUEST);
             }
-        }*/
-        else {
-            if (blockUser)
-                objFromDb.setStatus(IConstant.UserStatus.Blocked.name());
-            else {
-                if (null == objFromDb.getPassword())
-                    objFromDb.setStatus(IConstant.UserStatus.Inactive.name());
-                else
-                    objFromDb.setStatus(IConstant.UserStatus.Active.name());
-            }
-            objFromDb.setUpdatedBy(getLoggedInUser().getId());
-            objFromDb.setUpdatedOn(new Date());
-
-            userRepository.save(objFromDb);
-            companyService.saveCompanyHistory(objFromDb.getCompany().getId(), "Status of user with email, " +objFromDb.getEmail()+ ", changed to " + objFromDb.getStatus(), getLoggedInUser());
         }
+        else {*/
+
+        if (blockUser)
+            objFromDb.setStatus(IConstant.UserStatus.Blocked.name());
+        else {
+            if (null == objFromDb.getPassword())
+                objFromDb.setStatus(IConstant.UserStatus.Inactive.name());
+            else
+                objFromDb.setStatus(IConstant.UserStatus.Active.name());
+        }
+        objFromDb.setUpdatedBy(getLoggedInUser().getId());
+        objFromDb.setUpdatedOn(new Date());
+
+        userRepository.save(objFromDb);
+        companyService.saveCompanyHistory(objFromDb.getCompany().getId(), "Status of user with email, " +objFromDb.getEmail()+ ", changed to " + objFromDb.getStatus(), getLoggedInUser());
     }
 
     /**
