@@ -157,6 +157,7 @@ public class JobCandidateMapping implements Serializable, Comparable {
     private CandidateReferralDetail candidateReferralDetail;
 
     @OneToMany(cascade = {CascadeType.MERGE}, mappedBy = "jobCandidateMappingId")
+    @OrderBy("id DESC")
     private List<InterviewDetails> interviewDetails = new ArrayList<>(0);
 
     @Transient
@@ -249,5 +250,9 @@ public class JobCandidateMapping implements Serializable, Comparable {
             returnVal = this.getCandidateLastName().compareTo(objToCompare.getCandidateLastName());
 
         return returnVal;
+    }
+
+    public InterviewDetails getCurrentInterviewDetail(){
+        return this.getInterviewDetails().get(0);
     }
 }
