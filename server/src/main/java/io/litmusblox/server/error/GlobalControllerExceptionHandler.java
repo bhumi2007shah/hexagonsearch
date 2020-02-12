@@ -67,7 +67,9 @@ public class GlobalControllerExceptionHandler {
         //System.out.println(ex);
         Map<String, String> breadCrumb = new HashMap<>();
         breadCrumb.put("ExceptionType","WebException");
-        breadCrumb.put("userId", ex.getUserId().toString());
+        if(null != ex.getUserId())
+            breadCrumb.put("userId", ex.getUserId().toString());
+
         if(ex.getBreadCrumb()!=null) {
             for (String key : ex.getBreadCrumb().keySet()) {
                 breadCrumb.put(key, ex.getBreadCrumb().get(key));
