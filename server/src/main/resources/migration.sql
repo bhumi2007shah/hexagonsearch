@@ -1671,6 +1671,8 @@ Insert into MASTER_DATA (TYPE, VALUE) values
 ALTER TABLE INTERVIEW_DETAILS
 ADD COLUMN CANDIDATE_CONFIRMATION_VALUE INTEGER REFERENCES MASTER_DATA(ID);
 
+ALTER TABLE export_format_detail ALTER COLUMN column_name TYPE VARCHAR(30), ALTER COLUMN header TYPE VARCHAR(30);
+
 delete from export_format_detail where format_id=(select id from export_format_master where format='All Data');
 INSERT INTO export_format_detail
 (format_id, column_name, header,  "position")
@@ -1686,4 +1688,14 @@ VALUES
 (1, 'countryCode','Country Code', 9),
 (1, 'mobile','Mobile', 10),
 (1, 'totalExperience','Total Experience', 11),
-(1, 'createdBy','Created By', 12);
+(1, 'createdBy','Created By', 12),
+(1, 'interviewDate','Interview Date', 13),
+(1, 'interviewType','Interview Type', 14),
+(1, 'interviewMode','Interview Mode', 15),
+(1, 'interviewLocation','Interview location', 16),
+(1, 'candidateConfirmation','Candidate Confirmation', 17),
+(1, 'candidateConfirmationTime','Candidate Confirmation Time', 18),
+(1, 'showNoShow','Show No Show', 19),
+(1, 'noShowReason','No Show Reason' ,20),
+(1, 'cancelled', 'Interview Cancelled', 21),
+(1, 'cancellationReason','Cancellation Reason', 22);
