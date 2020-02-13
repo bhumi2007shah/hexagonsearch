@@ -828,10 +828,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 throw new WebException(IErrorMessages.INVALID_RECEIVER_NAME, HttpStatus.BAD_REQUEST);
 
             //validate recevier email
-            if (!Util.validateEmail(receiverEmailToUse)) {
+            if (!Util.isValidateEmail(receiverEmailToUse)) {
                 String cleanEmail = receiverEmailToUse.replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL,"");
                 log.error("Special characters found, cleaning Email \"" + receiverEmailToUse + "\" to " + cleanEmail);
-                if (!Util.validateEmail(cleanEmail)) {
+                if (!Util.isValidateEmail(cleanEmail)) {
                     throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + receiverEmailToUse, HttpStatus.BAD_REQUEST);
                 }
                 receiverEmailToUse=cleanEmail;
@@ -1260,7 +1260,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             jcm.setAlternateMobile(validateMobile(jcm.getAlternateMobile(), jcmFromDb.getCountryCode()));
 
         if(Util.isNotNull(jcm.getAlternateEmail()))
-            jcm.setAlternateEmail(validateEmail(jcm.getAlternateEmail()));
+            jcm.setAlternateEmail(Util.validateEmail(jcm.getAlternateEmail()));
 
         CandidateEmailHistory candidateEmailHistory = null;
         CandidateMobileHistory candidateMobileHistory = null;
@@ -1305,21 +1305,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             }
         }
         return mobile;
-    }
-
-    private String validateEmail(String receiverEmailToUse){
-        if (!Util.validateEmail(receiverEmailToUse)) {
-            String cleanEmail = receiverEmailToUse.replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL,"");
-            log.error("Special characters found, cleaning Email \"" + receiverEmailToUse + "\" to " + cleanEmail);
-            if (!Util.validateEmail(cleanEmail)) {
-                throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + receiverEmailToUse, HttpStatus.BAD_REQUEST);
-            }
-            receiverEmailToUse=cleanEmail;
-        }
-        if(receiverEmailToUse.length()>50)
-            throw new ValidationException(IErrorMessages.EMAIL_TOO_LONG, HttpStatus.BAD_REQUEST);
-
-        return receiverEmailToUse;
     }
 
     private boolean removeNotAvailableEmail(JobCandidateMapping jcm){
@@ -1595,8 +1580,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     private void createUpdateEmail(JobCandidateMapping jobCandidateMapping, JobCandidateMapping jcmFromDb, User loggedInUser){
-        jobCandidateMapping.setEmail(validateEmail(jobCandidateMapping.getEmail()));
+        jobCandidateMapping.setEmail(Util.validateEmail(jobCandidateMapping.getEmail()));
         CandidateEmailHistory candidateEmailHistory = candidateEmailHistoryRepository.findByEmail(jobCandidateMapping.getEmail());
+        jobCandidateMapping.getCandidate().setId(jcmFromDb.getCandidate().getId());
         if (null == candidateEmailHistory) {
             if (!removeNotAvailableEmail(jobCandidateMapping))
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(jcmFromDb.getCandidate(), jobCandidateMapping.getEmail(), new Date(), loggedInUser));
@@ -1724,6 +1710,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             StoreFileUtil.storeFile(candidateCv, jcmFromDb.getJob().getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),jcmFromDb.getCandidate(),null);
             jcmFromDb.setCvFileType("."+extension);
             jobCandidateMappingRepository.save(jcmFromDb);
+            cvParsingDetailsRepository.save(new CvParsingDetails(new Date(), null, jcmFromDb.getCandidate().getId(),jcmFromDb));
         }catch (Exception ex){
            log.error("{}, File name : {}, For jcmId : ", IErrorMessages.FAILED_TO_SAVE_FILE, candidateCv.getOriginalFilename(), jcmId, ex.getMessage());
             throw new ValidationException(IErrorMessages.FAILED_TO_SAVE_FILE+" "+candidateCv.getOriginalFilename()+ex.getMessage(), HttpStatus.BAD_REQUEST);

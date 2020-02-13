@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
-import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.IJobCandidateMappingService;
@@ -20,7 +19,6 @@ import io.litmusblox.server.utils.SentryUtil;
 import io.litmusblox.server.utils.StoreFileUtil;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
@@ -29,7 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import javax.annotation.Resource;
 import java.io.*;
@@ -195,7 +192,7 @@ public class RChilliCvProcessor {
         try {
             //For converting multipart file create private method
             File file = new File(filePath);
-            MultipartFile multipartFile = createMultipartFile(file);
+            MultipartFile multipartFile = Util.createMultipartFile(file);
             if(isCandidateFailedToProcess && rChilliErrorResponse)
                 StoreFileUtil.storeFile(multipartFile, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.ERROR_FILES,null, user);
             else{
@@ -211,6 +208,10 @@ public class RChilliCvProcessor {
             log.error("For CandidateId : "+candidateId+", Email : "+candidate.getEmail()+", Mobile : "+candidate.getMobile());
         }
         cvParsingDetails = addUpdateCvParsingDetails(cvParsingDetails, fileName, rchilliResponseTime, (null!=rchilliFormattedJson)?rchilliFormattedJson:rchilliJsonResponse, isCandidateFailedToProcess, bean, (candidate != null)?candidate.getUploadErrorMessage():null, candidateId, job.getId(), pythonJsonResponse, mlJsonResponse);
+
+        if(null == candidate)
+            candidate = new Candidate();
+
         candidate.setCvParsingDetails(cvParsingDetails);
         return candidate;
     }
@@ -236,7 +237,7 @@ public class RChilliCvProcessor {
             if(isEmailOrMobilePresent(candidate)) {
                 //check if country code in null and set it to user's country code
                 if(Util.isNull(candidate.getCountryCode())){
-                    candidate.setCountryCode(user.getCountryId().getCountryCode());
+                    candidate.setCountryCode(job.getCompanyId().getCountryId().getCountryCode());
                 }
                 else{
                     //check if country code is supported by us and strip mobile number according to that,
@@ -246,11 +247,11 @@ public class RChilliCvProcessor {
                             .map(IConstant.CountryCode::getValue)
                             .collect(Collectors.toList()).contains(candidate.getCountryCode())
                     ){
-                        candidate.setCountryCode(user.getCountryId().getCountryCode());
+                        candidate.setCountryCode(job.getCompanyId().getCountryId().getCountryCode());
                         if(!candidate.getMobile().isEmpty()) {
                             candidate.setMobile(
                                     candidate.getMobile().substring(
-                                            (int) (candidate.getMobile().length() - Util.getCountryMap().get(user.getCountryId().getCountryCode()))
+                                            (int) (candidate.getMobile().length() - Util.getCountryMap().get(job.getCompanyId().getCountryId().getCountryCode()))
                                     )
                             );
                         }
@@ -539,7 +540,9 @@ public class RChilliCvProcessor {
         candidateId = processCandidate(candidateByData, user, job);
         try {
             file = new File(errorFilePath.toString());
-            MultipartFile multipartFile = createMultipartFile(file);
+
+            //CreateMultipartFile method used multiple places so add it in Util class
+            MultipartFile multipartFile = Util.createMultipartFile(file);
             StoreFileUtil.storeFile(multipartFile, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(), candidate, null);
         } catch (Exception ex) {
             file=null;
@@ -552,31 +555,6 @@ public class RChilliCvProcessor {
         if(null != file)
             file.delete();
         log.info("candidate info updated : For candidate id - "+candidateId);
-    }
-
-    private MultipartFile createMultipartFile(File file) throws IOException {
-        log.info("inside createMultipartFile method");
-        InputStream input = null;
-        try {
-            DiskFileItem fileItem = new DiskFileItem("file", "text/plain", false, file.getName(), (int) file.length(), file.getParentFile());
-            input = new FileInputStream(file);
-            OutputStream os = fileItem.getOutputStream();
-            int ret = input.read();
-            while (ret != -1) {
-                os.write(ret);
-                ret = input.read();
-            }
-            os.flush();
-            return new CommonsMultipartFile(fileItem);
-        }catch (Exception e){
-            throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,e);
-        }finally {
-            try {
-                input.close();
-            }catch (IOException ex){
-                ex.printStackTrace();
-            }
-        }
     }
 
     private boolean isEmailOrMobilePresent(Candidate candidate){

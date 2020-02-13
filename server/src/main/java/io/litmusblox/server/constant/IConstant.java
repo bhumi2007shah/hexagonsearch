@@ -61,6 +61,7 @@ public interface IConstant {
     String REPO_LOCATION = "repoLocation";
     String TEMP_REPO_LOCATION = "temprepolocation";
     String ERROR_FILES_REPO_LOCATION = "error_files";
+    String CV_STORAGE_LOCATION = "cvStorageUrl";
     String DATE_FORMAT_yyyymmdd_hhmm = "yyyyMMdd_HHmm";
     String STR_INDIA = "India";
 

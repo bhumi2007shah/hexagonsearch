@@ -140,10 +140,10 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             candidate.setLastName(Util.validateCandidateName(candidate.getLastName()));
         }
 
-        if (!Util.validateEmail(candidate.getEmail())) {
+        if (!Util.isValidateEmail(candidate.getEmail())) {
             String cleanEmail = candidate.getEmail().replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL,"");
             log.error("Special characters found, cleaning Email \"" + candidate.getEmail() + "\" to " + cleanEmail);
-            if (!Util.validateEmail(cleanEmail)) {
+            if (!Util.isValidateEmail(cleanEmail)) {
                 throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + candidate.getEmail(), HttpStatus.BAD_REQUEST);
             }
             candidate.setEmail(cleanEmail.toLowerCase());
@@ -176,7 +176,6 @@ public class UploadDataProcessService implements IUploadDataProcessService {
         log.info(msg);
 
         //create a candidate if no history found for email and mobile
-        long candidateId;
         Candidate existingCandidate = candidateService.findByMobileOrEmail(candidate.getEmail(),candidate.getMobile(),(Util.isNull(candidate.getCountryCode())?job.getCompanyId().getCountryId().getCountryCode():candidate.getCountryCode()), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
         if(null == existingCandidate && candidate.getCandidateSource().equalsIgnoreCase(IConstant.CandidateSource.LinkedIn.getValue())){
             existingCandidate = candidateService.findByProfileTypeAndUniqueId(candidate.getCandidateOnlineProfiles());
