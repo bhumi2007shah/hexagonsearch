@@ -1415,24 +1415,6 @@ update Job set RESUBMIT_HR_CHATBOT='f';
 
 ALTER TABLE export_format_detail ALTER COLUMN column_name TYPE VARCHAR(25), ALTER COLUMN header TYPE VARCHAR(25);
 
-delete from export_format_detail where format_id=(select id from export_format_master where format='All Data');
-INSERT INTO export_format_detail
-(format_id, column_name, header,  "position")
-VALUES
-(1, 'candidateName','Candidate Name', 1),
-(1, 'chatbotStatus','Chatbot Status', 2),
-(1, 'chatbotFilledTimeStamp', 'Chatbot Filled Timestamp', 3),
-(1, 'currentStage','Stage', 4),
-(1, 'keySkillsStrength','Key Skills Strength', 5),
-(1, 'currentCompany','Current Company', 6),
-(1, 'currentDesignation','Current Designation', 7),
-(1, 'email','Email', 8),
-(1, 'countryCode','Country Code', 9),
-(1, 'mobile','Mobile', 10),
-(1, 'totalExperience','Total Experience', 11),
-(1, 'createdBy','Created By', 12);
-
-
 ALTER TABLE JCM_COMMUNICATION_DETAILS RENAME COLUMN CHAT_COMPLETE_FLAG TO TECH_CHAT_COMPLETE_FLAG;
 
 update job_candidate_mapping
@@ -1577,50 +1559,6 @@ ADD CONSTRAINT jcm_history_stage_step_fkey FOREIGN KEY(stage) REFERENCES stage_s
 
 DROP TABLE company_stage_step, job_stage_step, steps_per_stage, stage_master;
 
---updated view for export data
-drop view if exists exportDataView;
-create view exportDataView AS
-select
-	jcm.job_id as jobId,
-	concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidateName,
-	jcm.chatbot_status as chatbotStatus,
-	jcm.chatbot_updated_on as chatbotFilledTimeStamp,
-	cvr.overall_rating as keySkillsStrength,
-	ssm.stage as currentStage,
-	currentCompany.company_name as currentCompany,
-	currentCompany.designation as currentDesignation,
-	jcm.email,
-	jcm.country_code as countryCode,
-	jcm.mobile,
-	cd.total_experience as totalExperience,
-	concat(users.first_name, ' ', users.last_name) as createdBy,
-	jcm.created_on as createdOn,
-	jcm.score as capabilityScore,
-	jsq.jsqId as jsqId,
-	jsq.ScreeningQn as screeningQuestion,
-	csqr.response as candidateResponse
-	from job_candidate_mapping jcm
-	left join cv_rating cvr ON cvr.job_candidate_mapping_id = jcm.id
-	left join (
-		select candidate_id, company_name, designation from candidate_company_details where id in (
-				select min(id) from candidate_company_details
-				group by candidate_id
-			)
-	) as currentCompany on jcm.candidate_id = currentCompany.candidate_id
-	left join candidate_details cd on cd.candidate_id = jcm.candidate_id
-	inner join users ON users.id = jcm.created_by
-	inner join stage_step_master ssm on ssm.id=jcm.stage
-	left join (
-		select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
-		union
-		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.user_screening_question_id=usq.id
-		union
-		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
-	) as jsq on jsq.jsqJobId = jcm.job_id
-	left join
-	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId, candidateName, jsq.jsqId;
-
-
 --For ticket #377
 ALTER TABLE COMPANY
 ADD COLUMN COUNTRY_ID INTEGER REFERENCES COUNTRY(ID);
@@ -1733,5 +1671,22 @@ Insert into MASTER_DATA (TYPE, VALUE) values
 ALTER TABLE INTERVIEW_DETAILS
 ADD COLUMN CANDIDATE_CONFIRMATION_VALUE INTEGER REFERENCES MASTER_DATA(ID);
 
+ALTER TABLE export_format_detail ADD COLUMN access text[] not null default '{"SuperAdmin", "ClientAdmin", "Recruiter"}';
 
-
+delete from export_format_detail where format_id=(select id from export_format_master where format='All Data');
+INSERT INTO export_format_detail
+(format_id, column_name, header,  "position", access)
+VALUES
+(1, 'candidateName','Candidate Name', 1, '{"SuperAdmin", "ClientAdmin", "Recruiter"}'),
+(1, 'chatbotStatus','Chatbot Status', 2, '{"SuperAdmin", "ClientAdmin", "Recruiter"}'),
+(1, 'chatbotLink','Chatbot Link', 3, '{"SuperAdmin"}'),
+(1, 'chatbotFilledTimeStamp', 'Chatbot Filled Timestamp', 4, '{"SuperAdmin", "ClientAdmin", "Recruiter"}'),
+(1, 'currentStage','Stage', 5, '{"SuperAdmin", "ClientAdmin", "Recruiter"}'),
+(1, 'keySkillsStrength','Key Skills Strength', 6, '{"SuperAdmin", "ClientAdmin", "Recruiter"}'),
+(1, 'currentCompany','Current Company', 7, '{"SuperAdmin", "ClientAdmin", "Recruiter"}'),
+(1, 'currentDesignation','Current Designation', 8, '{"SuperAdmin", "ClientAdmin", "Recruiter"}'),
+(1, 'email','Email', 9, '{"SuperAdmin", "ClientAdmin", "Recruiter"}'),
+(1, 'countryCode','Country Code', 10, '{"SuperAdmin", "ClientAdmin", "Recruiter"}'),
+(1, 'mobile','Mobile', 11, '{"SuperAdmin", "ClientAdmin", "Recruiter"}'),
+(1, 'totalExperience','Total Experience', 12, '{"SuperAdmin", "ClientAdmin", "Recruiter"}'),
+(1, 'createdBy','Created By', 13, '{"SuperAdmin", "ClientAdmin", "Recruiter"}');
