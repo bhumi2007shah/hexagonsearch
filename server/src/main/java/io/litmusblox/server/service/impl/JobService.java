@@ -1202,7 +1202,7 @@ public class JobService implements IJobService {
             company = job.getCompanyId();
         }
 
-        String userRole = ((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getRole();
+        boolean isSuperAdmin = ((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getRole().equalsIgnoreCase(IConstant.UserRole.Names.SUPER_ADMIN);
 
         //if default format is not available in db then throw exception
         if(null==exportFormatMaster){
@@ -1212,7 +1212,9 @@ public class JobService implements IJobService {
         //get list of headers and column names frm  db for default format
         List<ExportFormatDetail> defaultExportColumns = exportFormatDetailRepository.findByExportFormatMasterOrderByPositionAsc(exportFormatMaster);
 
-        defaultExportColumns = defaultExportColumns.stream().filter(exportFormatDetail -> exportFormatDetail.getAccess().contains(userRole)).collect(Collectors.toList());
+        if(isSuperAdmin){
+            defaultExportColumns.add(new ExportFormatDetail(IConstant.CHAT_LINK, IConstant.CHAT_LINK_HEADER));
+        }
 
         Map<String, String> exportHeaderColumnMap = new LinkedHashMap<>();
 
