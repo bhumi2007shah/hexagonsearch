@@ -23,4 +23,7 @@ public interface CvParsingApiDetailsRepository extends JpaRepository<CvParsingAp
 
     @Transactional(readOnly = true)
     List<CvParsingApiDetails> findAllByOrderByApiSequenceAsc();
+
+    @Transactional(readOnly = true)
+    CvParsingApiDetails findByColumnToUpdate(String columnToUpdate);
 }
