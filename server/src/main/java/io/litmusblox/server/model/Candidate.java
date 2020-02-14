@@ -160,4 +160,8 @@ public class Candidate implements Serializable {
     @Transient
     private EmployeeReferrer employeeReferrer;
 
+    @JsonProperty
+    @Transient
+    private CvParsingDetails cvParsingDetails;
+
 }

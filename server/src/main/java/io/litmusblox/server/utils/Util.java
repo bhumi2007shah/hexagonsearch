@@ -13,16 +13,20 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
+import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.Candidate;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.repository.CandidateRepository;
 import io.litmusblox.server.service.MasterDataBean;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang.WordUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import java.io.*;
 import java.nio.file.FileSystem;
@@ -119,7 +123,7 @@ public class Util {
         return true;
     }
 
-    public static boolean validateEmail(String email) throws ValidationException {
+    public static boolean isValidateEmail(String email) throws ValidationException {
         if(Util.isNull(email) || email.trim().length() == 0)
             throw new ValidationException(IErrorMessages.EMAIL_NULL_OR_BLANK + " - " + email, HttpStatus.BAD_REQUEST);
         if(email.length() > IConstant.CANDIDATE_EMAIL_MAX_LENGTH)
@@ -135,6 +139,21 @@ public class Util {
         }
         //email address is valid
         return true;
+    }
+
+    public static String validateEmail(String receiverEmailToUse){
+        if (!isValidateEmail(receiverEmailToUse)) {
+            String cleanEmail = receiverEmailToUse.replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL,"");
+            log.error("Special characters found, cleaning Email \"" + receiverEmailToUse + "\" to " + cleanEmail);
+            if (!isValidateEmail(cleanEmail)) {
+                throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + receiverEmailToUse, HttpStatus.BAD_REQUEST);
+            }
+            receiverEmailToUse=cleanEmail;
+        }
+        if(receiverEmailToUse.length()>50)
+            throw new ValidationException(IErrorMessages.EMAIL_TOO_LONG, HttpStatus.BAD_REQUEST);
+
+        return receiverEmailToUse;
     }
 
     public static boolean validateMobile(String mobile, String countryCode) throws ValidationException  {
@@ -433,5 +452,28 @@ public class Util {
         return false;
     }
 
-
+    public static MultipartFile createMultipartFile(File file) throws IOException {
+        log.info("inside createMultipartFile method");
+        InputStream input = null;
+        try {
+            DiskFileItem fileItem = new DiskFileItem("file", "text/plain", false, file.getName(), (int) file.length(), file.getParentFile());
+            input = new FileInputStream(file);
+            OutputStream os = fileItem.getOutputStream();
+            int ret = input.read();
+            while (ret != -1) {
+                os.write(ret);
+                ret = input.read();
+            }
+            os.flush();
+            return new CommonsMultipartFile(fileItem);
+        }catch (Exception e){
+            throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,e);
+        }finally {
+            try {
+                input.close();
+            }catch (IOException ex){
+                ex.printStackTrace();
+            }
+        }
+    }
 }
