@@ -6,7 +6,6 @@ package io.litmusblox.server.uploadProcessor.impl;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.*;
@@ -143,11 +142,8 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                         if(null != candidate.get() && null != candidate.get().getCvParsingDetails()){
 
                             Candidate candidateFromPython = null;
-                            ObjectMapper mapper = new ObjectMapper();
                             try {
-                                mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
-                                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                                candidateFromPython = mapper.readValue(pythonResponse.get(), Candidate.class);
+                                candidateFromPython = new ObjectMapper().readValue(pythonResponse.get(), Candidate.class);
                                 if(Util.isNull(candidateFromPython.getEmail()) || !Util.isValidateEmail(candidateFromPython.getEmail()))
                                     candidateFromPython.setEmail("notavailable"+new Date().getTime()+IConstant.NOT_AVAILABLE_EMAIL);
 
@@ -245,7 +241,6 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         log.info("inside CvToCvText");
         List<CvParsingDetails> cvParsingDetailsList = new ArrayList<>();
         List<CvParsingDetails> cvParsingDetails = cvParsingDetailsRepository.getDataForConvertCvToCvText();
-        RestClient rest = RestClient.getInstance();
         if(null != cvParsingDetails && cvParsingDetails.size()>0){
             cvParsingDetails.forEach(cvParsingDetailsFromDb-> {
                 String cvText = null;
@@ -259,7 +254,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     log.info("CvFile path : {}", queryParameters.get("file"));
                     breadCrumb.put("FilePath", queryParameters.get("file"));
                     long apiCallStartTime = System.currentTimeMillis();
-                    cvText = rest.consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), null).getResponseBody();
+                    cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), null).getResponseBody();
                     log.info("Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", (System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
                     if (null != cvText && cvText.trim().length()>IConstant.CV_TEXT_API_RESPONSE_MIN_LENGTH && !cvText.isEmpty()) {
                         cvParsingDetailsFromDb.setParsingResponseText(cvText);
@@ -297,15 +292,11 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
 
     private Candidate pythonCvParser(String queryString){
         log.info("Inside pythonCvParser");
-        RestClient rest = RestClient.getInstance();
-        ObjectMapper mapper = new ObjectMapper();
         long PythonStartTime = System.currentTimeMillis();
         Candidate candidateFromPython = null;
         try {
-            String pythonResponse = rest.consumeRestApi(null, queryString, HttpMethod.GET, null).getResponseBody();
-            mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
-            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            candidateFromPython = mapper.readValue(pythonResponse, Candidate.class);
+            String pythonResponse = RestClient.getInstance().consumeRestApi(null, queryString, HttpMethod.GET, null).getResponseBody();
+            candidateFromPython = new ObjectMapper().readValue(pythonResponse, Candidate.class);
             log.info("Received response from Python parser in {}ms.",(System.currentTimeMillis() - PythonStartTime));
         }catch (Exception e){
             log.error("Error while parse resume by Python parser : {}",e.getMessage());
