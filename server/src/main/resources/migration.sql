@@ -1673,29 +1673,31 @@ ADD COLUMN CANDIDATE_CONFIRMATION_VALUE INTEGER REFERENCES MASTER_DATA(ID);
 
 ALTER TABLE export_format_detail ALTER COLUMN column_name TYPE VARCHAR(30), ALTER COLUMN header TYPE VARCHAR(30);
 
+ALTER TABLE export_format_detail ADD COLUMN stage VARCHAR(15);
+
 delete from export_format_detail where format_id=(select id from export_format_master where format='All Data');
 INSERT INTO export_format_detail
-(format_id, column_name, header,  "position")
+(format_id, column_name, header,  "position", stage)
 VALUES
-(1, 'candidateName','Candidate Name', 1),
-(1, 'chatbotStatus','Chatbot Status', 2),
-(1, 'chatbotFilledTimeStamp', 'Chatbot Filled Timestamp', 3),
-(1, 'currentStage','Stage', 4),
-(1, 'keySkillsStrength','Key Skills Strength', 5),
-(1, 'currentCompany','Current Company', 6),
-(1, 'currentDesignation','Current Designation', 7),
-(1, 'email','Email', 8),
-(1, 'countryCode','Country Code', 9),
-(1, 'mobile','Mobile', 10),
-(1, 'totalExperience','Total Experience', 11),
-(1, 'createdBy','Created By', 12),
-(1, 'interviewDate','Interview Date', 13),
-(1, 'interviewType','Interview Type', 14),
-(1, 'interviewMode','Interview Mode', 15),
-(1, 'interviewLocation','Interview location', 16),
-(1, 'candidateConfirmation','Candidate Confirmation', 17),
-(1, 'candidateConfirmationTime','Candidate Confirmation Time', 18),
-(1, 'showNoShow','Show No Show', 19),
-(1, 'noShowReason','No Show Reason' ,20),
-(1, 'cancelled', 'Interview Cancelled', 21),
-(1, 'cancellationReason','Cancellation Reason', 22);
+(1, 'candidateName','Candidate Name', 1, ''),
+(1, 'chatbotStatus','Chatbot Status', 2, ''),
+(1, 'chatbotFilledTimeStamp', 'Chatbot Filled Timestamp', 3, ''),
+(1, 'currentStage','Stage', 4, ''),
+(1, 'keySkillsStrength','Key Skills Strength', 5, ''),
+(1, 'currentCompany','Current Company', 6, ''),
+(1, 'currentDesignation','Current Designation', 7, ''),
+(1, 'email','Email', 8, ''),
+(1, 'countryCode','Country Code', 9, ''),
+(1, 'mobile','Mobile', 10, ''),
+(1, 'totalExperience','Total Experience', 11, ''),
+(1, 'createdBy','Created By', 12, ''),
+(1, 'interviewDate','Interview Date', 13, 'Interview'),
+(1, 'interviewType','Interview Type', 14, 'Interview'),
+(1, 'interviewMode','Interview Mode', 15, 'Interview'),
+(1, 'interviewLocation','Interview location', 16, 'Interview'),
+(1, 'candidateConfirmation','Candidate Confirmation', 17, 'Interview'),
+(1, 'candidateConfirmationTime','Candidate Confirmation Time', 18, 'Interview'),
+(1, 'showNoShow','Show No Show', 19, 'Interview'),
+(1, 'noShowReason','No Show Reason' ,20, 'Interview'),
+(1, 'cancelled', 'Interview Cancelled', 21, 'Interview'),
+(1, 'cancellationReason','Cancellation Reason', 22, 'Interview');

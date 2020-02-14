@@ -1212,6 +1212,10 @@ public class JobService implements IJobService {
         //get list of headers and column names frm  db for default format
         List<ExportFormatDetail> defaultExportColumns = exportFormatDetailRepository.findByExportFormatMasterOrderByPositionAsc(exportFormatMaster);
 
+        defaultExportColumns = defaultExportColumns.stream().filter(exportFormatDetail -> {
+            return (exportFormatDetail.getStage().isEmpty() || exportFormatDetail.getStage().equalsIgnoreCase(stage));
+        }).collect(Collectors.toList());
+
         if(isSuperAdmin){
             defaultExportColumns.add(new ExportFormatDetail(IConstant.CHAT_LINK, IConstant.CHAT_LINK_HEADER));
         }

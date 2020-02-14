@@ -30,12 +30,8 @@ public class ExportData {
         query.append(columns);
         query.append(" from exportDataView where jobId=");
         query.append(jobId);
-        if(IConstant.Stage.Reject.equals(stage)){
-            query.append(query.append(" and rejected is true"));
-        }else {
-            query.append(" and currentStage='" + stage + "'");
-            query.append(" and rejected is false");
-        }
+        query.append(" and currentStage='" + stage + "'");
+
         List<Object[]> exportDataList= new ArrayList<>();
 
         try {

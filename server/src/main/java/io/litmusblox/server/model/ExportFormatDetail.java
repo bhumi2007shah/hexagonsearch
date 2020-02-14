@@ -44,6 +44,9 @@ public class ExportFormatDetail {
     @Column(name = "POSITION")
     private int position;
 
+    @Column(name = "STAGE")
+    private String stage;
+
     public ExportFormatDetail(String columnName, String header) {
         this.columnName = columnName;
         this.header = header;
