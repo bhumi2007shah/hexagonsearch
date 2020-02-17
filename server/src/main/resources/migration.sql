@@ -1758,7 +1758,7 @@ case
  when COMPANY_NAME = 'Quality Kiosk' then 'QualityKiosk'
  when COMPANY_NAME = 'Accurate Sales and Services' then 'AccurateSales'
  when COMPANY_NAME = 'Persistent Systems' then 'Persistent'
- when COMPANY_NAME = 'Fast Data Connect' then 'FastDataConnect '
+ when COMPANY_NAME = 'Fast Data Connect' then 'FastDataConnect'
  when COMPANY_NAME = 'Schlumberger' then 'Schlumberger'
  when COMPANY_NAME = 'Princeton IT Services' then 'PrincetonIT'
  when COMPANY_NAME = 'Tricentis' then 'Tricentis'
