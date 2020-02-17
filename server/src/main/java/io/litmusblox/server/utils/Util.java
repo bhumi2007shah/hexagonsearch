@@ -134,6 +134,11 @@ public class Util {
         if(domainName.indexOf('.') == -1)
             throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + email, HttpStatus.BAD_REQUEST);
 
+        String domainString = domainName.substring(domainName.indexOf('.')+1);
+
+        if(domainString.length()>3)
+            return false;
+
         if(!email.matches(IConstant.REGEX_FOR_EMAIL_VALIDATION)) {
             return false;
         }

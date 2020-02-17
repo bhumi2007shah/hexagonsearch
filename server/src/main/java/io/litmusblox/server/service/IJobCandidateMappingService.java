@@ -258,5 +258,15 @@ public interface IJobCandidateMappingService {
      */
     void candidateConfirmationForInterview(InterviewDetails confirmationDetails);
 
+    /**
+     * function to update candidate data nad jcm record with new email or mobile requested in candidate edit function.
+     * @param jobCandidateMapping - updated jcm record.
+     * @param jcmFromDb - jcm record from db with candidate id
+     * @param loggedInUser - user updating the jcm record.
+     * @return boolean whether jcmFromDbDeleted, in case id candidate with new email or mobile already existing and jcm from db has null mobile and email has @notavailable.
+     * Flowchart for this method - https://github.com/hexagonsearch/litmusblox-backend/issues/253
+     */
+    boolean updateOrCreateEmailMobile(JobCandidateMapping jobCandidateMapping, JobCandidateMapping jcmFromDb, User loggedInUser);
+
 
 }
