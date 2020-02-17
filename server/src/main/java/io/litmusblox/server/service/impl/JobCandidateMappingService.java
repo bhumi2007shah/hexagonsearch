@@ -1088,7 +1088,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Transactional
     @Override
     public void editCandidate(JobCandidateMapping jobCandidateMapping) {
-        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        log.info("Inside editCandidate");
+        User loggedInUser = (null != SecurityContextHolder.getContext().getAuthentication())?(User)SecurityContextHolder.getContext().getAuthentication().getPrincipal():jobCandidateMapping.getCreatedBy();
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(jobCandidateMapping.getId()).orElse(null);
 
         //update or create email id and mobile
@@ -1188,7 +1189,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             if (Util.isNotNull(companyDetailsByRequest.getCompanyName())) {
                 AtomicBoolean isCompanyPresent = new AtomicBoolean(false);
                 jcmFromDb.getCandidate().getCandidateCompanyDetails().stream().forEach(CompanyDetails -> {
-                    if (CompanyDetails.getCompanyName().equalsIgnoreCase(companyDetailsByRequest.getCompanyName())) {
+                    if (!isCompanyPresent.get() && CompanyDetails.getCompanyName().equalsIgnoreCase(companyDetailsByRequest.getCompanyName())) {
                         companyDetailsByRequest.setId(CompanyDetails.getId());
                         isCompanyPresent.set(true);
                     }
