@@ -1769,6 +1769,7 @@ case
  when COMPANY_NAME = 'Melzer' then 'Melzer'
  when COMPANY_NAME = 'Shinde Developers Private Limited' then 'ShindeDevelopers'
  when COMPANY_NAME = 'Z&A Infotek Inc.' then 'ZenArt'
+ ELSE SHORT_NAME
 end;
 
 --For ticket #415
