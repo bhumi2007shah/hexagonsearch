@@ -1337,7 +1337,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @return boolean whether jcmFromDbDeleted, in case id candidate with new email or mobile already existing and jcm from db has null mobile and email has @notavailable.
      * Flowchart for this method - https://github.com/hexagonsearch/litmusblox-backend/issues/253
      */
-    private boolean updateOrCreateEmailMobile(JobCandidateMapping jobCandidateMapping, JobCandidateMapping jcmFromDb, User loggedInUser){
+    public boolean updateOrCreateEmailMobile(JobCandidateMapping jobCandidateMapping, JobCandidateMapping jcmFromDb, User loggedInUser){
+        log.info("Inside updateOrCreateEmailMobile");
 
         boolean jcmFromDbDeleted = false;
         //check if new email contains @notavailable.io
@@ -1488,6 +1489,22 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     /**
+     * Service method to determine if candidate has already sent a confirmation for the said interview earlier
+     *
+     * @return List of companies
+     * @throws Exception
+     */
+    @Transactional
+    public JobCandidateMapping getCandidateConfirmationStatus(UUID interviewReferenceId) throws Exception {
+        log.info("Inside getCandidateConfirmationStatus");
+         InterviewDetails interviewDetailsFromDb = interviewDetailsRepository.findByInterviewReferenceId(interviewReferenceId);
+         if(null == interviewDetailsFromDb)
+             throw new ValidationException("Interview details not found for rf id : "+interviewReferenceId, HttpStatus.BAD_REQUEST);
+
+        return jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null);
+    }
+
+    /**
      * function to remove all occurrences of records for a candidate in different tables.
      * @param candidate for which all records will be removed
      */
@@ -1550,6 +1567,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     private void createUpdateEmailMobileNew(JobCandidateMapping jobCandidateMapping, JobCandidateMapping jcmFromDb, User loggedInUser){
+        log.info("Inside createUpdateEmailMobileNew");
         //Update or create email id
         if (null != jobCandidateMapping.getEmail() && !jobCandidateMapping.getEmail().isEmpty()) {
             createUpdateEmail(jobCandidateMapping, jcmFromDb, loggedInUser);
@@ -1564,11 +1582,11 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
 
     private void createUpdateMobile(JobCandidateMapping jobCandidateMapping, JobCandidateMapping jcmFromDb, User loggedInUser){
-        jobCandidateMapping.setMobile(validateMobile(jobCandidateMapping.getMobile(), jobCandidateMapping.getCandidate().getCountryCode()));
+        jobCandidateMapping.setMobile(validateMobile(jobCandidateMapping.getMobile(), jcmFromDb.getCountryCode()));
         if(!Util.isNull(jobCandidateMapping.getMobile())) {
-            CandidateMobileHistory candidateMobileHistory = candidateMobileHistoryRepository.findByMobileAndCountryCode(jobCandidateMapping.getMobile(), jobCandidateMapping.getCandidate().getCountryCode());
+            CandidateMobileHistory candidateMobileHistory = candidateMobileHistoryRepository.findByMobileAndCountryCode(jobCandidateMapping.getMobile(), jcmFromDb.getCountryCode());
             if (null == candidateMobileHistory) {
-                candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jobCandidateMapping.getMobile(), jobCandidateMapping.getCandidate().getCountryCode(), new Date(), loggedInUser));
+                candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jobCandidateMapping.getMobile(), jcmFromDb.getCountryCode(), new Date(), loggedInUser));
                 jcmFromDb.setMobile(jobCandidateMapping.getMobile());
             } else {
                 if (!jcmFromDb.getCandidate().getId().equals(candidateMobileHistory.getCandidate().getId()))

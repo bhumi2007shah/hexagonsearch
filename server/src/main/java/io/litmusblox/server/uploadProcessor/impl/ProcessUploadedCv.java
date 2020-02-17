@@ -263,18 +263,31 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                         SentryUtil.logWithStaticAPI(null, "Cv convert python response not good", breadCrumb);
                     }
 
-                    if(cvParsingDetailsFromDb.getJobCandidateMappingId().getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)){
-                        log.info("Update candidate email for candidateId : {}", cvParsingDetailsFromDb.getCandidateId());
+                    if(cvParsingDetailsFromDb.getJobCandidateMappingId().getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL) || null == cvParsingDetailsFromDb.getJobCandidateMappingId().getMobile()){
+                        String validMobile = null;
+                        boolean isEditCandidate = false;
+                        JobCandidateMapping jcmFromDb = cvParsingDetailsFromDb.getJobCandidateMappingId();
+                        log.info("Update edit candidate for candidateId : {}", cvParsingDetailsFromDb.getCandidateId());
                         CvParsingApiDetails cvParsingApiDetails = cvParsingApiDetailsRepository.findByColumnToUpdate(PARSING_RESPONSE_PYTHON);
                         StringBuffer queryString = new StringBuffer(cvParsingApiDetails.getApiUrl());
                         queryString.append("?file=");
-                        queryString.append(environment.getProperty(IConstant.CV_STORAGE_LOCATION)).append(cvParsingDetailsFromDb.getJobCandidateMappingId().getJob().getId()).append(File.separator).append(cvParsingDetailsFromDb.getCandidateId()).append(cvParsingDetailsFromDb.getJobCandidateMappingId().getCvFileType());
+                        queryString.append(environment.getProperty(IConstant.CV_STORAGE_LOCATION)).append(jcmFromDb.getJob().getId()).append(File.separator).append(cvParsingDetailsFromDb.getCandidateId()).append(jcmFromDb.getCvFileType());
                         candidateFromPython = pythonCvParser(queryString.toString());
                         if(Util.isNotNull(candidateFromPython.getEmail()) && Util.isValidateEmail(candidateFromPython.getEmail())){
-                            log.info("candidate old email : {}, python response email : {}", cvParsingDetailsFromDb.getJobCandidateMappingId().getEmail(), candidateFromPython.getEmail());
+                            log.info("candidate old email : {}, python response email : {}", jcmFromDb.getEmail(), candidateFromPython.getEmail());
                             cvParsingDetailsFromDb.getJobCandidateMappingId().setEmail(candidateFromPython.getEmail());
-                            jobCandidateMappingService.editCandidate(cvParsingDetailsFromDb.getJobCandidateMappingId());
+                            isEditCandidate = true;
                         }
+                        if(Util.isNull(jcmFromDb.getMobile()) && Util.isNotNull(candidateFromPython.getMobile())){
+                            validMobile = Util.indianMobileConvertor(candidateFromPython.getMobile(), cvParsingDetailsFromDb.getJobCandidateMappingId().getCountryCode());
+                            if(Util.validateMobile(validMobile, cvParsingDetailsFromDb.getJobCandidateMappingId().getCountryCode())){
+                                log.info("candidate old mobile : {}, python response mobile : {}", jcmFromDb.getMobile(), candidateFromPython.getMobile());
+                                cvParsingDetailsFromDb.getJobCandidateMappingId().setMobile(validMobile);
+                                isEditCandidate = true;
+                            }
+                        }
+                        if(isEditCandidate)
+                            jobCandidateMappingService.updateOrCreateEmailMobile(cvParsingDetailsFromDb.getJobCandidateMappingId(), jcmFromDb, jcmFromDb.getCreatedBy());
                     }
                 } catch (Exception e) {
                     log.error("Error while convert cv to text cvFilePath : {}, for cvParsingDetailsId  : {}, error message : {}", queryParameters.get("file"), cvParsingDetailsFromDb.getId(), e.getMessage());

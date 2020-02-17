@@ -378,13 +378,15 @@ public class LbUserDetailsService implements UserDetailsService {
         else if(IConstant.UserStatus.New.name().equals(userToReset.getStatus())) {
             throw new ValidationException(IErrorMessages.USER_NOT_ACTIVE + email, HttpStatus.UNPROCESSABLE_ENTITY);
         }
-        else if(!IConstant.UserStatus.Active.name().equals(userToReset.getStatus())){
+        //commented out the following as a result of backend ticket #385
+        /*else if(!IConstant.UserStatus.Active.name().equals(userToReset.getStatus())){
             throw new ValidationException(IErrorMessages.FORGOT_PASSWORD_DUPLICATE_REQUEST+email, HttpStatus.UNPROCESSABLE_ENTITY);
-        }
+        }*/
         userToReset.setPassword(null);
         userToReset.setUserUuid(UUID.randomUUID());
         userToReset.setStatus(IConstant.UserStatus.Inactive.name());
         userToReset.setResetPasswordFlag(true);
+        userToReset.setResetPasswordEmailTimestamp(null);
         userRepository.save(userToReset);
     }
 

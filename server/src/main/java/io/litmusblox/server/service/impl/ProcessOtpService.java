@@ -82,6 +82,10 @@ public class ProcessOtpService implements IProcessOtpService {
             log.error("Error while verify otp : "+ex.getMessage());
         }
         log.info("Completed processing Verify OTP request in {}",(System.currentTimeMillis() - startTime));
+        if (environment.getActiveProfiles()[0].equals("testServer")){
+            log.info("Your active profile is : {}, Otp verify : {}", environment.getActiveProfiles(), true);
+            return true;
+        }
         return match;
     }
 }
