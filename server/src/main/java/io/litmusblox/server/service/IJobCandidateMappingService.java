@@ -268,5 +268,12 @@ public interface IJobCandidateMappingService {
      */
     boolean updateOrCreateEmailMobile(JobCandidateMapping jobCandidateMapping, JobCandidateMapping jcmFromDb, User loggedInUser);
 
+    /**
+     * Service method to determine if candidate has already sent a confirmation for the said interview earlier
+     *
+     * @return List of companies
+     * @throws Exception
+     */
+    JobCandidateMapping getCandidateConfirmationStatus(UUID interviewReferenceId) throws Exception;
 
 }

@@ -351,4 +351,25 @@ public class NoAuthController {
         log.info("Candidate Interview confirmation done in " + (System.currentTimeMillis()-startTime) + "ms.");
     }
 
+    /**
+     * REST Api to determine if candidate has already sent a confirmation for the said interview earlier
+     *
+     * @return List of companies
+     * @throws Exception
+     */
+    @GetMapping(value = "/getCandidateConfirmationStatus/{interviewReferenceId}")
+    @ResponseStatus(value = HttpStatus.OK)
+    String getCandidateConfirmationStatus(@PathVariable("interviewReferenceId") UUID interviewReferenceId) throws Exception {
+        long startTime = System.currentTimeMillis();
+        JobCandidateMapping jobCandidateMapping = jobCandidateMappingService.getCandidateConfirmationStatus(interviewReferenceId);
+        log.info("Get candidate confirmation status in " + (System.currentTimeMillis()-startTime) + "ms.");
+        String responseStr = Util.stripExtraInfoFromResponseBean(jobCandidateMapping,
+                (new HashMap<String, List<String>>(){{
+                    put("User", Arrays.asList("displayName"));
+                    put("JobCandidateMapping", Arrays.asList("displayName", "currentInterviewDetail"));
+                }}),
+                null
+        );
+        return responseStr;
+    }
 }

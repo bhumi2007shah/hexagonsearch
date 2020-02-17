@@ -1489,6 +1489,22 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     /**
+     * Service method to determine if candidate has already sent a confirmation for the said interview earlier
+     *
+     * @return List of companies
+     * @throws Exception
+     */
+    @Transactional
+    public JobCandidateMapping getCandidateConfirmationStatus(UUID interviewReferenceId) throws Exception {
+        log.info("Inside getCandidateConfirmationStatus");
+         InterviewDetails interviewDetailsFromDb = interviewDetailsRepository.findByInterviewReferenceId(interviewReferenceId);
+         if(null == interviewDetailsFromDb)
+             throw new ValidationException("Interview details not found for rf id : "+interviewReferenceId, HttpStatus.BAD_REQUEST);
+
+        return jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null);
+    }
+
+    /**
      * function to remove all occurrences of records for a candidate in different tables.
      * @param candidate for which all records will be removed
      */
