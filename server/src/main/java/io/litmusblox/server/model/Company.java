@@ -125,6 +125,9 @@ public class Company implements Serializable {
     @JoinColumn(name="COUNTRY_ID")
     private Country countryId;
 
+    @Column(name = "COMPANY_UNIQUE_ID")
+    private String companyUniqueId;
+
     @Transient
     private Set<String> newCompanyBu;
 

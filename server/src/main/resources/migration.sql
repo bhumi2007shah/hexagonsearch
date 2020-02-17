@@ -1733,6 +1733,7 @@ Insert into MASTER_DATA (TYPE, VALUE) values
 ALTER TABLE INTERVIEW_DETAILS
 ADD COLUMN CANDIDATE_CONFIRMATION_VALUE INTEGER REFERENCES MASTER_DATA(ID);
 
+--For ticket #336
 UPDATE COMPANY SET SHORT_NAME =
 case
  when COMPANY_NAME = 'LitmusBlox' then 'LitmusBlox'
@@ -1769,4 +1770,9 @@ case
  when COMPANY_NAME = 'Shinde Developers Private Limited' then 'ShindeDevelopers'
  when COMPANY_NAME = 'Z&A Infotek Inc.' then 'ZenArt'
 end;
+
+--For ticket #415
+ALTER TABLE COMPANY
+ADD COLUMN COMPANY_UNIQUE_ID VARCHAR(8) UNIQUE;
+
 

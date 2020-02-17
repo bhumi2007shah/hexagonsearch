@@ -37,6 +37,7 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -103,6 +104,7 @@ public class CompanyService implements ICompanyService {
      */
     @Transactional
     public Company addCompany(Company company, User loggedInUser) throws Exception {
+        company = generateAndSetCompanyUniqueId(company);
         companyRepository.save(company);
         saveCompanyHistory(company.getId(), "New company, "+company.getCompanyName()+", created", loggedInUser);
         return company;
@@ -706,6 +708,50 @@ public class CompanyService implements ICompanyService {
         List<CompanyAddress> companyAddressList = companyAddressRepository.findByCompanyId(companyId);
         log.info("Get Company address list by company id in {} ms.", (System.currentTimeMillis() - startTime));
         return companyAddressList;
+    }
+
+    @Override
+    public List<Company> setCompanyUniqueId() {
+        log.info("Inside setCompanyUniqueId");
+        List<Company> companies = companyRepository.findByShortNameIsNotNullAndRecruitmentAgencyIdIsNullAndCompanyUniqueIdIsNull();
+        companies.forEach(company -> {
+            company = generateAndSetCompanyUniqueId(company);
+        });
+        return companies;
+    }
+
+    private static final int RANDOM_STRING_LENGTH = 5;
+    private static String getAlphaNumericString() {
+        byte[] array = new byte[256];
+        new Random().nextBytes(array);
+        String randomString = new String(array, Charset.forName("UTF-8"));
+        StringBuffer r = new StringBuffer();
+        for (int k = 0; k < randomString.length(); k++) {
+            char ch = randomString.charAt(k);
+            if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')) {
+                r.append(ch);
+                if (RANDOM_STRING_LENGTH == r.length())
+                    break;
+            }
+        }
+        return r.toString();
+    }
+
+    private Company generateAndSetCompanyUniqueId(Company company){
+        log.info("Inside generateAndSetCompanyUniqueId");
+        if(null == company.getRecruitmentAgencyId()){
+            boolean isUniqueIdPresent = true;
+            String companyUniqueId = null;
+            while(isUniqueIdPresent){
+                companyUniqueId = company.getShortName().substring(0,3)+getAlphaNumericString();
+                Company companyFromDb = companyRepository.findByCompanyUniqueId(companyUniqueId);
+                if(null == companyFromDb){
+                    isUniqueIdPresent = false;
+                    company.setCompanyUniqueId(companyUniqueId);
+                }
+            }
+        }
+        return company;
     }
 
 }

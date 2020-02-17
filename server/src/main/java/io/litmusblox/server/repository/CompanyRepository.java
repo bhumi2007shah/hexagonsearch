@@ -38,4 +38,10 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     @Transactional
     List<Company> findBySubdomainCreatedIsFalseAndShortNameIsNotNull();
+
+    @Transactional(readOnly = true)
+    Company findByCompanyUniqueId(String companyUniqueId);
+
+    @Transactional
+    List<Company> findByShortNameIsNotNullAndRecruitmentAgencyIdIsNullAndCompanyUniqueIdIsNull();
 }
