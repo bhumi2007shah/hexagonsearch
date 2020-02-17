@@ -128,4 +128,13 @@ public interface ICompanyService {
      * @return List of CompanyAddresses
      */
     List<CompanyAddress> getCompanyAddress(Long companyId);
+
+
+    /**
+     * Service method Api to set Company Unique Id for all companies
+     *
+     * @return List of companies
+     * @throws Exception
+     */
+    List<Company> setCompanyUniqueId();
 }

@@ -1672,6 +1672,47 @@ ALTER TABLE INTERVIEW_DETAILS
 ADD COLUMN CANDIDATE_CONFIRMATION_VALUE INTEGER REFERENCES MASTER_DATA(ID);
 
 ALTER TABLE export_format_detail ALTER COLUMN column_name TYPE VARCHAR(30), ALTER COLUMN header TYPE VARCHAR(30);
+--For ticket #336
+UPDATE COMPANY SET SHORT_NAME =
+case
+ when COMPANY_NAME = 'LitmusBlox' then 'LitmusBlox'
+ when COMPANY_NAME = 'Hyperbola Technologies' then 'Hyperbola'
+ when COMPANY_NAME = 'Bold Dialogue' then 'BoldDialogue'
+ when COMPANY_NAME = 'EarlySalary' then 'EarlySalary'
+ when COMPANY_NAME = 'KPIT Limited' then 'KPIT'
+ when COMPANY_NAME = 'Mercurius IT' then 'MercuriusIT'
+ when COMPANY_NAME = 'Aretove Technologies' then 'Aretove'
+ when COMPANY_NAME = 'Gexcon India Pvt. Ltd.' then 'Gexcon'
+ when COMPANY_NAME = 'Infogen Labs Pvt. Ltd.' then 'Infogen'
+ when COMPANY_NAME = 'WhiteHedge Technologies' then 'WhiteHedge'
+ when COMPANY_NAME = 'Hexagon Executive Search' then 'Hexagon'
+ when COMPANY_NAME = 'Sanjay Tools and Accessories Pvt. Ltd.' then 'SanjayTools'
+ when COMPANY_NAME = 'Krehsst Tech Solutions' then 'KrehsstTech'
+ when COMPANY_NAME = 'TJC Group' then 'TJCGroup'
+ when COMPANY_NAME = 'Clairvoyant India' then 'Clairvoyant'
+ when COMPANY_NAME = 'L&T Infotech' then 'LTI'
+ when COMPANY_NAME = 'Synechron Technologies' then 'Synechron'
+ when COMPANY_NAME = 'Harman International' then 'Harman'
+ when COMPANY_NAME = 'Expleo' then 'Expleo'
+ when COMPANY_NAME = 'Quality Kiosk' then 'QualityKiosk'
+ when COMPANY_NAME = 'Accurate Sales and Services' then 'AccurateSales'
+ when COMPANY_NAME = 'Persistent Systems' then 'Persistent'
+ when COMPANY_NAME = 'Fast Data Connect' then 'FastDataConnect '
+ when COMPANY_NAME = 'Schlumberger' then 'Schlumberger'
+ when COMPANY_NAME = 'Princeton IT Services' then 'PrincetonIT'
+ when COMPANY_NAME = 'Tricentis' then 'Tricentis'
+ when COMPANY_NAME = 'Evolent Health International Private Limited' then 'Evolent'
+ when COMPANY_NAME = 'Imperial Auto Industries Ltd.' then 'ImperialAuto'
+ when COMPANY_NAME = 'Xpanxion International Private Limited' then 'Xpanxion'
+ when COMPANY_NAME = 'Techprimelab Software Pvt. Ltd.' then 'TechPrimeLab'
+ when COMPANY_NAME = 'Melzer' then 'Melzer'
+ when COMPANY_NAME = 'Shinde Developers Private Limited' then 'ShindeDevelopers'
+ when COMPANY_NAME = 'Z&A Infotek Inc.' then 'ZenArt'
+end;
+
+--For ticket #415
+ALTER TABLE COMPANY
+ADD COLUMN COMPANY_UNIQUE_ID VARCHAR(8) UNIQUE;
 
 ALTER TABLE export_format_detail ADD COLUMN stage VARCHAR(15);
 
@@ -1679,18 +1720,18 @@ delete from export_format_detail where format_id=(select id from export_format_m
 INSERT INTO export_format_detail
 (format_id, column_name, header,  "position", stage)
 VALUES
-(1, 'candidateName','Candidate Name', 1, ''),
-(1, 'chatbotStatus','Chatbot Status', 2, ''),
-(1, 'chatbotFilledTimeStamp', 'Chatbot Filled Timestamp', 3, ''),
-(1, 'currentStage','Stage', 4, ''),
-(1, 'keySkillsStrength','Key Skills Strength', 5, ''),
-(1, 'currentCompany','Current Company', 6, ''),
-(1, 'currentDesignation','Current Designation', 7, ''),
-(1, 'email','Email', 8, ''),
-(1, 'countryCode','Country Code', 9, ''),
-(1, 'mobile','Mobile', 10, ''),
-(1, 'totalExperience','Total Experience', 11, ''),
-(1, 'createdBy','Created By', 12, ''),
+(1, 'candidateName','Candidate Name', 1, null),
+(1, 'chatbotStatus','Chatbot Status', 2, null),
+(1, 'chatbotFilledTimeStamp', 'Chatbot Filled Timestamp', 3, null),
+(1, 'currentStage','Stage', 4, null),
+(1, 'keySkillsStrength','Key Skills Strength', 5, null),
+(1, 'currentCompany','Current Company', 6, null),
+(1, 'currentDesignation','Current Designation', 7, null),
+(1, 'email','Email', 8, null),
+(1, 'countryCode','Country Code', 9, null),
+(1, 'mobile','Mobile', 10, null),
+(1, 'totalExperience','Total Experience', 11, null),
+(1, 'createdBy','Created By', 12, null),
 (1, 'interviewDate','Interview Date', 13, 'Interview'),
 (1, 'interviewType','Interview Type', 14, 'Interview'),
 (1, 'interviewMode','Interview Mode', 15, 'Interview'),
