@@ -1903,7 +1903,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             });
 
             interviewDetailsFromReq.getInterviewIdList().add(interviewDetailsFromDb.get());
-            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, "Interview scheduled :"+ new Date()+" ,address :"+interviewDetailsFromReq.getInterviewLocation().getAddress() , new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, ((null != interviewDetailsFromReq.getInterviewLocation())?("Interview scheduled :"+ new Date()+" ,address :"+interviewDetailsFromReq.getInterviewLocation().getAddress()):null), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
         });
         return interviewDetailsRepository.findByIdIn(interviewDetailsFromReq.getInterviewIdList());
     }
@@ -1961,7 +1961,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null == interviewDetailsFromDb)
             throw new ValidationException("Interview details not found for id : "+showNoShowDetails.getId(), HttpStatus.BAD_REQUEST);
 
-        if(showNoShowDetails.getInterviewDate().after(new Date())){
+        if(interviewDetailsFromDb.getInterviewDate().after(new Date())){
             throw new ValidationException("Interview date : "+interviewDetailsFromDb.getInterviewDate()+ " should be older or equal to current date", HttpStatus.BAD_REQUEST);
         }
 
