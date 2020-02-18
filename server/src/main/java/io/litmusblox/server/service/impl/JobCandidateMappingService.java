@@ -1752,13 +1752,16 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         log.info("Inside uploadCandidateByNoAuthCall");
         UploadResponseBean responseBean = null;
         CandidateDetails candidateDetails = null;
-        Boolean isOtpVerify;
+        boolean isOtpVerify = false;
         EmployeeReferrer referrerFromDb;
 
-        if(null != employeeReferrer)
-            isOtpVerify = otpService.verifyOtp(employeeReferrer.getMobile(), otp);
-        else
-            isOtpVerify = otpService.verifyOtp(candidate.getMobile(), otp);
+
+        if (null != otp && otp.length() == 4 && otp.matches("[0-9]+")) {
+            if (null != employeeReferrer)
+                isOtpVerify = otpService.verifyOtp(employeeReferrer.getMobile(), Integer.parseInt(otp));
+            else
+                isOtpVerify = otpService.verifyOtp(candidate.getMobile(), Integer.parseInt(otp));
+        }
 
         if(isOtpVerify){
             if(null == candidate.getCandidateName() || candidate.getCandidateName().isEmpty()){

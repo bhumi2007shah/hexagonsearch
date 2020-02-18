@@ -4,14 +4,18 @@
 
 package io.litmusblox.server.service.impl;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.service.IProcessOtpService;
-import io.litmusblox.server.utils.RestClient;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
+
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author : Sumit
@@ -27,65 +31,58 @@ public class ProcessOtpService implements IProcessOtpService {
     @Autowired
     Environment environment;
 
+    private LoadingCache<String, Integer> otpCache;
+
+    //initialize cache
+    public ProcessOtpService() {
+        log.info("Initializing cache for OTP");
+        otpCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(IConstant.OTP_EXPIRY_SECONDS, TimeUnit.SECONDS)
+                .build(new CacheLoader<String, Integer>() {
+                    public Integer load(String key) {
+                        return 0;
+                    }
+                });
+    }
+
     /**
      * Service method to handle send Otp request from search job page
-     * @param mobile mobile number to send otp to
-     * @param email email address to send otp to
+     *
+     * @param otpRequestKey can be either mobile number or the email address to send otp to
      * @throws Exception
      */
     @Override
-    public void sendOtp(String mobile, String email) throws Exception {
-        log.info("Received request to Send OTP for mobile number {} and email {}", mobile, email);
+    public void sendOtp(String otpRequestKey) throws Exception {
+        log.info("Received request to Send OTP for {}", otpRequestKey);
         long startTime = System.currentTimeMillis();
-        try {
-            RestClient rest = RestClient.getInstance();
-            StringBuilder stringBuilder = new StringBuilder(environment.getProperty(IConstant.OtpMsg91.SEND_OTP_URL.getValue()));
-            stringBuilder.append("?authkey="+environment.getProperty(IConstant.OtpMsg91.AUTH_KEY.getValue()));
-            stringBuilder.append("&mobile="+mobile);
-            stringBuilder.append("&email="+email);
-            stringBuilder.append("&template_id="+environment.getProperty(IConstant.OtpMsg91.TEMPLATE_ID.getValue()));
-            stringBuilder.append("&sender="+environment.getProperty(IConstant.OtpMsg91.SENDER.getValue()));
-            stringBuilder.append("&otp_length="+environment.getProperty(IConstant.OtpMsg91.OTP_LENGTH.getValue()));
-            String response = rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.GET,null).getResponseBody();
-            log.info("Response from resend otp api call: {}", response);
-        }catch (Exception ex){
-            log.error("Error while send otp : "+ex.getMessage());
-        }
-        log.info("Completed processing Send OTP request in {}",(System.currentTimeMillis() - startTime));
+
+        Random random = new Random();
+        int otp = 0;
+        while (otp == 0 || otp >= 10000)
+            otp = 1000 + random.nextInt(10000);
+        otpCache.put(otpRequestKey, otp);
+        log.info("Generated otp: {} for {}", otp, otpRequestKey);
+
+        //TODO: Push the otp on to queue
+
+        log.info("Completed processing Send OTP request in {} ms",(System.currentTimeMillis() - startTime));
     }
 
     /**
      * Service method to validate Otp against a mobile number
-     * @param mobile the mobile number for the otp
-     * @param otp the otp value
+     *
+     * @param otpRequestKey the mobile number or  for the otp
+     * @param otp           the otp value
      * @return boolean indicating whether the otp verification succeeded or failed
      * @throws Exception
      */
     @Override
-    public boolean verifyOtp(String mobile, String otp){
-        log.info("Received request to Verify OTP for mobile number {} with otp value {}", mobile, otp);
-        long startTime = System.currentTimeMillis();
-        boolean match = true;
-        try {
-            RestClient rest = RestClient.getInstance();
-            StringBuilder stringBuilder = new StringBuilder(environment.getProperty(IConstant.OtpMsg91.VERIFY_OTP.getValue()));
-            stringBuilder.append("?authkey="+environment.getProperty(IConstant.OtpMsg91.AUTH_KEY.getValue()));
-            stringBuilder.append("&mobile="+mobile);
-            stringBuilder.append("&otp="+otp);
-            log.info("Msg91 request url: {}", stringBuilder.toString());
-            String response = rest.consumeRestApi(null, stringBuilder.toString(), HttpMethod.POST,null).getResponseBody();
-            if (null != response && response.indexOf("success") == -1)
-            //if (!OTP_MATCH.equalsIgnoreCase(response))
-                match = false;
-            log.info("Response from msg91\n{}", response);
-        }catch (Exception ex){
-            log.error("Error while verify otp : "+ex.getMessage());
-        }
-        log.info("Completed processing Verify OTP request in {}",(System.currentTimeMillis() - startTime));
-        if (environment.getActiveProfiles()[0].equals("testServer")){
-            log.info("Your active profile is : {}, Otp verify : {}", environment.getActiveProfiles(), true);
-            return true;
-        }
-        return match;
+    public boolean verifyOtp(String otpRequestKey, int otp) throws Exception {
+        return (otpCache.get(otpRequestKey) == otp);
+    }
+
+    //This method is used to clear the OTP cached already
+    public void clearOTP(String key){
+        otpCache.invalidate(key);
     }
 }

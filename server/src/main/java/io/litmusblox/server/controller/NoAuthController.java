@@ -275,16 +275,14 @@ public class NoAuthController {
 
     /**
      * REST Api to handle send Otp request from search job page
-     * @param mobile mobile number to send otp to
-     * @param email email address to send otp to
+     * @param otpRequestKey can be either mobile number or the email address to send otp to
      * @throws Exception
      */
     @GetMapping(value = "/sendOtp")
     @ResponseStatus(value = HttpStatus.OK)
-    void sendOtp(@RequestParam String mobile, @RequestParam String email) throws Exception {
-        processOtpService.sendOtp(mobile, email);
+    void sendOtp(@RequestParam String otpRequestKey) throws Exception {
+        processOtpService.sendOtp(otpRequestKey);
     }
-
 
     /**
      *REST Api to fetch data related to job like job detail, screening questions and corresponding candidate
