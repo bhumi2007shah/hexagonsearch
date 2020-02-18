@@ -1905,7 +1905,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             });
 
             interviewDetailsFromReq.getInterviewIdList().add(interviewDetailsFromDb.get());
-            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, ((null != interviewDetailsFromReq.getInterviewLocation())?("Interview scheduled :"+ new Date()+" ,address :"+interviewDetailsFromReq.getInterviewLocation().getAddress()):null), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, "Interview scheduled :"+ new Date()+((null != interviewDetailsFromReq.getInterviewLocation())?(" ,address :"+interviewDetailsFromReq.getInterviewLocation().getAddress()):" "), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
         });
         return interviewDetailsRepository.findByIdIn(interviewDetailsFromReq.getInterviewIdList());
     }
