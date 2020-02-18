@@ -7,6 +7,7 @@ package io.litmusblox.server.model;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -21,6 +22,7 @@ import java.util.Date;
  */
 @Data
 @Entity
+@NoArgsConstructor
 @JsonFilter("InterviewerDetails")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @Table(name = "INTERVIEWER_DETAILS")
@@ -59,4 +61,11 @@ public class InterviewerDetails {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="INTERVIEWER")
     private User interviewer;
+
+    public InterviewerDetails(@NotNull Long interviewId, @NotNull Date createdOn, @NotNull User createdBy, @NotNull User interviewer) {
+        this.interviewId = interviewId;
+        this.createdOn = createdOn;
+        this.createdBy = createdBy;
+        this.interviewer = interviewer;
+    }
 }

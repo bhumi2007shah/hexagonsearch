@@ -1878,41 +1878,36 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     /**
      * Service method to schedule interview for jcm list
      *
-     * @param interviewDetails interview details
+     * @param interviewDetailsFromReq interview details
      * @return List of schedule interview for list of jcm
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public List<InterviewDetails> scheduleInterview(InterviewDetails interviewDetails) {
+    public List<InterviewDetails> scheduleInterview(InterviewDetails interviewDetailsFromReq) {
         log.info("Inside scheduleInterview");
-        if(IConstant.InterviewMode.IN_PERSION.getValue().equals(interviewDetails.getInterviewMode()) && null == interviewDetails.getInterviewLocation())
+        if(IConstant.InterviewMode.IN_PERSION.getValue().equals(interviewDetailsFromReq.getInterviewMode()) && null == interviewDetailsFromReq.getInterviewLocation())
             throw new ValidationException("Interview location must not be null", HttpStatus.BAD_REQUEST);
 
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         
-        if(!Util.validateInterviewDate(interviewDetails.getInterviewDate())){
-            throw new ValidationException("Interview date : "+interviewDetails.getInterviewDate()+ " should be future date", HttpStatus.BAD_REQUEST);
+        if(interviewDetailsFromReq.getInterviewDate().before(new Date())){
+            throw new ValidationException("Interview date : "+interviewDetailsFromReq.getInterviewDate()+ " should be future date", HttpStatus.BAD_REQUEST);
         }
 
-        AtomicReference<InterviewDetails> interviewDetailsFromDb = new AtomicReference<>();
-        interviewDetails.getJobCandidateMappingList().forEach(jobCandidateMapping -> {
-            if(null != interviewDetails.getComments() && interviewDetails.getComments().length()>IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue())
-                interviewDetails.setComments(Util.truncateField(jobCandidateMapping.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue(), interviewDetails.getComments()));
-            interviewDetails.setJobCandidateMappingId(jobCandidateMapping.getId());
-            interviewDetails.setCreatedOn(new Date());
-            interviewDetails.setInterviewReferenceId(UUID.randomUUID());
-            interviewDetails.setCreatedBy(loggedInUser);
-            interviewDetailsFromDb.set(interviewDetailsRepository.save(interviewDetails));
-            interviewDetails.getInterviewerDetails().forEach(interviewerDetails -> {
-                interviewerDetails.setCreatedBy(loggedInUser);
-                interviewerDetails.setCreatedOn(new Date());
-                interviewerDetails.setInterviewId(interviewDetailsFromDb.get().getId());
-                interviewerDetailsRepository.save(interviewerDetails);
+        AtomicReference<Long> interviewDetailsFromDb = new AtomicReference<>();
+        interviewDetailsFromReq.getJobCandidateMappingList().forEach(jobCandidateMapping -> {
+            if(null != interviewDetailsFromReq.getComments() && interviewDetailsFromReq.getComments().length()>IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue())
+                interviewDetailsFromReq.setComments(Util.truncateField(jobCandidateMapping.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue(), interviewDetailsFromReq.getComments()));
+
+            interviewDetailsFromDb.set(interviewDetailsRepository.save(new InterviewDetails(jobCandidateMapping.getId(), interviewDetailsFromReq.getInterviewType(), interviewDetailsFromReq.getInterviewMode(), interviewDetailsFromReq.getInterviewLocation(),
+                    interviewDetailsFromReq.getInterviewDate(), interviewDetailsFromReq.getInterviewInstruction(), interviewDetailsFromReq.isSendJobDescription(), interviewDetailsFromReq.getComments(), UUID.randomUUID(), new Date(), loggedInUser)).getId());
+            interviewDetailsFromReq.getInterviewerDetails().forEach(interviewerDetailsFromReq -> {
+                interviewerDetailsRepository.save(new InterviewerDetails(interviewDetailsFromDb.get(), new Date(), loggedInUser, interviewerDetailsFromReq.getInterviewer()));
             });
 
-            interviewDetails.getInterviewIdList().add(interviewDetailsFromDb.get().getId());
-            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, "Interview scheduled :"+ new Date()+" ,address :"+interviewDetails.getInterviewLocation().getAddress() , new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+            interviewDetailsFromReq.getInterviewIdList().add(interviewDetailsFromDb.get());
+            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, "Interview scheduled :"+ new Date()+" ,address :"+interviewDetailsFromReq.getInterviewLocation().getAddress() , new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
         });
-        return interviewDetailsRepository.findByIdIn(interviewDetails.getInterviewIdList());
+        return interviewDetailsRepository.findByIdIn(interviewDetailsFromReq.getInterviewIdList());
     }
 
     /**
@@ -1968,7 +1963,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null == interviewDetailsFromDb)
             throw new ValidationException("Interview details not found for id : "+showNoShowDetails.getId(), HttpStatus.BAD_REQUEST);
 
-        if(Util.validateInterviewDate(interviewDetailsFromDb.getInterviewDate())){
+        if(showNoShowDetails.getInterviewDate().after(new Date())){
             throw new ValidationException("Interview date : "+interviewDetailsFromDb.getInterviewDate()+ " should be older or equal to current date", HttpStatus.BAD_REQUEST);
         }
 

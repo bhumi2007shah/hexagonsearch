@@ -1616,7 +1616,7 @@ ID serial PRIMARY KEY NOT NULL,
 JOB_CANDIDATE_MAPPING_ID INTEGER REFERENCES JOB_CANDIDATE_MAPPING(ID) NOT NULL,
 INTERVIEW_TYPE VARCHAR(20) NOT NULL,
 INTERVIEW_MODE VARCHAR(20) NOT NULL,
-INTERVIEW_LOCATION INTEGER REFERENCES COMPANY_ADDRESS(ID) NOT NULL,
+INTERVIEW_LOCATION INTEGER REFERENCES COMPANY_ADDRESS(ID),
 INTERVIEW_DATE TIMESTAMP NOT NULL,
 INTERVIEW_INSTRUCTIONS TEXT,
 SEND_JOB_DESCRIPTION bool DEFAULT 'f' NOT NULL,
@@ -1727,7 +1727,7 @@ case
  when COMPANY_NAME = 'Quality Kiosk' then 'QualityKiosk'
  when COMPANY_NAME = 'Accurate Sales and Services' then 'AccurateSales'
  when COMPANY_NAME = 'Persistent Systems' then 'Persistent'
- when COMPANY_NAME = 'Fast Data Connect' then 'FastDataConnect '
+ when COMPANY_NAME = 'Fast Data Connect' then 'FastDataConnect'
  when COMPANY_NAME = 'Schlumberger' then 'Schlumberger'
  when COMPANY_NAME = 'Princeton IT Services' then 'PrincetonIT'
  when COMPANY_NAME = 'Tricentis' then 'Tricentis'
@@ -1738,9 +1738,15 @@ case
  when COMPANY_NAME = 'Melzer' then 'Melzer'
  when COMPANY_NAME = 'Shinde Developers Private Limited' then 'ShindeDevelopers'
  when COMPANY_NAME = 'Z&A Infotek Inc.' then 'ZenArt'
- else SHORT_NAME
+ ELSE SHORT_NAME
 end;
 
 --For ticket #415
 ALTER TABLE COMPANY
 ADD COLUMN COMPANY_UNIQUE_ID VARCHAR(8) UNIQUE;
+
+--For ticket #364
+ALTER TABLE INTERVIEW_DETAILS ALTER COLUMN INTERVIEW_LOCATION DROP NOT NULL;
+
+
+
