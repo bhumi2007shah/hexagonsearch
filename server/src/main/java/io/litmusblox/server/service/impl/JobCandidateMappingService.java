@@ -615,7 +615,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      */
     public InviteCandidateResponseBean inviteCandidates(List<Long> jcmList, User loggedInUser) throws Exception {
         InviteCandidateResponseBean inviteCandidateResponseBean = performInvitationAndHistoryUpdation(jcmList, loggedInUser);
-        callScoringEngineToAddCandidates(jcmList);
+        callScoringEngineToAddCandidates(jcmList, inviteCandidateResponseBean.getFailedCandidates().stream().map(Candidate::getId).collect(Collectors.toList()));
         return inviteCandidateResponseBean;
     }
 
@@ -645,7 +645,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     @Transactional(readOnly = true)
-    private void callScoringEngineToAddCandidates(List<Long> jcmList) {
+    private void callScoringEngineToAddCandidates(List<Long> jcmList, List<Long> failedCandidateIds) {
         //make an api call to scoring engine for each of the jcm
         jcmList.stream().forEach(jcmId->{
             log.info("Calling scoring engine - add candidate api for : " + jcmId);
@@ -655,49 +655,51 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             }
             else {
                 if(jcm.getJob().getScoringEngineJobAvailable()) {
-                    try {
-                        Map queryParams = new HashMap(3);
-                        queryParams.put("lbJobId", jcm.getJob().getId());
-                        queryParams.put("candidateId", jcm.getCandidate().getId());
-                        queryParams.put("candidateUuid", jcm.getChatbotUuid());
-                        log.info("Calling Scoring Engine api to add candidate to job");
-                        String scoringEngineResponse = RestClient.getInstance().consumeRestApi(null, scoringEngineBaseUrl + scoringEngineAddCandidateUrlSuffix, HttpMethod.PUT, null, Optional.of(queryParams), null).getResponseBody();
-                        log.info(scoringEngineResponse);
-
+                    if(!failedCandidateIds.contains(jcm.getCandidate().getId())) {
                         try {
-                            ObjectMapper objectMapper = new ObjectMapper();
-                            TechChatbotRequestBean techChatbotRequestBean = objectMapper.readValue(scoringEngineResponse, TechChatbotRequestBean.class);
-                            jcm.setChatbotUpdatedOn(techChatbotRequestBean.getChatbotUpdatedOn());
-                            if (techChatbotRequestBean.getTechResponseJson() != null && !techChatbotRequestBean.getTechResponseJson().isEmpty()) {
-                                jcm.getTechResponseData().setTechResponse(techChatbotRequestBean.getTechResponseJson());
-                            }
-                            if (techChatbotRequestBean.getScore() > 0) {
-                                jcm.setScore(techChatbotRequestBean.getScore());
-                            }
-                            if (techChatbotRequestBean.getChatbotUpdatedOn() != null) {
+                            Map queryParams = new HashMap(3);
+                            queryParams.put("lbJobId", jcm.getJob().getId());
+                            queryParams.put("candidateId", jcm.getCandidate().getId());
+                            queryParams.put("candidateUuid", jcm.getChatbotUuid());
+                            log.info("Calling Scoring Engine api to add candidate to job");
+                            String scoringEngineResponse = RestClient.getInstance().consumeRestApi(null, scoringEngineBaseUrl + scoringEngineAddCandidateUrlSuffix, HttpMethod.PUT, null, Optional.of(queryParams), null).getResponseBody();
+                            log.info(scoringEngineResponse);
+
+                            try {
+                                ObjectMapper objectMapper = new ObjectMapper();
+                                TechChatbotRequestBean techChatbotRequestBean = objectMapper.readValue(scoringEngineResponse, TechChatbotRequestBean.class);
                                 jcm.setChatbotUpdatedOn(techChatbotRequestBean.getChatbotUpdatedOn());
-                            }
-
-                            //Candidate has already completed the tech chatbot
-                            if (IConstant.ChatbotStatus.COMPLETE.getValue().equalsIgnoreCase(techChatbotRequestBean.getChatbotStatus())) {
-                                log.info("Found complete status from scoring engine: " + jcm.getEmail() + " ~ " + jcm.getId());
-                                //Set chatCompleteFlag = true
-                                JcmCommunicationDetails jcmCommunicationDetails = jcmCommunicationDetailsRepository.findByJcmId(jcm.getId());
-                                jcmCommunicationDetails.setTechChatCompleteFlag(true);
-                                jcmCommunicationDetailsRepository.save(jcmCommunicationDetails);
-
-                                //If hr chat flag is also complete, set chatstatus = complete
-                                if (!jcm.getJob().getHrQuestionAvailable() || jcmCommunicationDetails.isHrChatCompleteFlag()) {
-                                    log.info("Found complete status for hr chat: " + jcm.getEmail() + " ~ " + jcm.getId());
-                                    jcm.setChatbotStatus(techChatbotRequestBean.getChatbotStatus());
+                                if (techChatbotRequestBean.getTechResponseJson() != null && !techChatbotRequestBean.getTechResponseJson().isEmpty()) {
+                                    jcm.getTechResponseData().setTechResponse(techChatbotRequestBean.getTechResponseJson());
                                 }
+                                if (techChatbotRequestBean.getScore() > 0) {
+                                    jcm.setScore(techChatbotRequestBean.getScore());
+                                }
+                                if (techChatbotRequestBean.getChatbotUpdatedOn() != null) {
+                                    jcm.setChatbotUpdatedOn(techChatbotRequestBean.getChatbotUpdatedOn());
+                                }
+
+                                //Candidate has already completed the tech chatbot
+                                if (IConstant.ChatbotStatus.COMPLETE.getValue().equalsIgnoreCase(techChatbotRequestBean.getChatbotStatus())) {
+                                    log.info("Found complete status from scoring engine: " + jcm.getEmail() + " ~ " + jcm.getId());
+                                    //Set chatCompleteFlag = true
+                                    JcmCommunicationDetails jcmCommunicationDetails = jcmCommunicationDetailsRepository.findByJcmId(jcm.getId());
+                                    jcmCommunicationDetails.setTechChatCompleteFlag(true);
+                                    jcmCommunicationDetailsRepository.save(jcmCommunicationDetails);
+
+                                    //If hr chat flag is also complete, set chatstatus = complete
+                                    if (!jcm.getJob().getHrQuestionAvailable() || jcmCommunicationDetails.isHrChatCompleteFlag()) {
+                                        log.info("Found complete status for hr chat: " + jcm.getEmail() + " ~ " + jcm.getId());
+                                        jcm.setChatbotStatus(techChatbotRequestBean.getChatbotStatus());
+                                    }
+                                }
+                                jobCandidateMappingRepository.save(jcm);
+                            } catch (Exception e) {
+                                log.error("Error in response received from scoring engine " + e.getMessage());
                             }
-                            jobCandidateMappingRepository.save(jcm);
                         } catch (Exception e) {
-                            log.error("Error in response received from scoring engine " + e.getMessage());
+                            log.error("Error while adding candidate on Scoring Engine: " + e.getMessage());
                         }
-                    } catch (Exception e) {
-                        log.error("Error while adding candidate on Scoring Engine: " + e.getMessage());
                     }
                 }
                 else {
