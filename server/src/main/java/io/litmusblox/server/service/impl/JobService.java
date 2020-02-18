@@ -1202,8 +1202,6 @@ public class JobService implements IJobService {
             company = job.getCompanyId();
         }
 
-        boolean isSuperAdmin = ((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getRole().equalsIgnoreCase(IConstant.UserRole.Names.SUPER_ADMIN);
-
         //if default format is not available in db then throw exception
         if(null==exportFormatMaster){
             throw new WebException("Default format is missing from database", HttpStatus.UNPROCESSABLE_ENTITY);
@@ -1216,7 +1214,7 @@ public class JobService implements IJobService {
             return (exportFormatDetail.getStage().isEmpty() || exportFormatDetail.getStage().equalsIgnoreCase(stage));
         }).collect(Collectors.toList());
 
-        if(isSuperAdmin){
+        if(((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getRole().equalsIgnoreCase(IConstant.UserRole.Names.SUPER_ADMIN)){
             defaultExportColumns.add(new ExportFormatDetail(IConstant.CHAT_LINK, IConstant.CHAT_LINK_HEADER));
         }
 

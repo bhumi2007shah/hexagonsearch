@@ -1672,48 +1672,6 @@ ALTER TABLE INTERVIEW_DETAILS
 ADD COLUMN CANDIDATE_CONFIRMATION_VALUE INTEGER REFERENCES MASTER_DATA(ID);
 
 ALTER TABLE export_format_detail ALTER COLUMN column_name TYPE VARCHAR(30), ALTER COLUMN header TYPE VARCHAR(30);
---For ticket #336
-UPDATE COMPANY SET SHORT_NAME =
-case
- when COMPANY_NAME = 'LitmusBlox' then 'LitmusBlox'
- when COMPANY_NAME = 'Hyperbola Technologies' then 'Hyperbola'
- when COMPANY_NAME = 'Bold Dialogue' then 'BoldDialogue'
- when COMPANY_NAME = 'EarlySalary' then 'EarlySalary'
- when COMPANY_NAME = 'KPIT Limited' then 'KPIT'
- when COMPANY_NAME = 'Mercurius IT' then 'MercuriusIT'
- when COMPANY_NAME = 'Aretove Technologies' then 'Aretove'
- when COMPANY_NAME = 'Gexcon India Pvt. Ltd.' then 'Gexcon'
- when COMPANY_NAME = 'Infogen Labs Pvt. Ltd.' then 'Infogen'
- when COMPANY_NAME = 'WhiteHedge Technologies' then 'WhiteHedge'
- when COMPANY_NAME = 'Hexagon Executive Search' then 'Hexagon'
- when COMPANY_NAME = 'Sanjay Tools and Accessories Pvt. Ltd.' then 'SanjayTools'
- when COMPANY_NAME = 'Krehsst Tech Solutions' then 'KrehsstTech'
- when COMPANY_NAME = 'TJC Group' then 'TJCGroup'
- when COMPANY_NAME = 'Clairvoyant India' then 'Clairvoyant'
- when COMPANY_NAME = 'L&T Infotech' then 'LTI'
- when COMPANY_NAME = 'Synechron Technologies' then 'Synechron'
- when COMPANY_NAME = 'Harman International' then 'Harman'
- when COMPANY_NAME = 'Expleo' then 'Expleo'
- when COMPANY_NAME = 'Quality Kiosk' then 'QualityKiosk'
- when COMPANY_NAME = 'Accurate Sales and Services' then 'AccurateSales'
- when COMPANY_NAME = 'Persistent Systems' then 'Persistent'
- when COMPANY_NAME = 'Fast Data Connect' then 'FastDataConnect'
- when COMPANY_NAME = 'Schlumberger' then 'Schlumberger'
- when COMPANY_NAME = 'Princeton IT Services' then 'PrincetonIT'
- when COMPANY_NAME = 'Tricentis' then 'Tricentis'
- when COMPANY_NAME = 'Evolent Health International Private Limited' then 'Evolent'
- when COMPANY_NAME = 'Imperial Auto Industries Ltd.' then 'ImperialAuto'
- when COMPANY_NAME = 'Xpanxion International Private Limited' then 'Xpanxion'
- when COMPANY_NAME = 'Techprimelab Software Pvt. Ltd.' then 'TechPrimeLab'
- when COMPANY_NAME = 'Melzer' then 'Melzer'
- when COMPANY_NAME = 'Shinde Developers Private Limited' then 'ShindeDevelopers'
- when COMPANY_NAME = 'Z&A Infotek Inc.' then 'ZenArt'
- ELSE SHORT_NAME
-end;
-
---For ticket #415
-ALTER TABLE COMPANY
-ADD COLUMN COMPANY_UNIQUE_ID VARCHAR(8) UNIQUE;
 
 ALTER TABLE export_format_detail ADD COLUMN stage VARCHAR(15);
 
@@ -1743,3 +1701,46 @@ VALUES
 (1, 'noShowReason','No Show Reason' ,20, 'Interview'),
 (1, 'cancelled', 'Interview Cancelled', 21, 'Interview'),
 (1, 'cancellationReason','Cancellation Reason', 22, 'Interview');
+
+--For ticket #336
+UPDATE COMPANY SET SHORT_NAME =
+case
+ when COMPANY_NAME = 'LitmusBlox' then 'LitmusBlox'
+ when COMPANY_NAME = 'Hyperbola Technologies' then 'Hyperbola'
+ when COMPANY_NAME = 'Bold Dialogue' then 'BoldDialogue'
+ when COMPANY_NAME = 'EarlySalary' then 'EarlySalary'
+ when COMPANY_NAME = 'KPIT Limited' then 'KPIT'
+ when COMPANY_NAME = 'Mercurius IT' then 'MercuriusIT'
+ when COMPANY_NAME = 'Aretove Technologies' then 'Aretove'
+ when COMPANY_NAME = 'Gexcon India Pvt. Ltd.' then 'Gexcon'
+ when COMPANY_NAME = 'Infogen Labs Pvt. Ltd.' then 'Infogen'
+ when COMPANY_NAME = 'WhiteHedge Technologies' then 'WhiteHedge'
+ when COMPANY_NAME = 'Hexagon Executive Search' then 'Hexagon'
+ when COMPANY_NAME = 'Sanjay Tools and Accessories Pvt. Ltd.' then 'SanjayTools'
+ when COMPANY_NAME = 'Krehsst Tech Solutions' then 'KrehsstTech'
+ when COMPANY_NAME = 'TJC Group' then 'TJCGroup'
+ when COMPANY_NAME = 'Clairvoyant India' then 'Clairvoyant'
+ when COMPANY_NAME = 'L&T Infotech' then 'LTI'
+ when COMPANY_NAME = 'Synechron Technologies' then 'Synechron'
+ when COMPANY_NAME = 'Harman International' then 'Harman'
+ when COMPANY_NAME = 'Expleo' then 'Expleo'
+ when COMPANY_NAME = 'Quality Kiosk' then 'QualityKiosk'
+ when COMPANY_NAME = 'Accurate Sales and Services' then 'AccurateSales'
+ when COMPANY_NAME = 'Persistent Systems' then 'Persistent'
+ when COMPANY_NAME = 'Fast Data Connect' then 'FastDataConnect '
+ when COMPANY_NAME = 'Schlumberger' then 'Schlumberger'
+ when COMPANY_NAME = 'Princeton IT Services' then 'PrincetonIT'
+ when COMPANY_NAME = 'Tricentis' then 'Tricentis'
+ when COMPANY_NAME = 'Evolent Health International Private Limited' then 'Evolent'
+ when COMPANY_NAME = 'Imperial Auto Industries Ltd.' then 'ImperialAuto'
+ when COMPANY_NAME = 'Xpanxion International Private Limited' then 'Xpanxion'
+ when COMPANY_NAME = 'Techprimelab Software Pvt. Ltd.' then 'TechPrimeLab'
+ when COMPANY_NAME = 'Melzer' then 'Melzer'
+ when COMPANY_NAME = 'Shinde Developers Private Limited' then 'ShindeDevelopers'
+ when COMPANY_NAME = 'Z&A Infotek Inc.' then 'ZenArt'
+ else SHORT_NAME
+end;
+
+--For ticket #415
+ALTER TABLE COMPANY
+ADD COLUMN COMPANY_UNIQUE_ID VARCHAR(8) UNIQUE;
