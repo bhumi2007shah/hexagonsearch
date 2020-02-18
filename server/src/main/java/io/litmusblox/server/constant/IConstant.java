@@ -212,7 +212,7 @@ public interface IConstant {
     }
 
     enum CompanySubscription {
-        Lite, Max;
+        Lite, Max, LDEB;
     }
 
     enum UPLOAD_TYPE {
