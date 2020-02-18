@@ -355,4 +355,7 @@ public interface IConstant {
 
     Integer SCREENING_QUESTION_RESPONSE_MAX_LENGTH = 300;
     Integer SCREENING_QUESTION_COMMENT_MAX_LENGTH = 100;
+
+    String CHAT_LINK="chatbotLink";
+    String CHAT_LINK_HEADER="Chatbot Link";
 }

@@ -21,6 +21,7 @@ import io.litmusblox.server.utils.SentryUtil;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -126,6 +127,9 @@ public class JobService implements IJobService {
 
     @Autowired
     CustomQueryExecutor customQueryExecutor;
+
+    @Autowired
+    Environment environment;
 
     @Value("${mlApiUrl}")
     private String mlUrl;
@@ -1206,12 +1210,22 @@ public class JobService implements IJobService {
         //get list of headers and column names frm  db for default format
         List<ExportFormatDetail> defaultExportColumns = exportFormatDetailRepository.findByExportFormatMasterOrderByPositionAsc(exportFormatMaster);
 
+        defaultExportColumns = defaultExportColumns.stream().filter(exportFormatDetail -> {
+            return (exportFormatDetail.getStage().isEmpty() || exportFormatDetail.getStage().equalsIgnoreCase(stage));
+        }).collect(Collectors.toList());
+
+        if(((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getRole().equalsIgnoreCase(IConstant.UserRole.Names.SUPER_ADMIN)){
+            defaultExportColumns.add(new ExportFormatDetail(IConstant.CHAT_LINK, IConstant.CHAT_LINK_HEADER));
+        }
+
         Map<String, String> exportHeaderColumnMap = new LinkedHashMap<>();
 
 
-        defaultExportColumns.forEach(exportColumn->{
-            exportHeaderColumnMap.put(exportColumn.getColumnName(), exportColumn.getHeader());
-        });
+        if(defaultExportColumns.size()>0) {
+            defaultExportColumns.forEach(exportColumn -> {
+                exportHeaderColumnMap.put(exportColumn.getColumnName(), exportColumn.getHeader());
+            });
+        }
 
         List<String>columnNames = new ArrayList<String>(exportHeaderColumnMap.keySet());
 
@@ -1230,7 +1244,11 @@ public class JobService implements IJobService {
         exportDataList.forEach(data-> {
                 LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
             for (int i = 0; i < data.length; ++i) {
-                candidateData.put(exportHeaderColumnMap.get(columnNames.get(i)), data[i] != null ? data[i].toString() : "");
+                if(columnNames.get(i).equals("chatbotLink")){
+                    candidateData.put(exportHeaderColumnMap.get(columnNames.get(i)), data[i]!=null? (environment.getProperty(IConstant.CHAT_LINK)+data[i].toString()):"");
+                } else {
+                    candidateData.put(exportHeaderColumnMap.get(columnNames.get(i)), data[i] != null ? data[i].toString() : "");
+                }
             }
             if (exportResponseBean.stream().filter(object -> {
                 return object.get("Email").toString().equalsIgnoreCase(candidateData.get("Email").toString());

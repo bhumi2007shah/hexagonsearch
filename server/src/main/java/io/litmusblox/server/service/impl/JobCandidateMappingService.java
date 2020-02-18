@@ -635,7 +635,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 try {
                     inviteCandidates(userListEntry.getValue(), userListEntry.getKey());
                 } catch (Exception e) {
-                    log.error("Some error occured while auto inviting candidate");
+                    log.error("Error while inviting candidates for user: {}, {}", userListEntry.getKey(), e.getMessage());
                 }
             });
         }
