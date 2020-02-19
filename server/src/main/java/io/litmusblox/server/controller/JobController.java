@@ -232,7 +232,7 @@ public class JobController {
         long startTime = System.currentTimeMillis();
         String response = Util.stripExtraInfoFromResponseBean(jobService.getTechRoleCompetencyByJob(jobId),
                 new HashMap<String, List<String>>() {{
-                    put("Candidate",Arrays.asList("firstName","lastName","email", "mobile", "candidateSource"));
+                    put("Candidate",Arrays.asList("displayName","email", "mobile"));
                     put("TechResponseJson", Arrays.asList("name", "complexities", "score", "capabilityStarRating"));
                     put("String", Arrays.asList("candidateProfileLink"));
                 }},

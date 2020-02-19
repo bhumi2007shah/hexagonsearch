@@ -4,7 +4,6 @@
 
 package io.litmusblox.server.service.impl;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -1361,13 +1360,10 @@ public class JobService implements IJobService {
 
         if(jobCandidateMappings.size()>0){
             ObjectMapper mapper = new ObjectMapper();
-            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
             jobCandidateMappings.stream().parallel().forEach(jcm->{
                 try {
                     TechRoleCompetencyBean techRoleCompetencyBean = new TechRoleCompetencyBean();
-                    techRoleCompetencyBean.setCandidate(jcm.getCandidate());
-                    techRoleCompetencyBean.getCandidate().setEmail(jcm.getEmail());
-                    techRoleCompetencyBean.getCandidate().setMobile(jcm.getMobile());
+                    techRoleCompetencyBean.setCandidate(new Candidate(jcm.getDisplayName(), jcm.getEmail(), jcm.getMobile()));
                     techRoleCompetencyBean.setTechResponseJson(
                             jcm.getTechResponseData().getTechResponse()!=null?
                                     Arrays.asList(mapper.readValue(jcm.getTechResponseData().getTechResponse(), TechResponseJson[].class))
