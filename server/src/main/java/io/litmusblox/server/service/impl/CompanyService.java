@@ -670,6 +670,12 @@ public class CompanyService implements ICompanyService {
                     Files.delete(link);
                 }
                 Files.createSymbolicLink(link, Paths.get("/etc/apache2/sites-available/" + company.getShortName() + ".conf"));
+
+                // Reload apache configuration to enable virtual host for new sub-domains
+                Process process = Runtime.getRuntime().exec(IConstant.apacheReloadCommand);
+                process.waitFor();
+                log.info("process completed to reload apache, exit code: {}", process.exitValue());
+                process.destroy();
             } else {
                 log.error("Error creating subdomain on GoDaddy for company {}", company.getCompanyName());
             }

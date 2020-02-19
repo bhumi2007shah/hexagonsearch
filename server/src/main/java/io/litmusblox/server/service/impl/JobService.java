@@ -33,6 +33,7 @@ import javax.annotation.Resource;
 import javax.naming.OperationNotSupportedException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1328,5 +1329,58 @@ public class JobService implements IJobService {
 
         log.info("Query generated:\n {}", query.toString());
         return customQueryExecutor.executeSearchQuery(query.toString());//"Select id from job where id < 20;");
+    }
+
+    /**
+     * Service method to create a list of TechRoleCompetency per job.
+     * It will be used by companies with LDEB subscription
+     * @param jobId
+     * @return
+     * @throws Exception
+     */
+    @Override
+    public List<TechRoleCompetencyBean> getTechRoleCompetencyByJob(Long jobId) throws Exception {
+        Job job = jobRepository.getOne(jobId);
+
+        //check if job is null for jobId
+        if(job == null){
+            log.error("job not found for id {}", jobId);
+            throw new WebException("No job with id "+jobId+" found.", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        // check if company has LDEB subscription or not
+        if(!job.getCompanyId().getSubscription().equalsIgnoreCase(IConstant.CompanySubscription.LDEB.toString())){
+            log.error("Unauthorized access");
+            throw new WebException("You don't have LDEB subscription.", HttpStatus.UNAUTHORIZED);
+        }
+
+        List<TechRoleCompetencyBean> techRoleCompetencyBeans = new ArrayList<>();
+
+        List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.findAllByJobId(jobId);
+
+        if(jobCandidateMappings.size()>0){
+            ObjectMapper mapper = new ObjectMapper();
+            jobCandidateMappings.stream().parallel().forEach(jcm->{
+                try {
+                    TechRoleCompetencyBean techRoleCompetencyBean = new TechRoleCompetencyBean();
+                    techRoleCompetencyBean.setCandidate(new Candidate(jcm.getDisplayName(), jcm.getEmail(), jcm.getMobile()));
+                    techRoleCompetencyBean.setTechResponseJson(
+                            jcm.getTechResponseData().getTechResponse()!=null?
+                                    Arrays.asList(mapper.readValue(jcm.getTechResponseData().getTechResponse(), TechResponseJson[].class))
+                                    :
+                                    null
+                    );
+                    techRoleCompetencyBean.setCandidateProfileLink((environment.getProperty("shareProfileLink") + jcm.getChatbotUuid()));
+                    techRoleCompetencyBeans.add(techRoleCompetencyBean);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+        else{
+            log.info("No candidates found for job id {}", jobId);
+        }
+
+        return techRoleCompetencyBeans;
     }
 }

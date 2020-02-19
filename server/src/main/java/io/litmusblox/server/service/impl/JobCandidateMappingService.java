@@ -620,11 +620,25 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     /**
-     * Service method to call inviteCandidates with jcm which are autosourced and currently in sourcing stage
+     * Service method to call inviteAutoSourcedOrLDEBCandidates with jcm which are autosourced and currently in sourcing stage
      * @throws Exception
      */
     public void inviteAutoSourcedCandidate()throws Exception{
         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getNewAutoSourcedJcmList();
+        inviteAutoSourcedOrLDEBCandidates(jobCandidateMappings);
+    }
+
+    /**
+     *
+     * Service method to call inviteAutoSourcedOrLDEBCandidates with jcm which are uploaded in job of companies with LDEB subscription and currently in sourcing stage
+     * @throws Exception
+     */
+    public void inviteLDEBCandidates() throws Exception{
+        List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getLDEBCandidates();
+        inviteAutoSourcedOrLDEBCandidates(jobCandidateMappings);
+    }
+
+    private void inviteAutoSourcedOrLDEBCandidates(List<JobCandidateMapping> jobCandidateMappings) throws Exception{
         if(jobCandidateMappings.size()>0) {
             log.info("Found {} autosourced candidates to be auto invited", jobCandidateMappings.size());
             Map<User, List<Long>> userJcmMap = jobCandidateMappings.stream()
@@ -1905,7 +1919,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             });
 
             interviewDetailsFromReq.getInterviewIdList().add(interviewDetailsFromDb.get());
-            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, "Interview scheduled :"+ new Date()+" ,address :"+interviewDetailsFromReq.getInterviewLocation().getAddress() , new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, "Interview scheduled :"+ new Date()+((null != interviewDetailsFromReq.getInterviewLocation())?(" ,address :"+interviewDetailsFromReq.getInterviewLocation().getAddress()):" "), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
         });
         return interviewDetailsRepository.findByIdIn(interviewDetailsFromReq.getInterviewIdList());
     }
@@ -1963,7 +1977,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null == interviewDetailsFromDb)
             throw new ValidationException("Interview details not found for id : "+showNoShowDetails.getId(), HttpStatus.BAD_REQUEST);
 
-        if(showNoShowDetails.getInterviewDate().after(new Date())){
+        if(interviewDetailsFromDb.getInterviewDate().after(new Date())){
             throw new ValidationException("Interview date : "+interviewDetailsFromDb.getInterviewDate()+ " should be older or equal to current date", HttpStatus.BAD_REQUEST);
         }
 

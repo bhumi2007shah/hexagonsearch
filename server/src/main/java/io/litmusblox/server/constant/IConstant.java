@@ -212,7 +212,7 @@ public interface IConstant {
     }
 
     enum CompanySubscription {
-        Lite, Max;
+        Lite, Max, LDEB;
     }
 
     enum UPLOAD_TYPE {
@@ -358,4 +358,6 @@ public interface IConstant {
 
     String CHAT_LINK="chatbotLink";
     String CHAT_LINK_HEADER="Chatbot Link";
+
+    String [] apacheReloadCommand = {"sudo", "apache2ctl", "graceful"};
 }
