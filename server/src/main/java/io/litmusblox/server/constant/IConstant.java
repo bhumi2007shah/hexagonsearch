@@ -359,5 +359,5 @@ public interface IConstant {
     String CHAT_LINK="chatbotLink";
     String CHAT_LINK_HEADER="Chatbot Link";
 
-    String [] apacheReloadCommand = {"/etc/init.d/apache2", "graceful"};
+    String [] apacheReloadCommand = {"sudo", "apache2ctl", "graceful"};
 }
