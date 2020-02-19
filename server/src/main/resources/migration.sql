@@ -1776,4 +1776,6 @@ end;
 ALTER TABLE COMPANY
 ADD COLUMN COMPANY_UNIQUE_ID VARCHAR(8) UNIQUE;
 
-
+-- For ticket #380
+INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
+('OTPSms','Your OTP for LitmusBlox is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] seconds.');

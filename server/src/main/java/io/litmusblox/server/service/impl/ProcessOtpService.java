@@ -4,16 +4,20 @@
 
 package io.litmusblox.server.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.service.IProcessOtpService;
+import io.litmusblox.server.service.OTPRequestBean;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.jms.Queue;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -30,6 +34,12 @@ public class ProcessOtpService implements IProcessOtpService {
 
     @Autowired
     Environment environment;
+
+    @Autowired
+    private Queue queue;
+
+    @Autowired
+    private JmsTemplate jmsTemplate;
 
     private LoadingCache<String, Integer> otpCache;
 
@@ -64,7 +74,10 @@ public class ProcessOtpService implements IProcessOtpService {
         log.info("Generated otp: {} for {}", otp, otpRequestKey);
 
         //TODO: Push the otp on to queue
-
+        ObjectMapper objectMapper = new ObjectMapper();
+        //if otpRequestKey has '@', it's an email address, else it's a mobile number
+        jmsTemplate.convertAndSend(queue, objectMapper.writeValueAsString(new OTPRequestBean(otp, IConstant.OTP_EXPIRY_SECONDS, ((otpRequestKey.indexOf('@') > -1)?null:otpRequestKey),((otpRequestKey.indexOf('@') > -1)?otpRequestKey:null))));
+        log.info("Put message on queue {}", queue.getQueueName());
         log.info("Completed processing Send OTP request in {} ms",(System.currentTimeMillis() - startTime));
     }
 
