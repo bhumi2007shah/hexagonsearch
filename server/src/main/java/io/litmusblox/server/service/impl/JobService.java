@@ -1026,6 +1026,8 @@ public class JobService implements IJobService {
         if(null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
             log.info("Subdomain does not exist for company: {}. Creating one.", publishedJob.getCompanyId().getCompanyName());
             companyService.createSubdomain(publishedJob.getCompanyId());
+            log.info("Reloading apache for subdomain {}.", publishedJob.getCompanyId().getShortName());
+            companyService.reloadApache(Arrays.asList(publishedJob.getCompanyId()));
         }
         if(publishedJob.getJobCapabilityList().size() == 0)
             log.info("No capabilities exist for the job: " + jobId + " Scoring engine api call will NOT happen");

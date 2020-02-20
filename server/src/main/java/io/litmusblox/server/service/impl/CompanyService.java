@@ -36,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -670,12 +671,6 @@ public class CompanyService implements ICompanyService {
                     Files.delete(link);
                 }
                 Files.createSymbolicLink(link, Paths.get("/etc/apache2/sites-available/" + company.getShortName() + ".conf"));
-
-                // Reload apache configuration to enable virtual host for new sub-domains
-                Process process = Runtime.getRuntime().exec(IConstant.apacheReloadCommand);
-                process.waitFor();
-                log.info("process completed to reload apache, exit code: {}", process.exitValue());
-                process.destroy();
             } else {
                 log.error("Error creating subdomain on GoDaddy for company {}", company.getCompanyName());
             }
@@ -704,7 +699,34 @@ public class CompanyService implements ICompanyService {
                 log.error("Error creating subdomain for company {}:\n {}", company.getCompanyName(), e.getMessage());
             }
         });
+        if(companyList.size()>0)
+            reloadApache(companyList);
         log.info("Completed processing request to create subdomains in {} ms.", (System.currentTimeMillis() - startTime));
+    }
+
+    /**
+     * functioon to reload Apache if new subdomain vitua host configuration is added in sites-available directory
+     * @param companyList
+     */
+    public void reloadApache(List<Company> companyList){
+        // Reload apache configuration to enable virtual host for new sub-domains
+        try {
+            Process process = Runtime.getRuntime().exec(IConstant.apacheReloadCommand);
+            process.waitFor();
+            log.info("process completed to reload apache, exit code: {}", process.exitValue());
+            process.destroy();
+        }
+        catch (IOException e){
+            SentryUtil.logWithStaticAPI(null, "Error while reloading apache after creating virtual host configuration for subdomains: "+String.join(",", companyList.stream().map(Company::getShortName).collect(Collectors.toList())), null);
+            log.error("Error while creating process to reload apache: {}", e.getCause());
+        }
+        catch (InterruptedException e){
+            SentryUtil.logWithStaticAPI(null, "Error while reloading apache after creating virtual host configuration for subdomains: "+String.join(",", companyList.stream().map(Company::getShortName).collect(Collectors.toList())), null);
+            log.error("Reload apache process interrupted while executing: {}", e.getCause());
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+        }
     }
 
     @Transactional(readOnly = true)
