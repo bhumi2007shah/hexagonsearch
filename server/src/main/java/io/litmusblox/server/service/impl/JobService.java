@@ -1345,29 +1345,35 @@ public class JobService implements IJobService {
         Job job = jobRepository.getOne(jobId);
 
         //check if job is null for jobId
-        if(job == null){
+        if( null  == job ){
             log.error("job not found for id {}", jobId);
             throw new WebException("No job with id "+jobId+" found.", HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
         // check if company has LDEB subscription or not
-        if(!job.getCompanyId().getSubscription().equalsIgnoreCase(IConstant.CompanySubscription.LDEB.toString())){
+        if(!IConstant.CompanySubscription.LDEB.toString().equalsIgnoreCase(job.getCompanyId().getSubscription())){
             log.error("Unauthorized access");
             throw new WebException("You don't have LDEB subscription.", HttpStatus.UNAUTHORIZED);
         }
 
         List<TechRoleCompetencyBean> techRoleCompetencyBeans = new ArrayList<>();
 
+        //Find all jcm for job id
         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.findAllByJobId(jobId);
+
+        log.info("Found {} records", jobCandidateMappings.size());
 
         if(jobCandidateMappings.size()>0){
             ObjectMapper mapper = new ObjectMapper();
+            //Create TechRoleCompetencyBean object and add it to list of TechRoleCompetencyBean
             jobCandidateMappings.stream().parallel().forEach(jcm->{
                 try {
                     TechRoleCompetencyBean techRoleCompetencyBean = new TechRoleCompetencyBean();
                     techRoleCompetencyBean.setCandidate(new Candidate(jcm.getDisplayName(), jcm.getEmail(), jcm.getMobile()));
                     techRoleCompetencyBean.setTechResponseJson(
                             jcm.getTechResponseData().getTechResponse()!=null?
+                                    //Map string of array of TechResponseJson to array of TechResponseBean
+                                    // and convert it to list, then assign it to techRoleCompetencyBean object
                                     Arrays.asList(mapper.readValue(jcm.getTechResponseData().getTechResponse(), TechResponseJson[].class))
                                     :
                                     null
