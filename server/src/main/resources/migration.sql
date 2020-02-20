@@ -1597,9 +1597,9 @@ ADD COLUMN autosource_acknowledgement_timestamp_email TIMESTAMP DEFAULT NULL,
 ADD COLUMN autosource_acknowledgement_timestamp_sms TIMESTAMP DEFAULT NULL;
 
 insert into sms_templates(template_name, template_content) values
-('autosourceAcknowledgement', '[[${commBean.sendercompany}]] thanks you for your application for [[${commBean.jobtitle}]] position. We will be in touch with you for further action if your profile is shortlisted. Good luck!'),
-('autosourceApplicationShortlisted', '[[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Please click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]'),
-('autosourceLinkNotVisited', 'Last Reminder: [[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]');
+('AutosourceAcknowledgement', '[[${commBean.sendercompany}]] thanks you for your application for [[${commBean.jobtitle}]] position. We will be in touch with you for further action if your profile is shortlisted. Good luck!'),
+('AutosourceApplicationShortlisted', '[[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Please click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]'),
+('AutosourceLinkNotVisited', 'Last Reminder: [[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]');
 
 ALTER TABLE email_log ALTER COLUMN template_name TYPE VARCHAR(35);
 
