@@ -321,7 +321,7 @@ public interface IConstant {
     String NOT_AVAILABLE_EMAIL = "@notavailable.io";
     String SYSTEM_USER_EMAIL = "systemuser@hex.com";
 
-    String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation"};
+    String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countryList"};
 
     String REPLACEMENT_KEY_FOR_SHORTNAME = "_shortName_";
     String GODADDY_SUCCESS_RESPONSE = "\"code\":";
