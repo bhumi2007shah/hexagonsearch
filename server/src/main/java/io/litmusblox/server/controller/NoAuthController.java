@@ -290,17 +290,6 @@ public class NoAuthController {
 
 
     /**
-     * REST Api to handle send Otp request from search job page
-     * @param otpRequestKey can be either mobile number or the email address to send otp to
-     * @throws Exception
-     */
-    @GetMapping(value = "/validateOtp")
-    @ResponseStatus(value = HttpStatus.OK)
-    boolean validateOtp(@RequestParam String otpRequestKey, @RequestParam String otp) throws Exception {
-        return processOtpService.verifyOtp(otpRequestKey, Integer.parseInt(otp));
-    }
-
-    /**
      *REST Api to fetch data related to job like job detail, screening questions and corresponding candidate
      *Merge two api getScreeningQuestions and getCandidateAndJobDetails in current api
      * @param uuid the uuid corresponding to a unique jcm record
