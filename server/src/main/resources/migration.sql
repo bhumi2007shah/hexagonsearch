@@ -1597,9 +1597,9 @@ ADD COLUMN autosource_acknowledgement_timestamp_email TIMESTAMP DEFAULT NULL,
 ADD COLUMN autosource_acknowledgement_timestamp_sms TIMESTAMP DEFAULT NULL;
 
 insert into sms_templates(template_name, template_content) values
-('autosourceAcknowledgement', '[[${commBean.sendercompany}]] thanks you for your application for [[${commBean.jobtitle}]] position. We will be in touch with you for further action if your profile is shortlisted. Good luck!'),
-('autosourceApplicationShortlisted', '[[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Please click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]'),
-('autosourceLinkNotVisited', 'Last Reminder: [[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]');
+('AutosourceAcknowledgement', '[[${commBean.sendercompany}]] thanks you for your application for [[${commBean.jobtitle}]] position. We will be in touch with you for further action if your profile is shortlisted. Good luck!'),
+('AutosourceApplicationShortlisted', '[[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Please click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]'),
+('AutosourceLinkNotVisited', 'Last Reminder: [[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]');
 
 ALTER TABLE email_log ALTER COLUMN template_name TYPE VARCHAR(35);
 
@@ -1769,5 +1769,12 @@ ADD COLUMN INTERVIEW_REJECTION_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL;
 
 insert into sms_templates(template_name, template_content) values
 ('InterviewDay', 'You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewDate}]]. Below is the Google Maps link to the interview address. Please report 15 mins before. See you there! [[${commBean.interviewAddressLink}]]');
+
+-- For ticket #410
+ALTER TABLE COMPANY
+ADD COLUMN SEND_COMMUNICATION bool NOT NULL DEFAULT 't';
+
+
+
 
 

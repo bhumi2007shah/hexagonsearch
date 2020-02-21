@@ -80,6 +80,15 @@ public interface IJobCandidateMappingService {
     void inviteAutoSourcedCandidate()throws Exception;
 
     /**
+     *
+     * Service method to call inviteAutoSourcedOrLDEBCandidates
+     * with jcm which are uploaded in job of companies
+     * with LDEB subscription and currently in sourcing stage
+     * @throws Exception
+     */
+    void inviteLDEBCandidates() throws Exception;
+
+    /**
      * Service method to invite candidates to fill chatbot for a job
      *
      * @param jcmList list of jcm ids for chatbot invitation

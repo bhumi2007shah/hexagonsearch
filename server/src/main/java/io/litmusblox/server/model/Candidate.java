@@ -164,4 +164,9 @@ public class Candidate implements Serializable {
     @Transient
     private CvParsingDetails cvParsingDetails;
 
+    public Candidate(String displayName, String email, String mobile) {
+        this.displayName = displayName;
+        this.email = email;
+        this.mobile = mobile;
+    }
 }

@@ -620,11 +620,25 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     /**
-     * Service method to call inviteCandidates with jcm which are autosourced and currently in sourcing stage
+     * Service method to call inviteAutoSourcedOrLDEBCandidates with jcm which are autosourced and currently in sourcing stage
      * @throws Exception
      */
     public void inviteAutoSourcedCandidate()throws Exception{
         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getNewAutoSourcedJcmList();
+        inviteAutoSourcedOrLDEBCandidates(jobCandidateMappings);
+    }
+
+    /**
+     *
+     * Service method to call inviteAutoSourcedOrLDEBCandidates with jcm which are uploaded in job of companies with LDEB subscription and currently in sourcing stage
+     * @throws Exception
+     */
+    public void inviteLDEBCandidates() throws Exception{
+        List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getLDEBCandidates();
+        inviteAutoSourcedOrLDEBCandidates(jobCandidateMappings);
+    }
+
+    private void inviteAutoSourcedOrLDEBCandidates(List<JobCandidateMapping> jobCandidateMappings) throws Exception{
         if(jobCandidateMappings.size()>0) {
             log.info("Found {} autosourced candidates to be auto invited", jobCandidateMappings.size());
             Map<User, List<Long>> userJcmMap = jobCandidateMappings.stream()
