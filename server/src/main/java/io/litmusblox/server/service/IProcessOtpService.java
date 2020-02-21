@@ -14,10 +14,15 @@ package io.litmusblox.server.service;
 public interface IProcessOtpService {
     /**
      * Service method to handle send Otp request from search job page
-     * @param otpRequestKey can be either mobile number or the email address to send otp to
+     *
+     * @param isEmployeeReferral true if the send otp request was from employee referral flow
+     * @param mobileNumber mobile number to send otp to
+     * @param countryCode country code
+     * @param email email address of the employee
+     * @param recepientName name of the message receiver
      * @throws Exception
      */
-    void sendOtp(String otpRequestKey) throws Exception;
+    void sendOtp(boolean isEmployeeReferral, String mobileNumber, String countryCode, String email, String recepientName) throws Exception;
 
     /**
      * Service method to validate Otp against a mobile number

@@ -9,11 +9,13 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import io.litmusblox.server.constant.IConstant;
+import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.service.IProcessOtpService;
 import io.litmusblox.server.service.OTPRequestBean;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 
@@ -58,13 +60,25 @@ public class ProcessOtpService implements IProcessOtpService {
     /**
      * Service method to handle send Otp request from search job page
      *
-     * @param otpRequestKey can be either mobile number or the email address to send otp to
+     * @param isEmployeeReferral true if the send otp request was from employee referral flow
+     * @param mobileNumber mobile number to send otp to
+     * @param countryCode country code
+     * @param email email address of the employee
+     * @param recepientName name of the message receiver
      * @throws Exception
      */
     @Override
-    public void sendOtp(String otpRequestKey) throws Exception {
-        log.info("Received request to Send OTP for {}", otpRequestKey);
+    public void sendOtp(boolean isEmployeeReferral, String mobileNumber, String countryCode, String email, String recepientName) throws Exception {
+        log.info("Received request to Send OTP for {} mobile: {} email: {} ", recepientName, mobileNumber, email);
         long startTime = System.currentTimeMillis();
+
+        if(isEmployeeReferral && (null == email || email.trim().length() == 0))
+            throw new ValidationException("Email address is required for Employee Referral OTP", HttpStatus.UNPROCESSABLE_ENTITY);
+
+        if(!isEmployeeReferral && (null == mobileNumber || mobileNumber.trim().length() == 0))
+            throw new ValidationException("Mobile number is required to send OTP", HttpStatus.UNPROCESSABLE_ENTITY);
+
+        String otpRequestKey = isEmployeeReferral?email:mobileNumber;
 
         Random random = new Random();
         int otp = 0;
@@ -75,8 +89,19 @@ public class ProcessOtpService implements IProcessOtpService {
 
         //TODO: Push the otp on to queue
         ObjectMapper objectMapper = new ObjectMapper();
-        //if otpRequestKey has '@', it's an email address, else it's a mobile number
-        jmsTemplate.convertAndSend(queue, objectMapper.writeValueAsString(new OTPRequestBean(otp, IConstant.OTP_EXPIRY_SECONDS, ((otpRequestKey.indexOf('@') > -1)?null:otpRequestKey),((otpRequestKey.indexOf('@') > -1)?otpRequestKey:null))));
+        //Messages on queue that are more than timeout seconds old, should not be processed
+        jmsTemplate.setExplicitQosEnabled(true);
+        jmsTemplate.setTimeToLive(IConstant.OTP_EXPIRY_SECONDS * 1000);
+
+        OTPRequestBean otpRequestBean;
+        //if the otp is for employee referral, do not send mobile to queue
+        //if the otp is for candidate career page, do not send email to queue
+        if (isEmployeeReferral)
+            otpRequestBean = new OTPRequestBean(otp, IConstant.OTP_EXPIRY_SECONDS, null, countryCode, email, recepientName);
+        else
+            otpRequestBean = new OTPRequestBean(otp, IConstant.OTP_EXPIRY_SECONDS, mobileNumber, countryCode, null, recepientName);
+
+        jmsTemplate.convertAndSend(queue, objectMapper.writeValueAsString(otpRequestBean));
         log.info("Put message on queue {}", queue.getQueueName());
         log.info("Completed processing Send OTP request in {} ms",(System.currentTimeMillis() - startTime));
     }

@@ -275,13 +275,29 @@ public class NoAuthController {
 
     /**
      * REST Api to handle send Otp request from search job page
-     * @param otpRequestKey can be either mobile number or the email address to send otp to
+     * @param isEmployeeReferral true if the send otp request was from employee referral flow
+     * @param mobileNumber mobile number to send otp to
+     * @param countryCode country code
+     * @param email email address of the employee
+     * @param recepientName name of the message receiver
      * @throws Exception
      */
     @GetMapping(value = "/sendOtp")
     @ResponseStatus(value = HttpStatus.OK)
-    void sendOtp(@RequestParam String otpRequestKey) throws Exception {
-        processOtpService.sendOtp(otpRequestKey);
+    void sendOtp(@RequestParam(name = "isEmployeeReferral") boolean isEmployeeReferral, @RequestParam(name = "mobileNumber", required = false) String mobileNumber, @RequestParam(name = "countryCode") String countryCode, @RequestParam(name = "email", required = false) String email, @RequestParam(name = "recepientName") String recepientName) throws Exception {
+        processOtpService.sendOtp(isEmployeeReferral, mobileNumber, countryCode, email, recepientName);
+    }
+
+
+    /**
+     * REST Api to handle send Otp request from search job page
+     * @param otpRequestKey can be either mobile number or the email address to send otp to
+     * @throws Exception
+     */
+    @GetMapping(value = "/validateOtp")
+    @ResponseStatus(value = HttpStatus.OK)
+    boolean validateOtp(@RequestParam String otpRequestKey, @RequestParam String otp) throws Exception {
+        return processOtpService.verifyOtp(otpRequestKey, Integer.parseInt(otp));
     }
 
     /**

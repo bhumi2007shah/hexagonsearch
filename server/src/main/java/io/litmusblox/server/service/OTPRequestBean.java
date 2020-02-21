@@ -21,16 +21,17 @@ public class OTPRequestBean {
     private int otpExpiry;
     private String receivermobile;
     private String receiveremail;
+    private String receiverfirstname;
+    private String receivercountrycode;
+    private String sendercountrycode;
 
-    //Hard-coded to get around not null checks for the following in communication module
-    private String receiverfirstName = "-";
-    private String receivercountrycode = "+91";
-    private String sendercountrycode = "+91";
-
-    public OTPRequestBean(int otp, int otpExpiry, String receivermobile, String receiveremail) {
+    public OTPRequestBean(int otp, int otpExpiry, String receivermobile, String receivercountrycode, String receiveremail, String receiverfirstname) {
         this.otp = otp;
         this.otpExpiry = otpExpiry;
         this.receivermobile = receivermobile;
         this.receiveremail = receiveremail;
+        this.receivercountrycode = receivercountrycode;
+        this.sendercountrycode = receivercountrycode;
+        this.receiverfirstname = receiverfirstname;
     }
 }
