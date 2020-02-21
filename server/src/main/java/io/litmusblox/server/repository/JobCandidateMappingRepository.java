@@ -114,6 +114,7 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
             "sum((chatbot_status LIKE 'Incomplete')\\:\\:INT) AS incompleteCount\n" +
             "FROM job_candidate_mapping, stage_step_master\n" +
             "where job_candidate_mapping.job_id = :jobId\n" +
+            "and job_candidate_mapping.rejected = false\n" +
             "and job_candidate_mapping.stage = stage_step_master.id\n" +
             "and stage_step_master.stage = :stage")
     List<Object[]> getCandidateCountPerStage(Long jobId, String stage) throws Exception;

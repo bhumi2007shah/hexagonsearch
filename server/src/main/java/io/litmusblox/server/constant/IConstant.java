@@ -360,4 +360,5 @@ public interface IConstant {
     String CHAT_LINK_HEADER="Chatbot Link";
 
     String [] apacheReloadCommand = {"sudo", "apache2ctl", "graceful"};
+    int OTP_EXPIRY_SECONDS = 90;
 }

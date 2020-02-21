@@ -12,7 +12,6 @@ import io.litmusblox.server.utils.SentryUtil;
 import lombok.extern.log4j.Log4j2;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,6 +35,12 @@ public class NaukriMassMailParser implements HtmlParser {
     @Autowired
     IDetectTextInImage detectTextInImage;
 
+    /**
+     * Function creates a Candidate and set name, email, mobile, candidate detail and candidate company details
+     * @param htmlData - Email body
+     * @param createdBy - Object of user who created the job for which this email is being proecssed
+     * @return Candidate with data from email body
+     */
     @Override
     public Candidate parseData(String htmlData, User createdBy) {
         long startTime = System.currentTimeMillis();
@@ -47,6 +52,7 @@ public class NaukriMassMailParser implements HtmlParser {
 
         Document doc = Jsoup.parse(htmlData);
 
+        //calling function to populate canididate name
         try {
             populateCandidateName(candidateFromNaukriEmail, doc);
         }
@@ -56,6 +62,7 @@ public class NaukriMassMailParser implements HtmlParser {
             e.printStackTrace();
         }
 
+        // calling function to populate candidate's email and mobile
         try {
             populateMobileAndEmail(candidateFromNaukriEmail, doc);
         }
@@ -65,13 +72,10 @@ public class NaukriMassMailParser implements HtmlParser {
             e.printStackTrace();
         }
 
-        try {
-            candidateFromNaukriEmail.setCandidateCompanyDetails(new ArrayList<CandidateCompanyDetails>(1));
-        } catch (Exception e) {
-            log.error("Error when populating candidate company details {}", e.getMessage());
-            SentryUtil.logWithStaticAPI(null, "error while processing candidate company details, "+e.getMessage(), null);
-            e.printStackTrace();
-        }
+        //Initializing company detail with empty list and calling function to populate candidate company details
+
+        candidateFromNaukriEmail.setCandidateCompanyDetails(new ArrayList<CandidateCompanyDetails>(1));
+
         try {
             populateCandidateCompanyDetails(candidateFromNaukriEmail, doc);
         } catch (Exception e) {
@@ -80,6 +84,7 @@ public class NaukriMassMailParser implements HtmlParser {
             e.printStackTrace();
         }
 
+        //calling function to populate candidate details
         try {
             populateCandidateDetails(candidateFromNaukriEmail, doc);
         } catch (Exception e) {
@@ -93,7 +98,13 @@ public class NaukriMassMailParser implements HtmlParser {
         return candidateFromNaukriEmail;
     }
 
+    /**
+     * Function to populate candidateName in candidate object passed as param using email body
+     * @param candidate
+     * @param doc
+     */
     private void populateCandidateName(Candidate candidate, Document doc) {
+        log.info("Extacting candidate name");
         if(doc.getElementsByAttributeValueContaining("src", "UserPic").size()!=0){
             if(doc.getElementsByAttributeValueContaining("src", "UserPic").get(0).parent().parent().parent().parent().parent().previousSibling().previousSibling().childNode(1).childNode(1).childNode(0).childNode(1).childNode(1).childNode(0).toString()!=null) {
                 candidate.setCandidateName(doc.getElementsByAttributeValueContaining("src", "UserPic").get(0).parent().parent().parent().parent().parent().previousSibling().previousSibling().childNode(1).childNode(1).childNode(0).childNode(1).childNode(1).childNode(0).toString().trim());
@@ -104,17 +115,30 @@ public class NaukriMassMailParser implements HtmlParser {
                 candidate.setCandidateName(doc.getElementsByAttributeValueContaining("style", "font-size:22px").text());
             }
         }
+        log.info("Found candidate name: {} ", candidate.getCandidateName());
     }
 
+    /**
+     * Function to set email and mobile in candidate object using doc
+     * @param candidate
+     * @param doc
+     */
     private void populateMobileAndEmail(Candidate candidate, Document doc) {
         candidate.setMobile(extractMobile(doc));
         candidate.setEmail(extractEmail(doc));
     }
 
+    /**
+     * Function to extract mobile from doc
+     * @param doc
+     * @return - String - mobile
+     */
     private String extractMobile(Document doc) {
+        log.info("extracting mobile number");
         //find mobile number element
         Elements mobileContainer = doc.getElementsContainingOwnText("mobile");
         String mobile = null;
+        // mobile is an image, converting it to text using google's API
         try {
             URL mobileImageUrl = new URL(String.valueOf(mobileContainer.get(0).getElementsByTag("img").attr("src")));
             mobile = detectTextInImage.detectText(mobileImageUrl);
@@ -124,33 +148,53 @@ public class NaukriMassMailParser implements HtmlParser {
         } catch (Exception e) {
             log.error(" Error while converting image to text, {}", e.getMessage());
         }
+        log.info("Found mobile number {}", mobile);
         return mobile;
     }
 
+    /**
+     * Function to extract email from doc
+     * @param doc
+     * @return - String - email
+     */
     private String extractEmail(Document doc){
         String email = null;
+        /*
         if(doc.getElementsByClass("aSH")!=null) {
             for(Node node: doc.getElementsByClass("aSH")){
-                System.out.println(node);
             }
-        }
-        return "";
+        }*/
+        //returning null email as candidate's email is not present in massMail email.
+        return email;
     }
 
+    /**
+     * Function to populate candidate company details with designation, company, notice period, salary
+     * @param candidate
+     * @param doc
+     * @throws Exception
+     */
     private void populateCandidateCompanyDetails(Candidate candidate, Document doc) throws Exception {
         CandidateCompanyDetails candidateCompanyDetails = new CandidateCompanyDetails();
+
+        log.info("setting current designation");
         if(doc.getElementsContainingOwnText("Current Designation").next().text()!=null){
+            log.info("Found company details for candidate: {}, {}", candidate.getCandidateName(), candidate.getMobile());
             candidateCompanyDetails.setDesignation(
                     doc.getElementsContainingOwnText("Current Designation").next().text()
             );
         }
+        log.info("set current designation");
 
+        log.info("setting current company");
         if(doc.getElementsContainingOwnText("Current Company").next().text()!=null) {
             candidateCompanyDetails.setCompanyName(
                     doc.getElementsContainingOwnText("Current Company").next().text()
             );
         }
+        log.info("set current company");
 
+        log.info("setting notice period");
         if(doc.getElementsContainingOwnText("Notice Period").next().text()!=null || !doc.getElementsContainingOwnText("Notice Period").next().text().equals("Not Mentioned")) {
             if (doc.getElementsContainingOwnText("Notice Period").next().text().contains("Months")) {
                 candidateCompanyDetails.setNoticePeriod(String.valueOf(Integer.parseInt(
@@ -167,6 +211,7 @@ public class NaukriMassMailParser implements HtmlParser {
         else{
             candidateCompanyDetails.setNoticePeriod("0");
         }
+        log.info("set notice period");
 
         log.info("setting ctc");
         //set ctc
@@ -194,10 +239,15 @@ public class NaukriMassMailParser implements HtmlParser {
         candidate.getCandidateCompanyDetails().add(candidateCompanyDetails);
     }
 
+    /**
+     * Function to populate candidate details with experience, location, preferred location, education
+     * @param candidate
+     * @param doc
+     * @throws Exception
+     */
     public void populateCandidateDetails(Candidate candidate, Document doc) throws Exception {
         log.info("setting experince");
         //set experience
-
         doc.getElementsContainingOwnText("Exp").forEach(element -> {
             if(element.text().equals("Exp") && element.parent().parent().nextElementSibling().childNode(1)
                     .childNode(1).childNode(0).toString().trim()!=null){
@@ -262,6 +312,9 @@ public class NaukriMassMailParser implements HtmlParser {
         //set education
         if(doc.getElementsContainingOwnText("Education")!=null){
             if(doc.getElementsContainingOwnText("Education").get(0).parent().nextElementSibling()!=null && doc.getElementsContainingOwnText("Education").get(0).parent().nextElementSibling().nextElementSibling()!=null){
+
+                log.info("Found candidate education for candidate : {}, {}", candidate.getCandidateName(), candidate.getMobile());
+
                 if(null == candidate.getCandidateEducationDetails())
                     candidate.setCandidateEducationDetails(new ArrayList<CandidateEducationDetails>());
 
@@ -270,7 +323,9 @@ public class NaukriMassMailParser implements HtmlParser {
                         .instituteName(doc.getElementsContainingOwnText("Education").get(0).parent().nextElementSibling().nextElementSibling().text())
                         .build()
                 );
+
             }
         }
+        log.info("set candidate education details");
     }
 }

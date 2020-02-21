@@ -32,6 +32,12 @@ public class DetectTextInImage implements IDetectTextInImage {
     @Autowired
     CloudVisionTemplate cloudVisionTemplate;
 
+    /**
+     * Function to convert image to text.
+     * @param imageUrl - this url will be sent to google api
+     * @return String - extracted text from image
+     * @throws Exception
+     */
     @Override
     public String detectText(URL imageUrl) throws Exception {
         List<AnnotateImageRequest> requests = new ArrayList<>();
