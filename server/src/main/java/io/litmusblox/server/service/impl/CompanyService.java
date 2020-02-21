@@ -745,6 +745,7 @@ public class CompanyService implements ICompanyService {
         companies.forEach(company -> {
             company = generateAndSetCompanyUniqueId(company);
         });
+        companyRepository.saveAll(companies);
         return companies;
     }
 
