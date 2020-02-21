@@ -275,14 +275,17 @@ public class NoAuthController {
 
     /**
      * REST Api to handle send Otp request from search job page
-     * @param mobile mobile number to send otp to
-     * @param email email address to send otp to
+     * @param isEmployeeReferral true if the send otp request was from employee referral flow
+     * @param mobileNumber mobile number to send otp to
+     * @param countryCode country code
+     * @param email email address of the employee
+     * @param recepientName name of the message receiver
      * @throws Exception
      */
     @GetMapping(value = "/sendOtp")
     @ResponseStatus(value = HttpStatus.OK)
-    void sendOtp(@RequestParam String mobile, @RequestParam String email) throws Exception {
-        processOtpService.sendOtp(mobile, email);
+    void sendOtp(@RequestParam(name = "isEmployeeReferral") boolean isEmployeeReferral, @RequestParam(name = "mobileNumber", required = false) String mobileNumber, @RequestParam(name = "countryCode") String countryCode, @RequestParam(name = "email", required = false) String email, @RequestParam(name = "recepientName") String recepientName) throws Exception {
+        processOtpService.sendOtp(isEmployeeReferral, mobileNumber, countryCode, email, recepientName);
     }
 
 
