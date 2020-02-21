@@ -1781,3 +1781,23 @@ ADD COLUMN SEND_COMMUNICATION bool NOT NULL DEFAULT 't';
 -- For ticket #380
 INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
 ('OTPSms','Your OTP for LitmusBlox is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] seconds.');
+
+-- For ticket Update sms content #38
+delete from sms_templates;
+INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
+('ChatInvite','NEW JOB ALERT - [[${commBean.receiverfirstname}]], your profile is shortlisted by [[${commBean.sendercompany}]] for [[${commBean.jobtitle}]]. Click [[${commBean.chatlink}]] to see JD and apply.'),
+('ChatCompleted','Congratulations [[${commBean.receiverfirstname}]]! Your application is complete for the [[${commBean.jobtitle}]] position at [[${commBean.sendercompany}]]. We will be in touch with you soon.'),
+('ChatIncompleteReminder1','Your application to [[${commBean.sendercompany}]] was incomplete. Just click the [[${commBean.chatlink}]] to continue and complete.'),
+('ChatIncompleteReminder2','FINAL REMINDER - Complete your application for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. It will take only 5 minutes. Click [[${commBean.chatlink}]] to continue.'),
+('LinkNotVisitedReminder1','[[${commBean.receiverfirstname}]], [[${commBean.sendercompany}]] has shortlisted you for [[${commBean.jobtitle}]] Job. Click [[${commBean.chatlink}]] to know more and apply.'),
+('LinkNotVisitedReminder2','Not interested in this job? [[${commBean.sendercompany}]] has invited you to apply for the [[${commBean.jobtitle}]] position. Click [[${commBean.chatlink}]] to start.'),
+('ChatNotVisitedReminder1','[[${commBean.receiverfirstname}]], this is link to apply for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. It is valid only for 24 hours. Click [[${commBean.chatlink}]] to begin.'),
+('ChatNotVisitedReminder2','[[${commBean.receiverfirstname}]], Just a reminder to complete your application for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. This link will expire in 24 hours. [[${commBean.chatlink}]] '),
+('AutosourceAcknowledgement', 'Hi [[${commBean.receiverfirstname}]], Your application for [[${commBean.jobtitle}]] position at [[${commBean.sendercompany}]] has been received. Good luck!'),
+('AutosourceApplicationShortlisted', '[[${commBean.receiverfirstname}]], [[${commBean.sendercompany}]] has shortlisted you for [[${commBean.jobtitle}]] position. Click on link to complete your profile. [[${commBean.chatlink}]] '),
+('AutosourceLinkNotVisited', 'Last Reminder [[${commBean.receiverfirstname}]] - [[${commBean.sendercompany}]] has shortlisted your application. Click link to complete your profile. [[${commBean.chatlink}]]'),
+('OTPSms','Your OTP for LitmusBlox is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] seconds.'),
+('InterviewDay', 'INTERVIEW REMINDER FOR [[${commBean.receiverfirstname}]] - You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewDate}]]. Please report 15 mins before. Click Google Maps link for directions. See you there! [[${commBean.interviewAddressLink}]]');
+
+
+
