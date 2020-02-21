@@ -123,4 +123,13 @@ public interface IJobService {
      * @return List of jobs
      */
     List<Job> searchJobs(SearchRequestBean searchRequest);
+
+    /**
+     * Service method to create a list of TechRoleCompetency per job.
+     * It will be used by companies with LDEB subscription
+     * @param jobId
+     * @return
+     * @throws Exception
+     */
+    List<TechRoleCompetencyBean> getTechRoleCompetencyByJob(Long jobId) throws Exception;
 }

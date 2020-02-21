@@ -446,17 +446,6 @@ public class Util {
         return new SimpleDateFormat(IConstant.DATE_FORMAT).parse(formatter);
     }
 
-    public static boolean validateInterviewDate(Date date){
-        log.info("Inside checkDateIsBeforeCurrentDate");
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        int dateValue = sdf.format(date).compareTo(sdf.format(new Date()));
-        if(dateValue == 0 || dateValue == 1)
-            return true;
-        else if (dateValue == -1)
-            return false;
-        return false;
-    }
-
     public static MultipartFile createMultipartFile(File file) throws IOException {
         log.info("inside createMultipartFile method");
         InputStream input = null;

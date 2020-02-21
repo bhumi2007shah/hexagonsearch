@@ -55,7 +55,6 @@ public class InterviewDetails implements Serializable {
     @Column(name = "INTERVIEW_MODE")
     private String interviewMode;
 
-    @NotNull
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="INTERVIEW_LOCATION")
     private CompanyAddress interviewLocation;
@@ -143,4 +142,18 @@ public class InterviewDetails implements Serializable {
     @Transient
     @JsonProperty
     private String confirmationText;
+
+    public InterviewDetails(@NotNull Long jobCandidateMappingId, @NotNull String interviewType, @NotNull String interviewMode, @NotNull CompanyAddress interviewLocation, @NotNull Date interviewDate, String interviewInstruction, @NotNull boolean sendJobDescription, String comments, UUID interviewReferenceId, @NotNull Date createdOn, @NotNull User createdBy) {
+        this.jobCandidateMappingId = jobCandidateMappingId;
+        this.interviewType = interviewType;
+        this.interviewMode = interviewMode;
+        this.interviewLocation = interviewLocation;
+        this.interviewDate = interviewDate;
+        this.interviewInstruction = interviewInstruction;
+        this.sendJobDescription = sendJobDescription;
+        this.comments = comments;
+        this.interviewReferenceId = interviewReferenceId;
+        this.createdOn = createdOn;
+        this.createdBy = createdBy;
+    }
 }

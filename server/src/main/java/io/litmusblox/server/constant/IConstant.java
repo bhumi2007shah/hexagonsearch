@@ -212,7 +212,7 @@ public interface IConstant {
     }
 
     enum CompanySubscription {
-        Lite, Max;
+        Lite, Max, LDEB;
     }
 
     enum UPLOAD_TYPE {
@@ -355,5 +355,10 @@ public interface IConstant {
 
     Integer SCREENING_QUESTION_RESPONSE_MAX_LENGTH = 300;
     Integer SCREENING_QUESTION_COMMENT_MAX_LENGTH = 100;
+
+    String CHAT_LINK="chatbotLink";
+    String CHAT_LINK_HEADER="Chatbot Link";
+
+    String [] apacheReloadCommand = {"sudo", "apache2ctl", "graceful"};
     int OTP_EXPIRY_SECONDS = 90;
 }
