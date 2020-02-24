@@ -470,4 +470,20 @@ public class Util {
             }
         }
     }
+
+    //This method is used for comparing interview date with current date time
+    public static Date getCurrentDateWithIstTimezone(){
+        log.info("Inside getCurrentDateWithIstTimezone");
+        //DateFormat
+        SimpleDateFormat dateTimeInIST = new SimpleDateFormat("yyyy-MMM-dd hh:mm:ss");
+        //Setting the time zone
+        dateTimeInIST.setTimeZone(TimeZone.getTimeZone("IST"));
+        try {
+            return dateTimeInIST.parse(dateTimeInIST.format(new Date()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("Issue in getCurrentDateWithIstTimezone : {}",e.getMessage());
+        }
+        return null;
+    }
 }

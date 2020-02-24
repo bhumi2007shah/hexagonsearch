@@ -1909,7 +1909,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         
-        if(interviewDetailsFromReq.getInterviewDate().before(new Date())){
+        if(interviewDetailsFromReq.getInterviewDate().before(Util.getCurrentDateWithIstTimezone())){
             throw new ValidationException("Interview date : "+interviewDetailsFromReq.getInterviewDate()+ " should be future date", HttpStatus.BAD_REQUEST);
         }
 
@@ -1983,7 +1983,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null == interviewDetailsFromDb)
             throw new ValidationException("Interview details not found for id : "+showNoShowDetails.getId(), HttpStatus.BAD_REQUEST);
 
-        if(interviewDetailsFromDb.getInterviewDate().after(new Date())){
+        if(interviewDetailsFromDb.getInterviewDate().after(Util.getCurrentDateWithIstTimezone())){
             throw new ValidationException("Interview date : "+interviewDetailsFromDb.getInterviewDate()+ " should be older or equal to current date", HttpStatus.BAD_REQUEST);
         }
 
