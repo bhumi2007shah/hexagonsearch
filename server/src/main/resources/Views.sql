@@ -26,7 +26,7 @@ create view exportDataView AS
   concat(users.first_name, ' ', users.last_name) as createdBy,
   jcm.created_on as createdOn,
   jcm.score as capabilityScore,
-  ivd.interviewDate,
+  (ivd.interviewDate + interval '5 hour 30 minute') as interviewDate,
   ivd.interviewType,
   ivd.interviewMode,
   ivd.interviewLocation,
@@ -68,7 +68,7 @@ create view exportDataView AS
         ELSE
         'no show'
         END)as showNoShow, (select value from master_data where id=ivd.no_show_reason) as noShowReason, ivd.cancelled as cancelled, (select value from master_data where id=ivd.cancellation_reason) as cancellationReason
-        from interview_details ivd inner join  company_address ca on ivd.interview_location = ca.id
+        from interview_details ivd left join  company_address ca on ivd.interview_location = ca.id
         where ivd.id in (
           select max(id) from interview_details group by job_candidate_mapping_id
         )
