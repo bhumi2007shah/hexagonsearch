@@ -5,6 +5,7 @@
 package io.litmusblox.server.model;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -19,6 +20,7 @@ import javax.validation.constraints.NotNull;
 @Entity
 @Data
 @Table(name = "EXPORT_FORMAT_DETAIL")
+@NoArgsConstructor
 public class ExportFormatDetail {
 
     private static final long serialVersionUID = 6868521896546285046L;
@@ -33,10 +35,20 @@ public class ExportFormatDetail {
     @JoinColumn(name = "FORMAT_ID")
     private ExportFormatMaster exportFormatMaster;
 
+    @Column(name = "COLUMN_NAME")
     private String columnName;
 
+    @Column(name = "HEADER")
     private String header;
 
+    @Column(name = "POSITION")
     private int position;
 
+    @Column(name = "STAGE")
+    private String stage;
+
+    public ExportFormatDetail(String columnName, String header) {
+        this.columnName = columnName;
+        this.header = header;
+    }
 }

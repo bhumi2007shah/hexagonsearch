@@ -1415,24 +1415,6 @@ update Job set RESUBMIT_HR_CHATBOT='f';
 
 ALTER TABLE export_format_detail ALTER COLUMN column_name TYPE VARCHAR(25), ALTER COLUMN header TYPE VARCHAR(25);
 
-delete from export_format_detail where format_id=(select id from export_format_master where format='All Data');
-INSERT INTO export_format_detail
-(format_id, column_name, header,  "position")
-VALUES
-(1, 'candidateName','Candidate Name', 1),
-(1, 'chatbotStatus','Chatbot Status', 2),
-(1, 'chatbotFilledTimeStamp', 'Chatbot Filled Timestamp', 3),
-(1, 'currentStage','Stage', 4),
-(1, 'keySkillsStrength','Key Skills Strength', 5),
-(1, 'currentCompany','Current Company', 6),
-(1, 'currentDesignation','Current Designation', 7),
-(1, 'email','Email', 8),
-(1, 'countryCode','Country Code', 9),
-(1, 'mobile','Mobile', 10),
-(1, 'totalExperience','Total Experience', 11),
-(1, 'createdBy','Created By', 12);
-
-
 ALTER TABLE JCM_COMMUNICATION_DETAILS RENAME COLUMN CHAT_COMPLETE_FLAG TO TECH_CHAT_COMPLETE_FLAG;
 
 update job_candidate_mapping
@@ -1455,11 +1437,7 @@ update users set role='BusinessUser'
 where
 company_id in
 (
-    select id from company where recruitment_agency_id in
-    (
-        select id from company where company_type = 'Agency'
-    )
-    and company_type != 'Agency'
+    select id from company where recruitment_agency_id is not null
 );
 
 --For ticket #336
@@ -1518,6 +1496,9 @@ INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 ALTER TABLE USER_SCREENING_QUESTION
 ALTER COLUMN QUESTION TYPE VARCHAR(250),
 ALTER COLUMN OPTIONS TYPE VARCHAR(200)[];
+
+-- to update custom chatbot detail for tricentis.
+update CUSTOMIZED_CHATBOT_PAGE_CONTENT set PAGE_INFO='"introText"=>"Automation premier League requires you to get tested on", "thankYouText"=>"The sore of your test will be communicated to you via email tomorrow from tricentis_apl@litmusblox.io", "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false"' where company_id=43;
 
 --For ticket #389
 UPDATE MASTER_DATA SET VALUE = 'Left Message or Voicemail' WHERE VALUE = 'Left Message/VoiceMail';
@@ -1578,43 +1559,256 @@ ADD CONSTRAINT jcm_history_stage_step_fkey FOREIGN KEY(stage) REFERENCES stage_s
 
 DROP TABLE company_stage_step, job_stage_step, steps_per_stage, stage_master;
 
---updated view for export data
-drop view if exists exportDataView;
-create view exportDataView AS
-select
-	jcm.job_id as jobId,
-	concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidateName,
-	jcm.chatbot_status as chatbotStatus,
-	jcm.chatbot_updated_on as chatbotFilledTimeStamp,
-	cvr.overall_rating as keySkillsStrength,
-	ssm.stage as currentStage,
-	currentCompany.company_name as currentCompany,
-	currentCompany.designation as currentDesignation,
-	jcm.email,
-	jcm.country_code as countryCode,
-	jcm.mobile,
-	cd.total_experience as totalExperience,
-	concat(users.first_name, ' ', users.last_name) as createdBy,
-	jsq.jsqId as jsqId,
-	jsq.ScreeningQn as screeningQuestion,
-	csqr.response as candidateResponse
-	from job_candidate_mapping jcm
-	left join cv_rating cvr ON cvr.job_candidate_mapping_id = jcm.id
-	left join (
-		select candidate_id, company_name, designation from candidate_company_details where id in (
-				select min(id) from candidate_company_details
-				group by candidate_id
-			)
-	) as currentCompany on jcm.candidate_id = currentCompany.candidate_id
-	left join candidate_details cd on cd.candidate_id = jcm.candidate_id
-	inner join users ON users.id = jcm.created_by
-	inner join stage_step_master ssm on ssm.id=jcm.stage
-	left join (
-		select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
-		union
-		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.user_screening_question_id=usq.id
-		union
-		select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
-	) as jsq on jsq.jsqJobId = jcm.job_id
-	left join
-	candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id order by jobId, candidateName, jsq.jsqId;
+--For ticket #377
+ALTER TABLE COMPANY
+ADD COLUMN COUNTRY_ID INTEGER REFERENCES COUNTRY(ID);
+
+--Update existing record's
+UPDATE COMPANY
+SET COUNTRY_ID = (SELECT ID FROM COUNTRY WHERE COUNTRY_NAME = 'India');
+
+ALTER TABLE COMPANY
+ALTER COLUMN COUNTRY_ID SET NOT NULL;
+UPDATE job_candidate_mapping SET candidate_source = 'NaukriJobPosting' WHERE candidate_source = 'NaukriMail';
+
+INSERT INTO export_format_detail
+(format_id, column_name, header, "position")
+VALUES
+(1, 'createdOn','Created On', 13),
+(1, 'capabilityScore', 'Capability Score', 14);
+
+
+-- #42 litmusblox-chatbot
+INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
+(4080, '"introText"=>"Automation premier League requires you to get tested on", "thankYouText"=>"The score of your test will be communicated to you via email tomorrow", "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false"');
+
+
+-- #399 litmusblox-backend Screening questions: Increase length of input field response
+alter table candidate_screening_question_response alter column response type varchar(300);
+
+-- #382 Design & Implement: Emails/SMS for job postings/mass mailing
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN AUTOSOURCED bool NOT NULL default 'f';
+
+UPDATE job_candidate_mapping set autosourced='t' where candidate_source in ('NaukriJobPosting','NaukriMassMail', 'EmployeeReferral', 'CareerPage');
+
+ALTER TABLE JCM_COMMUNICATION_DETAILS
+ADD COLUMN autosource_acknowledgement_timestamp_email TIMESTAMP DEFAULT NULL,
+ADD COLUMN autosource_acknowledgement_timestamp_sms TIMESTAMP DEFAULT NULL;
+
+insert into sms_templates(template_name, template_content) values
+('autosourceAcknowledgement', '[[${commBean.sendercompany}]] thanks you for your application for [[${commBean.jobtitle}]] position. We will be in touch with you for further action if your profile is shortlisted. Good luck!'),
+('autosourceApplicationShortlisted', '[[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Please click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]'),
+('autosourceLinkNotVisited', 'Last Reminder: [[${commBean.sendercompany}]] has shortlisted your application for [[${commBean.jobtitle}]] position. Click on the link below to complete your profile and be considered for an interview. [[${commBean.chatlink}]]');
+
+ALTER TABLE email_log ALTER COLUMN template_name TYPE VARCHAR(35);
+
+INSERT INTO COUNTRY (COUNTRY_NAME, COUNTRY_CODE, MAX_MOBILE_LENGTH, COUNTRY_SHORT_CODE) VALUES
+('Norway','+47', 8,'no');
+
+--For ticket #383
+ALTER TABLE COMPANY_ADDRESS DROP CONSTRAINT company_address_address_title_key;
+Alter table COMPANY_ADDRESS add constraint company_address_address_title_company_id_key unique(address_title, company_id);
+
+--For ticket #364
+CREATE TABLE INTERVIEW_DETAILS (
+ID serial PRIMARY KEY NOT NULL,
+JOB_CANDIDATE_MAPPING_ID INTEGER REFERENCES JOB_CANDIDATE_MAPPING(ID) NOT NULL,
+INTERVIEW_TYPE VARCHAR(20) NOT NULL,
+INTERVIEW_MODE VARCHAR(20) NOT NULL,
+INTERVIEW_LOCATION INTEGER REFERENCES COMPANY_ADDRESS(ID),
+INTERVIEW_DATE TIMESTAMP NOT NULL,
+INTERVIEW_INSTRUCTIONS TEXT,
+SEND_JOB_DESCRIPTION bool DEFAULT 'f' NOT NULL,
+CANCELLED bool DEFAULT 'f' NOT NULL,
+CANCELLATION_REASON INTEGER REFERENCES MASTER_DATA(ID),
+SHOW_NO_SHOW bool,
+NO_SHOW_REASON INTEGER REFERENCES MASTER_DATA(ID),
+COMMENTS VARCHAR(250),
+INTERVIEW_REFERENCE_ID UUID NOT NULL DEFAULT uuid_generate_v1(),
+CANDIDATE_CONFIRMATION bool,
+CANDIDATE_CONFIRMATION_TIME TIMESTAMP,
+CANCELLATION_COMMENTS VARCHAR(250),
+SHOW_NO_SHOW_COMMENTS VARCHAR(250),
+INTERVIEW_SCHEDULED_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_CONFIRMED_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_REMINDER_PREVIOUS_DAY_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_REMINDER_SAME_DAY_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_REMINDER_SAME_DAY_SMS_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_NO_SHOW_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_CANCELLED_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_REJECTION_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+CREATED_ON TIMESTAMP NOT NULL,
+CREATED_BY INTEGER REFERENCES USERS(ID) NOT NULL,
+UPDATED_ON TIMESTAMP,
+UPDATED_BY INTEGER REFERENCES USERS(ID)
+);
+
+CREATE TABLE INTERVIEWER_DETAILS (
+ID serial PRIMARY KEY NOT NULL,
+INTERVIEW_ID INTEGER REFERENCES INTERVIEW_DETAILS(ID) NOT NULL,
+INTERVIEWER INTEGER REFERENCES USERS(ID) NOT NULL,
+CREATED_ON TIMESTAMP NOT NULL,
+CREATED_BY INTEGER REFERENCES USERS(ID) NOT NULL,
+UPDATED_ON TIMESTAMP,
+UPDATED_BY INTEGER REFERENCES USERS(ID),
+CONSTRAINT UNIQUE_INTERVIEW_MAPPING UNIQUE(INTERVIEW_ID, INTERVIEWER)
+);
+
+Insert into MASTER_DATA (TYPE, VALUE) values
+('cancellationReasons','Client cancelled iv 1'),
+('cancellationReasons','Candidate no show 1'),
+('cancellationReasons','Panel not available 1'),
+('cancellationReasons','Client cancelled iv 2'),
+('cancellationReasons','Candidate no show 2'),
+('cancellationReasons','Panel not available 2'),
+
+('noShowReasons','Personal/Family'),
+('noShowReasons','Professional'),
+('noShowReasons','Medical'),
+('noShowReasons','Logistics'),
+('noShowReasons','Not reachable'),
+('noShowReasons','Client Cancellation');
+
+-- For ticket #406
+Insert into MASTER_DATA (TYPE, VALUE) values
+('interviewConfirmation','Yes, I will attend the interview'),
+('interviewConfirmation','I wish to reschedule the interview'),
+('interviewConfirmation','No, I am not able to attend the interview');
+
+ALTER TABLE INTERVIEW_DETAILS
+ADD COLUMN CANDIDATE_CONFIRMATION_VALUE INTEGER REFERENCES MASTER_DATA(ID);
+
+ALTER TABLE export_format_detail ALTER COLUMN column_name TYPE VARCHAR(30), ALTER COLUMN header TYPE VARCHAR(30);
+
+ALTER TABLE export_format_detail ADD COLUMN stage VARCHAR(15);
+
+delete from export_format_detail where format_id=(select id from export_format_master where format='All Data');
+INSERT INTO export_format_detail
+(format_id, column_name, header,  "position", stage)
+VALUES
+(1, 'candidateName','Candidate Name', 1, null),
+(1, 'chatbotStatus','Chatbot Status', 2, null),
+(1, 'chatbotFilledTimeStamp', 'Chatbot Filled Timestamp', 3, null),
+(1, 'currentStage','Stage', 4, null),
+(1, 'keySkillsStrength','Key Skills Strength', 5, null),
+(1, 'currentCompany','Current Company', 6, null),
+(1, 'currentDesignation','Current Designation', 7, null),
+(1, 'email','Email', 8, null),
+(1, 'countryCode','Country Code', 9, null),
+(1, 'mobile','Mobile', 10, null),
+(1, 'totalExperience','Total Experience', 11, null),
+(1, 'createdBy','Created By', 12, null),
+(1, 'interviewDate','Interview Date', 13, 'Interview'),
+(1, 'interviewType','Interview Type', 14, 'Interview'),
+(1, 'interviewMode','Interview Mode', 15, 'Interview'),
+(1, 'interviewLocation','Interview location', 16, 'Interview'),
+(1, 'candidateConfirmation','Candidate Confirmation', 17, 'Interview'),
+(1, 'candidateConfirmationTime','Candidate Confirmation Time', 18, 'Interview'),
+(1, 'showNoShow','Show No Show', 19, 'Interview'),
+(1, 'noShowReason','No Show Reason' ,20, 'Interview'),
+(1, 'cancelled', 'Interview Cancelled', 21, 'Interview'),
+(1, 'cancellationReason','Cancellation Reason', 22, 'Interview');
+
+--For ticket #336
+UPDATE COMPANY SET SHORT_NAME =
+case
+ when COMPANY_NAME = 'LitmusBlox' then 'LitmusBlox'
+ when COMPANY_NAME = 'Hyperbola Technologies' then 'Hyperbola'
+ when COMPANY_NAME = 'Bold Dialogue' then 'BoldDialogue'
+ when COMPANY_NAME = 'EarlySalary' then 'EarlySalary'
+ when COMPANY_NAME = 'KPIT Limited' then 'KPIT'
+ when COMPANY_NAME = 'Mercurius IT' then 'MercuriusIT'
+ when COMPANY_NAME = 'Aretove Technologies' then 'Aretove'
+ when COMPANY_NAME = 'Gexcon India Pvt. Ltd.' then 'Gexcon'
+ when COMPANY_NAME = 'Infogen Labs Pvt. Ltd.' then 'Infogen'
+ when COMPANY_NAME = 'WhiteHedge Technologies' then 'WhiteHedge'
+ when COMPANY_NAME = 'Hexagon Executive Search' then 'Hexagon'
+ when COMPANY_NAME = 'Sanjay Tools and Accessories Pvt. Ltd.' then 'SanjayTools'
+ when COMPANY_NAME = 'Krehsst Tech Solutions' then 'KrehsstTech'
+ when COMPANY_NAME = 'TJC Group' then 'TJCGroup'
+ when COMPANY_NAME = 'Clairvoyant India' then 'Clairvoyant'
+ when COMPANY_NAME = 'L&T Infotech' then 'LTI'
+ when COMPANY_NAME = 'Synechron Technologies' then 'Synechron'
+ when COMPANY_NAME = 'Harman International' then 'Harman'
+ when COMPANY_NAME = 'Expleo' then 'Expleo'
+ when COMPANY_NAME = 'Quality Kiosk' then 'QualityKiosk'
+ when COMPANY_NAME = 'Accurate Sales and Services' then 'AccurateSales'
+ when COMPANY_NAME = 'Persistent Systems' then 'Persistent'
+ when COMPANY_NAME = 'Fast Data Connect' then 'FastDataConnect'
+ when COMPANY_NAME = 'Schlumberger' then 'Schlumberger'
+ when COMPANY_NAME = 'Princeton IT Services' then 'PrincetonIT'
+ when COMPANY_NAME = 'Tricentis' then 'Tricentis'
+ when COMPANY_NAME = 'Evolent Health International Private Limited' then 'Evolent'
+ when COMPANY_NAME = 'Techprimelab Software Pvt. Ltd.' then 'TechPrimeLab'
+ when COMPANY_NAME = 'Melzer' then 'Melzer'
+ when COMPANY_NAME = 'Shinde Developers Private Limited' then 'ShindeDevelopers'
+ when COMPANY_NAME = 'Hexagon' then 'Hexa'
+ when COMPANY_NAME = 'MRP Technologies' then 'MRPTech'
+ when COMPANY_NAME = 'MRF' then 'MRF'
+ when COMPANY_NAME = 'Witmans Advanced Fluids' then 'WitmansAdvF'
+ when COMPANY_NAME = 'MPR' then 'MPR'
+ when COMPANY_NAME = 'Spar Solutions' then 'SparSoln'
+ when COMPANY_NAME = 'SR Pawar and company.' then 'SRPCompany'
+ when COMPANY_NAME = 'Sci edge abstracts' then 'SciEdgeA'
+ when COMPANY_NAME = 'Aventior' then 'Aventior'
+ when COMPANY_NAME = 'Excellon Software' then 'ExcellonSoft'
+ when COMPANY_NAME = 'Samrat Books' then 'SamratBook'
+ when COMPANY_NAME = 'KK Tech' then 'KKTech'
+ when COMPANY_NAME = 'Apna Job' then 'ApnaJob'
+ when COMPANY_NAME = 'Mera Job' then 'MeraJob'
+ ELSE SHORT_NAME
+end;
+
+--For ticket #415
+ALTER TABLE COMPANY
+ADD COLUMN COMPANY_UNIQUE_ID VARCHAR(8) UNIQUE;
+
+--For ticket #364
+ALTER TABLE INTERVIEW_DETAILS ALTER COLUMN INTERVIEW_LOCATION DROP NOT NULL;
+
+--For scheduler ticket #33
+ALTER TABLE INTERVIEW_DETAILS
+ADD COLUMN INTERVIEW_SCHEDULED_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_CONFIRMED_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_REMINDER_PREVIOUS_DAY_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_REMINDER_SAME_DAY_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_REMINDER_SAME_DAY_SMS_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_NO_SHOW_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_CANCELLED_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_REJECTION_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL;
+
+insert into sms_templates(template_name, template_content) values
+('InterviewDay', 'You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewDate}]]. Below is the Google Maps link to the interview address. Please report 15 mins before. See you there! [[${commBean.interviewAddressLink}]]');
+
+-- For ticket #410
+ALTER TABLE COMPANY
+ADD COLUMN SEND_COMMUNICATION bool NOT NULL DEFAULT 't';
+
+
+
+
+
+-- For ticket #380
+INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
+('OTPSms','Your OTP for LitmusBlox is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] seconds.');
+
+-- For ticket Update sms content #38
+delete from sms_templates;
+INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
+('ChatInvite','NEW JOB ALERT - [[${commBean.receiverfirstname}]], your profile is shortlisted by [[${commBean.sendercompany}]] for [[${commBean.jobtitle}]]. Click [[${commBean.chatlink}]] to see JD and apply.'),
+('ChatCompleted','Congratulations [[${commBean.receiverfirstname}]]! Your application is complete for the [[${commBean.jobtitle}]] position at [[${commBean.sendercompany}]]. We will be in touch with you soon.'),
+('ChatIncompleteReminder1','Your application to [[${commBean.sendercompany}]] was incomplete. Just click the [[${commBean.chatlink}]] to continue and complete.'),
+('ChatIncompleteReminder2','FINAL REMINDER - Complete your application for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. It will take only 5 minutes. Click [[${commBean.chatlink}]] to continue.'),
+('LinkNotVisitedReminder1','[[${commBean.receiverfirstname}]], [[${commBean.sendercompany}]] has shortlisted you for [[${commBean.jobtitle}]] Job. Click [[${commBean.chatlink}]] to know more and apply.'),
+('LinkNotVisitedReminder2','Not interested in this job? [[${commBean.sendercompany}]] has invited you to apply for the [[${commBean.jobtitle}]] position. Click [[${commBean.chatlink}]] to start.'),
+('ChatNotVisitedReminder1','[[${commBean.receiverfirstname}]], this is link to apply for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. It is valid only for 24 hours. Click [[${commBean.chatlink}]] to begin.'),
+('ChatNotVisitedReminder2','[[${commBean.receiverfirstname}]], Just a reminder to complete your application for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. This link will expire in 24 hours. [[${commBean.chatlink}]] '),
+('AutosourceAcknowledgement', 'Hi [[${commBean.receiverfirstname}]], Your application for [[${commBean.jobtitle}]] position at [[${commBean.sendercompany}]] has been received. Good luck!'),
+('AutosourceApplicationShortlisted', '[[${commBean.receiverfirstname}]], [[${commBean.sendercompany}]] has shortlisted you for [[${commBean.jobtitle}]] position. Click on link to complete your profile. [[${commBean.chatlink}]] '),
+('AutosourceLinkNotVisited', 'Last Reminder [[${commBean.receiverfirstname}]] - [[${commBean.sendercompany}]] has shortlisted your application. Click link to complete your profile. [[${commBean.chatlink}]]'),
+('OTPSms','Your OTP for LitmusBlox is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] seconds.'),
+('InterviewDay', 'INTERVIEW REMINDER FOR [[${commBean.receiverfirstname}]] - You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewDate}]]. Please report 15 mins before. Click Google Maps link for directions. See you there! [[${commBean.interviewAddressLink}]]');
+
+
+

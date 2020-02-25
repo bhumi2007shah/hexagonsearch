@@ -29,7 +29,7 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     //find by job and stage id
     @Transactional (readOnly = true)
-    List<JobCandidateMapping> findByJobAndStageInAndRejectedIsFalse(Job job, List<StageStepMaster> stage) throws Exception;
+    List<JobCandidateMapping> findByJobAndStageInAndRejectedIsFalse(Job job, StageStepMaster stage) throws Exception;
 
     //find all rejected candidates
     List<JobCandidateMapping> findByJobAndRejectedIsTrue(Job job) throws Exception;
@@ -72,8 +72,8 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
             "(select CONCAT(first_name, ' ', last_name) from users where id=j.recruiter) as recruiter\n" +
             "from job_candidate_mapping jcm\n" +
             "inner join job j on j.id = jcm.job_id\n" +
-            "where jcm.candidate_id =:candidateId order by jcm.created_on desc", nativeQuery = true)
-    List<CandidateInteractionHistory> getCandidateInteractionHistoryByCandidateId(Long candidateId);
+            "where jcm.candidate_id =:candidateId and j.company_id =:companyId order by jcm.created_on desc", nativeQuery = true)
+    List<CandidateInteractionHistory> getCandidateInteractionHistoryByCandidateId(Long candidateId, Long companyId);
 
     @Transactional
     @Modifying
@@ -114,7 +114,18 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
             "sum((chatbot_status LIKE 'Incomplete')\\:\\:INT) AS incompleteCount\n" +
             "FROM job_candidate_mapping, stage_step_master\n" +
             "where job_candidate_mapping.job_id = :jobId\n" +
+            "and job_candidate_mapping.rejected = false\n" +
             "and job_candidate_mapping.stage = stage_step_master.id\n" +
             "and stage_step_master.stage = :stage")
     List<Object[]> getCandidateCountPerStage(Long jobId, String stage) throws Exception;
+
+    @Transactional
+    @Query(nativeQuery = true, value = "select * from job_candidate_mapping where chatbot_status is null and autosourced='t' and stage=(select id from stage_step_master where stage='Sourcing')")
+    List<JobCandidateMapping> getNewAutoSourcedJcmList();
+
+    @Transactional
+    @Query(nativeQuery = true, value="select * from job_candidate_mapping where job_id in (select id from job where company_id in (select id from company where send_communication='f')) and stage=(select id from stage_step_master where stage='Sourcing') and chatbot_status is null")
+    List<JobCandidateMapping> getLDEBCandidates();
+
+    List<JobCandidateMapping> findAllByJobId(Long jobId);
 }

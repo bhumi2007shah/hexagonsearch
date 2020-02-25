@@ -275,14 +275,17 @@ public class NoAuthController {
 
     /**
      * REST Api to handle send Otp request from search job page
-     * @param mobile mobile number to send otp to
-     * @param email email address to send otp to
+     * @param isEmployeeReferral true if the send otp request was from employee referral flow
+     * @param mobileNumber mobile number to send otp to
+     * @param countryCode country code
+     * @param email email address of the employee
+     * @param recepientName name of the message receiver
      * @throws Exception
      */
     @GetMapping(value = "/sendOtp")
     @ResponseStatus(value = HttpStatus.OK)
-    void sendOtp(@RequestParam String mobile, @RequestParam String email) throws Exception {
-        processOtpService.sendOtp(mobile, email);
+    void sendOtp(@RequestParam(name = "isEmployeeReferral") boolean isEmployeeReferral, @RequestParam(name = "mobileNumber", required = false) String mobileNumber, @RequestParam(name = "countryCode") String countryCode, @RequestParam(name = "email", required = false) String email, @RequestParam(name = "recepientName") String recepientName) throws Exception {
+        processOtpService.sendOtp(isEmployeeReferral, mobileNumber, countryCode, email, recepientName);
     }
 
 
@@ -338,4 +341,38 @@ public class NoAuthController {
         return companyService.getCompanyAddress(companyId);
     }
 
+    /**
+     * REST Api to set candidate confirmation for interview
+     *
+     * @param confirmationDetails interviewDetails model for confirmation
+     */
+    @PutMapping(value = "/candidateConfirmation")
+    @ResponseStatus(value = HttpStatus.OK)
+    void candidateConfirmationForInterview(@RequestBody InterviewDetails confirmationDetails) throws Exception {
+        long startTime = System.currentTimeMillis();
+        jobCandidateMappingService.candidateConfirmationForInterview(confirmationDetails);
+        log.info("Candidate Interview confirmation done in " + (System.currentTimeMillis()-startTime) + "ms.");
+    }
+
+    /**
+     * REST Api to determine if candidate has already sent a confirmation for the said interview earlier
+     *
+     * @return List of companies
+     * @throws Exception
+     */
+    @GetMapping(value = "/getCandidateConfirmationStatus/{interviewReferenceId}")
+    @ResponseStatus(value = HttpStatus.OK)
+    String getCandidateConfirmationStatus(@PathVariable("interviewReferenceId") UUID interviewReferenceId) throws Exception {
+        long startTime = System.currentTimeMillis();
+        JobCandidateMapping jobCandidateMapping = jobCandidateMappingService.getCandidateConfirmationStatus(interviewReferenceId);
+        log.info("Get candidate confirmation status in " + (System.currentTimeMillis()-startTime) + "ms.");
+        String responseStr = Util.stripExtraInfoFromResponseBean(jobCandidateMapping,
+                (new HashMap<String, List<String>>(){{
+                    put("User", Arrays.asList("displayName"));
+                    put("JobCandidateMapping", Arrays.asList("displayName", "currentInterviewDetail"));
+                }}),
+                null
+        );
+        return responseStr;
+    }
 }

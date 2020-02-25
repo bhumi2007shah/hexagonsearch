@@ -32,7 +32,7 @@ public class NaukriHtmlParser implements HtmlParser {
     public Candidate parseData(String htmlData, User createdBy) {
         log.info("Parsing html data from Naukri email");
         Candidate candidateFromNaukriEmail = Candidate.builder().
-                candidateSource(IConstant.CandidateSource.NaukriEmail.getValue()).
+                candidateSource(IConstant.CandidateSource.NaukriJobPosting.getValue()).
                 createdOn(new Date()).
                 createdBy(createdBy).build();
 

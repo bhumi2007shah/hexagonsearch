@@ -21,6 +21,7 @@ import io.litmusblox.server.utils.SentryUtil;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +33,7 @@ import javax.annotation.Resource;
 import javax.naming.OperationNotSupportedException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -113,9 +115,6 @@ public class JobService implements IJobService {
     CvRatingRepository cvRatingRepository;
 
     @Resource
-    StageStepMasterRepository stageStepMasterRepository;
-
-    @Resource
     ExportFormatMasterRepository exportFormatMasterRepository;
 
     @Resource
@@ -129,6 +128,9 @@ public class JobService implements IJobService {
 
     @Autowired
     CustomQueryExecutor customQueryExecutor;
+
+    @Autowired
+    Environment environment;
 
     @Value("${mlApiUrl}")
     private String mlUrl;
@@ -412,7 +414,7 @@ public class JobService implements IJobService {
         if(IConstant.Stage.Reject.getValue().equals(stage))
             jcmList = jobCandidateMappingRepository.findByJobAndRejectedIsTrue(job);
         else
-            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, stageStepMasterRepository.findAll());
+            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage)));
 
         log.info("****Time to fetch jcmList {} ms", (System.currentTimeMillis() - startTime));
         startTime = System.currentTimeMillis();
@@ -985,9 +987,9 @@ public class JobService implements IJobService {
         }
         AtomicLong i = new AtomicLong();
         Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
-        if(null != job.getHiringTeamStageStepMapping() && job.getHiringTeamStageStepMapping().size()>0) {
+        if(null != job.getHiringTeamStepMapping() && job.getHiringTeamStepMapping().size()>0) {
             List<JobHiringTeam> jobHiringTeamList = new ArrayList<>(job.getJobHiringTeamList().size());
-            job.getHiringTeamStageStepMapping().forEach(stageStep -> {
+            job.getHiringTeamStepMapping().forEach(stageStep -> {
                 jobHiringTeamList.add(new JobHiringTeam(oldJob.getId(), stageStepMasterMap.get(stageStep.get(0)), User.builder().id(stageStep.get(1)).build(), i.longValue(), new Date(), loggedInUser));
                 i.getAndIncrement();
             });
@@ -1024,6 +1026,8 @@ public class JobService implements IJobService {
         if(null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
             log.info("Subdomain does not exist for company: {}. Creating one.", publishedJob.getCompanyId().getCompanyName());
             companyService.createSubdomain(publishedJob.getCompanyId());
+            log.info("Reloading apache for subdomain {}.", publishedJob.getCompanyId().getShortName());
+            companyService.reloadApache(Arrays.asList(publishedJob.getCompanyId()));
         }
         if(publishedJob.getJobCapabilityList().size() == 0)
             log.info("No capabilities exist for the job: " + jobId + " Scoring engine api call will NOT happen");
@@ -1194,6 +1198,12 @@ public class JobService implements IJobService {
         long startTime = System.currentTimeMillis();
         //get default export format master
         ExportFormatMaster exportFormatMaster = exportFormatMasterRepository.getOne(formatId!=null?formatId:1L);
+        Job job= jobRepository.getOne(jobId);
+        Company company = null;
+
+        if(null != job){
+            company = job.getCompanyId();
+        }
 
         //if default format is not available in db then throw exception
         if(null==exportFormatMaster){
@@ -1203,12 +1213,22 @@ public class JobService implements IJobService {
         //get list of headers and column names frm  db for default format
         List<ExportFormatDetail> defaultExportColumns = exportFormatDetailRepository.findByExportFormatMasterOrderByPositionAsc(exportFormatMaster);
 
+        defaultExportColumns = defaultExportColumns.stream().filter(exportFormatDetail -> {
+            return (exportFormatDetail.getStage().isEmpty() || exportFormatDetail.getStage().equalsIgnoreCase(stage));
+        }).collect(Collectors.toList());
+
+        if(((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getRole().equalsIgnoreCase(IConstant.UserRole.Names.SUPER_ADMIN)){
+            defaultExportColumns.add(new ExportFormatDetail(IConstant.CHAT_LINK, IConstant.CHAT_LINK_HEADER));
+        }
+
         Map<String, String> exportHeaderColumnMap = new LinkedHashMap<>();
 
 
-        defaultExportColumns.forEach(exportColumn->{
-            exportHeaderColumnMap.put(exportColumn.getColumnName(), exportColumn.getHeader());
-        });
+        if(defaultExportColumns.size()>0) {
+            defaultExportColumns.forEach(exportColumn -> {
+                exportHeaderColumnMap.put(exportColumn.getColumnName(), exportColumn.getHeader());
+            });
+        }
 
         List<String>columnNames = new ArrayList<String>(exportHeaderColumnMap.keySet());
 
@@ -1223,15 +1243,20 @@ public class JobService implements IJobService {
 
         List<LinkedHashMap<String, Object>> exportResponseBean = new ArrayList<>();
 
+        Company finalCompany = company;
         exportDataList.forEach(data-> {
                 LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
             for (int i = 0; i < data.length; ++i) {
-                candidateData.put(exportHeaderColumnMap.get(columnNames.get(i)), data[i] != null ? data[i].toString() : "");
+                if(columnNames.get(i).equals("chatbotLink")){
+                    candidateData.put(exportHeaderColumnMap.get(columnNames.get(i)), data[i]!=null? (environment.getProperty(IConstant.CHAT_LINK)+data[i].toString()):"");
+                } else {
+                    candidateData.put(exportHeaderColumnMap.get(columnNames.get(i)), data[i] != null ? data[i].toString() : "");
+                }
             }
             if (exportResponseBean.stream().filter(object -> {
                 return object.get("Email").toString().equalsIgnoreCase(candidateData.get("Email").toString());
             }).collect(Collectors.toList()).size() == 0){
-                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), jobId, em);
+                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), jobId, finalCompany, em);
                 /*questionAnswerMapForCandidate = questionAnswerMapForCandidate.entrySet().stream().sorted(comparingByKey())
                         .collect(toMap(e->e.getKey(), e->e.getValue(), (e1, e2)-> e2, LinkedHashMap::new));*/
                 if(questionAnswerMapForCandidate.size()!=0){
@@ -1306,5 +1331,64 @@ public class JobService implements IJobService {
 
         log.info("Query generated:\n {}", query.toString());
         return customQueryExecutor.executeSearchQuery(query.toString());//"Select id from job where id < 20;");
+    }
+
+    /**
+     * Service method to create a list of TechRoleCompetency per job.
+     * It will be used by companies with LDEB subscription
+     * @param jobId
+     * @return
+     * @throws Exception
+     */
+    @Override
+    public List<TechRoleCompetencyBean> getTechRoleCompetencyByJob(Long jobId) throws Exception {
+        Job job = jobRepository.getOne(jobId);
+
+        //check if job is null for jobId
+        if( null  == job ){
+            log.error("job not found for id {}", jobId);
+            throw new WebException("No job with id "+jobId+" found.", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        // check if company has LDEB subscription or not
+        if(!IConstant.CompanySubscription.LDEB.toString().equalsIgnoreCase(job.getCompanyId().getSubscription())){
+            log.error("Unauthorized access");
+            throw new WebException("You don't have LDEB subscription.", HttpStatus.UNAUTHORIZED);
+        }
+
+        List<TechRoleCompetencyBean> techRoleCompetencyBeans = new ArrayList<>();
+
+        //Find all jcm for job id
+        List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.findAllByJobId(jobId);
+
+        log.info("Found {} records", jobCandidateMappings.size());
+
+        if(jobCandidateMappings.size()>0){
+            ObjectMapper mapper = new ObjectMapper();
+            //Create TechRoleCompetencyBean object and add it to list of TechRoleCompetencyBean
+            jobCandidateMappings.stream().parallel().forEach(jcm->{
+                try {
+                    TechRoleCompetencyBean techRoleCompetencyBean = new TechRoleCompetencyBean();
+                    techRoleCompetencyBean.setCandidate(new Candidate(jcm.getDisplayName(), jcm.getEmail(), jcm.getMobile()));
+                    techRoleCompetencyBean.setTechResponseJson(
+                            jcm.getTechResponseData().getTechResponse()!=null?
+                                    //Map string of array of TechResponseJson to array of TechResponseBean
+                                    // and convert it to list, then assign it to techRoleCompetencyBean object
+                                    Arrays.asList(mapper.readValue(jcm.getTechResponseData().getTechResponse(), TechResponseJson[].class))
+                                    :
+                                    null
+                    );
+                    techRoleCompetencyBean.setCandidateProfileLink((environment.getProperty("shareProfileLink") + jcm.getChatbotUuid()));
+                    techRoleCompetencyBeans.add(techRoleCompetencyBean);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+        else{
+            log.info("No candidates found for job id {}", jobId);
+        }
+
+        return techRoleCompetencyBeans;
     }
 }

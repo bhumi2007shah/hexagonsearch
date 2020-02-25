@@ -1,0 +1,23 @@
+lbprod@LBProd:~$ sudo setfacl -m u:lbprod:rwx /etc/apache2/sites-enabled/
+lbprod@LBProd:~$ sudo setfacl -m u:lbprod:rwx /etc/apache2/sites-available/
+lbprod@LBProd:~$ getfacl /etc/apache2/sites-enabled/ /etc/apache2/sites-available/
+getfacl: Removing leading '/' from absolute path names
+# file: etc/apache2/sites-enabled/
+# owner: root
+# group: root
+user::rwx
+user:lbprod:rwx
+group::r-x
+mask::rwx
+other::r-x
+
+# file: etc/apache2/sites-available/
+# owner: root
+# group: root
+user::rwx
+user:lbprod:rwx
+group::r-x
+mask::rwx
+other::r-x
+
+

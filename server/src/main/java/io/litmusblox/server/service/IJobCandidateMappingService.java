@@ -75,6 +75,21 @@ public interface IJobCandidateMappingService {
     void saveScreeningQuestionResponses(UUID uuid, Map<Long, List<String>> candidateResponse) throws Exception;
 
     /**
+     * Service method to call inviteCandidates with jcm which are autosourced and currently in sourcing stage
+     * @throws Exception
+     */
+    void inviteAutoSourcedCandidate()throws Exception;
+
+    /**
+     *
+     * Service method to call inviteAutoSourcedOrLDEBCandidates
+     * with jcm which are uploaded in job of companies
+     * with LDEB subscription and currently in sourcing stage
+     * @throws Exception
+     */
+    void inviteLDEBCandidates() throws Exception;
+
+    /**
      * Service method to invite candidates to fill chatbot for a job
      *
      * @param jcmList list of jcm ids for chatbot invitation
@@ -225,5 +240,51 @@ public interface IJobCandidateMappingService {
      */
     ChatbotResponseBean getChatbotDetailsByUuid(UUID uuid) throws Exception;
 
+    /**
+     * Service method to schedule interview for jcm list
+     *
+     * @param interviewDetails interview details
+     * @return List of schedule interview for list of jcm
+     */
+    List<InterviewDetails> scheduleInterview(InterviewDetails interviewDetails);
+
+    /**
+     * Service method to cancel interview
+     *
+     * @param cancellationDetails interview cancellation details
+     */
+    void cancelInterview(InterviewDetails cancellationDetails);
+
+    /**
+     * Service method to mark show noShow for interview
+     *
+     * @param showNoShowDetails interview showNoShowDetails
+     */
+    void markShowNoShow(InterviewDetails showNoShowDetails);
+
+    /**
+     * Service method to set candidate confirmation for interview
+     *
+     *  @param confirmationDetails interviewDetails model for confirmation
+     */
+    void candidateConfirmationForInterview(InterviewDetails confirmationDetails);
+
+    /**
+     * function to update candidate data nad jcm record with new email or mobile requested in candidate edit function.
+     * @param jobCandidateMapping - updated jcm record.
+     * @param jcmFromDb - jcm record from db with candidate id
+     * @param loggedInUser - user updating the jcm record.
+     * @return boolean whether jcmFromDbDeleted, in case id candidate with new email or mobile already existing and jcm from db has null mobile and email has @notavailable.
+     * Flowchart for this method - https://github.com/hexagonsearch/litmusblox-backend/issues/253
+     */
+    boolean updateOrCreateEmailMobile(JobCandidateMapping jobCandidateMapping, JobCandidateMapping jcmFromDb, User loggedInUser);
+
+    /**
+     * Service method to determine if candidate has already sent a confirmation for the said interview earlier
+     *
+     * @return List of companies
+     * @throws Exception
+     */
+    JobCandidateMapping getCandidateConfirmationStatus(UUID interviewReferenceId) throws Exception;
 
 }

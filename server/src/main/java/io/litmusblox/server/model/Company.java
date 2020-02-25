@@ -120,6 +120,14 @@ public class Company implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date subdomainCreatedOn;
 
+    @NotNull
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="COUNTRY_ID")
+    private Country countryId;
+
+    @Column(name = "COMPANY_UNIQUE_ID")
+    private String companyUniqueId;
+
     @Transient
     private Set<String> newCompanyBu;
 
@@ -142,12 +150,13 @@ public class Company implements Serializable {
         this.createdBy = createdBy;
     }
 
-    public Company(@NotNull(message = "COMPANY_NAME " + IErrorMessages.NULL_MESSAGE) @NotBlank(message = "COMPANY_NAME " + IErrorMessages.BLANK_MESSAGE) @Pattern(message = "COMPANY_NAME " + IErrorMessages.COMPANY_NAME_NOT_VALID, regexp = IConstant.REGEX_FOR_COMPANY_NAME) String companyName, @NotNull Boolean active, @NotNull String companyType, Long recruitmentAgencyId, String shortName, @NotNull Date createdOn, @NotNull Long createdBy) {
+    public Company(@NotNull(message = "COMPANY_NAME " + IErrorMessages.NULL_MESSAGE) @NotBlank(message = "COMPANY_NAME " + IErrorMessages.BLANK_MESSAGE) @Pattern(message = "COMPANY_NAME " + IErrorMessages.COMPANY_NAME_NOT_VALID, regexp = IConstant.REGEX_FOR_COMPANY_NAME) String companyName, @NotNull Boolean active, @NotNull String companyType, Long recruitmentAgencyId, String shortName, @NotNull Country countryId, @NotNull Date createdOn, @NotNull Long createdBy) {
         this.companyName = companyName;
         this.active = active;
         this.companyType = companyType;
         this.recruitmentAgencyId = recruitmentAgencyId;
         this.shortName = shortName;
+        this.countryId = countryId;
         this.createdOn = createdOn;
         this.createdBy = createdBy;
     }

@@ -11,8 +11,18 @@
     ProxyRequests on
     ProxyPreserveHost On
 
-    ProxyPass / https://localhost:8443/
-    ProxyPassReverse / https://localhost:8443/
+    SSLEngine on
+    SSLProxyEngine on
+    SSLProxyVerify none
+    SSLProxyCheckPeerCN off
+    SSLProxyCheckPeerName off
+    SSLProxyCheckPeerExpire off
+    SSLCertificateFile ./certs/STAR_litmusblox_io.crt
+    SSLCertificateKeyFile ./certs/litmusblox.key
+    SSLCertificateChainFile ./certs/STAR_litmusblox_io.ca-bundle
+
+    ProxyPass / https://localhost:4500/
+    ProxyPassReverse / https://localhost:4500/
 
        ErrorLog ${APACHE_LOG_DIR}/error.log
         CustomLog ${APACHE_LOG_DIR}/access.log combined
