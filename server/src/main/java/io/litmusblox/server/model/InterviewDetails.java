@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang.time.DateUtils;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -155,5 +156,11 @@ public class InterviewDetails implements Serializable {
         this.interviewReferenceId = interviewReferenceId;
         this.createdOn = createdOn;
         this.createdBy = createdBy;
+    }
+
+    public Date getInterviewDate(){
+        Date istInterviewDate = DateUtils.addHours(this.interviewDate, 5);
+        istInterviewDate = DateUtils.addMinutes(istInterviewDate, 30);
+        return istInterviewDate;
     }
 }
