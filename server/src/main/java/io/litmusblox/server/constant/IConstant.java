@@ -326,22 +326,6 @@ public interface IConstant {
     String REPLACEMENT_KEY_FOR_SHORTNAME = "_shortName_";
     String GODADDY_SUCCESS_RESPONSE = "\"code\":";
 
-    //Constants for process otp
-    enum OtpMsg91 {
-
-        AUTH_KEY("authkey"), SEND_OTP_URL("sendOtpUrl"), VERIFY_OTP("verifyOtpUrl"), RETRY_OTP("retrySendOtp"), SENDER("sender"), TEMPLATE_ID("template_id"), OTP_LENGTH("otp_length"), RETRY_TYPE("text");
-
-        private String value;
-
-        OtpMsg91(String val) {
-            this.value = val;
-        }
-
-        public String getValue() {
-            return this.value;
-        }
-    }
-
     String NAUKRI_SUBJECT_STRING = "Naukri.com -";
     String REF_ID_MATCH_REGEX = "[a-fA-F0-9]{8}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{12}";
 
