@@ -1909,8 +1909,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         
-        if(interviewDetailsFromReq.getInterviewDate().before(Util.getCurrentDateWithTimezone(TimeZone.getTimeZone("UTC")))){
-            throw new ValidationException("Interview date : "+interviewDetailsFromReq.getInterviewDate()+ " should be future date", HttpStatus.BAD_REQUEST);
+        if(interviewDetailsFromReq.getInterviewDate().before(new Date())){
+            log.error("Interview date : {}  should be future date, Current date : {}", interviewDetailsFromReq.getInterviewDate(),new Date());
+            throw new ValidationException("Interview date : "+Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), interviewDetailsFromReq.getInterviewDate())+ " should be future date, Current date : "+Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), new Date()), HttpStatus.BAD_REQUEST);
         }
 
         AtomicReference<Long> interviewDetailsFromDb = new AtomicReference<>();
@@ -1983,8 +1984,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null == interviewDetailsFromDb)
             throw new ValidationException("Interview details not found for id : "+showNoShowDetails.getId(), HttpStatus.BAD_REQUEST);
 
-        if(interviewDetailsFromDb.getInterviewDate().after(Util.getCurrentDateWithTimezone(TimeZone.getTimeZone("UTC")))){
-            throw new ValidationException("Interview date : "+interviewDetailsFromDb.getInterviewDate()+ " should be older or equal to current date", HttpStatus.BAD_REQUEST);
+        if(interviewDetailsFromDb.getInterviewDate().after(new Date())){
+            log.error("Interview date : {} should be older or equal to current date : {}", interviewDetailsFromDb.getInterviewDate(),new Date());
+            throw new ValidationException("Interview date : "+Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), interviewDetailsFromDb.getInterviewDate())+ " should be older or equal to current date : "+Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), new Date()), HttpStatus.BAD_REQUEST);
         }
 
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null);
