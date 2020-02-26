@@ -472,16 +472,15 @@ public class Util {
     }
 
     //This method is used for comparing interview date with current date time
-    public static Date getDateWithTimezone(TimeZone timeZone, Date date){
+    public static String getDateWithTimezone(TimeZone timeZone, Date date){
         log.info("Inside getCurrentDateWithTimezone, TimeZone : ",timeZone.getDisplayName());
         //DateFormat
-        SimpleDateFormat dateTimeInIST = new SimpleDateFormat("yyyy-MMM-dd hh:mm:ss");
+        SimpleDateFormat dateTimeInIST = new SimpleDateFormat("dd/MM/yyyy hh:mm a");
         //Setting the time zone
         dateTimeInIST.setTimeZone(timeZone);
         try {
-
-            log.info("System Current Date : {}", date);
-            return dateTimeInIST.parse(dateTimeInIST.format(date));
+            log.info("Date before convert to IST: {}, After convert to IST date : {}", date,dateTimeInIST.format(date));
+            return dateTimeInIST.format(date);
         } catch (Exception e) {
             e.printStackTrace();
             log.error("Issue in getCurrentDateWithIstTimezone : {}",e.getMessage());

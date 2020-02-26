@@ -155,7 +155,7 @@ public class InterviewDetails implements Serializable {
         this.createdBy = createdBy;
     }
 
-    public Date getInterviewDateWithTimeZone(){
+    public String getInterviewDateWithTimeZone(){
          return (null == this.interviewDate)?null:(Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), this.interviewDate));
     }
 
