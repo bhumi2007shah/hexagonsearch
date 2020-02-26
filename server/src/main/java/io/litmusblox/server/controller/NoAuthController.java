@@ -369,7 +369,8 @@ public class NoAuthController {
         String responseStr = Util.stripExtraInfoFromResponseBean(jobCandidateMapping,
                 (new HashMap<String, List<String>>(){{
                     put("User", Arrays.asList("displayName"));
-                    put("JobCandidateMapping", Arrays.asList("displayName", "currentInterviewDetail"));
+                    put("JobCandidateMapping", Arrays.asList("displayName", "currentInterviewDetail","job"));
+                    put("Job", Arrays.asList("companyId"));
                 }}),
                 null
         );
