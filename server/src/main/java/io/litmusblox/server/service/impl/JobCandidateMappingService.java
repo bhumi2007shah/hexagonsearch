@@ -153,6 +153,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Resource
     InterviewerDetailsRepository interviewerDetailsRepository;
 
+    @Resource
+    AsyncOperationsErrorRecordsRepository asyncOperationsErrorRecordsRepository;
+
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
         return jobRepository.findById(jobId).get();
@@ -331,10 +334,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         try {
             processCandidateData(candidateList, uploadResponseBean, loggedInUser, jobId, candidatesProcessed, false);
-
         } catch (Exception ex) {
             log.error("Error while processing file " + fileName + " :: " + ex.getMessage());
             uploadResponseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
+        }
+        if (null != uploadResponseBean.getFailedCandidates() && uploadResponseBean.getFailedCandidates().size() > 0) {
+            handleErrorRecords(uploadResponseBean.getFailedCandidates(), null, IConstant.ASYNC_OPERATIONS.FileUpload.name(), loggedInUser, jobId);
         }
         log.info("Thread - {} : Completed processing uploadCandidatesFromFile in JobCandidateMappingService", Thread.currentThread().getName());
     }
@@ -576,8 +581,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     public void inviteCandidates(List<Long> jcmList, User loggedInUser) throws Exception {
         log.info("Thread - {} : Started invite candidates method", Thread.currentThread().getName());
         InviteCandidateResponseBean inviteCandidateResponseBean = performInvitationAndHistoryUpdation(jcmList, loggedInUser);
-        callScoringEngineToAddCandidates(jcmList, inviteCandidateResponseBean.getFailedCandidates().stream().map(Candidate::getId).collect(Collectors.toList()));
-        //TODO: for all error records in inviteCandidateResponseBean insert records in async_operations_error_records with IConstant.ASYNC_OPERATIONS.InviteCandidates.name()
+        //remove all failed invitations
+        jcmList.removeAll(inviteCandidateResponseBean.getFailedJcm());
+        callScoringEngineToAddCandidates(jcmList);
+        if (null != inviteCandidateResponseBean.getFailedJcm() && inviteCandidateResponseBean.getFailedJcm().size() > 0) {
+            handleErrorRecords(null, inviteCandidateResponseBean.getFailedJcm(), IConstant.ASYNC_OPERATIONS.InviteCandidates.name(), loggedInUser, inviteCandidateResponseBean.getJobId());
+        }
         log.info("Thread - {} : Completed invite candidates method", Thread.currentThread().getName());
 
     }
@@ -622,7 +631,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     @Transactional(readOnly = true)
-    private void callScoringEngineToAddCandidates(List<Long> jcmList, List<Long> failedCandidateIds) {
+    private void callScoringEngineToAddCandidates(List<Long> jcmList) {
         //make an api call to scoring engine for each of the jcm
         jcmList.stream().forEach(jcmId->{
             log.info("Calling scoring engine - add candidate api for : " + jcmId);
@@ -632,51 +641,49 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             }
             else {
                 if(jcm.getJob().getScoringEngineJobAvailable()) {
-                    if(!failedCandidateIds.contains(jcm.getCandidate().getId())) {
+                    try {
+                        Map queryParams = new HashMap(3);
+                        queryParams.put("lbJobId", jcm.getJob().getId());
+                        queryParams.put("candidateId", jcm.getCandidate().getId());
+                        queryParams.put("candidateUuid", jcm.getChatbotUuid());
+                        log.info("Calling Scoring Engine api to add candidate to job");
+                        String scoringEngineResponse = RestClient.getInstance().consumeRestApi(null, scoringEngineBaseUrl + scoringEngineAddCandidateUrlSuffix, HttpMethod.PUT, null, Optional.of(queryParams), null).getResponseBody();
+                        log.info(scoringEngineResponse);
+
                         try {
-                            Map queryParams = new HashMap(3);
-                            queryParams.put("lbJobId", jcm.getJob().getId());
-                            queryParams.put("candidateId", jcm.getCandidate().getId());
-                            queryParams.put("candidateUuid", jcm.getChatbotUuid());
-                            log.info("Calling Scoring Engine api to add candidate to job");
-                            String scoringEngineResponse = RestClient.getInstance().consumeRestApi(null, scoringEngineBaseUrl + scoringEngineAddCandidateUrlSuffix, HttpMethod.PUT, null, Optional.of(queryParams), null).getResponseBody();
-                            log.info(scoringEngineResponse);
-
-                            try {
-                                ObjectMapper objectMapper = new ObjectMapper();
-                                TechChatbotRequestBean techChatbotRequestBean = objectMapper.readValue(scoringEngineResponse, TechChatbotRequestBean.class);
-                                jcm.setChatbotUpdatedOn(techChatbotRequestBean.getChatbotUpdatedOn());
-                                if (techChatbotRequestBean.getTechResponseJson() != null && !techChatbotRequestBean.getTechResponseJson().isEmpty()) {
-                                    jcm.getTechResponseData().setTechResponse(techChatbotRequestBean.getTechResponseJson());
-                                }
-                                if (techChatbotRequestBean.getScore() > 0) {
-                                    jcm.setScore(techChatbotRequestBean.getScore());
-                                }
-                                if (techChatbotRequestBean.getChatbotUpdatedOn() != null) {
-                                    jcm.setChatbotUpdatedOn(techChatbotRequestBean.getChatbotUpdatedOn());
-                                }
-
-                                //Candidate has already completed the tech chatbot
-                                if (IConstant.ChatbotStatus.COMPLETE.getValue().equalsIgnoreCase(techChatbotRequestBean.getChatbotStatus())) {
-                                    log.info("Found complete status from scoring engine: " + jcm.getEmail() + " ~ " + jcm.getId());
-                                    //Set chatCompleteFlag = true
-                                    JcmCommunicationDetails jcmCommunicationDetails = jcmCommunicationDetailsRepository.findByJcmId(jcm.getId());
-                                    jcmCommunicationDetails.setTechChatCompleteFlag(true);
-                                    jcmCommunicationDetailsRepository.save(jcmCommunicationDetails);
-
-                                    //If hr chat flag is also complete, set chatstatus = complete
-                                    if (!jcm.getJob().getHrQuestionAvailable() || jcmCommunicationDetails.isHrChatCompleteFlag()) {
-                                        log.info("Found complete status for hr chat: " + jcm.getEmail() + " ~ " + jcm.getId());
-                                        jcm.setChatbotStatus(techChatbotRequestBean.getChatbotStatus());
-                                    }
-                                }
-                                jobCandidateMappingRepository.save(jcm);
-                            } catch (Exception e) {
-                                log.error("Error in response received from scoring engine " + e.getMessage());
+                            ObjectMapper objectMapper = new ObjectMapper();
+                            TechChatbotRequestBean techChatbotRequestBean = objectMapper.readValue(scoringEngineResponse, TechChatbotRequestBean.class);
+                            jcm.setChatbotUpdatedOn(techChatbotRequestBean.getChatbotUpdatedOn());
+                            if (techChatbotRequestBean.getTechResponseJson() != null && !techChatbotRequestBean.getTechResponseJson().isEmpty()) {
+                                jcm.getTechResponseData().setTechResponse(techChatbotRequestBean.getTechResponseJson());
                             }
+                            if (techChatbotRequestBean.getScore() > 0) {
+                                jcm.setScore(techChatbotRequestBean.getScore());
+                            }
+                            if (techChatbotRequestBean.getChatbotUpdatedOn() != null) {
+                                jcm.setChatbotUpdatedOn(techChatbotRequestBean.getChatbotUpdatedOn());
+                            }
+
+                            //Candidate has already completed the tech chatbot
+                            if (IConstant.ChatbotStatus.COMPLETE.getValue().equalsIgnoreCase(techChatbotRequestBean.getChatbotStatus())) {
+                                log.info("Found complete status from scoring engine: " + jcm.getEmail() + " ~ " + jcm.getId());
+                                //Set chatCompleteFlag = true
+                                JcmCommunicationDetails jcmCommunicationDetails = jcmCommunicationDetailsRepository.findByJcmId(jcm.getId());
+                                jcmCommunicationDetails.setTechChatCompleteFlag(true);
+                                jcmCommunicationDetailsRepository.save(jcmCommunicationDetails);
+
+                                //If hr chat flag is also complete, set chatstatus = complete
+                                if (!jcm.getJob().getHrQuestionAvailable() || jcmCommunicationDetails.isHrChatCompleteFlag()) {
+                                    log.info("Found complete status for hr chat: " + jcm.getEmail() + " ~ " + jcm.getId());
+                                    jcm.setChatbotStatus(techChatbotRequestBean.getChatbotStatus());
+                                }
+                            }
+                            jobCandidateMappingRepository.save(jcm);
                         } catch (Exception e) {
-                            log.error("Error while adding candidate on Scoring Engine: " + e.getMessage());
+                            log.error("Error in response received from scoring engine " + e.getMessage());
                         }
+                    } catch (Exception e) {
+                        log.error("Error while adding candidate on Scoring Engine: " + e.getMessage());
                     }
                 }
                 else {
@@ -688,19 +695,19 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     private InviteCandidateResponseBean performInvitationAndHistoryUpdation(List<Long> jcmList, User loggedInUser) throws Exception {
-        if(jcmList == null || jcmList.size() == 0)
-            throw new WebException("Select candidates to invite",HttpStatus.UNPROCESSABLE_ENTITY);
+        if (jcmList == null || jcmList.size() == 0)
+            throw new WebException("Select candidates to invite", HttpStatus.UNPROCESSABLE_ENTITY);
 
         //make sure all candidates are at the same stage
-        if(!areCandidatesInSameStage(jcmList))
+        if (!areCandidatesInSameStage(jcmList))
             throw new WebException("Select candidates that are all in Source stage", HttpStatus.UNPROCESSABLE_ENTITY);
 
-        if(loggedInUser == null) {
+        if (loggedInUser == null) {
             loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         }
 
         //list to store candidates for which email contains "@notavailable.io" or mobile is null
-        List<Candidate>failedCandidates = new ArrayList<>();
+        List<Long> failedJcm = new ArrayList<>();
 
         //List to store jcm ids for which email does not start with "@notavailable.io" or mobile is not null
         List<Long> jcmListWithoutError = new ArrayList<>();
@@ -709,39 +716,38 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         InviteCandidateResponseBean inviteCandidateResponseBean = null;
 
         //fetch list of jcm from db using ids
-        List<JobCandidateMapping>jobCandidateMappingList = jobCandidateMappingRepository.findAllById(jcmList);
+        List<JobCandidateMapping> jobCandidateMappingList = jobCandidateMappingRepository.findAllById(jcmList);
 
         Job jobObjToUse = null;
         //iterate over jcm list
-        for(JobCandidateMapping jobCandidateMapping: jobCandidateMappingList){
+        for (JobCandidateMapping jobCandidateMapping : jobCandidateMappingList) {
 
             //check if email does not contain "@notavailable.io" or mobile is not null
-            if(jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)){
-                failedCandidates.add(jobCandidateMapping.getCandidate());
+            if (jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)) {
+                failedJcm.add(jobCandidateMapping.getId());
+                continue;
+            } else if (Util.isNull(jobCandidateMapping.getMobile())) {
+                failedJcm.add(jobCandidateMapping.getId());
                 continue;
             }
-            else if(Util.isNull(jobCandidateMapping.getMobile())){
-                failedCandidates.add(jobCandidateMapping.getCandidate());
-                continue;
-            }
-            if(null == jobObjToUse)
+            if (null == jobObjToUse)
                 jobObjToUse = jobCandidateMapping.getJob();
 
             jcmListWithoutError.add(jobCandidateMapping.getId());
         }
 
-        if(jcmListWithoutError.size()==0){
-            inviteCandidateResponseBean =  new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Failure.toString(), 0, jcmList.size(), failedCandidates);
-        }
-        else{
-            if(jcmListWithoutError.size()<jcmList.size()) {
-                inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Partial_Success.toString(),jcmListWithoutError.size(), jcmList.size()-jcmListWithoutError.size(), failedCandidates);
+        if(null != jobObjToUse) {
+            if (jcmListWithoutError.size() == 0) {
+                inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Failure.toString(), 0, jcmList.size(), jobObjToUse.getId(), failedJcm);
+            } else {
+                if (jcmListWithoutError.size() < jcmList.size()) {
+                    inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Partial_Success.toString(), jcmListWithoutError.size(), jcmList.size() - jcmListWithoutError.size(), jobObjToUse.getId(), failedJcm);
+                } else {
+                    inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Success.toString(), jcmListWithoutError.size(), 0, jobObjToUse.getId(), failedJcm);
+                }
+                jcmCommunicationDetailsRepository.inviteCandidates(jcmListWithoutError);
+                jobCandidateMappingRepository.updateJcmSetStatus(IConstant.ChatbotStatus.INVITED.getValue(), jcmListWithoutError);
             }
-            else{
-                inviteCandidateResponseBean = new InviteCandidateResponseBean(IConstant.UPLOAD_STATUS.Success.toString(), jcmListWithoutError.size(), 0, failedCandidates);
-            }
-            jcmCommunicationDetailsRepository.inviteCandidates(jcmListWithoutError);
-            jobCandidateMappingRepository.updateJcmSetStatus(IConstant.ChatbotStatus.INVITED.getValue(), jcmListWithoutError);
         }
 
         if(null == jobObjToUse && jcmListWithoutError.size() > 0) {
@@ -1994,6 +2000,31 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         interviewDetailsFromDb.setCandidateConfirmationTime(new Date());
         interviewDetailsRepository.save(interviewDetailsFromDb);
         jcmHistoryRepository.save(new JcmHistory(jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null), "Candidate response for interview on "+ interviewDetailsFromDb.getInterviewDate()+" : "+confirmationDetails.getConfirmationText()+" "+new Date(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+    }
+
+    @Transactional
+    private void handleErrorRecords(List<Candidate> failedCandidates, List<Long> failedJcm, String asyncOperation, User loggedInUser, Long jobId) {
+        List<AsyncOperationsErrorRecords> recordsToSave = null;
+
+        //call constructor for failed candidate upload from file
+        if(null != failedCandidates && failedCandidates.size() > 0) {
+            recordsToSave = new ArrayList<>(failedCandidates.size());
+            for(Candidate candidate: failedCandidates) {
+                recordsToSave.add(new AsyncOperationsErrorRecords(jobId, candidate.getFirstName(), candidate.getLastName(), candidate.getEmail(), candidate.getMobile(), candidate.getUploadErrorMessage(), asyncOperation, loggedInUser, new Date()));
+            };
+        }
+        //call constructor for failed jcms for invite candidates flow
+        else if (null != failedJcm && failedJcm.size() > 0) {
+            recordsToSave = new ArrayList<>(failedJcm.size());
+            for(Long jcmId : failedJcm) {
+                recordsToSave.add(new AsyncOperationsErrorRecords(jobId, jcmId, "error", asyncOperation, loggedInUser, new Date()));
+            }
+        }
+
+        //save records to db
+        if(null != recordsToSave && recordsToSave.size() > 0) {
+            asyncOperationsErrorRecordsRepository.saveAll(recordsToSave);
+        }
     }
 
 }

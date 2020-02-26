@@ -1810,5 +1810,17 @@ INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
 ('OTPSms','Your OTP for LitmusBlox is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] seconds.'),
 ('InterviewDay', 'INTERVIEW REMINDER FOR [[${commBean.receiverfirstname}]] - You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewDate}]]. Please report 15 mins before. Click Google Maps link for directions. See you there! [[${commBean.interviewAddressLink}]]');
 
-
-
+-- For ticket #379 - Async handling of upload candidates from a file and invite candidates
+CREATE TABLE ASYNC_OPERATIONS_ERROR_RECORDS (
+ID serial PRIMARY KEY NOT NULL,
+JOB_ID INTEGER REFERENCES JOB(ID),
+JOB_CANDIDATE_MAPPING_ID INTEGER REFERENCES JOB_CANDIDATE_MAPPING(ID),
+CANDIDATE_FIRST_NAME varchar(45),
+CANDIDATE_LAST_NAME varchar(45),
+EMAIL VARCHAR (50),
+MOBILE VARCHAR (15),
+ASYNC_OPERATION VARCHAR(20),
+ERROR_MESSAGE VARCHAR(100),
+CREATED_ON TIMESTAMP NOT NULL,
+CREATED_BY INTEGER REFERENCES USERS(ID) NOT NULL
+);
