@@ -125,6 +125,8 @@ public class MasterDataService implements IMasterDataService {
                 MasterDataBean.getInstance().getReasonForChange().add(data.getValue());
             else if(data.getType().equalsIgnoreCase("callOutCome"))
                 MasterDataBean.getInstance().getCallOutCome().add(data.getValue());
+            else if(data.getType().equalsIgnoreCase("interviewConfirmation"))
+                MasterDataBean.getInstance().getInterviewConfirmation().put(data.getValue(), data);
             else
                 ((Map)mapAccessor.getPropertyValue(data.getType())).put(data.getId(), data.getValue());
 
@@ -269,7 +271,11 @@ public class MasterDataService implements IMasterDataService {
     private static final String DEFAULT_EXPORT_FORMAT = "defaultExportFormats";
     private static final String CALL_OUT_COME = "callOutCome";
     private static final String STAGE_MASTER_DATA = "stage";
-
+    private static final String INTERVIEW_TYPE = "interviewType";
+    private static final String INTERVIEW_MODE = "interviewMode";
+    private static final String INTERVIEW_CANCELLATION_REASONS = "cancellationReasons";
+    private static final String INTERVIEW_NO_SHOW_REASONS = "noShowReasons";
+    private static final String INTERVIEW_CONFIRMATION = "interviewConfirmation";
 
     /**
      * Method to fetch specific master data from cache
@@ -317,6 +323,25 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case STAGE_MASTER_DATA:
                 master.getStage().addAll(MasterDataBean.getInstance().getStage());
+                break;
+            case INTERVIEW_TYPE:
+                master.getInterviewType().addAll(Stream.of(IConstant.InterviewType.values())
+                        .map(IConstant.InterviewType::getValue)
+                        .collect(Collectors.toList()));
+                break;
+            case INTERVIEW_MODE:
+                master.getInterviewMode().addAll(Stream.of(IConstant.InterviewMode.values())
+                        .map(IConstant.InterviewMode::getValue)
+                        .collect(Collectors.toList()));
+                break;
+            case INTERVIEW_CANCELLATION_REASONS:
+                master.getCancellationReasons().putAll(MasterDataBean.getInstance().getCancellationReasons());
+                break;
+            case INTERVIEW_NO_SHOW_REASONS:
+                master.getNoShowReasons().putAll(MasterDataBean.getInstance().getNoShowReasons());
+                break;
+            case INTERVIEW_CONFIRMATION:
+                master.getInterviewConfirmation().addAll(MasterDataBean.getInstance().getInterviewConfirmation().keySet());
                 break;
             default: //for all other properties, use reflection
 

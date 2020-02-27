@@ -30,7 +30,8 @@ public class ExportData {
         query.append(columns);
         query.append(" from exportDataView where jobId=");
         query.append(jobId);
-        query.append(" and currentStage='"+stage+"'");
+        query.append(" and currentStage='" + stage + "'");
+
         List<Object[]> exportDataList= new ArrayList<>();
 
         try {

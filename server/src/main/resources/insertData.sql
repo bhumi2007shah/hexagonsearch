@@ -657,14 +657,19 @@ insert into skills_master (skill_name) values
 
 delete from sms_templates;
 INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
-('ChatInvite','New Job - [[${commBean.jobtitle}]] at [[${commBean.sendercompany}]]%n[[${commBean.receiverfirstname}]],%n[[${commBean.senderfirstname}]] from [[${commBean.sendercompany}]] has invited you to apply for the [[${commBean.jobtitle}]] position. Click the link below to apply.%n[[${commBean.chatlink}]]'),
-('ChatCompleted','Congratulations [[${commBean.receiverfirstname}]]!%nYour Profile is now complete for the [[${commBean.jobtitle}]] position. [[${commBean.senderfirstname}]] from [[${commBean.sendercompany}]] will be in touch with you if your profile is shortlisted.%n%nGood luck!'),
-('ChatIncompleteReminder1','Oh no [[${commBean.receiverfirstname}]]!  The Litmus Profile you started creating for the [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]] was left incomplete. It''s important that you finish the profile to be considered for the job. Continue from where you left last. Just click the link to continue. [[${commBean.chatlink}]]'),
-('ChatIncompleteReminder2','[[${commBean.receiverfirstname}]],%nThis is your final reminder%n[[${commBean.sendercompany}]] is still waiting to see your profile for the [[${commBean.jobtitle}]] job. Your Litmus Profile is not complete. It will take just a few more minutes to finish it. Please click the link to continue. [[${commBean.chatlink}]]'),
-('LinkNotVisitedReminder1','[[${commBean.jobtitle}]] Job opportunity at [[${commBean.sendercompany}]]. [[${commBean.receiverfirstname}]], you are being considered for this job. Click the link to apply. [[${commBean.chatlink}]]'),
-('LinkNotVisitedReminder2','[[${commBean.receiverfirstname}]], are you not interested in this job? [[${commBean.senderfirstname}]] from [[${commBean.sendercompany}]] has invited you to apply for the [[${commBean.jobtitle}]] position. Click the link below to apply. [[${commBean.chatlink}]]'),
-('ChatNotVisitedReminder1','Hi [[${commBean.receiverfirstname}]],%nHere is your link to create your Litmus Profile for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. It''s required to submit completed profile to be considered for the job. The link is valid only for 48 hours. Click the link to begin. [[${commBean.chatlink}]] '),
-('ChatNotVisitedReminder2','[[${commBean.receiverfirstname}]],%nJust a reminder to complete your Litmus Profile for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. It will take just a few minutes to finish it.  It''s required that you finish the profile to be considered for the job.  This link will expire in 24 hours.%nClick the link to apply. [[${commBean.chatlink}]] ');
+('ChatInvite','NEW JOB ALERT - [[${commBean.receiverfirstname}]], your profile is shortlisted by [[${commBean.sendercompany}]] for [[${commBean.jobtitle}]]. Click [[${commBean.chatlink}]] to see JD and apply.'),
+('ChatCompleted','Congratulations [[${commBean.receiverfirstname}]]! Your application is complete for the [[${commBean.jobtitle}]] position at [[${commBean.sendercompany}]]. We will be in touch with you soon.'),
+('ChatIncompleteReminder1','Your application to [[${commBean.sendercompany}]] was incomplete. Just click the [[${commBean.chatlink}]] to continue and complete.'),
+('ChatIncompleteReminder2','FINAL REMINDER - Complete your application for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. It will take only 5 minutes. Click [[${commBean.chatlink}]] to continue.'),
+('LinkNotVisitedReminder1','[[${commBean.receiverfirstname}]], [[${commBean.sendercompany}]] has shortlisted you for [[${commBean.jobtitle}]] Job. Click [[${commBean.chatlink}]] to know more and apply.'),
+('LinkNotVisitedReminder2','Not interested in this job? [[${commBean.sendercompany}]] has invited you to apply for the [[${commBean.jobtitle}]] position. Click [[${commBean.chatlink}]] to start.'),
+('ChatNotVisitedReminder1','[[${commBean.receiverfirstname}]], this is link to apply for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. It is valid only for 24 hours. Click [[${commBean.chatlink}]] to begin.'),
+('ChatNotVisitedReminder2','[[${commBean.receiverfirstname}]], Just a reminder to complete your application for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. This link will expire in 24 hours. [[${commBean.chatlink}]] '),
+('AutosourceAcknowledgement', 'Hi [[${commBean.receiverfirstname}]], Your application for [[${commBean.jobtitle}]] position at [[${commBean.sendercompany}]] has been received. Good luck!'),
+('AutosourceApplicationShortlisted', '[[${commBean.receiverfirstname}]], [[${commBean.sendercompany}]] has shortlisted you for [[${commBean.jobtitle}]] position. Click on link to complete your profile. [[${commBean.chatlink}]] '),
+('AutosourceLinkNotVisited', 'Last Reminder [[${commBean.receiverfirstname}]] - [[${commBean.sendercompany}]] has shortlisted your application. Click link to complete your profile. [[${commBean.chatlink}]]'),
+('OTPSms','Your OTP for LitmusBlox is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] seconds.'),
+('InterviewDay', 'INTERVIEW REMINDER FOR [[${commBean.receiverfirstname}]] - You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewDate}]]. Please report 15 mins before. Click Google Maps link for directions. See you there! [[${commBean.interviewAddressLink}]]');
 
 delete from create_job_page_sequence;
 INSERT INTO CREATE_JOB_PAGE_SEQUENCE (PAGE_DISPLAY_NAME, PAGE_NAME, PAGE_DISPLAY_ORDER, DISPLAY_FLAG,SUBSCRIPTION_AVAILABILITY)
@@ -752,20 +757,30 @@ values
 ('All Data', true);
 
 INSERT INTO export_format_detail
-(format_id, column_name, header,  "position")
+(format_id, column_name, header,  "position", stage)
 VALUES
-(1, 'candidateName','Candidate Name', 1),
-(1, 'chatbotStatus','Chatbot Status', 2),
-(1, 'chatbotFilledTimeStamp', 'Chatbot Filled Timestamp', 3),
-(1, 'currentStage','Stage', 4),
-(1, 'keySkillsStrength','Key Skills Strength', 5),
-(1, 'currentCompany','Current Company', 6),
-(1, 'currentDesignation','Current Designation', 7),
-(1, 'email','Email', 8),
-(1, 'countryCode','Country Code', 9),
-(1, 'mobile','Mobile', 10),
-(1, 'totalExperience','Total Experience', 11),
-(1, 'createdBy','Created By', 12);
+(1, 'candidateName','Candidate Name', 1, null),
+(1, 'chatbotStatus','Chatbot Status', 2, null),
+(1, 'chatbotFilledTimeStamp', 'Chatbot Filled Timestamp', 3, null),
+(1, 'currentStage','Stage', 4, null),
+(1, 'keySkillsStrength','Key Skills Strength', 5, null),
+(1, 'currentCompany','Current Company', 6, null),
+(1, 'currentDesignation','Current Designation', 7, null),
+(1, 'email','Email', 8, null),
+(1, 'countryCode','Country Code', 9, null),
+(1, 'mobile','Mobile', 10, null),
+(1, 'totalExperience','Total Experience', 11, null),
+(1, 'createdBy','Created By', 12, null),
+(1, 'interviewDate','Interview Date', 13, 'Interview'),
+(1, 'interviewType','Interview Type', 14, 'Interview'),
+(1, 'interviewMode','Interview Mode', 15, 'Interview'),
+(1, 'interviewLocation','Interview location', 16, 'Interview'),
+(1, 'candidateConfirmation','Candidate Confirmation', 17, 'Interview'),
+(1, 'candidateConfirmationTime','Candidate Confirmation Time', 18, 'Interview'),
+(1, 'showNoShow','Show No Show', 19, 'Interview'),
+(1, 'noShowReason','No Show Reason' ,20, 'Interview'),
+(1, 'cancelled', 'Interview Cancelled', 21, 'Interview'),
+(1, 'cancellationReason','Cancellation Reason', 22, 'Interview');
 
 Insert into MASTER_DATA (TYPE, VALUE) values
 ('reasonForChange','Too much time spent in Commuting to work'),
@@ -791,3 +806,18 @@ INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
 ('callOutCome', 'Busy'),
 ('callOutCome', 'Wrong Number'),
 ('callOutCome', 'Left Message/VoiceMail');
+
+Insert into MASTER_DATA (TYPE, VALUE) values
+('cancellationReasons','Client cancelled iv 1'),
+('cancellationReasons','Candidate no show 1'),
+('cancellationReasons','Panel not available 1'),
+('cancellationReasons','Client cancelled iv 2'),
+('cancellationReasons','Candidate no show 2'),
+('cancellationReasons','Panel not available 2'),
+
+('noShowReasons','Personal/Family'),
+('noShowReasons','Professional'),
+('noShowReasons','Medical'),
+('noShowReasons','Logistics'),
+('noShowReasons','Not reachable'),
+('noShowReasons','Client Cancellation');

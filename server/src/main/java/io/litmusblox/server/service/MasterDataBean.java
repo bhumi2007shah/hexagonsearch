@@ -68,6 +68,9 @@ public class MasterDataBean {
     private Map<String, Long> stageStepMasterMap = new LinkedHashMap<>();
     private Map<Long, StageStepMaster> stageStepMap = new HashMap<>();
     private MasterData defaultJobType = null;
+    private Map<Long, String> cancellationReasons = new HashMap<>();
+    private Map<Long, String> noShowReasons = new HashMap<>();
+    private Map<String, MasterData> interviewConfirmation = new LinkedHashMap<>();
 
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;

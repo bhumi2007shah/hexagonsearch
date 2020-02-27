@@ -11,6 +11,7 @@ import io.litmusblox.server.model.Job;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
 import io.litmusblox.server.utils.Util;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +30,7 @@ import java.util.*;
 @CrossOrigin(allowedHeaders = "*")
 @RestController
 @RequestMapping("/api/job")
+@Log4j2
 public class JobController {
 
     @Autowired
@@ -115,7 +117,7 @@ public class JobController {
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy"));
                     put("Candidate", Arrays.asList("candidateProjectDetails","candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies",
                             "candidateSkillDetails","createdOn","createdBy", "firstName", "lastName", "displayName"));
-                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData"));
+                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData", "interviewDetails", "candidateReferralDetail"));
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateCompanyDetails", Arrays.asList("candidateId"));
                     put("MasterData", new ArrayList<>(0));
@@ -222,5 +224,21 @@ public class JobController {
             data = jobService.exportData(jobId, formatId.get(), stage);
         }
         return data;
+    }
+
+    @GetMapping(value = "/exportTechRoleCompetency/{jobId}")
+    String exportTechRoleCompetency(@PathVariable("jobId") Long jobId) throws Exception{
+        log.info("Received request to fetch Tech role competency list for job {}", jobId);
+        long startTime = System.currentTimeMillis();
+        String response = Util.stripExtraInfoFromResponseBean(jobService.getTechRoleCompetencyByJob(jobId),
+                new HashMap<String, List<String>>() {{
+                    put("Candidate",Arrays.asList("displayName","email", "mobile"));
+                    put("TechResponseJson", Arrays.asList("name", "complexities", "score", "capabilityStarRating"));
+                    put("String", Arrays.asList("candidateProfileLink"));
+                }},
+                new HashMap<String, List<String>>() {{
+                }});
+        log.info("Completed processing fetch Tech role competency list for job {} in {}", jobId, (System.currentTimeMillis()-startTime) + "ms.");
+        return response;
     }
 }

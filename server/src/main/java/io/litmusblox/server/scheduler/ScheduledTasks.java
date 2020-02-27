@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.scheduler;
 
+import io.litmusblox.server.service.IJobCandidateMappingService;
 import io.litmusblox.server.service.impl.FetchEmailService;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import lombok.extern.log4j.Log4j2;
@@ -32,6 +33,9 @@ public class ScheduledTasks {
     @Autowired
     FetchEmailService fetchEmailService;
 
+    @Autowired
+    IJobCandidateMappingService jobCandidateMappingService;
+
     @Scheduled(fixedRate = 30000, initialDelay = 5000)
     public void parseAndProcessCv() {
         log.info("started parse and process cv. Thread: {}", Thread.currentThread().getId());
@@ -51,6 +55,20 @@ public class ScheduledTasks {
         log.info("started process email applications. Thread: {}", Thread.currentThread().getId());
         fetchEmailService.processEmail();
         log.info("completed process email applications. Thread: {}", Thread.currentThread().getId());
+    }
+
+    @Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
+    public void inviteAutoSourcedCandidates() throws Exception {
+        log.info("started inviting autosourced candidates. Thread: {}", Thread.currentThread().getId());
+        jobCandidateMappingService.inviteAutoSourcedCandidate();
+        log.info("Completed inviting autosourced candidates. Thread: {}", Thread.currentThread().getId());
+    }
+
+    @Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
+    public void inviteLDEBCandidates() throws Exception{
+        log.info("started inviting LDEB candidates. Thread {}", Thread.currentThread().getId());
+        jobCandidateMappingService.inviteLDEBCandidates();
+        log.info("Completed invitin LDEB candidates. Thread {}", Thread.currentThread().getId());
     }
 
     @Scheduled(fixedRate = 120000, initialDelay = 5000)

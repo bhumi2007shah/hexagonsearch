@@ -69,7 +69,7 @@ public interface ICompanyService {
      */
     List<CompanyBu> getCompanyBuList(Long companyId) throws Exception;
 
-    Map<String, List<CompanyAddress>> getCompanyAddresses(Long companyId) throws Exception;
+    Map<String, List<CompanyAddress>> getCompanyAddresses(Long companyId, Boolean isInterviewLocation) throws Exception;
 
     /**
      * Service method to save company history. Need a service method because needs to be called from LbUserDetailsService on company create
@@ -113,7 +113,7 @@ public interface ICompanyService {
      * @param company the company for which subdomain is to be created
      * @throws Exception
      */
-    void createSubdomain(Company company) throws Exception;
+    void createSubdomain(Company company);
 
     /**
      * Method that fetches a list of all companies that have short name and for which a subdomain has not been created
@@ -128,4 +128,19 @@ public interface ICompanyService {
      * @return List of CompanyAddresses
      */
     List<CompanyAddress> getCompanyAddress(Long companyId);
+
+
+    /**
+     * Service method Api to set Company Unique Id for all companies
+     *
+     * @return List of companies
+     * @throws Exception
+     */
+    List<Company> setCompanyUniqueId();
+
+    /**
+     * functioon to reload Apache if new subdomain vitua host configuration is added in sites-available directory
+     * @param companyList
+     */
+    public void reloadApache(List<Company> companyList);
 }

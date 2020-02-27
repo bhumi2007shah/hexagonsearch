@@ -36,7 +36,9 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -103,6 +105,7 @@ public class CompanyService implements ICompanyService {
      */
     @Transactional
     public Company addCompany(Company company, User loggedInUser) throws Exception {
+        company = generateAndSetCompanyUniqueId(company);
         companyRepository.save(company);
         saveCompanyHistory(company.getId(), "New company, "+company.getCompanyName()+", created", loggedInUser);
         return company;
@@ -255,10 +258,13 @@ public class CompanyService implements ICompanyService {
                 CompanyBu companyBuFromDb = companyBuRepository.findByBusinessUnitIgnoreCaseAndCompanyId(businessUnit, company.getId());
                 if(null!=companyBuFromDb) {
                     int jobsCount = jobRepository.countByBuId(companyBuFromDb);
-                    if (jobsCount == 0) {
+                    int userCount = userRepository.countByCompanyBuId(companyBuFromDb.getId());
+                    if (jobsCount == 0 && userCount == 0) {
                         companyBuRepository.delete(companyBuFromDb);
-                    } else {
+                    } else if(jobsCount>0) {
                         errorResponse.put(businessUnit, jobsCount + "jobs available for this BU");
+                    } else if(userCount>0){
+                        errorResponse.put(businessUnit, userCount + "Users available for this BU");
                     }
                 }
                 else{
@@ -499,7 +505,7 @@ public class CompanyService implements ICompanyService {
     }
 
     @Override
-    public Map<String, List<CompanyAddress>>getCompanyAddresses(Long companyId)throws Exception{
+    public Map<String, List<CompanyAddress>>getCompanyAddresses(Long companyId, Boolean isInterviewLocation)throws Exception{
         //find company by companyId
         Company company = companyRepository.findById(companyId).orElse(null);
 
@@ -539,7 +545,9 @@ public class CompanyService implements ICompanyService {
         }
 
         companyAddressListByType.put("Interview Location", interviewAddersses);
-        companyAddressListByType.put("Job Location", jobAddresses);
+
+        if(!isInterviewLocation)
+            companyAddressListByType.put("Job Location", jobAddresses);
 
         log.info("Completed processing list of Addresses for companyId: "+ companyId +" in " + (System.currentTimeMillis() - startTime) + "ms.");
         return companyAddressListByType;
@@ -617,7 +625,7 @@ public class CompanyService implements ICompanyService {
      * @throws Exception
      */
     @Override
-    public void createSubdomain(Company company) throws Exception {
+    public void createSubdomain(Company company) {
         log.info("Received request to create subdomain for company: {} shortName: {}", company.getCompanyName(), company.getShortName());
         long startTime = System.currentTimeMillis();
 
@@ -629,35 +637,47 @@ public class CompanyService implements ICompanyService {
         objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         List<GoDaddyRequestBean> requestObj = Arrays.asList(new GoDaddyRequestBean(company.getShortName(), createSubdomainIp));
-        RestClientResponseBean responseFromGoDaddy = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestObj), createSubdomainApi, HttpMethod.PATCH,new StringBuffer("sso-key ").append(createSubdomainKey).append(":").append(createSubdomainSecret).toString());
-        log.info("Response from GoDaddy:: {} ::",responseFromGoDaddy);
-        if (null != responseFromGoDaddy && HttpStatus.OK.value() == responseFromGoDaddy.getStatusCode()) {
-
-            company.setSubdomainCreated(true);
-            company.setSubdomainCreatedOn(new Date());
-            companyRepository.save(company);
-
-            ClassPathResource resource = new ClassPathResource(subdomainTemplateName);
-
-            String templateData = FileCopyUtils.copyToString(new InputStreamReader(((ClassPathResource) resource).getInputStream(), UTF_8));
-            //replace key with company short name
-            templateData = templateData.replaceAll(IConstant.REPLACEMENT_KEY_FOR_SHORTNAME, company.getShortName());
-            log.info("Created template data to be written to file \n{}", templateData);
-            //create conf in apache folder
-            File configFile = new File("/etc/apache2/sites-available/"+company.getShortName()+".conf");
-            FileWriter fw = new FileWriter(configFile);
-            fw.write(templateData);
-            fw.close();
-
-            //create symbolic link
-            Path link = Paths.get("/etc/apache2/sites-enabled/",company.getShortName()+".conf");
-            if (Files.exists(link)) {
-                Files.delete(link);
+        try {
+            RestClientResponseBean responseFromGoDaddy = null;
+            try {
+                responseFromGoDaddy = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestObj), createSubdomainApi, HttpMethod.PATCH, new StringBuffer("sso-key ").append(createSubdomainKey).append(":").append(createSubdomainSecret).toString());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                log.error("Error while creating subdomain for {}.\n{}", company, ex.getMessage());
+                log.info("Duplicate subdomain creation attempt. Setting flag and creating conf files.");
             }
-            Files.createSymbolicLink(link, Paths.get("/etc/apache2/sites-available/"+company.getShortName()+".conf"));
-        }
-        else {
-            log.error("Error creating subdomain on GoDaddy for company {}", company.getCompanyName());
+            log.info("Response from GoDaddy:: {} ::", responseFromGoDaddy);
+            if (null != responseFromGoDaddy && (HttpStatus.OK.value() == responseFromGoDaddy.getStatusCode() || responseFromGoDaddy.getResponseBody().indexOf("\"code\":\"DUPLICATE_RECORD\"") != -1) ){
+
+                company.setSubdomainCreated(true);
+                company.setSubdomainCreatedOn(new Date());
+                companyRepository.save(company);
+
+                ClassPathResource resource = new ClassPathResource(subdomainTemplateName);
+
+                String templateData = FileCopyUtils.copyToString(new InputStreamReader(((ClassPathResource) resource).getInputStream(), UTF_8));
+                //replace key with company short name
+                templateData = templateData.replaceAll(IConstant.REPLACEMENT_KEY_FOR_SHORTNAME, company.getShortName());
+                log.info("Created template data to be written to file \n{}", templateData);
+                //create conf in apache folder
+                File configFile = new File("/etc/apache2/sites-available/" + company.getShortName() + ".conf");
+                FileWriter fw = new FileWriter(configFile);
+                fw.write(templateData);
+                fw.close();
+
+                //create symbolic link
+                Path link = Paths.get("/etc/apache2/sites-enabled/", company.getShortName() + ".conf");
+                if (Files.exists(link)) {
+                    Files.delete(link);
+                }
+                Files.createSymbolicLink(link, Paths.get("/etc/apache2/sites-available/" + company.getShortName() + ".conf"));
+            } else {
+                log.error("Error creating subdomain on GoDaddy for company {}", company.getCompanyName());
+            }
+        } catch (Exception e) {
+            log.error("Error while creating sub-domain: {}", e.getMessage());
+            Map breadCrumb = new HashMap<String, String>();
+            SentryUtil.logWithStaticAPI(null, "Error while creating sub-domain: "+e.getMessage(), breadCrumb);
         }
         log.info("Completed processing request to create subdomain for company {} in {} ms.",company.getCompanyName(), (System.currentTimeMillis() - startTime));
     }
@@ -679,7 +699,34 @@ public class CompanyService implements ICompanyService {
                 log.error("Error creating subdomain for company {}:\n {}", company.getCompanyName(), e.getMessage());
             }
         });
+        if(companyList.size()>0)
+            reloadApache(companyList);
         log.info("Completed processing request to create subdomains in {} ms.", (System.currentTimeMillis() - startTime));
+    }
+
+    /**
+     * functioon to reload Apache if new subdomain vitua host configuration is added in sites-available directory
+     * @param companyList
+     */
+    public void reloadApache(List<Company> companyList){
+        // Reload apache configuration to enable virtual host for new sub-domains
+        try {
+            Process process = Runtime.getRuntime().exec(IConstant.apacheReloadCommand);
+            process.waitFor();
+            log.info("process completed to reload apache, exit code: {}", process.exitValue());
+            process.destroy();
+        }
+        catch (IOException e){
+            SentryUtil.logWithStaticAPI(null, "Error while reloading apache after creating virtual host configuration for subdomains: "+String.join(",", companyList.stream().map(Company::getShortName).collect(Collectors.toList())), null);
+            log.error("Error while creating process to reload apache: {}", e.getCause());
+        }
+        catch (InterruptedException e){
+            SentryUtil.logWithStaticAPI(null, "Error while reloading apache after creating virtual host configuration for subdomains: "+String.join(",", companyList.stream().map(Company::getShortName).collect(Collectors.toList())), null);
+            log.error("Reload apache process interrupted while executing: {}", e.getCause());
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+        }
     }
 
     @Transactional(readOnly = true)
@@ -689,6 +736,51 @@ public class CompanyService implements ICompanyService {
         List<CompanyAddress> companyAddressList = companyAddressRepository.findByCompanyId(companyId);
         log.info("Get Company address list by company id in {} ms.", (System.currentTimeMillis() - startTime));
         return companyAddressList;
+    }
+
+    @Override
+    public List<Company> setCompanyUniqueId() {
+        log.info("Inside setCompanyUniqueId");
+        List<Company> companies = companyRepository.findByShortNameIsNotNullAndRecruitmentAgencyIdIsNullAndCompanyUniqueIdIsNull();
+        companies.forEach(company -> {
+            company = generateAndSetCompanyUniqueId(company);
+        });
+        companyRepository.saveAll(companies);
+        return companies;
+    }
+
+    private static final int RANDOM_STRING_LENGTH = 5;
+    private static String getAlphaNumericString() {
+        byte[] array = new byte[256];
+        new Random().nextBytes(array);
+        String randomString = new String(array, Charset.forName("UTF-8"));
+        StringBuffer r = new StringBuffer();
+        for (int k = 0; k < randomString.length(); k++) {
+            char ch = randomString.charAt(k);
+            if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')) {
+                r.append(ch);
+                if (RANDOM_STRING_LENGTH == r.length())
+                    break;
+            }
+        }
+        return r.toString();
+    }
+
+    private Company generateAndSetCompanyUniqueId(Company company){
+        log.info("Inside generateAndSetCompanyUniqueId");
+        if(null == company.getRecruitmentAgencyId()){
+            boolean isUniqueIdPresent = true;
+            String companyUniqueId = null;
+            while(isUniqueIdPresent){
+                companyUniqueId = company.getShortName().substring(0,3)+getAlphaNumericString();
+                Company companyFromDb = companyRepository.findByCompanyUniqueId(companyUniqueId);
+                if(null == companyFromDb){
+                    isUniqueIdPresent = false;
+                    company.setCompanyUniqueId(companyUniqueId);
+                }
+            }
+        }
+        return company;
     }
 
 }

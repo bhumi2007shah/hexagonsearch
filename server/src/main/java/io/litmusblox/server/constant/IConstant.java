@@ -4,6 +4,9 @@
 
 package io.litmusblox.server.constant;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * @author : Sumit
  * Date : 4/7/19
@@ -58,6 +61,7 @@ public interface IConstant {
     String REPO_LOCATION = "repoLocation";
     String TEMP_REPO_LOCATION = "temprepolocation";
     String ERROR_FILES_REPO_LOCATION = "error_files";
+    String CV_STORAGE_LOCATION = "cvStorageUrl";
     String DATE_FORMAT_yyyymmdd_hhmm = "yyyyMMdd_HHmm";
     String STR_INDIA = "India";
 
@@ -148,6 +152,8 @@ public interface IConstant {
         }
     }
 
+    List AUTOSOURCED_TYPE = Arrays.asList(CandidateSource.NaukriMassMail.getValue(), CandidateSource.NaukriJobPosting.getValue(),CandidateSource.CareerPage.getValue(), CandidateSource.EmployeeReferral.getValue());
+
     enum LITMUSBLOX_FILE_COLUMNS {
         FirstName("First Name"), LastName("Last Name"), Email("Email"), Mobile("Mobile");
         private String value;
@@ -192,7 +198,7 @@ public interface IConstant {
 
 
     enum MAX_FIELD_LENGTHS {
-        INSTITUTE_NAME(75), COMPANY_NAME(75), DESIGNATION(100), ADDRESS(255), KEY_SKILLS(255), ONLINE_PROFILE_URL(255), ONLINE_PROFILE_TYPE(20), WORK_SUMMARY(255), GENDER(1), DEGREE(100), SKILL(50), ROLE(40), YEAR_OF_PASSING(4), REASON_FOR_CHANGE(100), SPECIALIZATION(50);
+        INSTITUTE_NAME(75), COMPANY_NAME(75), DESIGNATION(100), ADDRESS(255), KEY_SKILLS(255), ONLINE_PROFILE_URL(255), ONLINE_PROFILE_TYPE(20), WORK_SUMMARY(255), GENDER(1), DEGREE(100), SKILL(50), ROLE(40), YEAR_OF_PASSING(4), REASON_FOR_CHANGE(100), SPECIALIZATION(50), INTERVIEW_COMMENTS(250);
 
         private int value;
 
@@ -206,7 +212,7 @@ public interface IConstant {
     }
 
     enum CompanySubscription {
-        Lite, Max;
+        Lite, Max, LDEB;
     }
 
     enum UPLOAD_TYPE {
@@ -221,10 +227,26 @@ public interface IConstant {
         rar, zip, other
     }
 
-    String USER_KEY = "userKey";
-    String VERSION = "version";
-    String SUB_USER_ID = "subUserId";
-    String RCHILLI_API_URL = "rchilliApiUrl";
+    enum InterviewType {
+        SINGLE_INTERVIEW("Single Interview"), RECRUITMENT_DRIVE("Recruitment Drive");
+
+        private String interviewType;
+
+        InterviewType(String val) { this.interviewType = val; }
+
+        public String getValue() { return this.interviewType; }
+    }
+
+    enum InterviewMode {
+        TELEPHONIC("Telephonic"), IN_PERSION("In Person"), VIDEO_CONFERENCE("Video Conference");
+
+        private String interviewMode;
+
+        InterviewMode(String val) { this.interviewMode = val; }
+
+        public String getValue() { return this.interviewMode; }
+    }
+
     String FILE_STORAGE_URL = "fileStorageUrl";
     String ERROR_FILES = "error_files";
     String NOT_AVAILABLE = "Not Available";
@@ -299,26 +321,10 @@ public interface IConstant {
     String NOT_AVAILABLE_EMAIL = "@notavailable.io";
     String SYSTEM_USER_EMAIL = "systemuser@hex.com";
 
-    String[] fetchItemsType = new String[]{"referrerRelation", "jobType"};
+    String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countries", "education"};
 
     String REPLACEMENT_KEY_FOR_SHORTNAME = "_shortName_";
     String GODADDY_SUCCESS_RESPONSE = "\"code\":";
-
-    //Constants for process otp
-    enum OtpMsg91 {
-
-        AUTH_KEY("authkey"), SEND_OTP_URL("sendOtpUrl"), VERIFY_OTP("verifyOtpUrl"), RETRY_OTP("retrySendOtp"), SENDER("sender"), TEMPLATE_ID("template_id"), OTP_LENGTH("otp_length"), RETRY_TYPE("text");
-
-        private String value;
-
-        OtpMsg91(String val) {
-            this.value = val;
-        }
-
-        public String getValue() {
-            return this.value;
-        }
-    }
 
     String NAUKRI_SUBJECT_STRING = "Naukri.com -";
     String REF_ID_MATCH_REGEX = "[a-fA-F0-9]{8}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{12}";
@@ -327,10 +333,16 @@ public interface IConstant {
     String PARSING_RESPONSE_PYTHON = "PARSING_RESPONSE_PYTHON";
     String PARSING_RESPONSE_ML = "PARSING_RESPONSE_ML";
 
-    int SCHEDULER_THREAD_POOL_SIZE = 5;
+    int SCHEDULER_THREAD_POOL_SIZE = 6;
 
     String COMPANY_NAME_VARIABLE = "$companyName";
 
     Integer SCREENING_QUESTION_RESPONSE_MAX_LENGTH = 300;
     Integer SCREENING_QUESTION_COMMENT_MAX_LENGTH = 100;
+
+    String CHAT_LINK="chatbotLink";
+    String CHAT_LINK_HEADER="Chatbot Link";
+
+    String [] apacheReloadCommand = {"sudo", "apache2ctl", "graceful"};
+    int OTP_EXPIRY_SECONDS = 90;
 }

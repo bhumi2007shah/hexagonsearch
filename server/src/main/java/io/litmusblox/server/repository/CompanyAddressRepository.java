@@ -6,6 +6,7 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.CompanyAddress;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
@@ -20,4 +21,7 @@ public interface CompanyAddressRepository extends JpaRepository<CompanyAddress, 
 
     // find list of company address by company Id
     List<CompanyAddress> findByCompanyId(Long companyId);
+
+    @Query(value = "select * from company_address where address_type in (select id from master_data where value in('Interview Location','Both')) and company_id =:companyId", nativeQuery = true)
+    List<CompanyAddress> findByCompanyIdAndAddressType(Long companyId);
 }
