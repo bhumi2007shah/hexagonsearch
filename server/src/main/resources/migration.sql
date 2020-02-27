@@ -1811,4 +1811,11 @@ INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
 ('InterviewDay', 'INTERVIEW REMINDER FOR [[${commBean.receiverfirstname}]] - You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewDate}]]. Please report 15 mins before. Click Google Maps link for directions. See you there! [[${commBean.interviewAddressLink}]]');
 
 
+-- For #441
+INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
+(6, '"introText"=>"As a part of org level role baselining, we seek your inputs on various aspects of your work experience regarding the role of",
+"thankYouText"=>"No further action is required from your side",
+"showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false"');
+
+
 
