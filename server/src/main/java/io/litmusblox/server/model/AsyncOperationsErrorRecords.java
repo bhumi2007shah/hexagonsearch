@@ -37,9 +37,8 @@ public class AsyncOperationsErrorRecords implements Serializable {
     @Column(name = "JOB_ID")
     private Long jobId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "JOB_CANDIDATE_MAPPING_ID")
-    private JobCandidateMapping jobCandidateMappingId;
+    @Column(name = "FILE_NAME")
+    private String fileName;
 
     @Column(name = "CANDIDATE_FIRST_NAME")
     private String candidateFirstName;
@@ -52,6 +51,10 @@ public class AsyncOperationsErrorRecords implements Serializable {
 
     @Column(name = "MOBILE")
     private String mobile;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "JOB_CANDIDATE_MAPPING_ID")
+    private JobCandidateMapping jobCandidateMappingId;
 
     @Column(name = "ERROR_MESSAGE")
     private String errorMessage;
@@ -69,7 +72,7 @@ public class AsyncOperationsErrorRecords implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdOn;
 
-    public AsyncOperationsErrorRecords(Long jobId, String candidateFirstName, String candidateLastName, String email, String mobile, String errorMessage, String asyncOperation, @NotNull User createdBy, @NotNull Date createdOn) {
+    public AsyncOperationsErrorRecords(Long jobId, String candidateFirstName, String candidateLastName, String email, String mobile, String errorMessage, String asyncOperation, @NotNull User createdBy, @NotNull Date createdOn, String fileName) {
         this.jobId = jobId;
         this.candidateFirstName = candidateFirstName;
         this.candidateLastName = candidateLastName;
@@ -79,6 +82,7 @@ public class AsyncOperationsErrorRecords implements Serializable {
         this.asyncOperation = asyncOperation;
         this.createdBy = createdBy;
         this.createdOn = createdOn;
+        this.fileName = fileName;
     }
 
     public AsyncOperationsErrorRecords(Long jobId, JobCandidateMapping jobCandidateMappingId, String errorMessage, String asyncOperation, @NotNull User createdBy, @NotNull Date createdOn) {

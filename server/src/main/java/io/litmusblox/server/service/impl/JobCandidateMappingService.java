@@ -327,19 +327,25 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      */
     // @Transactional(propagation = Propagation.REQUIRED)
     @Async("asyncTaskExecutor")
-    public void uploadCandidatesFromFile(String fileName, Long jobId, String fileFormat, User loggedInUser, int candidatesProcessed) throws Exception {
+    public void uploadCandidatesFromFile(String fileName, Long jobId, String fileFormat, User loggedInUser, int candidatesProcessed, String originalFileName) throws Exception {
         log.info("Thread - {} : Started processing uploadCandidatesFromFile in JobCandidateMappingService", Thread.currentThread().getName());
         UploadResponseBean uploadResponseBean = new UploadResponseBean();
-        List<Candidate> candidateList = processUploadedFile(fileName, uploadResponseBean, loggedInUser, fileFormat, environment.getProperty(IConstant.REPO_LOCATION), loggedInUser.getCountryCode());
+        List<Candidate> candidateList = null;
 
         try {
-            processCandidateData(candidateList, uploadResponseBean, loggedInUser, jobId, candidatesProcessed, false);
-        } catch (Exception ex) {
-            log.error("Error while processing file " + fileName + " :: " + ex.getMessage());
-            uploadResponseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
-        }
-        if (null != uploadResponseBean.getFailedCandidates() && uploadResponseBean.getFailedCandidates().size() > 0) {
-            handleErrorRecords(uploadResponseBean.getFailedCandidates(), null, IConstant.ASYNC_OPERATIONS.FileUpload.name(), loggedInUser, jobId);
+            candidateList = processUploadedFile(fileName, uploadResponseBean, loggedInUser, fileFormat, environment.getProperty(IConstant.REPO_LOCATION), loggedInUser.getCountryCode());
+
+            try {
+                processCandidateData(candidateList, uploadResponseBean, loggedInUser, jobId, candidatesProcessed, false);
+            } catch (Exception ex) {
+                log.error("Error while processing file " + fileName + " :: " + ex.getMessage());
+                uploadResponseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
+            }
+            if (null != uploadResponseBean.getFailedCandidates() && uploadResponseBean.getFailedCandidates().size() > 0) {
+                handleErrorRecords(uploadResponseBean.getFailedCandidates(), null, IConstant.ASYNC_OPERATIONS.FileUpload.name(), loggedInUser, jobId, originalFileName);
+            }
+        } catch (WebException webException) {
+            asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(jobId, null, null, null, null, webException.getErrorMessage(), IConstant.ASYNC_OPERATIONS.FileUpload.name(), loggedInUser, new Date(), originalFileName));
         }
         log.info("Thread - {} : Completed processing uploadCandidatesFromFile in JobCandidateMappingService", Thread.currentThread().getName());
     }
@@ -585,7 +591,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         jcmList.removeAll(inviteCandidateResponseBean.getFailedJcm().stream().map(JobCandidateMapping::getId).collect(Collectors.toList()));
         callScoringEngineToAddCandidates(jcmList);
         if (null != inviteCandidateResponseBean.getFailedJcm() && inviteCandidateResponseBean.getFailedJcm().size() > 0) {
-            handleErrorRecords(null, inviteCandidateResponseBean.getFailedJcm(), IConstant.ASYNC_OPERATIONS.InviteCandidates.name(), loggedInUser, inviteCandidateResponseBean.getJobId());
+            handleErrorRecords(null, inviteCandidateResponseBean.getFailedJcm(), IConstant.ASYNC_OPERATIONS.InviteCandidates.name(), loggedInUser, inviteCandidateResponseBean.getJobId(), null);
         }
         log.info("Thread - {} : Completed invite candidates method", Thread.currentThread().getName());
 
@@ -2005,14 +2011,14 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     @Transactional
-    private void handleErrorRecords(List<Candidate> failedCandidates, List<JobCandidateMapping> failedJcm, String asyncOperation, User loggedInUser, Long jobId) {
+    private void handleErrorRecords(List<Candidate> failedCandidates, List<JobCandidateMapping> failedJcm, String asyncOperation, User loggedInUser, Long jobId, String fileName) {
         List<AsyncOperationsErrorRecords> recordsToSave = null;
 
         //call constructor for failed candidate upload from file
         if(null != failedCandidates && failedCandidates.size() > 0) {
             recordsToSave = new ArrayList<>(failedCandidates.size());
             for(Candidate candidate: failedCandidates) {
-                recordsToSave.add(new AsyncOperationsErrorRecords(jobId, candidate.getFirstName(), candidate.getLastName(), candidate.getEmail(), candidate.getMobile(), candidate.getUploadErrorMessage(), asyncOperation, loggedInUser, new Date()));
+                recordsToSave.add(new AsyncOperationsErrorRecords(jobId, candidate.getFirstName(), candidate.getLastName(), candidate.getEmail(), candidate.getMobile(), candidate.getUploadErrorMessage(), asyncOperation, loggedInUser, new Date(), fileName));
             };
         }
         //call constructor for failed jcms for invite candidates flow

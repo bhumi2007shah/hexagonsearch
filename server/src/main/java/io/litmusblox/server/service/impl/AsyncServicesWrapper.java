@@ -104,7 +104,7 @@ public class AsyncServicesWrapper implements IAsyncServicesWrapper {
         log.info("User " + loggedInUser.getDisplayName() + " uploaded " + fileName);
 
         log.info("Callling async upload service from thread {}", Thread.currentThread().getName());
-        jobCandidateMappingService.uploadCandidatesFromFile(fileName, jobId, fileFormat, getUser(), candidatesProcessed);
+        jobCandidateMappingService.uploadCandidatesFromFile(fileName, jobId, fileFormat, getUser(), candidatesProcessed, multipartFile.getOriginalFilename());
     }
 
     @Transactional(readOnly = true)

@@ -41,9 +41,10 @@ public interface IJobCandidateMappingService {
      * @param fileFormat the format of file, for e.g. Naukri, LB format
      * @param loggedInUser the logged in user
      * @param candidatesProcessed candidates processed by the user for the current day
+     * @param originalFileName the name of the file uploaded by user
      * @throws Exception
      */
-    void uploadCandidatesFromFile(String fileName, Long jobId, String fileFormat, User loggedInUser, int candidatesProcessed) throws Exception;
+    void uploadCandidatesFromFile(String fileName, Long jobId, String fileFormat, User loggedInUser, int candidatesProcessed, String originalFileName) throws Exception;
 
     /**
      * Service method to source and add a candidate from a plugin, for example Naukri plugin
