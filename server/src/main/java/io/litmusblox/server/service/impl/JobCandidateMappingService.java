@@ -2007,9 +2007,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         interviewDetailsFromDb.setNoShowReason(showNoShowDetails.getNoShowReason());
         interviewDetailsRepository.save(interviewDetailsFromDb);
         if(!showNoShowDetails.isShowNoShow())
-            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview no show("+MasterDataBean.getInstance().getNoShowReasons().get(showNoShowDetails.getNoShowReason().getId())+") : "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+" ~ "+interviewDetailsFromDb.getShowNoShowComments(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview no show("+MasterDataBean.getInstance().getNoShowReasons().get(showNoShowDetails.getNoShowReason().getId())+") : "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+" ~ "+showNoShowDetails.getShowNoShowComments(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
         else
-            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview show : "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+" ~ "+interviewDetailsFromDb.getShowNoShowComments(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview show : "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+" ~ "+showNoShowDetails.getShowNoShowComments(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
 
         log.info("Interview marked Show NoShow in " + (System.currentTimeMillis()-startTime) + "ms.");
     }
