@@ -582,7 +582,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         log.info("Thread - {} : Started invite candidates method", Thread.currentThread().getName());
         InviteCandidateResponseBean inviteCandidateResponseBean = performInvitationAndHistoryUpdation(jcmList, loggedInUser);
         //remove all failed invitations
-        jcmList.removeAll(inviteCandidateResponseBean.getFailedJcm());
+        jcmList.removeAll(inviteCandidateResponseBean.getFailedJcm().stream().map(JobCandidateMapping::getId).collect(Collectors.toList()));
         callScoringEngineToAddCandidates(jcmList);
         if (null != inviteCandidateResponseBean.getFailedJcm() && inviteCandidateResponseBean.getFailedJcm().size() > 0) {
             handleErrorRecords(null, inviteCandidateResponseBean.getFailedJcm(), IConstant.ASYNC_OPERATIONS.InviteCandidates.name(), loggedInUser, inviteCandidateResponseBean.getJobId());
@@ -707,7 +707,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
 
         //list to store candidates for which email contains "@notavailable.io" or mobile is null
-        List<Long> failedJcm = new ArrayList<>();
+        List<JobCandidateMapping> failedJcm = new ArrayList<>();
 
         //List to store jcm ids for which email does not start with "@notavailable.io" or mobile is not null
         List<Long> jcmListWithoutError = new ArrayList<>();
@@ -722,17 +722,19 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         //iterate over jcm list
         for (JobCandidateMapping jobCandidateMapping : jobCandidateMappingList) {
 
-            //check if email does not contain "@notavailable.io" or mobile is not null
-            if (jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)) {
-                failedJcm.add(jobCandidateMapping.getId());
-                continue;
-            } else if (Util.isNull(jobCandidateMapping.getMobile())) {
-                failedJcm.add(jobCandidateMapping.getId());
-                continue;
-            }
             if (null == jobObjToUse)
                 jobObjToUse = jobCandidateMapping.getJob();
 
+            //check if email does not contain "@notavailable.io" or mobile is not null
+            if (jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)) {
+                jobCandidateMapping.setInviteErrorMessage("Invalid Email address: " + jobCandidateMapping.getEmail());
+                failedJcm.add(jobCandidateMapping);
+                continue;
+            } else if (Util.isNull(jobCandidateMapping.getMobile())) {
+                jobCandidateMapping.setInviteErrorMessage("Invalid Mobile number: " + jobCandidateMapping.getMobile());
+                failedJcm.add(jobCandidateMapping);
+                continue;
+            }
             jcmListWithoutError.add(jobCandidateMapping.getId());
         }
 
@@ -2003,7 +2005,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     @Transactional
-    private void handleErrorRecords(List<Candidate> failedCandidates, List<Long> failedJcm, String asyncOperation, User loggedInUser, Long jobId) {
+    private void handleErrorRecords(List<Candidate> failedCandidates, List<JobCandidateMapping> failedJcm, String asyncOperation, User loggedInUser, Long jobId) {
         List<AsyncOperationsErrorRecords> recordsToSave = null;
 
         //call constructor for failed candidate upload from file
@@ -2016,8 +2018,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         //call constructor for failed jcms for invite candidates flow
         else if (null != failedJcm && failedJcm.size() > 0) {
             recordsToSave = new ArrayList<>(failedJcm.size());
-            for(Long jcmId : failedJcm) {
-                recordsToSave.add(new AsyncOperationsErrorRecords(jobId, jcmId, "error", asyncOperation, loggedInUser, new Date()));
+            for(JobCandidateMapping jcm : failedJcm) {
+                recordsToSave.add(new AsyncOperationsErrorRecords(jobId, jcm, jcm.getInviteErrorMessage(), asyncOperation, loggedInUser, new Date()));
             }
         }
 

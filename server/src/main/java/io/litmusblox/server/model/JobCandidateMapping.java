@@ -196,6 +196,9 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @JsonProperty
     private String cvLocation;
 
+    @Transient
+    private String inviteErrorMessage;
+
     public String getDisplayName() {
         return candidateFirstName + " " + candidateLastName;
     }
