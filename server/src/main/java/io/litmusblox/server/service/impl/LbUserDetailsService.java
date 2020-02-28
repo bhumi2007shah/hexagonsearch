@@ -151,8 +151,9 @@ public class LbUserDetailsService implements UserDetailsService {
 
         //TODO Need revisit this code after getting screens
         Company companyObjToUse = null;
+        //If Call for update user then company could not be updated
         if(null == user.getId() && IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && null == user.getCompany().getRecruitmentAgencyId()) {
-            //check if company exists
+            //Check if company exists
             Company userCompany = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyIdIsNull(user.getCompany().getCompanyName());
 
             if (null == userCompany) {
@@ -165,7 +166,7 @@ public class LbUserDetailsService implements UserDetailsService {
                         throw new ValidationException(IErrorMessages.INVALID_COMPANY_SHORT_NAME+", Company short name : " + user.getCompany().getShortName(), HttpStatus.BAD_REQUEST);
                 }
 
-                //create a company
+                //Create a company
                 companyObjToUse = companyService.addCompany(new Company(user.getCompany().getCompanyName(), true, user.getCompany().getCompanyType(),null, user.getCompany().getShortName(), user.getCompany().getCountryId(), new Date(), loggedInUser.getId()), loggedInUser);
                 user.setRole(IConstant.ADMIN);
             } else {
@@ -182,6 +183,7 @@ public class LbUserDetailsService implements UserDetailsService {
                 companyObjToUse = userCompany;
             }
         }else if(null != user.getId()){
+            //Update user
             userFromDb = userRepository.findById(user.getId()).orElse(null);
             companyObjToUse = userFromDb.getCompany();
             u.setId(userFromDb.getId());
@@ -203,7 +205,7 @@ public class LbUserDetailsService implements UserDetailsService {
         if(null == user.getId() && null == companyObjToUse)
             companyObjToUse=loggedInUser.getCompany();
 
-        //add CompanyAddressId and CompanyBuId in user
+        //Add or update CompanyAddressId and CompanyBuId in user
         if(null != user.getCompanyAddressId()){
             Boolean isCompanyPresent = false;
             if(companyObjToUse.getRecruitmentAgencyId() != null && !companyObjToUse.getId().equals(loggedInUser.getCompany().getId())){
@@ -255,9 +257,7 @@ public class LbUserDetailsService implements UserDetailsService {
                 log.error("Company Bu Id is not related to logged in user company, CompanyBuId : "+user.getCompanyBuId());
         }
 
-
         u.setCompany(companyObjToUse);
-
 
         if (null == user.getRole()) {
             //If user role is null then set default role is Recruiter
@@ -297,11 +297,17 @@ public class LbUserDetailsService implements UserDetailsService {
 
         u.setCountryId(countryRepository.findByCountryCode(user.getCountryCode()));
         u.setMobile(user.getMobile());
-        u.setUserUuid(UUID.randomUUID());
+
+        //For update user password should be reset
         if(null != user.getId()){
             u.setUpdatedOn(new Date());
             u.setUpdatedBy(loggedInUser.getId());
+            u.setStatus(IConstant.UserStatus.Inactive.name());
+            u.setPassword(null);
+            u.setResetPasswordFlag(true);
+            u.setResetPasswordEmailTimestamp(null);
         }else{
+            u.setUserUuid(UUID.randomUUID());
             u.setCreatedBy(loggedInUser.getId());
             u.setCreatedOn(new Date());
         }
