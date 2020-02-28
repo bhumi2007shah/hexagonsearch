@@ -277,8 +277,8 @@ public class LbUserDetailsService implements UserDetailsService {
             else
                 throw new ValidationException("Invalid role in create user request: " + user.getRole(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
-        if(IConstant.UserType.BUSINESS.getValue().equals(user.getUserType()) || IConstant.UserType.RECRUITING.getValue().equals(user.getUserType()))
-            u.setUserType(user.getUserType());
+        if(IConstant.UserRole.Names.BUSINESS_USER.equals(user.getRole()))
+            u.setUserType(IConstant.UserType.BUSINESS.getValue());
         else
             u.setUserType(IConstant.UserType.RECRUITING.getValue());
 
