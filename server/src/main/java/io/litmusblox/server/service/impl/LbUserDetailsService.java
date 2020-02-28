@@ -138,17 +138,20 @@ public class LbUserDetailsService implements UserDetailsService {
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public User createUser(User user) throws Exception {
-
+    public User createUpdateUser(User user) throws Exception {
+        log.info("Inside createUpdateUser");
+        User userFromDb = null;
         User loggedInUser = getLoggedInUser();
 
         //check if the user is duplicate
-        checkForDuplicateUser(user, loggedInUser.getRole());
+        checkForDuplicateUser(user, user.getId());
         validateUser(user);
+
+        User u = new User();
 
         //TODO Need revisit this code after getting screens
         Company companyObjToUse = null;
-        if(IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && null == user.getCompany().getRecruitmentAgencyId()) {
+        if(null == user.getId() && IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && null == user.getCompany().getRecruitmentAgencyId()) {
             //check if company exists
             Company userCompany = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyIdIsNull(user.getCompany().getCompanyName());
 
@@ -168,7 +171,7 @@ public class LbUserDetailsService implements UserDetailsService {
             } else {
                 companyObjToUse = userCompany;
             }
-        }else if(null != user.getCompany() && null != user.getCompany().getRecruitmentAgencyId() && IConstant.UserRole.Names.RECRUITMENT_AGENCY.equals(loggedInUser.getRole())){
+        }else if(null == user.getId() && null != user.getCompany() && null != user.getCompany().getRecruitmentAgencyId() && IConstant.UserRole.Names.RECRUITMENT_AGENCY.equals(loggedInUser.getRole())){
             Company userCompany = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(user.getCompany().getCompanyName(), loggedInUser.getCompany().getId());
             if(null==userCompany){
                 //If Client company not found then do not create company throw exception
@@ -178,9 +181,16 @@ public class LbUserDetailsService implements UserDetailsService {
                     throw new ValidationException("Client company : " + user.getCompany().getCompanyName() + " not belonging to agency : "+loggedInUser.getCompany().getCompanyName(), HttpStatus.UNAUTHORIZED);
                 companyObjToUse = userCompany;
             }
+        }else if(null != user.getId()){
+            userFromDb = userRepository.findById(user.getId()).orElse(null);
+            companyObjToUse = userFromDb.getCompany();
+            u.setId(userFromDb.getId());
+            if(null == user.getCompanyAddressId())
+                user.setCompanyAddressId(userFromDb.getCompanyAddressId());
+            if(null == user.getCompanyBuId())
+                user.setCompanyBuId(userFromDb.getCompanyBuId());
         }
 
-        User u = new User();
         if(null != user.getDesignation()){
             if(!USER_DESIGNATION_PATTERN.matcher(user.getDesignation()).matches())
                 throw new ValidationException(IErrorMessages.USER_DESIGNATION_NOT_VALID, HttpStatus.BAD_REQUEST);
@@ -190,7 +200,7 @@ public class LbUserDetailsService implements UserDetailsService {
         u.setFirstName(Util.toSentenceCase(user.getFirstName()));
         u.setLastName(Util.toSentenceCase(user.getLastName()));
         u.setEmail(user.getEmail().toLowerCase());
-        if(null == companyObjToUse)
+        if(null == user.getId() && null == companyObjToUse)
             companyObjToUse=loggedInUser.getCompany();
 
         //add CompanyAddressId and CompanyBuId in user
@@ -244,8 +254,11 @@ public class LbUserDetailsService implements UserDetailsService {
             if(!isCompanyPresent)
                 log.error("Company Bu Id is not related to logged in user company, CompanyBuId : "+user.getCompanyBuId());
         }
-        //u.setCompany((companyObjToUse==null)?loggedInUser.getCompany():companyObjToUse);
+
+
         u.setCompany(companyObjToUse);
+
+
         if (null == user.getRole()) {
             //If user role is null then set default role is Recruiter
             if(null != user.getCompany().getRecruitmentAgencyId() && !user.getCompany().getId().equals(loggedInUser.getCompany().getId())){
@@ -285,10 +298,17 @@ public class LbUserDetailsService implements UserDetailsService {
         u.setCountryId(countryRepository.findByCountryCode(user.getCountryCode()));
         u.setMobile(user.getMobile());
         u.setUserUuid(UUID.randomUUID());
-        u.setCreatedBy(loggedInUser.getId());
-        u.setCreatedOn(new Date());
+        if(null != user.getId()){
+            u.setUpdatedOn(new Date());
+            u.setUpdatedBy(loggedInUser.getId());
+        }else{
+            u.setCreatedBy(loggedInUser.getId());
+            u.setCreatedOn(new Date());
+        }
 
-        companyService.saveCompanyHistory(companyObjToUse.getId(), "New user with email " + user.getEmail() + " created",loggedInUser);
+        if(null == user.getId())
+            companyService.saveCompanyHistory(companyObjToUse.getId(), "New user with email " + user.getEmail() + " created",loggedInUser);
+
         return userRepository.save(u);
     }
 
@@ -296,10 +316,10 @@ public class LbUserDetailsService implements UserDetailsService {
         return (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
-    private void checkForDuplicateUser(User user, String role) throws ValidationException {
+    private void checkForDuplicateUser(User user, Long userId) throws ValidationException {
         //check if user with email exists
         User dupUser = userRepository.findByEmail(user.getEmail());
-        if (null != dupUser) {
+        if (null != dupUser && (null == userId || !dupUser.getId().equals(userId))) {
             log.error("Duplicate user found: " + dupUser.toString());
             throw new ValidationException(IErrorMessages.DUPLICATE_USER_EMAIL + " - " + user.getEmail(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
