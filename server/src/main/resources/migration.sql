@@ -1817,5 +1817,7 @@ INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 "thankYouText"=>"No further action is required from your side",
 "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false"');
 
-
-
+-- For ticket #443
+UPDATE SMS_TEMPLATES
+SET TEMPLATE_CONTENT = 'Your OTP for LitmusBlox job application is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] minutes.'
+WHERE TEMPLATE_NAME = 'OTPSms';
