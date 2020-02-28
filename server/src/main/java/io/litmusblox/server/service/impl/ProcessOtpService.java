@@ -49,7 +49,7 @@ public class ProcessOtpService implements IProcessOtpService {
     public ProcessOtpService() {
         log.info("Initializing cache for OTP");
         otpCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(IConstant.OTP_EXPIRY_SECONDS, TimeUnit.SECONDS)
+                .expireAfterWrite(IConstant.OTP_EXPIRY_MINUTES, TimeUnit.MINUTES)
                 .build(new CacheLoader<String, Integer>() {
                     public Integer load(String key) {
                         return 0;
@@ -91,15 +91,15 @@ public class ProcessOtpService implements IProcessOtpService {
         ObjectMapper objectMapper = new ObjectMapper();
         //Messages on queue that are more than timeout seconds old, should not be processed
         jmsTemplate.setExplicitQosEnabled(true);
-        jmsTemplate.setTimeToLive(IConstant.OTP_EXPIRY_SECONDS * 1000);
+        jmsTemplate.setTimeToLive(IConstant.OTP_EXPIRY_MINUTES * 60 * 1000);
 
         OTPRequestBean otpRequestBean;
         //if the otp is for employee referral, do not send mobile to queue
         //if the otp is for candidate career page, do not send email to queue
         if (isEmployeeReferral)
-            otpRequestBean = new OTPRequestBean(otp, IConstant.OTP_EXPIRY_SECONDS, null, countryCode, email, recepientName);
+            otpRequestBean = new OTPRequestBean(otp, IConstant.OTP_EXPIRY_MINUTES, null, countryCode, email, recepientName);
         else
-            otpRequestBean = new OTPRequestBean(otp, IConstant.OTP_EXPIRY_SECONDS, mobileNumber, countryCode, null, recepientName);
+            otpRequestBean = new OTPRequestBean(otp, IConstant.OTP_EXPIRY_MINUTES, mobileNumber, countryCode, null, recepientName);
 
         jmsTemplate.convertAndSend(queue, objectMapper.writeValueAsString(otpRequestBean));
         log.info("Put message on queue {}", queue.getQueueName());
