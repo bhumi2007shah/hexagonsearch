@@ -280,12 +280,13 @@ public class NoAuthController {
      * @param countryCode country code
      * @param email email address of the employee
      * @param recepientName name of the message receiver
+     * @param companyShortName shortname of the company
      * @throws Exception
      */
     @GetMapping(value = "/sendOtp")
     @ResponseStatus(value = HttpStatus.OK)
-    void sendOtp(@RequestParam(name = "isEmployeeReferral") boolean isEmployeeReferral, @RequestParam(name = "mobileNumber", required = false) String mobileNumber, @RequestParam(name = "countryCode") String countryCode, @RequestParam(name = "email", required = false) String email, @RequestParam(name = "recepientName") String recepientName) throws Exception {
-        processOtpService.sendOtp(isEmployeeReferral, mobileNumber, countryCode, email, recepientName);
+    void sendOtp(@RequestParam(name = "isEmployeeReferral") boolean isEmployeeReferral, @RequestParam(name = "mobileNumber", required = false) String mobileNumber, @RequestParam(name = "countryCode") String countryCode, @RequestParam(name = "email", required = false) String email, @RequestParam(name = "recepientName") String recepientName, @RequestParam(name = "companyShortName") String companyShortName) throws Exception {
+        processOtpService.sendOtp(isEmployeeReferral, mobileNumber, countryCode, email, recepientName, companyShortName);
     }
 
 

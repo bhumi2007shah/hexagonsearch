@@ -1821,3 +1821,8 @@ INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 UPDATE SMS_TEMPLATES
 SET TEMPLATE_CONTENT = 'Your OTP for LitmusBlox job application is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] minutes.'
 WHERE TEMPLATE_NAME = 'OTPSms';
+
+-- For ticket #444
+UPDATE SMS_TEMPLATES
+SET TEMPLATE_CONTENT = 'Your OTP for [[${commBean.sendercompany}]] job application is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] minutes.'
+WHERE TEMPLATE_NAME = 'OTPSms';
