@@ -1325,21 +1325,25 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     private boolean removeNotAvailableEmail(JobCandidateMapping jcm){
+        log.info("Inside removeNotAvailableEmail");
         boolean emailUpdated = false;
         List<CandidateEmailHistory>candidateEmailHistoryNotAvailableCheck = candidateEmailHistoryRepository.findByCandidateIdOrderByIdDesc(jcm.getCandidate().getId());
         if(candidateEmailHistoryNotAvailableCheck.size()>0){
-            List<CandidateEmailHistory> notAvailableEmailHistory = candidateEmailHistoryNotAvailableCheck.stream().filter(
-                    candidateEmailHistoryNotAvailable ->{
-                        return candidateEmailHistoryNotAvailable.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL);
-                    })
+
+            //Get not available email history list
+            List<CandidateEmailHistory> notAvailableEmailHistory = candidateEmailHistoryNotAvailableCheck.stream()
+                    .filter(candidateEmailHistoryNotAvailable -> candidateEmailHistoryNotAvailable.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL))
                     .collect(Collectors.toList());
-            notAvailableEmailHistory.get(0).setEmail(jcm.getEmail());
-            CandidateEmailHistory candidateEmailHistoryUpdated = candidateEmailHistoryRepository.save(notAvailableEmailHistory.get(0));
-            if(candidateEmailHistoryUpdated.getEmail().equals(jcm.getEmail()))
-                emailUpdated = true;
-            notAvailableEmailHistory.remove(0);
+
             if(notAvailableEmailHistory.size()>0){
-                candidateEmailHistoryRepository.deleteAll(notAvailableEmailHistory);
+                notAvailableEmailHistory.get(0).setEmail(jcm.getEmail());
+                CandidateEmailHistory candidateEmailHistoryUpdated = candidateEmailHistoryRepository.save(notAvailableEmailHistory.get(0));
+                if(candidateEmailHistoryUpdated.getEmail().equals(jcm.getEmail()))
+                    emailUpdated = true;
+                notAvailableEmailHistory.remove(0);
+                if(notAvailableEmailHistory.size()>0){
+                    candidateEmailHistoryRepository.deleteAll(notAvailableEmailHistory);
+                }
             }
         }
         return emailUpdated;
