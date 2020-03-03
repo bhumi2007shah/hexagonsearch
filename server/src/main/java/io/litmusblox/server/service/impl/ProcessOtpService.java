@@ -8,11 +8,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.Company;
 import io.litmusblox.server.repository.CompanyRepository;
 import io.litmusblox.server.service.IProcessOtpService;
+import io.litmusblox.server.service.MasterDataBean;
 import io.litmusblox.server.service.OTPRequestBean;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,7 +55,7 @@ public class ProcessOtpService implements IProcessOtpService {
     public ProcessOtpService() {
         log.info("Initializing cache for OTP");
         otpCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(IConstant.OTP_EXPIRY_MINUTES, TimeUnit.MINUTES)
+                .expireAfterWrite(MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes(), TimeUnit.MINUTES)
                 .build(new CacheLoader<String, Integer>() {
                     public Integer load(String key) {
                         return 0;
@@ -103,15 +103,15 @@ public class ProcessOtpService implements IProcessOtpService {
         ObjectMapper objectMapper = new ObjectMapper();
         //Messages on queue that are more than timeout seconds old, should not be processed
         jmsTemplate.setExplicitQosEnabled(true);
-        jmsTemplate.setTimeToLive(IConstant.OTP_EXPIRY_MINUTES * 60 * 1000);
+        jmsTemplate.setTimeToLive(MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes() * 60 * 1000);
 
         OTPRequestBean otpRequestBean;
         //if the otp is for employee referral, do not send mobile to queue
         //if the otp is for candidate career page, do not send email to queue
         if (isEmployeeReferral)
-            otpRequestBean = new OTPRequestBean(otp, IConstant.OTP_EXPIRY_MINUTES, null, countryCode, email, recepientName, companyObjToUse.getCompanyName());
+            otpRequestBean = new OTPRequestBean(otp, MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes(), null, countryCode, email, recepientName, companyObjToUse.getCompanyName());
         else
-            otpRequestBean = new OTPRequestBean(otp, IConstant.OTP_EXPIRY_MINUTES, mobileNumber, countryCode, null, recepientName, companyObjToUse.getCompanyName());
+            otpRequestBean = new OTPRequestBean(otp, MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes(), mobileNumber, countryCode, null, recepientName, companyObjToUse.getCompanyName());
 
         jmsTemplate.convertAndSend(queue, objectMapper.writeValueAsString(otpRequestBean));
         log.info("Put message on queue {}", queue.getQueueName());

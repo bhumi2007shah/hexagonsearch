@@ -1826,3 +1826,6 @@ WHERE TEMPLATE_NAME = 'OTPSms';
 UPDATE SMS_TEMPLATES
 SET TEMPLATE_CONTENT = 'Your OTP for [[${commBean.sendercompany}]] job application is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] minutes.'
 WHERE TEMPLATE_NAME = 'OTPSms';
+
+INSERT INTO CONFIGURATION_SETTINGS(CONFIG_NAME, CONFIG_VALUE)
+VALUES ('otpExpiryMinutes', 3);

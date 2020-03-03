@@ -344,6 +344,4 @@ public interface IConstant {
     String CHAT_LINK_HEADER="Chatbot Link";
 
     String [] apacheReloadCommand = {"sudo", "apache2ctl", "graceful"};
-    //Modified as per ticket #443
-    int OTP_EXPIRY_MINUTES = 3;
 }

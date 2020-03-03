@@ -159,7 +159,8 @@ insert into CONFIGURATION_SETTINGS(CONFIG_NAME, CONFIG_VALUE) values
 ('maxCvFiles',20),
 ('mlCall',1),
 ('maxCapabilities',10),
-('cvRatingTimeout', 5000);
+('cvRatingTimeout', 5000),
+('otpExpiryMinutes', 3);
 
 
 delete from skills_master;
