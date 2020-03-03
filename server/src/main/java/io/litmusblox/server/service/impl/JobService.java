@@ -1370,6 +1370,7 @@ public class JobService implements IJobService {
                 try {
                     TechRoleCompetencyBean techRoleCompetencyBean = new TechRoleCompetencyBean();
                     techRoleCompetencyBean.setCandidate(new Candidate(jcm.getDisplayName(), jcm.getEmail(), jcm.getMobile()));
+                    techRoleCompetencyBean.setScore(jcm.getScore());
                     techRoleCompetencyBean.setTechResponseJson(
                             jcm.getTechResponseData().getTechResponse()!=null?
                                     //Map string of array of TechResponseJson to array of TechResponseBean
@@ -1378,7 +1379,11 @@ public class JobService implements IJobService {
                                     :
                                     null
                     );
-                    techRoleCompetencyBean.setCandidateProfileLink((environment.getProperty("shareProfileLink") + jcm.getChatbotUuid()));
+
+                    List<JcmProfileSharingDetails> jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.findByJobCandidateMappingId(jcm.getId());
+                    if(jcmProfileSharingDetails.size()>0){
+                        techRoleCompetencyBean.setCandidateProfileLink(environment.getProperty("shareProfileLink") + jcmProfileSharingDetails.get(0).getId());
+                    }
                     techRoleCompetencyBeans.add(techRoleCompetencyBean);
                 } catch (IOException e) {
                     e.printStackTrace();
