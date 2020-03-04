@@ -75,11 +75,11 @@ public class AuthController {
         log.info("Completed processing set password request in " + (System.currentTimeMillis() - startTime) + "ms.");
     }
 
-    @PostMapping(value="/createUser")
+    @PostMapping(value="/createUpdateUser")
     @PreAuthorize("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.RECRUITMENT_AGENCY + "')")
-    String addUser(@RequestBody User user) throws Exception {
+    String createUpdateUser(@RequestBody User user) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
-                userDetailsService.createUser(user),
+                userDetailsService.createUpdateUser(user),
                 (new HashMap<String, List<String>>(){{
                     put("User", Arrays.asList("id", "firstName", "lastName", "email","mobile", "companyAddressId","companyBuId", "designation"));
                 }}),
