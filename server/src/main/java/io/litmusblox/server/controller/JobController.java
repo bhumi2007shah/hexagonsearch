@@ -233,6 +233,7 @@ public class JobController {
         String response = Util.stripExtraInfoFromResponseBean(jobService.getTechRoleCompetencyByJob(jobId),
                 new HashMap<String, List<String>>() {{
                     put("Candidate",Arrays.asList("displayName","email", "mobile"));
+                    put("Integer", Arrays.asList("score"));
                     put("TechResponseJson", Arrays.asList("name", "complexities", "score", "capabilityStarRating"));
                     put("String", Arrays.asList("candidateProfileLink"));
                 }},
