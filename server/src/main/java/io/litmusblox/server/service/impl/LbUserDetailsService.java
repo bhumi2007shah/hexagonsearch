@@ -306,6 +306,7 @@ public class LbUserDetailsService implements UserDetailsService {
             u.setPassword(null);
             u.setResetPasswordFlag(true);
             u.setResetPasswordEmailTimestamp(null);
+            log.info("Update User : {}", user.getId());
         }else{
             u.setUserUuid(UUID.randomUUID());
             u.setCreatedBy(loggedInUser.getId());
