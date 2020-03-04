@@ -465,7 +465,7 @@ public class LbUserDetailsService implements UserDetailsService {
         List<User> userList = userRepository.findByCompanyId(companyId);
         List<UserWorkspaceBean> responseBeans = new ArrayList<>(userList.size());
         userList.forEach(user->{
-            UserWorkspaceBean workspaceBean = new UserWorkspaceBean(user.getId(), user.getDisplayName(), user.getStatus(), user.getCompanyAddressId(), user.getCompanyBuId(), user.getEmail(), user.getMobile());
+            UserWorkspaceBean workspaceBean = new UserWorkspaceBean(user.getId(), user.getDisplayName(), user.getStatus(), user.getCompanyAddressId(), user.getCompanyBuId(), user.getEmail(), user.getMobile(), user.getRole());
             workspaceBean.setNumberOfJobsCreated(jobRepository.countByCreatedBy(user));
             workspaceBean.setNumOfInvites(jobCandidateMappingRepository.getInviteCount(user.getId()));
             List<Object[]> object = jobCandidateMappingRepository.getChatbotCountCompletedAndInCompleted(user.getId());
