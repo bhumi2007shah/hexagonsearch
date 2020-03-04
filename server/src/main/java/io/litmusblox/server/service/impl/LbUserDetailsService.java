@@ -9,6 +9,7 @@ import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.Company;
+import io.litmusblox.server.model.Country;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.security.JwtTokenUtil;
@@ -68,12 +69,6 @@ public class LbUserDetailsService implements UserDetailsService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-
-    @Resource
-    CompanyAddressRepository companyAddressRepository;
-
-    @Resource
-    CompanyBuRepository companyBuRepository;
 
     @Resource
     JcmProfileSharingDetailsRepository jcmProfileSharingDetailsRepository;
@@ -295,7 +290,7 @@ public class LbUserDetailsService implements UserDetailsService {
         else
             u.setUserType(IConstant.UserType.RECRUITING.getValue());
 
-        u.setCountryId(countryRepository.findByCountryCode(user.getCountryCode()));
+        u.setCountryId(user.getCountryId());
         u.setMobile(user.getMobile());
 
         //For update user password should be reset
@@ -349,7 +344,7 @@ public class LbUserDetailsService implements UserDetailsService {
     }
 
     private void validateUser(User user) throws ValidationException {
-        if (null == user.getCountryCode())
+        if (null == user.getCountryId())
             throw new ValidationException(IErrorMessages.USER_COUNTRY_NULL, HttpStatus.UNPROCESSABLE_ENTITY);
         //validate firstName
         Util.validateName(user.getFirstName());
@@ -358,7 +353,8 @@ public class LbUserDetailsService implements UserDetailsService {
         //validate email
         Util.validateEmail(user.getEmail());
         //validate mobile
-        Util.validateMobile(user.getMobile(), user.getCountryCode());
+        Country country = countryRepository.findById(user.getCountryId().getId()).orElse(null);
+        Util.validateMobile(user.getMobile(), null != country?country.getCountryCode():null);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
