@@ -107,8 +107,8 @@ public class LbUserDetailsService implements UserDetailsService {
             throw new WebException("Litmusblox cannot log you in right now. Please contact Litmusblox for further details", HttpStatus.FORBIDDEN);
         }
 
-        if(!IConstant.UserStatus.Active.toString().equals(userDetails.getStatus())){
-            log.error("User is not active, email: {}", user.getEmail());
+        if(IConstant.UserStatus.Blocked.toString().equals(userDetails.getStatus())){
+            log.error("User is blocked, email: {}", user.getEmail());
             throw new WebException("Your account has been blocked. Please contact your admin to get access to Litmusblox.", HttpStatus.FORBIDDEN);
         }
 
