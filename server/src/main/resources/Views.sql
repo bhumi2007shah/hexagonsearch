@@ -64,7 +64,7 @@ create view exportDataView AS
      ivd.interview_mode as interviewMode, ca.address as interviewLocation,
      (
         CASE
-        WHEN ivd.candidate_confirmation = 't' THEN
+        WHEN ivd.candidate_confirmation_time is not null THEN
         md.value
         ELSE
         null
