@@ -314,7 +314,7 @@ public class NoAuthController {
                 new HashMap<String, List<String>>() {{
                     put("Job",Arrays.asList("jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy","companyJobId","noOfPositions","mlDataAvailable","status","createdOn","createdBy","userEnteredKeySkill"));
                     put("Company", Arrays.asList("companyAddressList", "companyBuList"));
-                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData"));
+                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData", "candidateReferralDetail"));
                     put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
                     put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
                     put("JcmCommunicationDetails", Arrays.asList("id","jcmId"));
