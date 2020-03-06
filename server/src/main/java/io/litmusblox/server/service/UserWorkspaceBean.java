@@ -31,8 +31,9 @@ public class UserWorkspaceBean {
     int completedChatbotCount;
     int incompleteChatbotCount;
     int analyticsSharedCount;
+    String userRole;
 
-    public UserWorkspaceBean(Long userId, String userName, String status, Long companyAddressId, Long companyBuId, String email, String mobile) {
+    public UserWorkspaceBean(Long userId, String userName, String status, Long companyAddressId, Long companyBuId, String email, String mobile, String userRole) {
         this.userId = userId;
         this.userName = userName;
         this.status = status;
@@ -40,5 +41,6 @@ public class UserWorkspaceBean {
         this.companyBuId = companyBuId;
         this.email = email;
         this.mobile = mobile;
+        this.userRole = userRole;
     }
 }
