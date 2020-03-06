@@ -5,15 +5,13 @@
 package io.litmusblox.server.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.Company;
 import io.litmusblox.server.repository.CompanyRepository;
 import io.litmusblox.server.service.IProcessOtpService;
 import io.litmusblox.server.service.MasterDataBean;
 import io.litmusblox.server.service.OTPRequestBean;
+import io.litmusblox.server.utils.TimedCache;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -49,18 +47,10 @@ public class ProcessOtpService implements IProcessOtpService {
     @Resource
     CompanyRepository companyRepository;
 
-    private LoadingCache<String, Integer> otpCache;
+    private static TimedCache otpCache;
 
-    //initialize cache
-    public ProcessOtpService() {
-        log.info("Initializing cache for OTP");
-        otpCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes(), TimeUnit.MINUTES)
-                .build(new CacheLoader<String, Integer>() {
-                    public Integer load(String key) {
-                        return 0;
-                    }
-                });
+    private synchronized void initializeCache() {
+        otpCache = new TimedCache(1, MasterDataBean.getInstance().getOtpExpiryMinutes(), MasterDataBean.getInstance().getOtpExpiryMinutes(), TimeUnit.MINUTES );
     }
 
     /**
@@ -96,10 +86,12 @@ public class ProcessOtpService implements IProcessOtpService {
         int otp = 0;
         while (otp == 0 || otp >= 10000)
             otp = 1000 + random.nextInt(10000);
+        if(null == otpCache)
+            initializeCache();
         otpCache.put(otpRequestKey, otp);
+
         log.info("Generated otp: {} for {}", otp, otpRequestKey);
 
-        //TODO: Push the otp on to queue
         ObjectMapper objectMapper = new ObjectMapper();
         //Messages on queue that are more than timeout seconds old, should not be processed
         jmsTemplate.setExplicitQosEnabled(true);
@@ -128,16 +120,13 @@ public class ProcessOtpService implements IProcessOtpService {
      */
     @Override
     public boolean verifyOtp(String otpRequestKey, int otp) throws Exception {
-        log.info("Otp: from request:: {} from cache:: {}",otp,otpCache.get(otpRequestKey));
-        if (otp != otpCache.get(otpRequestKey)) {
-            log.info("Entries in cache:");
-            otpCache.asMap().keySet().stream().forEach(key -> System.out.println(key));
-        }
-        return (otpCache.get(otpRequestKey) == otp);
-    }
-
-    //This method is used to clear the OTP cached already
-    public void clearOTP(String key){
-        otpCache.invalidate(key);
+        if(null == otpCache)
+            return false;
+        Object otpObj = otpCache.remove(otpRequestKey);
+        if(null == otpObj)
+            return false;
+        int cachedOtp = Integer.parseInt(otpObj.toString());
+        log.info("Otp: from request:: {} from cache:: {}",otp,cachedOtp);
+        return (cachedOtp == otp);
     }
 }
