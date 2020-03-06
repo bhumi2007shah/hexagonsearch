@@ -1108,6 +1108,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         User loggedInUser = (null != SecurityContextHolder.getContext().getAuthentication())?(User)SecurityContextHolder.getContext().getAuthentication().getPrincipal():jobCandidateMapping.getCreatedBy();
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(jobCandidateMapping.getId()).orElse(null);
 
+        //set country code in jcm if it is null in request then take existing jcm country code from db
+        if(null == jobCandidateMapping.getCandidate().getCountryCode())
+            jobCandidateMapping.setCountryCode(jcmFromDb.getCountryCode());
+        else
+            jobCandidateMapping.setCountryCode(jobCandidateMapping.getCandidate().getCountryCode());
+
         //update or create email id and mobile
         Boolean jcmFromDbDeleted = updateOrCreateEmailMobile(jobCandidateMapping, jcmFromDb, loggedInUser);
 
@@ -1274,7 +1280,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     private JobCandidateMapping updateOrCreateAlternateMobileEmail(JobCandidateMapping jcm, JobCandidateMapping jcmFromDb, User loggedInUser){
         log.info("inside updateOrCreateAlternateMobileEmail");
         if(Util.isNotNull(jcm.getAlternateMobile()))
-            jcm.setAlternateMobile(validateMobile(jcm.getAlternateMobile(), jcmFromDb.getCountryCode()));
+            jcm.setAlternateMobile(validateMobile(jcm.getAlternateMobile(), jcm.getCountryCode()));
 
         if(Util.isNotNull(jcm.getAlternateEmail()))
             jcm.setAlternateEmail(Util.validateEmail(jcm.getAlternateEmail()));
@@ -1288,7 +1294,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         if(Util.isNotNull(jcm.getAlternateMobile())) {
             jcmFromDb.setAlternateMobile(jcm.getAlternateMobile());
-            candidateMobileHistory = getMobileHistory(jcm.getAlternateMobile(), jcmFromDb.getCountryCode());
+            candidateMobileHistory = getMobileHistory(jcm.getAlternateMobile(), jcm.getCountryCode());
         }
 
         if(null != candidateEmailHistory && null != candidateMobileHistory){
@@ -1296,12 +1302,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY + " - " + jcm.getAlternateMobile() + " "+jcm.getAlternateEmail()+", While add/update alternate email and mobile", HttpStatus.BAD_REQUEST);
         }else if(null == candidateEmailHistory && null == candidateMobileHistory){
             if(Util.isNotNull(jcm.getAlternateMobile()))
-                candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jcm.getAlternateMobile(), jcmFromDb.getCountryCode(), new Date(), loggedInUser));
+                candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jcm.getAlternateMobile(), jcm.getCountryCode(), new Date(), loggedInUser));
             if(Util.isNotNull(jcm.getAlternateEmail()))
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(jcmFromDb.getCandidate(), jcm.getAlternateEmail(), new Date(), loggedInUser));
         }else{
             if(null != candidateEmailHistory && null == candidateMobileHistory && Util.isNotNull(jcm.getAlternateMobile())){
-                candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jcm.getAlternateMobile(), jcmFromDb.getCountryCode(), new Date(), loggedInUser));
+                candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jcm.getAlternateMobile(), jcm.getCountryCode(), new Date(), loggedInUser));
             }else if(null != candidateMobileHistory && null == candidateEmailHistory && Util.isNotNull(jcm.getAlternateEmail())){
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(jcmFromDb.getCandidate(), jcm.getAlternateEmail(), new Date(), loggedInUser));
             }
@@ -1325,21 +1331,25 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     private boolean removeNotAvailableEmail(JobCandidateMapping jcm){
+        log.info("Inside removeNotAvailableEmail");
         boolean emailUpdated = false;
         List<CandidateEmailHistory>candidateEmailHistoryNotAvailableCheck = candidateEmailHistoryRepository.findByCandidateIdOrderByIdDesc(jcm.getCandidate().getId());
         if(candidateEmailHistoryNotAvailableCheck.size()>0){
-            List<CandidateEmailHistory> notAvailableEmailHistory = candidateEmailHistoryNotAvailableCheck.stream().filter(
-                    candidateEmailHistoryNotAvailable ->{
-                        return candidateEmailHistoryNotAvailable.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL);
-                    })
+
+            //Get not available email history list
+            List<CandidateEmailHistory> notAvailableEmailHistory = candidateEmailHistoryNotAvailableCheck.stream()
+                    .filter(candidateEmailHistoryNotAvailable -> candidateEmailHistoryNotAvailable.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL))
                     .collect(Collectors.toList());
-            notAvailableEmailHistory.get(0).setEmail(jcm.getEmail());
-            CandidateEmailHistory candidateEmailHistoryUpdated = candidateEmailHistoryRepository.save(notAvailableEmailHistory.get(0));
-            if(candidateEmailHistoryUpdated.getEmail().equals(jcm.getEmail()))
-                emailUpdated = true;
-            notAvailableEmailHistory.remove(0);
+
             if(notAvailableEmailHistory.size()>0){
-                candidateEmailHistoryRepository.deleteAll(notAvailableEmailHistory);
+                notAvailableEmailHistory.get(0).setEmail(jcm.getEmail());
+                CandidateEmailHistory candidateEmailHistoryUpdated = candidateEmailHistoryRepository.save(notAvailableEmailHistory.get(0));
+                if(candidateEmailHistoryUpdated.getEmail().equals(jcm.getEmail()))
+                    emailUpdated = true;
+                notAvailableEmailHistory.remove(0);
+                if(notAvailableEmailHistory.size()>0){
+                    candidateEmailHistoryRepository.deleteAll(notAvailableEmailHistory);
+                }
             }
         }
         return emailUpdated;
@@ -1364,7 +1374,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
             if (candidateIdFromMobileHistory != null && !jobCandidateMapping.getMobile().equals(jcmFromDb.getMobile())) {
                 //fetch candidate mobile history for new mobile as it is already existing if control reaches here.
-                CandidateMobileHistory candidateMobileHistory = getMobileHistory(jobCandidateMapping.getMobile(), jcmFromDb.getCountryCode());
+                CandidateMobileHistory candidateMobileHistory = getMobileHistory(jobCandidateMapping.getMobile(), jobCandidateMapping.getCountryCode());
 
                 //extracting existing candidate from db for new email.
                 Candidate existingCandidate = candidateMobileHistory.getCandidate();
@@ -1394,7 +1404,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
         else {
             // call getCandidateIdFromMobileHistory to fetch candidate id for new mobile from mobile history from db if exists.
-            Long candidateIdFromMobileHistory = getCandidateIdFromMobileHistory(jobCandidateMapping.getMobile(), jcmFromDb.getCountryCode());
+            Long candidateIdFromMobileHistory = getCandidateIdFromMobileHistory(jobCandidateMapping.getMobile(), jobCandidateMapping.getCountryCode());
 
             //call getCandidateIdFromEmailHistory to fetch candidate id for new email from email history from db if exists.
             Long candidateIdFromEmailHistory = getCandidateIdFromEmailHistory(jobCandidateMapping.getEmail());
@@ -1472,7 +1482,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 }
                 else {
                     //fetch candidate mobile history for new mobile as it is already existing if control reaches here.
-                    CandidateMobileHistory candidateMobileHistory = getMobileHistory(jobCandidateMapping.getMobile(), jcmFromDb.getCountryCode());
+                    CandidateMobileHistory candidateMobileHistory = getMobileHistory(jobCandidateMapping.getMobile(), jobCandidateMapping.getCountryCode());
 
                     //extracting existing candidate from db for new mobile.
                     Candidate existingCandidate = candidateMobileHistory.getCandidate();
@@ -1491,6 +1501,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                             jcmFromDb.setEmail(existingCandidateEmailList.get(0).getEmail());
                         }
                         jcmFromDb.setMobile(jobCandidateMapping.getMobile());
+                        jcmFromDb.setCountryCode(jobCandidateMapping.getCountryCode());
                         //update jcm with existing candidate and delete candidate with email "@notavailable"
                         deleteAndUpdateCandidate(existingCandidate, jcmFromDb);
                     }
@@ -1598,17 +1609,20 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
 
     private void createUpdateMobile(JobCandidateMapping jobCandidateMapping, JobCandidateMapping jcmFromDb, User loggedInUser){
-        jobCandidateMapping.setMobile(validateMobile(jobCandidateMapping.getMobile(), jcmFromDb.getCountryCode()));
+        jobCandidateMapping.setMobile(validateMobile(jobCandidateMapping.getMobile(), jobCandidateMapping.getCountryCode()));
         if(!Util.isNull(jobCandidateMapping.getMobile())) {
-            CandidateMobileHistory candidateMobileHistory = candidateMobileHistoryRepository.findByMobileAndCountryCode(jobCandidateMapping.getMobile(), jcmFromDb.getCountryCode());
+            CandidateMobileHistory candidateMobileHistory = candidateMobileHistoryRepository.findByMobileAndCountryCode(jobCandidateMapping.getMobile(), jobCandidateMapping.getCountryCode());
             if (null == candidateMobileHistory) {
-                candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jobCandidateMapping.getMobile(), jcmFromDb.getCountryCode(), new Date(), loggedInUser));
+                candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jobCandidateMapping.getMobile(), jobCandidateMapping.getCountryCode(), new Date(), loggedInUser));
                 jcmFromDb.setMobile(jobCandidateMapping.getMobile());
+                jcmFromDb.setCountryCode(jobCandidateMapping.getCountryCode());
             } else {
                 if (!jcmFromDb.getCandidate().getId().equals(candidateMobileHistory.getCandidate().getId()))
                     throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY_FOR_MOBILE + jobCandidateMapping.getMobile() + " " + jobCandidateMapping.getEmail(), HttpStatus.BAD_REQUEST);
-                else
+                else{
                     jcmFromDb.setMobile(candidateMobileHistory.getMobile());
+                    jcmFromDb.setCountryCode(jobCandidateMapping.getCountryCode());
+                }
             }
             jobCandidateMappingRepository.save(jcmFromDb);
         }
@@ -1773,10 +1787,14 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
 
         if (null != otp && otp.length() == 4 && otp.matches("[0-9]+")) {
-            if (null != employeeReferrer)
+            if (null != employeeReferrer) {
+                log.info("Verifying Otp: {} against email: {}", otp, employeeReferrer.getEmail());
                 isOtpVerify = otpService.verifyOtp(employeeReferrer.getEmail(), Integer.parseInt(otp));
-            else
+            }
+            else {
+                log.info("Verifying Otp: {} against mobile: {}", otp, candidate.getMobile());
                 isOtpVerify = otpService.verifyOtp(candidate.getMobile(), Integer.parseInt(otp));
+            }
         }
         else {
             throw new ValidationException("Invalid OTP : " + otp, HttpStatus.UNPROCESSABLE_ENTITY);
@@ -1926,7 +1944,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             });
 
             interviewDetailsFromReq.getInterviewIdList().add(interviewDetailsFromDb.get());
-            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, "Interview scheduled :"+ new Date()+((null != interviewDetailsFromReq.getInterviewLocation())?(" ,address :"+interviewDetailsFromReq.getInterviewLocation().getAddress()):" "), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, "Interview scheduled :"+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+((null != interviewDetailsFromReq.getInterviewLocation())?(" ,address :"+interviewDetailsFromReq.getInterviewLocation().getAddress()):" "), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
         });
         return interviewDetailsRepository.findByIdIn(interviewDetailsFromReq.getInterviewIdList());
     }
@@ -1964,7 +1982,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         interviewDetailsFromDb.setCancellationReason(cancellationDetails.getCancellationReason());
         interviewDetailsRepository.save(interviewDetailsFromDb);
-        jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview cancelled :"+ new Date()+ " ~ "+cancellationDetails.getCancellationComments(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+        jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview cancelled :"+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+ " ~ "+cancellationDetails.getCancellationComments(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
         log.info("Interview cancelled in " + (System.currentTimeMillis()-startTime) + "ms.");
     }
 
@@ -2007,9 +2025,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         interviewDetailsFromDb.setNoShowReason(showNoShowDetails.getNoShowReason());
         interviewDetailsRepository.save(interviewDetailsFromDb);
         if(!showNoShowDetails.isShowNoShow())
-            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview no show("+MasterDataBean.getInstance().getNoShowReasons().get(showNoShowDetails.getNoShowReason().getId())+") : "+ new Date()+" ~ "+interviewDetailsFromDb.getShowNoShowComments(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview no show("+MasterDataBean.getInstance().getNoShowReasons().get(showNoShowDetails.getNoShowReason().getId())+") : "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+" ~ "+showNoShowDetails.getShowNoShowComments(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
         else
-            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview show : "+ new Date()+" ~ "+interviewDetailsFromDb.getShowNoShowComments(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview show : "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+" ~ "+showNoShowDetails.getShowNoShowComments(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
 
         log.info("Interview marked Show NoShow in " + (System.currentTimeMillis()-startTime) + "ms.");
     }
@@ -2033,7 +2051,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         interviewDetailsFromDb.setCandidateConfirmationTime(new Date());
         interviewDetailsRepository.save(interviewDetailsFromDb);
-        jcmHistoryRepository.save(new JcmHistory(jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null), "Candidate response for interview on "+ interviewDetailsFromDb.getInterviewDate()+" : "+confirmationDetails.getConfirmationText()+" "+new Date(), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+        jcmHistoryRepository.save(new JcmHistory(jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null), "Candidate response for interview on "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),interviewDetailsFromDb.getInterviewDate())+" : "+confirmationDetails.getConfirmationText()+" "+Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), new Date()), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
     }
 
 }

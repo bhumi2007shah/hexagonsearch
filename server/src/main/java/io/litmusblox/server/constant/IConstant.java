@@ -321,7 +321,7 @@ public interface IConstant {
     String NOT_AVAILABLE_EMAIL = "@notavailable.io";
     String SYSTEM_USER_EMAIL = "systemuser@hex.com";
 
-    String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countries", "education"};
+    String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countries", "education","otpExpiryMinutes"};
 
     String REPLACEMENT_KEY_FOR_SHORTNAME = "_shortName_";
     String GODADDY_SUCCESS_RESPONSE = "\"code\":";
@@ -344,5 +344,4 @@ public interface IConstant {
     String CHAT_LINK_HEADER="Chatbot Link";
 
     String [] apacheReloadCommand = {"sudo", "apache2ctl", "graceful"};
-    int OTP_EXPIRY_SECONDS = 90;
 }

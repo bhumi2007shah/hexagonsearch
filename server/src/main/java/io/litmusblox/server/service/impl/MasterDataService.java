@@ -160,6 +160,7 @@ public class MasterDataService implements IMasterDataService {
 
         // sentryDSN is only read from application.properties file as per profile it is not save in database
         MasterDataBean.getInstance().setSentryDSN(environment.getProperty(IConstant.SENTRY_DSN));
+        MasterDataBean.getInstance().setOtpExpiryMinutes(MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes());
     }
 
     /**
@@ -276,6 +277,7 @@ public class MasterDataService implements IMasterDataService {
     private static final String INTERVIEW_CANCELLATION_REASONS = "cancellationReasons";
     private static final String INTERVIEW_NO_SHOW_REASONS = "noShowReasons";
     private static final String INTERVIEW_CONFIRMATION = "interviewConfirmation";
+    private static final String OTP_EXPIRY_MINUTES = "otpExpiryMinutes";
 
     /**
      * Method to fetch specific master data from cache
@@ -342,6 +344,9 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case INTERVIEW_CONFIRMATION:
                 master.getInterviewConfirmation().addAll(MasterDataBean.getInstance().getInterviewConfirmation().keySet());
+                break;
+            case OTP_EXPIRY_MINUTES:
+                master.setOtpExpiryMinutes(MasterDataBean.getInstance().getOtpExpiryMinutes());
                 break;
             default: //for all other properties, use reflection
 
