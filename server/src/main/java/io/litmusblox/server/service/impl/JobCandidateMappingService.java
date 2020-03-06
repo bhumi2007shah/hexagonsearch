@@ -1777,10 +1777,14 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
 
         if (null != otp && otp.length() == 4 && otp.matches("[0-9]+")) {
-            if (null != employeeReferrer)
+            if (null != employeeReferrer) {
+                log.info("Verifying Otp: {} against email: {}", otp, employeeReferrer.getEmail());
                 isOtpVerify = otpService.verifyOtp(employeeReferrer.getEmail(), Integer.parseInt(otp));
-            else
+            }
+            else {
+                log.info("Verifying Otp: {} against mobile: {}", otp, candidate.getMobile());
                 isOtpVerify = otpService.verifyOtp(candidate.getMobile(), Integer.parseInt(otp));
+            }
         }
         else {
             throw new ValidationException("Invalid OTP : " + otp, HttpStatus.UNPROCESSABLE_ENTITY);

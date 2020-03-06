@@ -128,6 +128,11 @@ public class ProcessOtpService implements IProcessOtpService {
      */
     @Override
     public boolean verifyOtp(String otpRequestKey, int otp) throws Exception {
+        log.info("Otp: from request:: {} from cache:: {}",otp,otpCache.get(otpRequestKey));
+        if (otp != otpCache.get(otpRequestKey)) {
+            log.info("Entries in cache:");
+            otpCache.asMap().keySet().stream().forEach(key -> System.out.println(key));
+        }
         return (otpCache.get(otpRequestKey) == otp);
     }
 
