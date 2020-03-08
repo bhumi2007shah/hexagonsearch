@@ -4,7 +4,10 @@
 
 package io.litmusblox.server.service;
 
-import io.litmusblox.server.model.*;
+import io.litmusblox.server.model.Country;
+import io.litmusblox.server.model.CreateJobPageSequence;
+import io.litmusblox.server.model.MasterData;
+import io.litmusblox.server.model.ScreeningQuestions;
 import lombok.Data;
 
 import java.util.*;
@@ -48,4 +51,5 @@ public class MasterDataResponse {
     private Map<Long, String> cancellationReasons = new HashMap<>();
     private Map<Long, String> noShowReasons = new HashMap<>();
     private List<String> interviewConfirmation = new ArrayList<>();
+    private int otpExpiryMinutes;
 }

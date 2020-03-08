@@ -20,9 +20,10 @@ public interface IProcessOtpService {
      * @param countryCode country code
      * @param email email address of the employee
      * @param recepientName name of the message receiver
+     * @param companyShortName shortname of the company
      * @throws Exception
      */
-    void sendOtp(boolean isEmployeeReferral, String mobileNumber, String countryCode, String email, String recepientName) throws Exception;
+    void sendOtp(boolean isEmployeeReferral, String mobileNumber, String countryCode, String email, String recepientName, String companyShortName) throws Exception;
 
     /**
      * Service method to validate Otp against a mobile number

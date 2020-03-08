@@ -45,7 +45,7 @@ public interface IErrorMessages {
     String CANDIDATE_ID_MISMATCH_FROM_HISTORY = "Found different Candidate ids for mobile and email : ";
     String JOB_NOT_LIVE = "Selected job is in \'Draft\' stage";
     String CLIENT_ADMIN_EXISTS_FOR_COMPANY = "Client admin for company already exists: ";
-    String USER_COUNTRY_NULL = "Country code for new  user not selected";
+    String USER_COUNTRY_NULL = "Country for new  user not selected";
     String USER_NOT_FOUND = "User does not exist ";
     String INVALID_CREDENTIALS="Invalid credentials";
     String FORGOT_PASSWORD_USER_BLOCKED = "User is blocked";

@@ -60,15 +60,35 @@ create view exportDataView AS
     left join
     candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id
     left join (
-      select ivd.job_candidate_mapping_id as jcm_id, ivd.interview_date as interviewDate, ivd.interview_type as interviewType, ivd.interview_mode as interviewMode, ca.address as interviewLocation, ivd.candidate_confirmation as candidateConfirmation,
+      select ivd.job_candidate_mapping_id as jcm_id, ivd.interview_date as interviewDate, ivd.interview_type as interviewType,
+     ivd.interview_mode as interviewMode, ca.address as interviewLocation,
+     (
+        CASE
+        WHEN ivd.candidate_confirmation_time is not null THEN
+        md.value
+        ELSE
+        null
+        END
+      ) as candidateConfirmation,
       ivd.candidate_confirmation_time as candidateConfirmationTime,
       (CASE
         WHEN ivd.show_no_show = 't' THEN
-        'show'
+        'Show'
+        WHEN ivd.show_no_show = 'f' THEN
+        'No Show'
         ELSE
-        'no show'
-        END)as showNoShow, (select value from master_data where id=ivd.no_show_reason) as noShowReason, ivd.cancelled as cancelled, (select value from master_data where id=ivd.cancellation_reason) as cancellationReason
+        null
+        END)as showNoShow, (select value from master_data where id=ivd.no_show_reason) as noShowReason,
+       (
+          CASE
+          WHEN ivd.cancelled = 't' THEN
+          ivd.updated_on
+          ELSE
+          null
+          END
+        ) as cancelled, (select value from master_data where id=ivd.cancellation_reason) as cancellationReason
         from interview_details ivd left join  company_address ca on ivd.interview_location = ca.id
+        left join master_data md on ivd.candidate_confirmation_value = md.id
         where ivd.id in (
           select max(id) from interview_details group by job_candidate_mapping_id
         )

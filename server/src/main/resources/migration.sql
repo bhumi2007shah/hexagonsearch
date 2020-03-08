@@ -1699,16 +1699,18 @@ VALUES
 (1, 'mobile','Mobile', 10, null),
 (1, 'totalExperience','Total Experience', 11, null),
 (1, 'createdBy','Created By', 12, null),
-(1, 'interviewDate','Interview Date', 13, 'Interview'),
-(1, 'interviewType','Interview Type', 14, 'Interview'),
-(1, 'interviewMode','Interview Mode', 15, 'Interview'),
-(1, 'interviewLocation','Interview location', 16, 'Interview'),
-(1, 'candidateConfirmation','Candidate Confirmation', 17, 'Interview'),
-(1, 'candidateConfirmationTime','Candidate Confirmation Time', 18, 'Interview'),
-(1, 'showNoShow','Show No Show', 19, 'Interview'),
-(1, 'noShowReason','No Show Reason' ,20, 'Interview'),
-(1, 'cancelled', 'Interview Cancelled', 21, 'Interview'),
-(1, 'cancellationReason','Cancellation Reason', 22, 'Interview');
+(1, 'createdOn','Created On', 13, ''),
+(1, 'capabilityScore', 'Capability Score', 14, ''),
+(1, 'interviewDate','Interview Date', 15, 'Interview'),
+(1, 'interviewType','Interview Type', 16, 'Interview'),
+(1, 'interviewMode','Interview Mode', 17, 'Interview'),
+(1, 'interviewLocation','Interview location', 18, 'Interview'),
+(1, 'candidateConfirmation','Candidate Confirmation', 19, 'Interview'),
+(1, 'candidateConfirmationTime','Candidate Confirmation Time', 20, 'Interview'),
+(1, 'showNoShow','Show No Show', 21, 'Interview'),
+(1, 'noShowReason','No Show Reason' ,22, 'Interview'),
+(1, 'cancelled', 'Interview Cancelled', 23, 'Interview'),
+(1, 'cancellationReason','Cancellation Reason', 24, 'Interview');
 
 --For ticket #336
 UPDATE COMPANY SET SHORT_NAME =
@@ -1785,10 +1787,6 @@ insert into sms_templates(template_name, template_content) values
 ALTER TABLE COMPANY
 ADD COLUMN SEND_COMMUNICATION bool NOT NULL DEFAULT 't';
 
-
-
-
-
 -- For ticket #380
 INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
 ('OTPSms','Your OTP for LitmusBlox is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] seconds.');
@@ -1810,7 +1808,6 @@ INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
 ('OTPSms','Your OTP for LitmusBlox is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] seconds.'),
 ('InterviewDay', 'INTERVIEW REMINDER FOR [[${commBean.receiverfirstname}]] - You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewDate}]]. Please report 15 mins before. Click Google Maps link for directions. See you there! [[${commBean.interviewAddressLink}]]');
 
-
 -- For #441
 INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 (6, '"introText"=>"As a part of org level role baselining, we seek your inputs on various aspects of your work experience regarding the role of",
@@ -1821,3 +1818,15 @@ INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 UPDATE SMS_TEMPLATES
 SET TEMPLATE_CONTENT = 'Your OTP for LitmusBlox job application is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] minutes.'
 WHERE TEMPLATE_NAME = 'OTPSms';
+
+--For ticket #430
+ALTER TABLE USERS ADD CONSTRAINT UNIQUE_USERS_EMAIL_KEY UNIQUE(EMAIL);
+
+
+-- For ticket #444
+UPDATE SMS_TEMPLATES
+SET TEMPLATE_CONTENT = 'Your OTP for [[${commBean.sendercompany}]] job application is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] minutes.'
+WHERE TEMPLATE_NAME = 'OTPSms';
+
+INSERT INTO CONFIGURATION_SETTINGS(CONFIG_NAME, CONFIG_VALUE)
+VALUES ('otpExpiryMinutes', 3);
