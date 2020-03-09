@@ -1214,7 +1214,7 @@ public class JobService implements IJobService {
         List<ExportFormatDetail> defaultExportColumns = exportFormatDetailRepository.findByExportFormatMasterOrderByPositionAsc(exportFormatMaster);
 
         defaultExportColumns = defaultExportColumns.stream().filter(exportFormatDetail -> {
-            return (exportFormatDetail.getStage().isEmpty() || exportFormatDetail.getStage().equalsIgnoreCase(stage));
+            return (null==exportFormatDetail.getStage() || exportFormatDetail.getStage().isEmpty() || exportFormatDetail.getStage().equalsIgnoreCase(stage));
         }).collect(Collectors.toList());
 
         if(((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getRole().equalsIgnoreCase(IConstant.UserRole.Names.SUPER_ADMIN)){
