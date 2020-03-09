@@ -489,4 +489,27 @@ public class LbUserDetailsService implements UserDetailsService {
     public User findById(Long userId) throws Exception {
         return userRepository.getOne(userId);
     }
+
+    /**
+     *Service method to fetch user details
+     * @param userId for which user we want details
+     * @return user details
+     * @throws Exception
+     */
+    public User getUserDetails(Long userId) throws Exception {
+        log.info("Inside getUserDetails");
+        User user = findById(userId);
+        if(null == user)
+            throw new ValidationException("User not found for userId : "+userId, HttpStatus.BAD_REQUEST);
+        else{
+            if(IConstant.UserRole.Names.RECRUITER.equals(user.getRole()))
+                user.setRole(IConstant.HR_RECRUITER);
+            else if(IConstant.UserRole.Names.CLIENT_ADMIN.equals(user.getRole()))
+                user.setRole(IConstant.ADMIN);
+            else if(IConstant.UserRole.Names.BUSINESS_USER.equals(user.getRole()))
+                user.setRole(IConstant.HIRING_MANAGER);
+
+            return user;
+        }
+    }
 }

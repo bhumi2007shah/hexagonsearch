@@ -96,4 +96,26 @@ public class AuthController {
         userDetailsService.blockUser(user,blockUser);
         log.info("Complete block user request in " + (System.currentTimeMillis() - startTime) + "ms.");
     }
+
+    /**
+     *API to fetch user details
+     * @param userId for which user we want details
+     * @return user details
+     * @throws Exception
+     */
+    @GetMapping(value = "/getUserDetails/{userId}")
+    @ResponseStatus(value = HttpStatus.OK)
+    String getUserDetails(@PathVariable("userId") Long userId) throws Exception {
+        log.info("Inside getUserDetails for UserId : {}", userId);
+        long startTime = System.currentTimeMillis();
+        User user = userDetailsService.getUserDetails(userId);
+        log.info("Get user detail request in " + (System.currentTimeMillis() - startTime) + "ms.");
+        String responseStr = Util.stripExtraInfoFromResponseBean(user,
+                (new HashMap<String, List<String>>(){{
+                    put("User", Arrays.asList("firstName","lastName", "email", "mobile", "designation", "companyAddressId", "companyBuId", "role"));
+                }}),
+                null
+        );
+        return responseStr;
+    }
 }
