@@ -1681,6 +1681,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         });
         jcmHistoryRepository.saveAll(jcmHistoryList);
+        jcmCommunicationDetailsRepository.setScreeningRejectionTimestampNull(jcmList);
 
         log.info("Completed moving candidates to {} stage in {} ms", stage, (System.currentTimeMillis() - startTime));
     }
