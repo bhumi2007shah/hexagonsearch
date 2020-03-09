@@ -777,9 +777,12 @@ public class CompanyService implements ICompanyService {
                 if(null == companyFromDb){
                     isUniqueIdPresent = false;
                     company.setCompanyUniqueId(companyUniqueId);
+                    log.info("Create new company unique id : {}, For company : {}",company.getCompanyUniqueId(), company.getShortName());
                 }
             }
-        }
+        }else
+            log.info("For recruitment agency Company unique id not generated");
+
         return company;
     }
 
