@@ -18,6 +18,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -376,5 +377,13 @@ public class NoAuthController {
                 null
         );
         return responseStr;
+    }
+
+    @PostMapping(value = "/uploadResume")
+    ResponseEntity uploadResume(@RequestParam("candidateCv") MultipartFile multipartFile, @RequestParam("chatbotUuid") UUID chatbotUuid) throws Exception {
+        log.info("inside uploadResume");
+        ResponseEntity responseEntity = jobCandidateMappingService.uploadResume(multipartFile, chatbotUuid);
+        log.info("Resume upload successFully");
+        return responseEntity;
     }
 }

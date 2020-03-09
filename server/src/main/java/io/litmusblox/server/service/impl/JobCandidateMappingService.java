@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -1751,19 +1752,57 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null == jcmFromDb)
             throw new ValidationException("Job candidate mapping not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
 
+        //Call private overloaded method upload resume which takes candidateCv and jobCandidateMapping as parameter
+        uploadResume(candidateCv, jcmFromDb);
+    }
+
+    /**
+     * Service method to upload resume against chatbot uuid
+     *
+     * @param chatbotUuid
+     * @param candidateCv
+     */
+    @Transactional
+    public ResponseEntity uploadResume(MultipartFile candidateCv, UUID chatbotUuid) throws Exception {
+        log.info("inside uploadResume");
+        String filePath = null;
+        JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findByChatbotUuid(chatbotUuid);
+        if(null == jcmFromDb)
+            throw new ValidationException("Job candidate mapping not found for jcmId : "+chatbotUuid, HttpStatus.BAD_REQUEST);
+
+        //Call private overloaded method upload resume which takes candidateCv and jobCandidateMapping as parameter
+        filePath = uploadResume(candidateCv, jcmFromDb);
+
+        if(null == filePath){
+            return ResponseEntity.badRequest().build();
+        }
+        else{
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        }
+    }
+
+    /**
+     * private function to upload file for a jcm
+     * @param candidateCv
+     * @param jcm
+     */
+    private String uploadResume(MultipartFile candidateCv, JobCandidateMapping jcm){
         String extension = Util.getFileExtension(candidateCv.getOriginalFilename()).toLowerCase();
+        String filePath = null;
         if(extension.equals(IConstant.FILE_TYPE.rar) || extension.equals(IConstant.FILE_TYPE.zip) || !Arrays.asList(IConstant.cvUploadSupportedExtensions).contains(extension))
-            throw new ValidationException(IErrorMessages.UNSUPPORTED_FILE_TYPE+" "+extension+", For JcmId : "+jcmId, HttpStatus.BAD_REQUEST);
+            throw new ValidationException(IErrorMessages.UNSUPPORTED_FILE_TYPE+" "+extension+", For JcmId : "+jcm.getId(), HttpStatus.BAD_REQUEST);
 
         try {
-            StoreFileUtil.storeFile(candidateCv, jcmFromDb.getJob().getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),jcmFromDb.getCandidate(),null);
-            jcmFromDb.setCvFileType("."+extension);
-            jobCandidateMappingRepository.save(jcmFromDb);
-            cvParsingDetailsRepository.save(new CvParsingDetails(new Date(), null, jcmFromDb.getCandidate().getId(),jcmFromDb));
+            filePath = StoreFileUtil.storeFile(candidateCv, jcm.getJob().getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),jcm.getCandidate(),null);
+            jcm.setCvFileType("."+extension);
+            jobCandidateMappingRepository.save(jcm);
+            cvParsingDetailsRepository.save(new CvParsingDetails(new Date(), null, jcm.getCandidate().getId(),jcm));
         }catch (Exception ex){
-           log.error("{}, File name : {}, For jcmId : ", IErrorMessages.FAILED_TO_SAVE_FILE, candidateCv.getOriginalFilename(), jcmId, ex.getMessage());
+            log.error("{}, File name : {}, For jcmId : ", IErrorMessages.FAILED_TO_SAVE_FILE, candidateCv.getOriginalFilename(), jcm.getId(), ex.getMessage());
             throw new ValidationException(IErrorMessages.FAILED_TO_SAVE_FILE+" "+candidateCv.getOriginalFilename()+ex.getMessage(), HttpStatus.BAD_REQUEST);
         }
+
+        return filePath;
     }
 
     /**
