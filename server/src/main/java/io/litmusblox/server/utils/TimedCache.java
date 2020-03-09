@@ -102,6 +102,13 @@ public class TimedCache {
         accessLock.readLock().unlock();
     }
 
+    public Object get(String key) {
+        accessLock.readLock().lock();
+        Object value = objectMap.get(key);
+        accessLock.readLock().unlock();
+        return value;
+    }
+
     public Object remove(Object key) {
         accessLock.readLock().lock();
         //accessLock.lock();
