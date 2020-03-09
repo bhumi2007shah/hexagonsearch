@@ -377,4 +377,20 @@ public class NoAuthController {
         );
         return responseStr;
     }
+
+    /**
+     * REST API to get address data(area, city, state) for live job's from job location
+     *
+     * @param companyId find jobList by companyId
+     * @return address string set(eg. "Baner, Pune, Maharashtra")
+     */
+    @GetMapping(value = "/getLiveJobAddressStringSet/{companyId}")
+    @ResponseStatus(value = HttpStatus.OK)
+    Set<String> getLiveJobAddressStringSet(@PathVariable("companyId") Long companyId) throws Exception {
+        log.info("Inside getLiveJobAddressStringSet");
+        long startTime = System.currentTimeMillis();
+        Set<String> addressStringSet = jobCandidateMappingService.getLiveJobAddressStringSetByCompanyId(companyId);
+        log.info("Get live job address string set in " + (System.currentTimeMillis()-startTime) + "ms.");
+        return addressStringSet;
+    }
 }

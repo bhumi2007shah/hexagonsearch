@@ -56,9 +56,10 @@ public class CompanyAddress implements Serializable {
     @Column(name = "COUNTRY")
     private String country;
 
+    @Column(name = "AREA")
+    private String area;
+
     @NotNull
-/*    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="COMPANY_ID")*/
     private Long companyId;
 
     @NotNull

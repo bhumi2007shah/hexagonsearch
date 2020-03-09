@@ -285,4 +285,12 @@ public interface IJobCandidateMappingService {
      */
     JobCandidateMapping getCandidateConfirmationStatus(UUID interviewReferenceId) throws Exception;
 
+    /**
+     * Service method to get address data(area, city, state) for live job's from job location
+     *
+     * @param companyId find jobList by companyId
+     * @return address string set(eg. "Baner, Pune, Maharashtra")
+     */
+    Set<String> getLiveJobAddressStringSetByCompanyId(Long companyId);
+
 }

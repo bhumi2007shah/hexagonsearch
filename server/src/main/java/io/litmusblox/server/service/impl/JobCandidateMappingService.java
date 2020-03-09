@@ -152,6 +152,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Resource
     InterviewerDetailsRepository interviewerDetailsRepository;
 
+    @Resource
+    CompanyRepository companyRepository;
+
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
         return jobRepository.findById(jobId).get();
@@ -2052,6 +2055,37 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         interviewDetailsFromDb.setCandidateConfirmationTime(new Date());
         interviewDetailsRepository.save(interviewDetailsFromDb);
         jcmHistoryRepository.save(new JcmHistory(jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null), "Candidate response for interview on "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),interviewDetailsFromDb.getInterviewDate())+" : "+confirmationDetails.getConfirmationText()+" "+Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), new Date()), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+    }
+
+    /**
+     * Service method to get address data(area, city, state) for live job's from job location
+     *
+     * @param companyId find jobList by companyId
+     * @return address string set(eg. "Baner, Pune, Maharashtra")
+     */
+    @Transactional
+    public Set<String> getLiveJobAddressStringSetByCompanyId(Long companyId) {
+        log.info("Inside getLiveJobAddressStringSetByCompanyId for companyId : {}",companyId);
+        List<Company> companyList = new ArrayList<>();
+        Set<String> companyAddressSet = new HashSet<>();
+        List<Company> companyListFromDB = companyRepository.findByRecruitmentAgencyId(companyId);
+        if(companyListFromDB.size()>0)
+            companyList.addAll(companyListFromDB);
+        else
+            companyList.add(Company.builder().id(companyId).build());
+
+        log.info("Found {} company addresses for companyId : {}", companyList.size(), companyId);
+
+        List<Job> jobList = jobRepository.findByCompanyIdInAndStatus(companyList, IConstant.JobStatus.PUBLISHED.getValue());
+
+        jobList.forEach(job -> {
+            if(null != job.getJobLocation() && null != job.getJobLocation().getArea() && null != job.getJobLocation().getState() && null != job.getJobLocation().getCity()){
+                StringBuffer addressString = new StringBuffer(job.getJobLocation().getArea());
+                addressString.append(", ").append(job.getJobLocation().getCity()).append(", ").append(job.getJobLocation().getState());
+                companyAddressSet.add(addressString.toString());
+            }
+        });
+        return companyAddressSet;
     }
 
 }
