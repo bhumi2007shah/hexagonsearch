@@ -1769,7 +1769,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         String filePath = null;
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findByChatbotUuid(chatbotUuid);
         if(null == jcmFromDb)
-            throw new ValidationException("Job candidate mapping not found for jcmId : "+chatbotUuid, HttpStatus.BAD_REQUEST);
+            throw new ValidationException("Job candidate mapping not found for Chatbot UUID : "+chatbotUuid, HttpStatus.BAD_REQUEST);
 
         //Call private overloaded method upload resume which takes candidateCv and jobCandidateMapping as parameter
         filePath = uploadResume(candidateCv, jcmFromDb);

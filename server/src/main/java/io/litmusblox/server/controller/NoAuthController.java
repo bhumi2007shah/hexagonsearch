@@ -381,9 +381,10 @@ public class NoAuthController {
 
     @PostMapping(value = "/uploadResume")
     ResponseEntity uploadResume(@RequestParam("candidateCv") MultipartFile multipartFile, @RequestParam("chatbotUuid") UUID chatbotUuid) throws Exception {
+        long startTime = System.currentTimeMillis();
         log.info("inside uploadResume");
         ResponseEntity responseEntity = jobCandidateMappingService.uploadResume(multipartFile, chatbotUuid);
-        log.info("Resume upload successFully");
+        log.info("Resume upload successFully in {}ms", System.currentTimeMillis()-startTime);
         return responseEntity;
     }
 }
