@@ -578,6 +578,7 @@ public class CompanyService implements ICompanyService {
     public Company createCompanyByAgency(Company company) {
         log.info("inside createCompanyByAgency method");
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Company recruitmentAgency = companyRepository.findById(company.getRecruitmentAgencyId()).orElse(null);
         Company companyFromDb = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(company.getCompanyName(), company.getRecruitmentAgencyId());
 
         if(null != companyFromDb)
@@ -588,6 +589,7 @@ public class CompanyService implements ICompanyService {
 
         company.setCreatedOn(new Date());
         company.setCreatedBy(loggedInUser.getId());
+        company.setCountryId(recruitmentAgency.getCountryId());
         company = truncateField(company);
         Company newCompany = companyRepository.save(company);
         return newCompany;
