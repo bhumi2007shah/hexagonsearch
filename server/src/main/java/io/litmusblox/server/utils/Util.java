@@ -487,4 +487,13 @@ public class Util {
         }
         return null;
     }
+
+    //Method to get exception stackTrace if we want to print in logs
+    public static String getStackTrace(Exception e){
+        log.info("Inside getStackTrace");
+        StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
+    }
+
 }

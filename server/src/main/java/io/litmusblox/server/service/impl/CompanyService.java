@@ -175,7 +175,7 @@ public class CompanyService implements ICompanyService {
                 fileName = StoreFileUtil.storeFile(logo, company.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.Logo.toString(), null, null);
             }
             catch (Exception e){
-                e.printStackTrace();
+                log.info(Util.getStackTrace(e));
             }
             log.info("Company " + company.getCompanyName() + " uploaded " + fileName);
             company.setLogo(fileName);
@@ -318,7 +318,7 @@ public class CompanyService implements ICompanyService {
                 try {
                     coordinates = GoogleMapsCoordinates.getCoordinates(address.getAddress());
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.info(Util.getStackTrace(e));
                 }
 
                 //check if company address title already exists
@@ -392,7 +392,7 @@ public class CompanyService implements ICompanyService {
                         try {
                             newCoordinates = GoogleMapsCoordinates.getCoordinates(companyAddress.getAddress());
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            log.info(Util.getStackTrace(e));
                         }
                         if(null!=newCoordinates){
                             companyAddressFromDb.setLongitude(newCoordinates.lat);
@@ -642,7 +642,7 @@ public class CompanyService implements ICompanyService {
             try {
                 responseFromGoDaddy = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestObj), createSubdomainApi, HttpMethod.PATCH, new StringBuffer("sso-key ").append(createSubdomainKey).append(":").append(createSubdomainSecret).toString());
             } catch (Exception ex) {
-                ex.printStackTrace();
+                log.info(Util.getStackTrace(ex));
                 log.error("Error while creating subdomain for {}.\n{}", company, ex.getMessage());
                 log.info("Duplicate subdomain creation attempt. Setting flag and creating conf files.");
             }

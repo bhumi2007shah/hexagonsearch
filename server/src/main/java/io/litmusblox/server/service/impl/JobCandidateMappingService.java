@@ -1367,7 +1367,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * Flowchart for this method - https://github.com/hexagonsearch/litmusblox-backend/issues/253
      */
     public boolean updateOrCreateEmailMobile(JobCandidateMapping jobCandidateMapping, JobCandidateMapping jcmFromDb, User loggedInUser){
-        log.info("Inside updateOrCreateEmailMobile");
+        log.info("Inside updateOrCreateEmailMobile for Jcm : {}",jcmFromDb.getId());
 
         boolean jcmFromDbDeleted = false;
         //check if new email contains @notavailable.io
@@ -1446,6 +1446,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                     }
                 }
                 else {
+                    log.error("Email and mobile belongs to different candidate, candidateIdFromEmailHistory : {} and candidateIdFromMobileHistory : {}", candidateIdFromEmailHistory, candidateIdFromMobileHistory);
                     throw new WebException("Email and mobile belongs to different candidate", HttpStatus.BAD_REQUEST);
                 }
             } else if (candidateIdFromEmailHistory != null) {
@@ -1514,7 +1515,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                createUpdateEmailMobileNew(jobCandidateMapping, jcmFromDb, loggedInUser);
             }
         }
-
+        log.info("Candidate edit process completed");
         return jcmFromDbDeleted;
     }
 
@@ -1539,6 +1540,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @param candidate for which all records will be removed
      */
     private void deleteCandidate(Candidate candidate){
+        log.info("Inside deleteCandidate for candidateId : {}",candidate.getId());
         candidateCompanyDetailsRepository.deleteByCandidateId(candidate.getId());
         candidateDetailsRepository.deleteByCandidateId(candidate);
         candidateEducationDetailsRepository.deleteByCandidateId(candidate.getId());
@@ -1553,26 +1555,31 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     private Long getCandidateIdFromEmailHistory(String email){
+        log.info("Inside getCandidateIdFromEmailHistory for email : {}",email);
         //Fetch candidateId From Email History
         Long candidateIdFromEmailHistory = candidateEmailHistoryRepository.findCandidateIdByEmail(email);
         return candidateIdFromEmailHistory;
     }
 
     private Long getCandidateIdFromMobileHistory(String mobile, String countryCode){
+        log.info("Inside getCandidateIdFromMobileHistory for mobile : {}",mobile);
         //Fetch candidateId From Mobile History
         Long candidateIdFromMobileHistory = candidateMobileHistoryRepository.findCandidateIdByMobileAndCountryCode(mobile, countryCode);
         return candidateIdFromMobileHistory;
     }
 
     private CandidateEmailHistory getEmailHistory(String email){
+        log.info("Inside getEmailHistory for email : {}",email);
         return candidateEmailHistoryRepository.findByEmail(email);
     }
 
     private CandidateMobileHistory getMobileHistory(String mobile, String countryCode){
+        log.info("Inside getMobileHistory for mobile : {}",mobile);
         return candidateMobileHistoryRepository.findByMobileAndCountryCode(mobile, countryCode);
     }
 
     private void deleteAndUpdateJcmRecord(JobCandidateMapping jcmFromDb, JobCandidateMapping jcmForExistingCandidate, User loggedInUser){
+        log.info("Inside deleteAndUpdateJcmRecord, JcmId : {}",jcmFromDb.getId());
         jcmCommunicationDetailsRepository.deleteByJcmId(jcmFromDb.getId());
         cvParsingDetailsRepository.deleteByJobCandidateMappingId(jcmFromDb);
         cvRatingRepository.deleteByJobCandidateMappingId(jcmFromDb.getId());
@@ -1586,6 +1593,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     private void deleteAndUpdateCandidate(Candidate existingCandidate, JobCandidateMapping jcmFromDb){
+        log.info("Inside deleteAndUpdateCandidate, candidateId : {}, JcmId : {}",existingCandidate.getId(),jcmFromDb.getId());
         //extracting candidate with email "@notavailable"
         Candidate oldCandidate = jcmFromDb.getCandidate();
         jcmFromDb.setCandidate(existingCandidate);
@@ -1612,10 +1620,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
 
     private void createUpdateMobile(JobCandidateMapping jobCandidateMapping, JobCandidateMapping jcmFromDb, User loggedInUser){
+        log.info("Inside createUpdateMobile");
         jobCandidateMapping.setMobile(validateMobile(jobCandidateMapping.getMobile(), jobCandidateMapping.getCountryCode()));
         if(!Util.isNull(jobCandidateMapping.getMobile())) {
             CandidateMobileHistory candidateMobileHistory = candidateMobileHistoryRepository.findByMobileAndCountryCode(jobCandidateMapping.getMobile(), jobCandidateMapping.getCountryCode());
             if (null == candidateMobileHistory) {
+                log.info("Create new mobile history for mobile : {}, for candidateId : {}", jobCandidateMapping.getMobile(), jcmFromDb.getCandidate().getId());
                 candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jobCandidateMapping.getMobile(), jobCandidateMapping.getCountryCode(), new Date(), loggedInUser));
                 jcmFromDb.setMobile(jobCandidateMapping.getMobile());
                 jcmFromDb.setCountryCode(jobCandidateMapping.getCountryCode());
@@ -1632,12 +1642,15 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     private void createUpdateEmail(JobCandidateMapping jobCandidateMapping, JobCandidateMapping jcmFromDb, User loggedInUser){
+        log.info("Inside createUpdateEmail");
         jobCandidateMapping.setEmail(Util.validateEmail(jobCandidateMapping.getEmail()));
         CandidateEmailHistory candidateEmailHistory = candidateEmailHistoryRepository.findByEmail(jobCandidateMapping.getEmail());
         jobCandidateMapping.getCandidate().setId(jcmFromDb.getCandidate().getId());
         if (null == candidateEmailHistory) {
-            if (!removeNotAvailableEmail(jobCandidateMapping))
+            if (!removeNotAvailableEmail(jobCandidateMapping)){
+                log.info("Create new email history for email : {}, for candidateId : {}", jobCandidateMapping.getEmail(), jcmFromDb.getCandidate().getId());
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(jcmFromDb.getCandidate(), jobCandidateMapping.getEmail(), new Date(), loggedInUser));
+            }
             jcmFromDb.setEmail(jobCandidateMapping.getEmail());
         } else {
             if (!jcmFromDb.getCandidate().getId().equals(candidateEmailHistory.getCandidate().getId()))
@@ -1645,7 +1658,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             else
                 jcmFromDb.setEmail(candidateEmailHistory.getEmail());
         }
-
         jobCandidateMappingRepository.save(jcmFromDb);
     }
 

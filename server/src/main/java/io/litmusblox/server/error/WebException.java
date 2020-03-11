@@ -32,7 +32,7 @@ public class WebException extends RuntimeException implements Serializable {
     public WebException(String errorMessage, HttpStatus errorCode)
     {
         super();
-        if(!SecurityContextHolder.getContext().getAuthentication().getPrincipal().equals("anonymousUser")){
+        if(null != SecurityContextHolder.getContext().getAuthentication() && !SecurityContextHolder.getContext().getAuthentication().getPrincipal().equals("anonymousUser")){
             User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             this.userId = user.getId();
             this.userEmail = user.getEmail();
