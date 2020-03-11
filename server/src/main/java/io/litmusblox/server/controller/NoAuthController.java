@@ -81,7 +81,7 @@ public class NoAuthController {
         log.info("Received candidate interest capture request: " + uuid);
         long startTime = System.currentTimeMillis();
         jobCandidateMappingService.captureCandidateInterest(uuid, interest);
-        log.info("Completed capturing candidate request in " + (System.currentTimeMillis() - startTime) + "ms.");
+        log.info("Completed capturing candidate request in {}ms",(System.currentTimeMillis()-startTime));
     }
 
     /**
@@ -96,7 +96,7 @@ public class NoAuthController {
         log.info("Received screening question responses from candidate: " + uuid);
         long startTime = System.currentTimeMillis();
         jobCandidateMappingService.saveScreeningQuestionResponses(uuid, candidateResponse);
-        log.info("Completed saving candidate response to screening questions in " + (System.currentTimeMillis() - startTime) + "ms.");
+        log.info("Completed saving candidate response to screening questions in {}ms",(System.currentTimeMillis()-startTime));
     }
 
     /**
@@ -114,7 +114,7 @@ public class NoAuthController {
 
         jobCandidateMappingService.updateHiringManagerInterest(sharingId, interestValue);
 
-        log.info("Completed processing request for Hiring Manager Interest in " + (System.currentTimeMillis() - startTime) + " ms");
+        log.info("Completed processing request for Hiring Manager Interest in {}ms",(System.currentTimeMillis()-startTime));
     }
 
     /**
@@ -161,7 +161,7 @@ public class NoAuthController {
         response = response.replaceAll(Pattern.quote("$companyName"),responseObj.getCreatedBy().getCompany().getCompanyName());
        // log.info("after call to replace:\n {}",response);
 
-        log.info("Completed processing fetch candidate profile request in " + (System.currentTimeMillis()-startTime) + "ms.");
+        log.info("Completed processing fetch candidate profile request in {}ms",(System.currentTimeMillis()-startTime));
         return response;
     }
 
@@ -182,7 +182,7 @@ public class NoAuthController {
         log.info("Received request to update tech chatbot status");
         long startTime = System.currentTimeMillis();
         jobCandidateMappingService.updateTechResponseStatus(requestBean);
-        log.info("Completed processing request to update tech chatbot status in " + (System.currentTimeMillis() - startTime) + "ms.");
+        log.info("Completed processing request to update tech chatbot status in {}ms",(System.currentTimeMillis()-startTime));
     }
 
     /**
@@ -264,7 +264,7 @@ public class NoAuthController {
 
         long startTime = System.currentTimeMillis();
         UploadResponseBean responseBean = jobCandidateMappingService.uploadCandidateByNoAuthCall(candidateSource, candidate, jobReferenceId, candidateCv, employeeReferrer, otp);
-        log.info("Candidate upload in " + (System.currentTimeMillis() - startTime) + "ms.");
+        log.info("Candidate upload in {}ms",(System.currentTimeMillis()-startTime));
         return Util.stripExtraInfoFromResponseBean(responseBean, null,
                 new HashMap<String, List<String>>() {{
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
@@ -352,7 +352,7 @@ public class NoAuthController {
     void candidateConfirmationForInterview(@RequestBody InterviewDetails confirmationDetails) throws Exception {
         long startTime = System.currentTimeMillis();
         jobCandidateMappingService.candidateConfirmationForInterview(confirmationDetails);
-        log.info("Candidate Interview confirmation done in " + (System.currentTimeMillis()-startTime) + "ms.");
+        log.info("Candidate Interview confirmation done in {}ms",(System.currentTimeMillis()-startTime));
     }
 
     /**
@@ -366,7 +366,7 @@ public class NoAuthController {
     String getCandidateConfirmationStatus(@PathVariable("interviewReferenceId") UUID interviewReferenceId) throws Exception {
         long startTime = System.currentTimeMillis();
         JobCandidateMapping jobCandidateMapping = jobCandidateMappingService.getCandidateConfirmationStatus(interviewReferenceId);
-        log.info("Get candidate confirmation status in " + (System.currentTimeMillis()-startTime) + "ms.");
+        log.info("Get candidate confirmation status in {}ms",(System.currentTimeMillis()-startTime));
         String responseStr = Util.stripExtraInfoFromResponseBean(jobCandidateMapping,
                 (new HashMap<String, List<String>>(){{
                     put("User", Arrays.asList("displayName"));
@@ -381,16 +381,16 @@ public class NoAuthController {
     /**
      * REST API to get address data(area, city, state) for live job's from job location
      *
-     * @param companyId find jobList by companyId
+     * @param companyShortName first find company then find jobList by companyId
      * @return address string set(eg. "Baner, Pune, Maharashtra")
      */
-    @GetMapping(value = "/getLiveJobAddressStringSet/{companyId}")
+    @GetMapping(value = "/getLiveJobAddressStringSet/{companyShortName}")
     @ResponseStatus(value = HttpStatus.OK)
-    Set<String> getLiveJobAddressStringSet(@PathVariable("companyId") Long companyId) throws Exception {
+    Set<String> getLiveJobAddressStringSet(@PathVariable("companyShortName") String companyShortName) throws Exception {
         log.info("Inside getLiveJobAddressStringSet");
         long startTime = System.currentTimeMillis();
-        Set<String> addressStringSet = jobCandidateMappingService.getLiveJobAddressStringSetByCompanyId(companyId);
-        log.info("Get live job address string set in " + (System.currentTimeMillis()-startTime) + "ms.");
+        Set<String> addressStringSet = jobCandidateMappingService.getLiveJobAddressStringSetByCompanyId(companyShortName);
+        log.info("Get live job address string set in {}ms",(System.currentTimeMillis()-startTime));
         return addressStringSet;
     }
 }

@@ -288,9 +288,9 @@ public interface IJobCandidateMappingService {
     /**
      * Service method to get address data(area, city, state) for live job's from job location
      *
-     * @param companyId find jobList by companyId
+     * @param companyShortName first find company then find jobList by companyId
      * @return address string set(eg. "Baner, Pune, Maharashtra")
      */
-    Set<String> getLiveJobAddressStringSetByCompanyId(Long companyId);
+    Set<String> getLiveJobAddressStringSetByCompanyId(String companyShortName);
 
 }

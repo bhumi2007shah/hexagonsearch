@@ -2074,23 +2074,27 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     /**
      * Service method to get address data(area, city, state) for live job's from job location
      *
-     * @param companyId find jobList by companyId
+     * @param companyShortName first find company then find jobList by companyId
      * @return address string set(eg. "Baner, Pune, Maharashtra")
      */
-    @Transactional
-    public Set<String> getLiveJobAddressStringSetByCompanyId(Long companyId) {
-        log.info("Inside getLiveJobAddressStringSetByCompanyId for companyId : {}",companyId);
+    @Transactional(readOnly = true)
+    public Set<String> getLiveJobAddressStringSetByCompanyId(String companyShortName) {
+        log.info("Inside getLiveJobAddressStringSetByCompanyId for company short name : {}",companyShortName);
         List<Company> companyList = new ArrayList<>();
         Set<String> companyAddressSet = new HashSet<>();
-        List<Company> companyListFromDB = companyRepository.findByRecruitmentAgencyId(companyId);
+        Company company = companyRepository.findByShortNameIgnoreCase(companyShortName);
+        if(null == company)
+            throw new WebException("Company not found for company short name : "+companyShortName, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        List<Company> companyListFromDB = companyRepository.findByRecruitmentAgencyId(company.getId());
         if(companyListFromDB.size()>0)
             companyList.addAll(companyListFromDB);
         else
-            companyList.add(Company.builder().id(companyId).build());
-
-        log.info("Found {} company addresses for companyId : {}", companyList.size(), companyId);
+            companyList.add(company);
 
         List<Job> jobList = jobRepository.findByCompanyIdInAndStatus(companyList, IConstant.JobStatus.PUBLISHED.getValue());
+
+        log.info("Found {} job{} for {} compan{}", jobList.size(),(jobList.size()>1)?"'s":"", companyList.size(), (companyList.size()>1)?"ies":"y");
 
         jobList.forEach(job -> {
             if(null != job.getJobLocation() && null != job.getJobLocation().getArea() && null != job.getJobLocation().getState() && null != job.getJobLocation().getCity()){
