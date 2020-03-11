@@ -112,7 +112,7 @@ public class AuthController {
         log.info("Get user detail request in {} ms.", (System.currentTimeMillis() - startTime));
         return Util.stripExtraInfoFromResponseBean(user,
                 (new HashMap<String, List<String>>(){{
-                    put("User", Arrays.asList("firstName","lastName", "email", "mobile", "designation", "companyAddressId", "companyBuId", "role"));
+                    put("User", Arrays.asList("firstName","lastName", "email", "mobile", "designation", "companyAddressId", "companyBuId", "role", "countryId"));
                 }}),
                 null
         );
