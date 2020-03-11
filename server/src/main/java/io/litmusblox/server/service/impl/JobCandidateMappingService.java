@@ -1804,6 +1804,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
 
         if(isOtpVerify){
+            log.info("OTP verification succeeded. Processing candidate against job");
             if(null == candidate.getCandidateName() || candidate.getCandidateName().isEmpty()){
                 candidate.setCandidateName(IConstant.NOT_AVAILABLE);
                 candidate.setFirstName(IConstant.NOT_AVAILABLE);
@@ -1853,6 +1854,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 responseBean.setCvErrorMsg(e.getMessage());
             }
         }else{
+            log.info("OTP verification failed.");
             responseBean = new UploadResponseBean();
             responseBean.setFailureCount(1);
             responseBean.setSuccessCount(0);
