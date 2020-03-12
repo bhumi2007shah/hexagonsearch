@@ -181,7 +181,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @return the status of upload operation
      * @throws Exception
      */
-    @Transactional(propagation = Propagation.REQUIRED)
+    //In this method we don't have any db related operation so remove @Transactional annotation
     public UploadResponseBean uploadIndividualCandidate(List<Candidate> candidates, Long jobId, boolean ignoreMobile, Optional<User> createdBy) throws Exception {
 
         //verify that the job is live before processing candidates
@@ -423,7 +423,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @return the status of upload operation
      * @throws Exception
      */
-    @Transactional(propagation = Propagation.REQUIRED)
+    //@Transactional(propagation = Propagation.REQUIRED)
     public UploadResponseBean uploadCandidateFromPlugin(Candidate candidate, Long jobId, MultipartFile candidateCv, Optional<User> createdBy) throws Exception {
         UploadResponseBean responseBean = null;
         if (null != candidate) {
