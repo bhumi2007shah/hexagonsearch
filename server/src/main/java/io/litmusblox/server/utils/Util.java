@@ -136,7 +136,7 @@ public class Util {
 
         String domainString = domainName.substring(domainName.indexOf('.')+1);
 
-        if(domainString.length()>3)
+        if(domainString.length()<2)
             return false;
 
         if(!email.matches(IConstant.REGEX_FOR_EMAIL_VALIDATION)) {
@@ -487,4 +487,13 @@ public class Util {
         }
         return null;
     }
+
+    //Method to get exception stackTrace if we want to print in logs
+    public static String getStackTrace(Exception e){
+        log.info("Inside getStackTrace");
+        StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
+    }
+
 }

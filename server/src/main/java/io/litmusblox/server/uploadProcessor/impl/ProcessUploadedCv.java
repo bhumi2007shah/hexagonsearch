@@ -290,6 +290,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                             jobCandidateMappingService.updateOrCreateEmailMobile(cvParsingDetailsFromDb.getJobCandidateMappingId(), jcmFromDb, jcmFromDb.getCreatedBy());
                     }
                 } catch (Exception e) {
+                    log.info(Util.getStackTrace(e));
                     log.error("Error while convert cv to text cvFilePath : {}, for cvParsingDetailsId  : {}, error message : {}", queryParameters.get("file"), cvParsingDetailsFromDb.getId(), e.getMessage());
                     breadCrumb.put("Error Msg", ExceptionUtils.getStackTrace(e));
                     SentryUtil.logWithStaticAPI(null, "Failed to convert cv to text", breadCrumb);
