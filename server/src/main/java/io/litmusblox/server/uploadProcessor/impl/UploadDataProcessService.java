@@ -63,7 +63,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
     @Autowired
     ICandidateService candidateService;
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    //@Transactional(propagation = Propagation.REQUIRED)
     public void processData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, int candidateProcessed, Long jobId, boolean ignoreMobile, Optional<User> createdBy){
         log.info("inside processData");
 
