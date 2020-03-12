@@ -136,7 +136,7 @@ public class Util {
 
         String domainString = domainName.substring(domainName.indexOf('.')+1);
 
-        if(domainString.length()>3)
+        if(domainString.length()<2)
             return false;
 
         if(!email.matches(IConstant.REGEX_FOR_EMAIL_VALIDATION)) {
