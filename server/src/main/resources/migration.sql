@@ -1837,3 +1837,39 @@ ADD COLUMN AREA VARCHAR(50) DEFAULT NULL;
 
 --For ticket https://github.com/hexagonsearch/litmusblox-scheduler/issues/48
 update sms_templates set template_content = 'You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewdate}]]. Below is the Google Maps link to the interview address. Please report 15 mins before. See you there! [[${commBean.interviewAddressLink}]]' where template_name = 'InterviewDay';
+
+--For ticket #450
+drop view if exists jobDetailsView;
+drop view if exists jobKeySkillAggregation;
+
+create view jobKeySkillAggregation as
+select job_key_skills.job_id as jobId, string_agg(trim(lower(skills_master.skill_name)), ',') as keySkills
+from skills_master, job_key_skills
+where skills_master.id = job_key_skills.skill_id
+group by job_key_skills.job_id;
+
+create view jobDetailsView AS
+select
+	job.id as jobId,
+	job.company_id as companyId,
+	job.job_title as jobTitle,
+	job.job_type as jobType,
+	job.created_on as jobCreatedOn,
+	job.date_published as jobPublishedOn,
+	company_address.address as jobLocation,
+	company_address.city as jobLocationCity,
+	company_address.state as jobLocationState,
+	company_address.country as jobLocationCountry,
+	exp.value as jobExperience,
+	education.value as education, jobKeySkillAggregation.keyskills as keyskills
+from job
+left join company_address
+on job.job_location = company_address.id
+left join master_data exp
+on job.experience_range = exp.id
+left join master_data education
+on job.education = education.id
+left join jobKeySkillAggregation
+on job.id = jobKeySkillAggregation.jobId
+where job.status = 'Live'
+order by jobPublishedOn desc, jobId asc;

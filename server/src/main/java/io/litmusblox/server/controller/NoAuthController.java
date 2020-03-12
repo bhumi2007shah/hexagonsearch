@@ -233,7 +233,7 @@ public class NoAuthController {
         log.info("Complete processing search operation in {} ms.", (System.currentTimeMillis() - startTime));
         return Util.stripExtraInfoFromResponseBean(jobsFound,
                 new HashMap<String, List<String>>() {{
-                    put("Job", Arrays.asList("jobTitle", "jobDescription", "jobLocation", "function", "jobReferenceId","jobType"));
+                    put("Job", Arrays.asList("id","jobTitle", "jobDescription", "jobLocation", "function", "jobReferenceId","jobType"));
                     put("CompanyAddress", Arrays.asList("address"));
                     put("MasterData", Arrays.asList("value"));
                 }}, null);
