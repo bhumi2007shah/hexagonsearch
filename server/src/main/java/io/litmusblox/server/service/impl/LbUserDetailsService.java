@@ -302,6 +302,7 @@ public class LbUserDetailsService implements UserDetailsService {
         if(null != user.getId()){
             u.setUpdatedOn(new Date());
             u.setUpdatedBy(loggedInUser.getId());
+            u.setStatus(userFromDb.getStatus());
             if(!userFromDb.getEmail().equals(user.getEmail().toLowerCase())){
                 log.info("Update email Old email : {}, new email : {}",userFromDb.getEmail(), user.getEmail().toLowerCase());
                 u.setStatus(IConstant.UserStatus.Inactive.name());
