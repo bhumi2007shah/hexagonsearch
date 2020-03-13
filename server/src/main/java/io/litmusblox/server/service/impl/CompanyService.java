@@ -416,7 +416,10 @@ public class CompanyService implements ICompanyService {
 
                     companyAddressFromDb.setUpdatedBy(loggedInUser.getId());
                     companyAddressFromDb.setUpdatedOn(new Date());
-
+                    companyAddressFromDb.setArea(companyAddress.getArea());
+                    companyAddressFromDb.setCountry(companyAddress.getCountry());
+                    companyAddressFromDb.setCity(companyAddress.getCity());
+                    companyAddressFromDb.setState(companyAddress.getState());
                     companyAddressRepository.save(companyAddressFromDb);
                     log.info("updated company address with id: "+companyAddress.getId());
                 }
