@@ -44,4 +44,9 @@ public interface JcmCommunicationDetailsRepository extends JpaRepository<JcmComm
 
     @Transactional
     void deleteByJcmId(Long jobCandidateMappingId);
+
+    @Transactional
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(nativeQuery = true, value = "update jcm_communication_details set rejected_timestamp_email = null where jcm_id in :jcmIdList")
+    void setScreeningRejectionTimestampNull(List<Long> jcmIdList);
 }

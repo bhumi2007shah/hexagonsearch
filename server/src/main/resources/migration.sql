@@ -1873,3 +1873,6 @@ left join jobKeySkillAggregation
 on job.id = jobKeySkillAggregation.jobId
 where job.status = 'Live'
 order by jobPublishedOn desc, jobId asc;
+
+-- For ticket #35 litmusblox-scheduler
+ALTER TABLE JCM_COMMUNICATION_DETAILS ADD COLUMN REJECTED_TIMESTAMP_EMAIL TIMESTAMP DEFAULT NULL;

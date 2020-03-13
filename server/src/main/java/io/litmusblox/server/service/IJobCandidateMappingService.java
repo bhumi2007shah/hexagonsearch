@@ -5,6 +5,7 @@
 package io.litmusblox.server.service;
 
 import io.litmusblox.server.model.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
@@ -205,6 +206,13 @@ public interface IJobCandidateMappingService {
      * @param candidateCv
      */
     void uploadResume(MultipartFile candidateCv, Long jcmId) throws Exception;
+
+    /**
+     * Service to upload resume against chatbot UUID
+     * @param chatbotUuid
+     * @param candidateCv
+     */
+    ResponseEntity uploadResume(MultipartFile candidateCv, UUID chatbotUuid) throws Exception;
 
     /**
      *Service to add candidate via career page, job portal, employee referral
