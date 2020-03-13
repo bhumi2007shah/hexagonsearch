@@ -1876,3 +1876,22 @@ order by jobPublishedOn desc, jobId asc;
 
 -- For ticket #35 litmusblox-scheduler
 ALTER TABLE JCM_COMMUNICATION_DETAILS ADD COLUMN REJECTED_TIMESTAMP_EMAIL TIMESTAMP DEFAULT NULL;
+
+update jcm_communication_details set rejected_timestamp_email = NOW() where jcm_id in (select id from job_candidate_mapping where rejected='t' and stage=(select id from stage_step_master where stage='Screening'));
+
+-- For ticket #55 chatbot
+update CUSTOMIZED_CHATBOT_PAGE_CONTENT set PAGE_INFO='"introText"=>"As a part of org level role baselining, we seek your inputs on various aspects of your work experience regarding the role of",
+"thankYouText"=>"No further action is required from your side",
+"showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false", "showUploadResumePage"=>"false"' where company_id = 6;
+
+update CUSTOMIZED_CHATBOT_PAGE_CONTENT set PAGE_INFO='"introText"=>"Automation premier League requires you to get tested on", "thankYouText"=>"The score of your test will be communicated to you via email tomorrow", "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false", "showUploadResumePage"=>"false"' where company_id=43;
+
+-- #427 backend Url shortener ticket
+DROP TABLE IF EXISTS SHORT_URL;
+CREATE TABLE SHORT_URL(
+	ID SERIAL PRIMARY KEY NOT NULL,
+  URL TEXT NOT NULL DEFAULT '',
+  HASH VARCHAR(10) NOT NULL DEFAULT '',
+  SHORT_URL TEXT NOT NULL DEFAULT '',
+  CREATED_ON TIMESTAMP
+);
