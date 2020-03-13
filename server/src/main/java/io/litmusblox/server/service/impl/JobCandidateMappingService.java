@@ -2137,10 +2137,16 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         log.info("Found {} job{} for {} compan{}", jobList.size(),(jobList.size()>1)?"'s":"", companyList.size(), (companyList.size()>1)?"ies":"y");
 
         jobList.forEach(job -> {
-            if(null != job.getJobLocation() && null != job.getJobLocation().getArea() && null != job.getJobLocation().getState() && null != job.getJobLocation().getCity()){
-                StringBuffer addressString = new StringBuffer(job.getJobLocation().getArea());
-                addressString.append(", ").append(job.getJobLocation().getCity()).append(", ").append(job.getJobLocation().getState());
-                companyAddressSet.add(addressString.toString());
+            if(null != job.getJobLocation()){
+                StringBuffer addressString = new StringBuffer();
+                if(null!=job.getJobLocation().getArea())
+                    addressString.append(job.getJobLocation().getArea()).append(", ");
+                if(null!=job.getJobLocation().getCity())
+                    addressString.append(job.getJobLocation().getCity()).append(", ");
+                if(null!=job.getJobLocation().getState())
+                    addressString.append(job.getJobLocation().getState());
+                if(Util.isNotNull(addressString.toString()))
+                    companyAddressSet.add(addressString.toString());
             }
         });
         return companyAddressSet;
