@@ -10,6 +10,7 @@ import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.ICandidateService;
+import io.litmusblox.server.service.IJcmCandidateSourceHistoryService;
 import io.litmusblox.server.service.MasterDataBean;
 import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.uploadProcessor.IUploadDataProcessService;
@@ -62,6 +63,9 @@ public class UploadDataProcessService implements IUploadDataProcessService {
 
     @Autowired
     ICandidateService candidateService;
+
+    @Autowired
+    IJcmCandidateSourceHistoryService jcmCandidateSourceHistoryService;
 
     //@Transactional(propagation = Propagation.REQUIRED)
     public void processData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, int candidateProcessed, Long jobId, boolean ignoreMobile, Optional<User> createdBy){
@@ -206,9 +210,13 @@ public class UploadDataProcessService implements IUploadDataProcessService {
         JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByJobAndCandidate(job, candidateObjToUse);
 
         if(null!=jobCandidateMapping){
+            //saving candidate source history even if candidate is duplicate for this job
+            jcmCandidateSourceHistoryService.createJcmCandidateSourceHistory(jobCandidateMapping.getId(), candidate.getCandidateSource(), loggedInUser);
+
             log.error(IErrorMessages.DUPLICATE_CANDIDATE + " : " + candidateObjToUse.getId() + candidate.getEmail() + " : " + candidate.getMobile());
             candidate.setUploadErrorMessage(IErrorMessages.DUPLICATE_CANDIDATE);
             candidate.setId(candidateObjToUse.getId());
+
             throw new ValidationException(IErrorMessages.DUPLICATE_CANDIDATE + " - " +"JobId: " + job.getId(), HttpStatus.BAD_REQUEST);
         }else{
             //Create new entry for JobCandidateMapping
@@ -232,6 +240,10 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             jobCandidateMappingRepository.save(savedObj);
             //create an empty record in jcm Communication details table
             jcmCommunicationDetailsRepository.save(new JcmCommunicationDetails(savedObj.getId()));
+
+            //saving candidate source history
+            jcmCandidateSourceHistoryService.createJcmCandidateSourceHistory(savedObj.getId(), savedObj.getCandidateSource(), loggedInUser);
+
         }
 
         if(null!=uploadResponseBean){

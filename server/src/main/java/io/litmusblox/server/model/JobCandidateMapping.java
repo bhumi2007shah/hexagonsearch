@@ -196,6 +196,9 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @JsonProperty
     private String cvLocation;
 
+    @OneToMany(cascade = {CascadeType.MERGE}, mappedBy = "jobCandidateMappingId")
+    private List<JcmCandidateSourceHistory> candidateSourceHistories = new ArrayList<>(0);
+
     public String getDisplayName() {
         return candidateFirstName + " " + candidateLastName;
     }
