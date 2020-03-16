@@ -115,7 +115,6 @@ public class FetchEmailService {
                                 //mark the mail as read to skip processing it in the next round
                                 message.setFlag(Flags.Flag.SEEN, true);
                             } else {
-
                                 writePart(message, mailData, !(message.getSubject().contains(IConstant.NAUKRI_SUBJECT_STRING)));
                                 message.setFlag(Flags.Flag.SEEN, true);
                                 if (null != mailData.getFileName()) {
@@ -124,14 +123,13 @@ public class FetchEmailService {
                                     mailData.getCandidateFromMail().getCandidateDetails().setCvFileType("." + Util.getFileExtension(mailData.getFileName()));
                                 }
                                 UploadResponseBean response = jobCandidateMappingService.uploadCandidateFromPlugin(mailData.getCandidateFromMail(), mailData.getJobFromReference().getId(), null, Optional.of(mailData.getJobFromReference().getCreatedBy()));
-                                if (IConstant.UPLOAD_STATUS.Success.name().equals(response.getStatus()) && null != mailData.getFileName())
-                                    saveCandidateCv(mailData);
+                                if (null != mailData.getFileName())
+                                    saveCandidateCv(mailData, response.getStatus(), mailData.getJobFromReference());
                             }
-
                         }
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.info(Util.getStackTrace(e));
                     log.error("Error processing mail with subject: {} \n Error message: {}", message.getSubject(), e.getMessage());
 
                     Map<String, String> breadCrumb = new HashMap<>();
@@ -147,28 +145,47 @@ public class FetchEmailService {
 
         } catch (NoSuchProviderException e) {
             log.error("Error processing Naukri application mail {}" , e.getMessage());
-            e.printStackTrace();
+            log.info(Util.getStackTrace(e));
         } catch (MessagingException e) {
             log.error("Error processing Naukri application mail {}" , e.getMessage());
-            e.printStackTrace();
+            log.info(Util.getStackTrace(e));
         } catch (Exception e) {
             log.error("Error processing Naukri application mail {}" , e.getMessage());
-            e.printStackTrace();
+            log.info(Util.getStackTrace(e));
         }
     }
 
     //write the candidate cv
-    private void saveCandidateCv(MailData mailData) throws IOException {
-        StringBuffer fileLocation = new StringBuffer(environment.getProperty(IConstant.REPO_LOCATION)).append(IConstant.CANDIDATE_CV).append(File.separator).append(mailData.getJobFromReference().getId());
+    private void saveCandidateCv(MailData mailData, String candidateUploadStatus, Job job) throws IOException {
+       log.info("Inside saveCandidateCv");
+        StringBuffer fileLocation = new StringBuffer("");
+
+        if(null != mailData.getCandidateFromMail() || IConstant.UPLOAD_STATUS.Success.name().equals(candidateUploadStatus)){
+            fileLocation.append(environment.getProperty(IConstant.REPO_LOCATION)).append(IConstant.CANDIDATE_CV).append(File.separator).append(mailData.getJobFromReference().getId());
+            createFileFolder(fileLocation);
+            fileLocation.append(File.separator).append(mailData.getCandidateFromMail().getId()).append(".").append(Util.getFileExtension(mailData.getFileName()));
+        }
+        else if(IConstant.CandidateSource.NaukriMassMail.getValue().equals(mailData.getCandidateSource())){
+            fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.MASS_MAIL);
+            createFileFolder(fileLocation);
+            fileLocation.append(File.separator).append(job.getCreatedBy().getId()).append("_").append(job.getId()).append("_").append(mailData.getFileName());
+        }
+        else{
+            fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.JOB_POSTING);
+            createFileFolder(fileLocation);
+            fileLocation.append(File.separator).append(job.getCreatedBy().getId()).append("_").append(job.getId()).append("_").append(mailData.getFileName());
+        }
+
+        Files.copy(mailData.getFileStream(), Paths.get(fileLocation.toString()), StandardCopyOption.REPLACE_EXISTING);
+        log.info("File save location : {}",fileLocation.toString());
+        new File(fileLocation.toString());
+    }
+
+    private void createFileFolder(StringBuffer fileLocation){
         File file = new File(fileLocation.toString());
         if (!file.exists()) {
             file.mkdirs();
         }
-
-        fileLocation.append(File.separator).append(mailData.getCandidateFromMail().getId()).append(".").append(Util.getFileExtension(mailData.getFileName()));
-
-        Files.copy(mailData.getFileStream(), Paths.get(fileLocation.toString()), StandardCopyOption.REPLACE_EXISTING);
-        new File(fileLocation.toString());
     }
 
     private Job findJobForEmailSubject(String subject) {
@@ -222,8 +239,10 @@ public class FetchEmailService {
                 //log.info("String Message:\n {}", (String)o);
                 if(naukriMassMail){
                     mailData.setCandidateFromMail(naukriMassMailParser.parseData((String) o, mailData.getJobFromReference().getCreatedBy()));
+                    mailData.setCandidateSource(IConstant.CandidateSource.NaukriMassMail.getValue());
                 }else {
                     mailData.setCandidateFromMail(naukriHtmlParser.parseData((String) o, mailData.getJobFromReference().getCreatedBy()));
+                    mailData.setCandidateSource(IConstant.CandidateSource.NaukriJobPosting.getValue());
                 }
             } else if (o instanceof InputStream) {
                 log.info("Input stream: File");
@@ -245,5 +264,6 @@ public class FetchEmailService {
         User createdBy;
         String fileName;
         InputStream fileStream;
+        String candidateSource;
     }
 }

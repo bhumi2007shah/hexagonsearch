@@ -1026,6 +1026,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         Integer[] countArray = new Integer[0];
 
         for (MultipartFile fileToProcess :multipartFiles) {
+            StringBuffer location = new StringBuffer(environment.getProperty(IConstant.TEMP_REPO_LOCATION));
+            location.append(IConstant.DRAG_AND_DROP).append(File.separator);
             String extension = Util.getFileExtension(fileToProcess.getOriginalFilename()).toLowerCase();
             if (filesProcessed == MasterDataBean.getInstance().getConfigSettings().getMaxCvFiles()) {
                 responseBean.getCvUploadMessage().put(fileToProcess.getOriginalFilename(), IErrorMessages.MAX_FILES_PER_UPLOAD);
@@ -1046,7 +1048,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
                 User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
                 try {
-                    filePath = StoreFileUtil.storeFile(fileToProcess, jobId, environment.getProperty(IConstant.TEMP_REPO_LOCATION), fileType,null, loggedInUser);
+                    filePath = StoreFileUtil.storeFile(fileToProcess, jobId, location.toString(), fileType,null, loggedInUser);
                     successCount++;
                 } catch (Exception e) {
                     log.error(fileToProcess.getOriginalFilename()+" not save to temp location : "+e.getMessage());
@@ -1056,7 +1058,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
                 if(IConstant.FILE_TYPE.zip.toString().equals(fileType) || IConstant.FILE_TYPE.rar.toString().equals(fileType)){
                     successCount--;
-                    countArray=ZipFileProcessUtil.extractZipFile(filePath, environment.getProperty(IConstant.TEMP_REPO_LOCATION), loggedInUser.getId(),jobId, responseBean, failureCount,successCount);
+                    countArray=ZipFileProcessUtil.extractZipFile(filePath, location.toString(), loggedInUser.getId(),jobId, responseBean, failureCount,successCount);
                     failureCount=countArray[0];
                     successCount=countArray[1];
                 }

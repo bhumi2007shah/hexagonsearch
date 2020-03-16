@@ -1468,7 +1468,7 @@ CONSTRAINT UNIQUE_API_SEQUENCE UNIQUE(API_SEQUENCE)
 );
 
 INSERT INTO CV_PARSING_API_DETAILS (API_URL, API_SEQUENCE, ACTIVE, COLUMN_TO_UPDATE, QUERY_ATTRIBUTES) VALUES
-('https://rest.rchilli.com/RChilliParser/Rchilli/parseResume', 1, true, 'PARSING_RESPONSE_JSON',
+('https://rest.rchilli.com/RChilliParser/Rchilli/parseResume', 1, false, 'PARSING_RESPONSE_JSON',
 '"userkey" => "2SNEDYNPV30",
 "version" => "7.0.0",
 "subuserid" => "Hexagon Search"'
@@ -1876,3 +1876,6 @@ order by jobPublishedOn desc, jobId asc;
 
 -- For ticket #35 litmusblox-scheduler
 ALTER TABLE JCM_COMMUNICATION_DETAILS ADD COLUMN REJECTED_TIMESTAMP_EMAIL TIMESTAMP DEFAULT NULL;
+
+--For ticket #456
+UPDATE CV_PARSING_API_DETAILS SET ACTIVE = 'f' WHERE COLUMN_TO_UPDATE = 'PARSING_RESPONSE_JSON';

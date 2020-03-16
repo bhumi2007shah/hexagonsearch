@@ -59,7 +59,7 @@ public interface IConstant {
     Integer COMPANY_SHORT_NAME = 25;
 
     String REPO_LOCATION = "repoLocation";
-    String TEMP_REPO_LOCATION = "temprepolocation";
+    String TEMP_REPO_LOCATION = "tempRepoLocation";
     String ERROR_FILES_REPO_LOCATION = "error_files";
     String CV_STORAGE_LOCATION = "cvStorageUrl";
     String DATE_FORMAT_yyyymmdd_hhmm = "yyyyMMdd_HHmm";
@@ -68,6 +68,9 @@ public interface IConstant {
     String TOKEN_HEADER = "Authorization";
     String TOKEN_PREFIX = "Bearer ";
     String CANDIDATE_CV = "CandidateCv";
+    String MASS_MAIL = "MassMail";
+    String JOB_POSTING = "JobPosting";
+    String DRAG_AND_DROP = "DragAndDrop";
     String SENTRY_DSN = "sentryDSN";
     String UPLOAD_FILE_TYPE = "Upload file type";
     String LOCALHOST_LOOPBACK = "0:0:0:0:0:0:0:1";
