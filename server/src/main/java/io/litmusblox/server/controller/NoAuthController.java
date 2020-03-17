@@ -214,7 +214,7 @@ public class NoAuthController {
     String jobDetailsByReferenceId(@PathVariable("jobShortCode") String jobShortCode) throws Exception {
         return Util.stripExtraInfoFromResponseBean(jobService.findJobByJobShortCode(jobShortCode),
                 new HashMap<String, List<String>>() {{
-                    put("Job",Arrays.asList("id","jobTitle","jobDescription", "jobLocation" , "function"));
+                    put("Job",Arrays.asList("id","jobTitle","jobDescription", "jobLocation" , "function","jobShortCode"));
                     put("MasterData", Arrays.asList("value"));
                 }}, null);
     }
