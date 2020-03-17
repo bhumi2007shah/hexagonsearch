@@ -75,6 +75,7 @@ public class FetchEmailService {
     String protocol;
 
     Pattern pattern = Pattern.compile(IConstant.REF_ID_MATCH_REGEX);
+    Pattern shortCodePattern = Pattern.compile(IConstant.REGEX_TO_VALIDATE_JOB_SHORT_CODE);
 
     public void processEmail() {
         try {
@@ -93,7 +94,7 @@ public class FetchEmailService {
             emailStore.connect(mailServerHost,userName, password);
 
             //3) create the folder object and open it
-            Folder emailFolder = emailStore.getFolder("Naukri");
+            Folder emailFolder = emailStore.getFolder("INBOX");
             emailFolder.open(Folder.READ_WRITE);
 
             //4) retrieve the messages from the folder in an array and print it
@@ -191,17 +192,29 @@ public class FetchEmailService {
     private Job findJobForEmailSubject(String subject) {
         Matcher matcher = pattern.matcher(subject);
         String jobReferenceId = null;
+        String jobShortCode = null;
         if(matcher.find()){
             jobReferenceId = matcher.group();
             log.info("Extracted jobReferenceId: {}", jobReferenceId);
         }
         else{
             log.error("Reference Id not found in subject : {}", subject);
+            Matcher shortCodeMatcher = shortCodePattern.matcher(subject);
+            if(shortCodeMatcher.find()){
+                jobShortCode = shortCodeMatcher.group();
+                log.info("Extracted jobShortCode: {}", jobShortCode);
+            }
         }
         try {
             //UUID uuidFromString = UUID.fromString(jobReferenceId.substring(0,jobReferenceId.indexOf(',')).trim());
-            assert jobReferenceId != null;
-            return jobService.findByJobReferenceId(UUID.fromString(jobReferenceId));
+            if(null != jobReferenceId)
+                return jobService.findByJobReferenceId(UUID.fromString(jobReferenceId));
+            else if (null != jobShortCode)
+                return jobService.findJobByJobShortCode(jobShortCode);
+            else{
+                log.error("Job ref id and job short code both are null");
+                return null;
+            }
         } catch (Exception e) {
             log.error("Error while converting job reference to UUID.");
             return null;

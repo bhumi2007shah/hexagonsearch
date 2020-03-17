@@ -1406,4 +1406,14 @@ public class JobService implements IJobService {
 
         return techRoleCompetencyBeans;
     }
+
+    @Transactional
+    public Job findJobByJobShortCode(String jobShortCode) {
+        log.info("Inside findJobByJobShortCode or jobShortCode : {}",jobShortCode);
+        jobShortCode = jobShortCode.replaceAll(IConstant.REGEX_TO_REMOVE_NON_NUMERIC_CHAR, "");
+        jobShortCode = jobShortCode.replaceFirst(IConstant.REGEX_FOR_REMOVE_ALL_LEADING_ZEROS, "");
+        return jobRepository.getOne(Long.parseLong(jobShortCode));
+    }
+
+
 }

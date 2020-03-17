@@ -69,6 +69,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Autowired
     Environment environment;
 
+    @Autowired
+    IJobService jobService;
+
     @Resource
     CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
 
@@ -1828,14 +1831,14 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      *
      * @param candidateSource from where we source the candidate
      * @param candidate candidate all info
-     * @param jobReferenceId In which job upload candidate
+     * @param jobShortCode In which job upload candidate
      * @param candidateCv candidate cv
      * @param employeeReferrer if candidate upload by employee referral then this model come
      * @return UploadResponseBean
      * @throws Exception
      */
     @Transactional
-    public UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception {
+    public UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, String jobShortCode, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception {
         log.info("Inside uploadCandidateByNoAuthCall");
         UploadResponseBean responseBean = null;
         CandidateDetails candidateDetails = null;
@@ -1878,7 +1881,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 }
                 candidate.getCandidateDetails().setCvFileType("."+cvFileType);
             }
-            Job job = jobRepository.findByJobReferenceId(jobReferenceId);
+            Job job = jobService.findJobByJobShortCode(jobShortCode);
             candidate.setCandidateSource(candidateSource);
 
             if(null != employeeReferrer){

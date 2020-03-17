@@ -132,4 +132,12 @@ public interface IJobService {
      * @throws Exception
      */
     List<TechRoleCompetencyBean> getTechRoleCompetencyByJob(Long jobId) throws Exception;
+
+    /**
+     * Service method to find job by jobShortCode
+     *
+     * @param jobShortCode jobShortCode
+     * @return job object
+     */
+    Job findJobByJobShortCode(String jobShortCode);
 }

@@ -219,13 +219,13 @@ public interface IJobCandidateMappingService {
      *
      * @param candidateSource from where we source the candidate
      * @param candidate candidate all info
-     * @param jobReferenceId In which job upload candidate
+     * @param jobShortCode In which job upload candidate
      * @param candidateCv candidate cv
      * @param employeeReferrer if candidate upload by employee referral then this model come
      * @return UploadResponseBean
      * @throws Exception
      */
-    UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception;
+    UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, String jobShortCode, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception;
 
     /**
      * Service method to fetch a list of count of candidate per chatbot status per job
