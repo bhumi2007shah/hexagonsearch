@@ -10,7 +10,6 @@ import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.ICandidateService;
-import io.litmusblox.server.service.IJcmCandidateSourceHistoryService;
 import io.litmusblox.server.service.MasterDataBean;
 import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.uploadProcessor.IUploadDataProcessService;
@@ -65,7 +64,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
     ICandidateService candidateService;
 
     @Autowired
-    IJcmCandidateSourceHistoryService jcmCandidateSourceHistoryService;
+    JcmCandidateSourceHistoryRepository jcmCandidateSourceHistoryRepository;
 
     //@Transactional(propagation = Propagation.REQUIRED)
     public void processData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, int candidateProcessed, Long jobId, boolean ignoreMobile, Optional<User> createdBy){
@@ -211,7 +210,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
 
         if(null!=jobCandidateMapping){
             //saving candidate source history even if candidate is duplicate for this job
-            jcmCandidateSourceHistoryService.createJcmCandidateSourceHistory(jobCandidateMapping.getId(), candidate.getCandidateSource(), loggedInUser);
+            jcmCandidateSourceHistoryRepository.save(new JcmCandidateSourceHistory(jobCandidateMapping.getId(), candidate.getCandidateSource(), loggedInUser));
 
             log.error(IErrorMessages.DUPLICATE_CANDIDATE + " : " + candidateObjToUse.getId() + candidate.getEmail() + " : " + candidate.getMobile());
             candidate.setUploadErrorMessage(IErrorMessages.DUPLICATE_CANDIDATE);
@@ -242,7 +241,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             jcmCommunicationDetailsRepository.save(new JcmCommunicationDetails(savedObj.getId()));
 
             //saving candidate source history
-            jcmCandidateSourceHistoryService.createJcmCandidateSourceHistory(savedObj.getId(), savedObj.getCandidateSource(), loggedInUser);
+            jcmCandidateSourceHistoryRepository.save(new JcmCandidateSourceHistory(savedObj.getId(), savedObj.getCandidateSource(), loggedInUser));
 
         }
 

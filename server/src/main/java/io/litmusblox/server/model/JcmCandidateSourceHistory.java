@@ -6,6 +6,7 @@ package io.litmusblox.server.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -39,16 +40,17 @@ public class JcmCandidateSourceHistory {
     private String candidateSource;
 
     @Column(name = "CREATED_ON")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdOn = new Date();
+    @CreationTimestamp
+    private Date createdOn;
 
     @NotNull
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="CREATED_BY")
     private User createdBy;
 
-    @PrePersist
-    void setCreatedOn(){
-        this.createdOn = new Date();
+    public JcmCandidateSourceHistory(Long jcmId, String candidateSource, User loggedInUser) {
+        this.jobCandidateMappingId = jcmId;
+        this.candidateSource = candidateSource;
+        this.createdBy = loggedInUser;
     }
 }
