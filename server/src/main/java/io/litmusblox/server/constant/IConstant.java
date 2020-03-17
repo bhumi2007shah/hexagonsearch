@@ -47,8 +47,6 @@ public interface IConstant {
     String REGEX_FOR_DOT_IN_NAME = "(?<=[a.zA-Z\\.]\\s)+";
     String REGEX_TO_FIND_ONLINE_PROFILE_UNIQUE_ID = "(?<=\\/)(?:[\\w\\-]+)(?:\\/)?$";
     String REGEX_TO_VALIDATE_COMPANY_SHORT_NAME = "^[a-zA-Z]+[a-zA-Z0-9]+$";
-    String REGEX_TO_REMOVE_NON_NUMERIC_CHAR = "[^0-9]";
-    String REGEX_FOR_REMOVE_ALL_LEADING_ZEROS = "^0+(?!$)";
     String REGEX_TO_VALIDATE_JOB_SHORT_CODE = "[A-Z]{2}[0-9]{6}$";
 
 
@@ -325,7 +323,7 @@ public interface IConstant {
     String DEFAULT_JOB_TYPE = "Full Time";
 
     String NOT_AVAILABLE_EMAIL = "@notavailable.io";
-    String SYSTEM_USER_EMAIL = "systemuser@hex. com";
+    String SYSTEM_USER_EMAIL = "systemuser@hex.com";
 
     String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countries", "education","otpExpiryMinutes"};
 

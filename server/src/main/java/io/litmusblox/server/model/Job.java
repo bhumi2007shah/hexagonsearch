@@ -228,10 +228,6 @@ public class Job implements Serializable {
     //Also add jobdetail model in job
 
     public String getJobShortCode() {
-        StringBuffer shortCode = new StringBuffer(this.getId().toString());
-        while (shortCode.length()<IConstant.LB_SHORT_CODE_LENGTH)
-            shortCode.insert(0, '0');
-
-        return IConstant.LB_SHORT_CODE+shortCode;
+        return IConstant.LB_SHORT_CODE+String.format("%0"+(IConstant.LB_SHORT_CODE_LENGTH-String.valueOf(this.getId()).length())+"d%s", 0, this.getId());
     }
 }
