@@ -95,7 +95,7 @@ public class AsyncServicesWrapper implements IAsyncServicesWrapper {
         int candidatesProcessed = getUploadCount(createdOn, loggedInUser);
 
         if (candidatesProcessed >= MasterDataBean.getInstance().getConfigSettings().getDailyCandidateUploadPerUserLimit()) {
-            log.error(IErrorMessages.MAX_CANDIDATE_PER_FILE_EXCEEDED + " :: user id : " + loggedInUser.getId() + " : not saving file " + multipartFile);
+            log.error(IErrorMessages.MAX_CANDIDATES_PER_USER_PER_DAY_EXCEEDED + " :: user id : " + loggedInUser.getId() + " : not saving file " + multipartFile);
             throw new WebException(IErrorMessages.MAX_CANDIDATES_PER_USER_PER_DAY_EXCEEDED, HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
