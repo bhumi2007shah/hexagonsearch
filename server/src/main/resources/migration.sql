@@ -1876,3 +1876,6 @@ order by jobPublishedOn desc, jobId asc;
 
 -- For ticket #35 litmusblox-scheduler
 ALTER TABLE JCM_COMMUNICATION_DETAILS ADD COLUMN REJECTED_TIMESTAMP_EMAIL TIMESTAMP DEFAULT NULL;
+
+--Update for all already reject candidate
+update jcm_communication_details set rejected_timestamp_email = NOW() where jcm_id in (select id from job_candidate_mapping where rejected='t' and stage=(select id from stage_step_master where stage='Screening'));
