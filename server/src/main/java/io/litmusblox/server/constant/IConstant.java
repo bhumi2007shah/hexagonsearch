@@ -338,6 +338,8 @@ public interface IConstant {
     String PARSING_RESPONSE_ML = "PARSING_RESPONSE_ML";
 
     int SCHEDULER_THREAD_POOL_SIZE = 20;
+    int ASYNC_CORE_THREAD_POOL_SIZE = 5;
+    int ASYNC_MAX_THREAD_POOL_SIZE = 10;
 
     String COMPANY_NAME_VARIABLE = "$companyName";
 
@@ -348,6 +350,11 @@ public interface IConstant {
     String CHAT_LINK_HEADER="Chatbot Link";
 
     String [] apacheReloadCommand = {"sudo", "apache2ctl", "graceful"};
+    int OTP_EXPIRY_SECONDS = 90;
+
+    enum ASYNC_OPERATIONS {
+        FileUpload, InviteCandidates
+    }
 
     String LB_SHORT_CODE = "LB";
     int LB_SHORT_CODE_LENGTH = 6;
