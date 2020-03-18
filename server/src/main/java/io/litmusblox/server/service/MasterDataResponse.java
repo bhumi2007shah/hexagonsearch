@@ -51,4 +51,5 @@ public class MasterDataResponse {
     private Map<Long, String> cancellationReasons = new HashMap<>();
     private Map<Long, String> noShowReasons = new HashMap<>();
     private List<String> interviewConfirmation = new ArrayList<>();
+    private int otpExpiryMinutes;
 }

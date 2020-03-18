@@ -1699,16 +1699,18 @@ VALUES
 (1, 'mobile','Mobile', 10, null),
 (1, 'totalExperience','Total Experience', 11, null),
 (1, 'createdBy','Created By', 12, null),
-(1, 'interviewDate','Interview Date', 13, 'Interview'),
-(1, 'interviewType','Interview Type', 14, 'Interview'),
-(1, 'interviewMode','Interview Mode', 15, 'Interview'),
-(1, 'interviewLocation','Interview location', 16, 'Interview'),
-(1, 'candidateConfirmation','Candidate Confirmation', 17, 'Interview'),
-(1, 'candidateConfirmationTime','Candidate Confirmation Time', 18, 'Interview'),
-(1, 'showNoShow','Show No Show', 19, 'Interview'),
-(1, 'noShowReason','No Show Reason' ,20, 'Interview'),
-(1, 'cancelled', 'Interview Cancelled', 21, 'Interview'),
-(1, 'cancellationReason','Cancellation Reason', 22, 'Interview');
+(1, 'createdOn','Created On', 13, ''),
+(1, 'capabilityScore', 'Capability Score', 14, ''),
+(1, 'interviewDate','Interview Date', 15, 'Interview'),
+(1, 'interviewType','Interview Type', 16, 'Interview'),
+(1, 'interviewMode','Interview Mode', 17, 'Interview'),
+(1, 'interviewLocation','Interview location', 18, 'Interview'),
+(1, 'candidateConfirmation','Candidate Confirmation', 19, 'Interview'),
+(1, 'candidateConfirmationTime','Candidate Confirmation Time', 20, 'Interview'),
+(1, 'showNoShow','Show No Show', 21, 'Interview'),
+(1, 'noShowReason','No Show Reason' ,22, 'Interview'),
+(1, 'cancelled', 'Interview Cancelled', 23, 'Interview'),
+(1, 'cancellationReason','Cancellation Reason', 24, 'Interview');
 
 --For ticket #336
 UPDATE COMPANY SET SHORT_NAME =
@@ -1785,10 +1787,6 @@ insert into sms_templates(template_name, template_content) values
 ALTER TABLE COMPANY
 ADD COLUMN SEND_COMMUNICATION bool NOT NULL DEFAULT 't';
 
-
-
-
-
 -- For ticket #380
 INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
 ('OTPSms','Your OTP for LitmusBlox is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] seconds.');
@@ -1808,7 +1806,76 @@ INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
 ('AutosourceApplicationShortlisted', '[[${commBean.receiverfirstname}]], [[${commBean.sendercompany}]] has shortlisted you for [[${commBean.jobtitle}]] position. Click on link to complete your profile. [[${commBean.chatlink}]] '),
 ('AutosourceLinkNotVisited', 'Last Reminder [[${commBean.receiverfirstname}]] - [[${commBean.sendercompany}]] has shortlisted your application. Click link to complete your profile. [[${commBean.chatlink}]]'),
 ('OTPSms','Your OTP for LitmusBlox is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] seconds.'),
-('InterviewDay', 'INTERVIEW REMINDER FOR [[${commBean.receiverfirstname}]] - You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewDate}]]. Please report 15 mins before. Click Google Maps link for directions. See you there! [[${commBean.interviewAddressLink}]]');
+('InterviewDay', 'INTERVIEW REMINDER FOR [[${commBean.receiverfirstname}]] - You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewdate}]]. Please report 15 mins before. Click Google Maps link for directions. See you there! [[${commBean.interviewAddressLink}]]');
+
+-- For #441
+INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
+(6, '"introText"=>"As a part of org level role baselining, we seek your inputs on various aspects of your work experience regarding the role of",
+"thankYouText"=>"No further action is required from your side",
+"showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false"');
+
+-- For ticket #443
+UPDATE SMS_TEMPLATES
+SET TEMPLATE_CONTENT = 'Your OTP for LitmusBlox job application is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] minutes.'
+WHERE TEMPLATE_NAME = 'OTPSms';
+
+--For ticket #430
+ALTER TABLE USERS ADD CONSTRAINT UNIQUE_USERS_EMAIL_KEY UNIQUE(EMAIL);
+
+
+-- For ticket #444
+UPDATE SMS_TEMPLATES
+SET TEMPLATE_CONTENT = 'Your OTP for [[${commBean.sendercompany}]] job application is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] minutes.'
+WHERE TEMPLATE_NAME = 'OTPSms';
+
+INSERT INTO CONFIGURATION_SETTINGS(CONFIG_NAME, CONFIG_VALUE)
+VALUES ('otpExpiryMinutes', 3);
+
+--For ticket #452
+ALTER TABLE COMPANY_ADDRESS
+ADD COLUMN AREA VARCHAR(50) DEFAULT NULL;
+
+--For ticket https://github.com/hexagonsearch/litmusblox-scheduler/issues/48
+update sms_templates set template_content = 'You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewdate}]]. Below is the Google Maps link to the interview address. Please report 15 mins before. See you there! [[${commBean.interviewAddressLink}]]' where template_name = 'InterviewDay';
+
+--For ticket #450
+drop view if exists jobDetailsView;
+drop view if exists jobKeySkillAggregation;
+
+create view jobKeySkillAggregation as
+select job_key_skills.job_id as jobId, string_agg(trim(lower(skills_master.skill_name)), ',') as keySkills
+from skills_master, job_key_skills
+where skills_master.id = job_key_skills.skill_id
+group by job_key_skills.job_id;
+
+create view jobDetailsView AS
+select
+	job.id as jobId,
+	job.company_id as companyId,
+	job.job_title as jobTitle,
+	job.job_type as jobType,
+	job.created_on as jobCreatedOn,
+	job.date_published as jobPublishedOn,
+	company_address.address as jobLocation,
+	company_address.city as jobLocationCity,
+	company_address.state as jobLocationState,
+	company_address.country as jobLocationCountry,
+	exp.value as jobExperience,
+	education.value as education, jobKeySkillAggregation.keyskills as keyskills
+from job
+left join company_address
+on job.job_location = company_address.id
+left join master_data exp
+on job.experience_range = exp.id
+left join master_data education
+on job.education = education.id
+left join jobKeySkillAggregation
+on job.id = jobKeySkillAggregation.jobId
+where job.status = 'Live'
+order by jobPublishedOn desc, jobId asc;
+
+-- For ticket #35 litmusblox-scheduler
+ALTER TABLE JCM_COMMUNICATION_DETAILS ADD COLUMN REJECTED_TIMESTAMP_EMAIL TIMESTAMP DEFAULT NULL;
 
 -- For ticket #379 - Async handling of upload candidates from a file and invite candidates
 CREATE TABLE ASYNC_OPERATIONS_ERROR_RECORDS (

@@ -24,8 +24,9 @@ public class OTPRequestBean {
     private String receiverfirstname;
     private String receivercountrycode;
     private String sendercountrycode;
+    private String sendercompany;
 
-    public OTPRequestBean(int otp, int otpExpiry, String receivermobile, String receivercountrycode, String receiveremail, String receiverfirstname) {
+    public OTPRequestBean(int otp, int otpExpiry, String receivermobile, String receivercountrycode, String receiveremail, String receiverfirstname, String sendercompany) {
         this.otp = otp;
         this.otpExpiry = otpExpiry;
         this.receivermobile = receivermobile;
@@ -33,5 +34,6 @@ public class OTPRequestBean {
         this.receivercountrycode = receivercountrycode;
         this.sendercountrycode = receivercountrycode;
         this.receiverfirstname = receiverfirstname;
+        this.sendercompany = sendercompany;
     }
 }

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.litmusblox.server.utils.Util;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,10 +16,7 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * @author : Sumit
@@ -156,4 +154,9 @@ public class InterviewDetails implements Serializable {
         this.createdOn = createdOn;
         this.createdBy = createdBy;
     }
+
+    public String getInterviewDateWithTimeZone(){
+         return (null == this.interviewDate)?null:(Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), this.interviewDate));
+    }
+
 }

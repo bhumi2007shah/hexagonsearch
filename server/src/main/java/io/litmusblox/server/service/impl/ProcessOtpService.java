@@ -5,13 +5,13 @@
 package io.litmusblox.server.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.error.ValidationException;
+import io.litmusblox.server.model.Company;
+import io.litmusblox.server.repository.CompanyRepository;
 import io.litmusblox.server.service.IProcessOtpService;
+import io.litmusblox.server.service.MasterDataBean;
 import io.litmusblox.server.service.OTPRequestBean;
+import io.litmusblox.server.utils.TimedCache;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import javax.jms.Queue;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -43,18 +44,13 @@ public class ProcessOtpService implements IProcessOtpService {
     @Autowired
     private JmsTemplate jmsTemplate;
 
-    private LoadingCache<String, Integer> otpCache;
+    @Resource
+    CompanyRepository companyRepository;
 
-    //initialize cache
-    public ProcessOtpService() {
-        log.info("Initializing cache for OTP");
-        otpCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(IConstant.OTP_EXPIRY_SECONDS, TimeUnit.SECONDS)
-                .build(new CacheLoader<String, Integer>() {
-                    public Integer load(String key) {
-                        return 0;
-                    }
-                });
+    private static TimedCache otpCache;
+
+    private synchronized void initializeCache() {
+        otpCache = new TimedCache(1, MasterDataBean.getInstance().getOtpExpiryMinutes(), MasterDataBean.getInstance().getOtpExpiryMinutes(), TimeUnit.MINUTES );
     }
 
     /**
@@ -65,10 +61,11 @@ public class ProcessOtpService implements IProcessOtpService {
      * @param countryCode country code
      * @param email email address of the employee
      * @param recepientName name of the message receiver
+     * @param companyShortName shortname of the company
      * @throws Exception
      */
     @Override
-    public void sendOtp(boolean isEmployeeReferral, String mobileNumber, String countryCode, String email, String recepientName) throws Exception {
+    public void sendOtp(boolean isEmployeeReferral, String mobileNumber, String countryCode, String email, String recepientName, String companyShortName) throws Exception {
         log.info("Received request to Send OTP for {} mobile: {} email: {} ", recepientName, mobileNumber, email);
         long startTime = System.currentTimeMillis();
 
@@ -78,28 +75,35 @@ public class ProcessOtpService implements IProcessOtpService {
         if(!isEmployeeReferral && (null == mobileNumber || mobileNumber.trim().length() == 0))
             throw new ValidationException("Mobile number is required to send OTP", HttpStatus.UNPROCESSABLE_ENTITY);
 
+        //Retrieve the company name based on company short name
+        Company companyObjToUse = companyRepository.findByShortNameIgnoreCase(companyShortName);
+        if (null == companyObjToUse)
+            throw new ValidationException("No company found for short name:"+companyShortName, HttpStatus.UNPROCESSABLE_ENTITY);
+
         String otpRequestKey = isEmployeeReferral?email:mobileNumber;
 
         Random random = new Random();
         int otp = 0;
         while (otp == 0 || otp >= 10000)
             otp = 1000 + random.nextInt(10000);
+        if(null == otpCache)
+            initializeCache();
         otpCache.put(otpRequestKey, otp);
+
         log.info("Generated otp: {} for {}", otp, otpRequestKey);
 
-        //TODO: Push the otp on to queue
         ObjectMapper objectMapper = new ObjectMapper();
         //Messages on queue that are more than timeout seconds old, should not be processed
         jmsTemplate.setExplicitQosEnabled(true);
-        jmsTemplate.setTimeToLive(IConstant.OTP_EXPIRY_SECONDS * 1000);
+        jmsTemplate.setTimeToLive(MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes() * 60 * 1000);
 
         OTPRequestBean otpRequestBean;
         //if the otp is for employee referral, do not send mobile to queue
         //if the otp is for candidate career page, do not send email to queue
         if (isEmployeeReferral)
-            otpRequestBean = new OTPRequestBean(otp, IConstant.OTP_EXPIRY_SECONDS, null, countryCode, email, recepientName);
+            otpRequestBean = new OTPRequestBean(otp, MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes(), null, countryCode, email, recepientName, companyObjToUse.getCompanyName());
         else
-            otpRequestBean = new OTPRequestBean(otp, IConstant.OTP_EXPIRY_SECONDS, mobileNumber, countryCode, null, recepientName);
+            otpRequestBean = new OTPRequestBean(otp, MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes(), mobileNumber, countryCode, null, recepientName, companyObjToUse.getCompanyName());
 
         jmsTemplate.convertAndSend(queue, objectMapper.writeValueAsString(otpRequestBean));
         log.info("Put message on queue {}", queue.getQueueName());
@@ -116,11 +120,15 @@ public class ProcessOtpService implements IProcessOtpService {
      */
     @Override
     public boolean verifyOtp(String otpRequestKey, int otp) throws Exception {
-        return (otpCache.get(otpRequestKey) == otp);
-    }
-
-    //This method is used to clear the OTP cached already
-    public void clearOTP(String key){
-        otpCache.invalidate(key);
+        if(null == otpCache)
+            return false;
+        Object otpObj = otpCache.get(otpRequestKey);
+        if(null == otpObj)
+            return false;
+        int cachedOtp = Integer.parseInt(otpObj.toString());
+        log.info("Otp: from request:: {} from cache:: {}",otp,cachedOtp);
+        if(cachedOtp == otp)
+            otpCache.remove(otpRequestKey);
+        return (cachedOtp == otp);
     }
 }

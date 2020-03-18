@@ -33,7 +33,7 @@ import java.util.UUID;
  * Class Name : AuthController
  * Project Name : server
  */
-@CrossOrigin(origins = "*", methods = {RequestMethod.PUT,RequestMethod.POST,RequestMethod.OPTIONS}, allowedHeaders = {"Content-Type", "Authorization","X-Requested-With", "accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"}, exposedHeaders = {"Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"})
+@CrossOrigin(origins = "*", methods = {RequestMethod.PUT,RequestMethod.POST,RequestMethod.OPTIONS, RequestMethod.GET}, allowedHeaders = {"Content-Type", "Authorization","X-Requested-With", "accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"}, exposedHeaders = {"Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"})
 @RestController
 @RequestMapping("/api/auth")
 @Log4j2
@@ -63,7 +63,7 @@ public class AuthController {
         long startTime = System.currentTimeMillis();
         user.setUserUuid(userToken);
         userDetailsService.setPassword(user);
-        log.info("Completed processing forgot password request in " + (System.currentTimeMillis() - startTime) + "ms.");
+        log.info("Completed processing forgot password request in {} ms.", (System.currentTimeMillis() - startTime));
     }
 
     @PutMapping(value="/forgotPassword")
@@ -72,14 +72,14 @@ public class AuthController {
         log.info("Received forgot password request for " + email);
         long startTime = System.currentTimeMillis();
         userDetailsService.forgotPassword(email);
-        log.info("Completed processing set password request in " + (System.currentTimeMillis() - startTime) + "ms.");
+        log.info("Completed processing set password request in {} ms.", (System.currentTimeMillis() - startTime));
     }
 
-    @PostMapping(value="/createUser")
+    @PostMapping(value="/createUpdateUser")
     @PreAuthorize("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.RECRUITMENT_AGENCY + "')")
-    String addUser(@RequestBody User user) throws Exception {
+    String createUpdateUser(@RequestBody User user) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
-                userDetailsService.createUser(user),
+                userDetailsService.createUpdateUser(user),
                 (new HashMap<String, List<String>>(){{
                     put("User", Arrays.asList("id", "firstName", "lastName", "email","mobile", "companyAddressId","companyBuId", "designation"));
                 }}),
@@ -94,6 +94,27 @@ public class AuthController {
         log.info("Received request to block user with id: "+ user.getId());
         long startTime = System.currentTimeMillis();
         userDetailsService.blockUser(user,blockUser);
-        log.info("Complete block user request in " + (System.currentTimeMillis() - startTime) + "ms.");
+        log.info("Complete block user request in {} ms.", (System.currentTimeMillis() - startTime));
+    }
+
+    /**
+     *API to fetch user details
+     * @param userId for which user we want details
+     * @return user details
+     * @throws Exception
+     */
+    @GetMapping(value = "/getUserDetails/{userId}")
+    @ResponseStatus(value = HttpStatus.OK)
+    String getUserDetails(@PathVariable("userId") Long userId) throws Exception {
+        log.info("Inside getUserDetails for UserId : {}", userId);
+        long startTime = System.currentTimeMillis();
+        User user = userDetailsService.getUserDetails(userId);
+        log.info("Get user detail request in {} ms.", (System.currentTimeMillis() - startTime));
+        return Util.stripExtraInfoFromResponseBean(user,
+                (new HashMap<String, List<String>>(){{
+                    put("User", Arrays.asList("firstName","lastName", "email", "mobile", "designation", "companyAddressId", "companyBuId", "role", "countryId"));
+                }}),
+                null
+        );
     }
 }

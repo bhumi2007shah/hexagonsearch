@@ -38,7 +38,7 @@ public interface IConstant {
 
     String INDIAN_MOBILE_PATTERN = "(0/91)?[6-9][0-9]{9}";
     String JUNK_MOBILE_PATTERN = "([0-9])\\1{8,}";
-    String REGEX_FOR_EMAIL_VALIDATION = "^[a-z0-9A-Z]+[\\w.]+@[a-zA-Z]+[a-zA-Z0-9.-]+[a-zA-Z]$";
+    String REGEX_FOR_EMAIL_VALIDATION = "^[a-z0-9A-Z]+[\\w.-]+@[a-zA-Z]+[a-zA-Z0-9.-]+[a-zA-Z]$";
     String REGEX_FOR_MOBILE_VALIDATION = "[\\d]+";
     String REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL = "[^\\d\\w@.-]";
     String REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_MOBILE = "[^\\d]";
@@ -321,7 +321,7 @@ public interface IConstant {
     String NOT_AVAILABLE_EMAIL = "@notavailable.io";
     String SYSTEM_USER_EMAIL = "systemuser@hex.com";
 
-    String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countries", "education"};
+    String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countries", "education","otpExpiryMinutes"};
 
     String REPLACEMENT_KEY_FOR_SHORTNAME = "_shortName_";
     String GODADDY_SUCCESS_RESPONSE = "\"code\":";
@@ -333,7 +333,7 @@ public interface IConstant {
     String PARSING_RESPONSE_PYTHON = "PARSING_RESPONSE_PYTHON";
     String PARSING_RESPONSE_ML = "PARSING_RESPONSE_ML";
 
-    int SCHEDULER_THREAD_POOL_SIZE = 6;
+    int SCHEDULER_THREAD_POOL_SIZE = 20;
     int ASYNC_CORE_THREAD_POOL_SIZE = 5;
     int ASYNC_MAX_THREAD_POOL_SIZE = 10;
 
@@ -347,7 +347,6 @@ public interface IConstant {
 
     String [] apacheReloadCommand = {"sudo", "apache2ctl", "graceful"};
     int OTP_EXPIRY_SECONDS = 90;
-
 
     enum ASYNC_OPERATIONS {
         FileUpload, InviteCandidates

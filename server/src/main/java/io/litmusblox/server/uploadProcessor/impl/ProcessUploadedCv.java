@@ -281,7 +281,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                         if(Util.isNull(jcmFromDb.getMobile()) && Util.isNotNull(candidateFromPython.getMobile())){
                             validMobile = Util.indianMobileConvertor(candidateFromPython.getMobile(), cvParsingDetailsFromDb.getJobCandidateMappingId().getCountryCode());
                             if(Util.validateMobile(validMobile, cvParsingDetailsFromDb.getJobCandidateMappingId().getCountryCode())){
-                                log.info("candidate old mobile : {}, python response mobile : {}", jcmFromDb.getMobile(), candidateFromPython.getMobile());
+                                log.info("candidate old mobile : {}, python response mobile : {}, For JcmId : {}", jcmFromDb.getMobile(), candidateFromPython.getMobile(), jcmFromDb.getId());
                                 cvParsingDetailsFromDb.getJobCandidateMappingId().setMobile(validMobile);
                                 isEditCandidate = true;
                             }
@@ -290,6 +290,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                             jobCandidateMappingService.updateOrCreateEmailMobile(cvParsingDetailsFromDb.getJobCandidateMappingId(), jcmFromDb, jcmFromDb.getCreatedBy());
                     }
                 } catch (Exception e) {
+                    log.info(Util.getStackTrace(e));
                     log.error("Error while convert cv to text cvFilePath : {}, for cvParsingDetailsId  : {}, error message : {}", queryParameters.get("file"), cvParsingDetailsFromDb.getId(), e.getMessage());
                     breadCrumb.put("Error Msg", ExceptionUtils.getStackTrace(e));
                     SentryUtil.logWithStaticAPI(null, "Failed to convert cv to text", breadCrumb);

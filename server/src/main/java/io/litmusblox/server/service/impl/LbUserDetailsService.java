@@ -9,6 +9,7 @@ import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.Company;
+import io.litmusblox.server.model.Country;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.security.JwtTokenUtil;
@@ -70,12 +71,6 @@ public class LbUserDetailsService implements UserDetailsService {
     private PasswordEncoder passwordEncoder;
 
     @Resource
-    CompanyAddressRepository companyAddressRepository;
-
-    @Resource
-    CompanyBuRepository companyBuRepository;
-
-    @Resource
     JcmProfileSharingDetailsRepository jcmProfileSharingDetailsRepository;
 
     @Autowired
@@ -105,6 +100,11 @@ public class LbUserDetailsService implements UserDetailsService {
         if(!userDetails.getCompany().getActive()){
             log.error("Company is blocked, LoggedIn user email : {}", user.getEmail());
             throw new WebException("Litmusblox cannot log you in right now. Please contact Litmusblox for further details", HttpStatus.FORBIDDEN);
+        }
+
+        if(IConstant.UserStatus.Blocked.toString().equals(userDetails.getStatus())){
+            log.error("User is blocked, email: {}", user.getEmail());
+            throw new WebException("Your account has been blocked. Please contact your admin to get access to Litmusblox.", HttpStatus.FORBIDDEN);
         }
 
         authenticate(user.getEmail(), user.getPassword());
@@ -138,18 +138,22 @@ public class LbUserDetailsService implements UserDetailsService {
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public User createUser(User user) throws Exception {
-
+    public User createUpdateUser(User user) throws Exception {
+        log.info("Inside createUpdateUser");
+        User userFromDb = null;
         User loggedInUser = getLoggedInUser();
 
         //check if the user is duplicate
-        checkForDuplicateUser(user, loggedInUser.getRole());
+        checkForDuplicateUser(user, user.getId());
         validateUser(user);
+
+        User u = new User();
 
         //TODO Need revisit this code after getting screens
         Company companyObjToUse = null;
-        if(IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && null == user.getCompany().getRecruitmentAgencyId()) {
-            //check if company exists
+        //If Call for update user then company could not be updated
+        if(null == user.getId() && IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && null == user.getCompany().getRecruitmentAgencyId()) {
+            //Check if company exists
             Company userCompany = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyIdIsNull(user.getCompany().getCompanyName());
 
             if (null == userCompany) {
@@ -162,13 +166,13 @@ public class LbUserDetailsService implements UserDetailsService {
                         throw new ValidationException(IErrorMessages.INVALID_COMPANY_SHORT_NAME+", Company short name : " + user.getCompany().getShortName(), HttpStatus.BAD_REQUEST);
                 }
 
-                //create a company
+                //Create a company
                 companyObjToUse = companyService.addCompany(new Company(user.getCompany().getCompanyName(), true, user.getCompany().getCompanyType(),null, user.getCompany().getShortName(), user.getCompany().getCountryId(), new Date(), loggedInUser.getId()), loggedInUser);
                 user.setRole(IConstant.ADMIN);
             } else {
                 companyObjToUse = userCompany;
             }
-        }else if(null != user.getCompany() && null != user.getCompany().getRecruitmentAgencyId() && IConstant.UserRole.Names.RECRUITMENT_AGENCY.equals(loggedInUser.getRole())){
+        }else if(null == user.getId() && null != user.getCompany() && null != user.getCompany().getRecruitmentAgencyId() && IConstant.UserRole.Names.RECRUITMENT_AGENCY.equals(loggedInUser.getRole())){
             Company userCompany = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(user.getCompany().getCompanyName(), loggedInUser.getCompany().getId());
             if(null==userCompany){
                 //If Client company not found then do not create company throw exception
@@ -178,9 +182,17 @@ public class LbUserDetailsService implements UserDetailsService {
                     throw new ValidationException("Client company : " + user.getCompany().getCompanyName() + " not belonging to agency : "+loggedInUser.getCompany().getCompanyName(), HttpStatus.UNAUTHORIZED);
                 companyObjToUse = userCompany;
             }
+        }else if(null != user.getId()){
+            //Update user
+            userFromDb = userRepository.findById(user.getId()).orElse(null);
+            companyObjToUse = userFromDb.getCompany();
+            u.setId(userFromDb.getId());
+            if(null == user.getCompanyAddressId())
+                user.setCompanyAddressId(userFromDb.getCompanyAddressId());
+            if(null == user.getCompanyBuId())
+                user.setCompanyBuId(userFromDb.getCompanyBuId());
         }
 
-        User u = new User();
         if(null != user.getDesignation()){
             if(!USER_DESIGNATION_PATTERN.matcher(user.getDesignation()).matches())
                 throw new ValidationException(IErrorMessages.USER_DESIGNATION_NOT_VALID, HttpStatus.BAD_REQUEST);
@@ -190,10 +202,10 @@ public class LbUserDetailsService implements UserDetailsService {
         u.setFirstName(Util.toSentenceCase(user.getFirstName()));
         u.setLastName(Util.toSentenceCase(user.getLastName()));
         u.setEmail(user.getEmail().toLowerCase());
-        if(null == companyObjToUse)
+        if(null == user.getId() && null == companyObjToUse)
             companyObjToUse=loggedInUser.getCompany();
 
-        //add CompanyAddressId and CompanyBuId in user
+        //Add or update CompanyAddressId and CompanyBuId in user
         if(null != user.getCompanyAddressId()){
             Boolean isCompanyPresent = false;
             if(companyObjToUse.getRecruitmentAgencyId() != null && !companyObjToUse.getId().equals(loggedInUser.getCompany().getId())){
@@ -244,8 +256,9 @@ public class LbUserDetailsService implements UserDetailsService {
             if(!isCompanyPresent)
                 log.error("Company Bu Id is not related to logged in user company, CompanyBuId : "+user.getCompanyBuId());
         }
-        //u.setCompany((companyObjToUse==null)?loggedInUser.getCompany():companyObjToUse);
+
         u.setCompany(companyObjToUse);
+
         if (null == user.getRole()) {
             //If user role is null then set default role is Recruiter
             if(null != user.getCompany().getRecruitmentAgencyId() && !user.getCompany().getId().equals(loggedInUser.getCompany().getId())){
@@ -277,18 +290,41 @@ public class LbUserDetailsService implements UserDetailsService {
             else
                 throw new ValidationException("Invalid role in create user request: " + user.getRole(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
-        if(IConstant.UserType.BUSINESS.getValue().equals(user.getUserType()) || IConstant.UserType.RECRUITING.getValue().equals(user.getUserType()))
-            u.setUserType(user.getUserType());
+        if(IConstant.UserRole.Names.BUSINESS_USER.equals(user.getRole()))
+            u.setUserType(IConstant.UserType.BUSINESS.getValue());
         else
             u.setUserType(IConstant.UserType.RECRUITING.getValue());
 
-        u.setCountryId(countryRepository.findByCountryCode(user.getCountryCode()));
+        u.setCountryId(user.getCountryId());
         u.setMobile(user.getMobile());
-        u.setUserUuid(UUID.randomUUID());
-        u.setCreatedBy(loggedInUser.getId());
-        u.setCreatedOn(new Date());
 
-        companyService.saveCompanyHistory(companyObjToUse.getId(), "New user with email " + user.getEmail() + " created",loggedInUser);
+        //For update user password should be reset
+        if(null != user.getId()){
+            u.setUpdatedOn(new Date());
+            u.setUpdatedBy(loggedInUser.getId());
+            u.setPassword(userFromDb.getPassword());
+            u.setStatus(userFromDb.getStatus());
+            u.setCreatedBy(userFromDb.getCreatedBy());
+            u.setCreatedOn(userFromDb.getCreatedOn());
+            u.setUserUuid(userFromDb.getUserUuid());
+            if(!userFromDb.getEmail().equals(user.getEmail().toLowerCase()) && !IConstant.UserType.BUSINESS.getValue().equals(userFromDb.getUserType()) && !IConstant.UserStatus.New.name().equals(userFromDb.getStatus())){
+                log.info("Reset password because update email, Old email : {}, new email : {}",userFromDb.getEmail(), user.getEmail().toLowerCase());
+                u.setStatus(IConstant.UserStatus.Inactive.name());
+                u.setPassword(null);
+                u.setResetPasswordFlag(true);
+                u.setResetPasswordEmailTimestamp(null);
+                u.setUserUuid(UUID.randomUUID());
+            }
+            log.info("Update User : {}", user.getId());
+        }else{
+            u.setUserUuid(UUID.randomUUID());
+            u.setCreatedBy(loggedInUser.getId());
+            u.setCreatedOn(new Date());
+        }
+
+        if(null == user.getId())
+            companyService.saveCompanyHistory(companyObjToUse.getId(), "New user with email " + user.getEmail() + " created",loggedInUser);
+
         return userRepository.save(u);
     }
 
@@ -296,10 +332,10 @@ public class LbUserDetailsService implements UserDetailsService {
         return (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
-    private void checkForDuplicateUser(User user, String role) throws ValidationException {
+    private void checkForDuplicateUser(User user, Long userId) throws ValidationException {
         //check if user with email exists
         User dupUser = userRepository.findByEmail(user.getEmail());
-        if (null != dupUser) {
+        if (null != dupUser && (null == userId || !dupUser.getId().equals(userId))) {
             log.error("Duplicate user found: " + dupUser.toString());
             throw new ValidationException(IErrorMessages.DUPLICATE_USER_EMAIL + " - " + user.getEmail(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
@@ -322,7 +358,7 @@ public class LbUserDetailsService implements UserDetailsService {
     }
 
     private void validateUser(User user) throws ValidationException {
-        if (null == user.getCountryCode())
+        if (null == user.getCountryId())
             throw new ValidationException(IErrorMessages.USER_COUNTRY_NULL, HttpStatus.UNPROCESSABLE_ENTITY);
         //validate firstName
         Util.validateName(user.getFirstName());
@@ -331,7 +367,8 @@ public class LbUserDetailsService implements UserDetailsService {
         //validate email
         Util.validateEmail(user.getEmail());
         //validate mobile
-        Util.validateMobile(user.getMobile(), user.getCountryCode());
+        Country country = countryRepository.findById(user.getCountryId().getId()).orElse(null);
+        Util.validateMobile(user.getMobile(), null != country?country.getCountryCode():null);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -442,7 +479,7 @@ public class LbUserDetailsService implements UserDetailsService {
         List<User> userList = userRepository.findByCompanyId(companyId);
         List<UserWorkspaceBean> responseBeans = new ArrayList<>(userList.size());
         userList.forEach(user->{
-            UserWorkspaceBean workspaceBean = new UserWorkspaceBean(user.getId(), user.getDisplayName(), user.getStatus(), user.getCompanyAddressId(), user.getCompanyBuId(), user.getEmail(), user.getMobile());
+            UserWorkspaceBean workspaceBean = new UserWorkspaceBean(user.getId(), user.getDisplayName(), user.getStatus(), user.getCompanyAddressId(), user.getCompanyBuId(), user.getEmail(), user.getMobile(), user.getRole());
             workspaceBean.setNumberOfJobsCreated(jobRepository.countByCreatedBy(user));
             workspaceBean.setNumOfInvites(jobCandidateMappingRepository.getInviteCount(user.getId()));
             List<Object[]> object = jobCandidateMappingRepository.getChatbotCountCompletedAndInCompleted(user.getId());
@@ -460,5 +497,28 @@ public class LbUserDetailsService implements UserDetailsService {
 
     public User findById(Long userId) throws Exception {
         return userRepository.getOne(userId);
+    }
+
+    /**
+     *Service method to fetch user details
+     * @param userId for which user we want details
+     * @return user details
+     * @throws Exception
+     */
+    public User getUserDetails(Long userId) throws Exception {
+        log.info("Inside getUserDetails");
+        User user = findById(userId);
+        if(null == user)
+            throw new ValidationException("User not found for userId : "+userId, HttpStatus.BAD_REQUEST);
+        else{
+            if(IConstant.UserRole.Names.RECRUITER.equals(user.getRole()))
+                user.setRole(IConstant.HR_RECRUITER);
+            else if(IConstant.UserRole.Names.CLIENT_ADMIN.equals(user.getRole()))
+                user.setRole(IConstant.ADMIN);
+            else if(IConstant.UserRole.Names.BUSINESS_USER.equals(user.getRole()))
+                user.setRole(IConstant.HIRING_MANAGER);
+
+            return user;
+        }
     }
 }

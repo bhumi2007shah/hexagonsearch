@@ -63,7 +63,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
     @Autowired
     ICandidateService candidateService;
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    //@Transactional(propagation = Propagation.REQUIRED)
     public void processData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, int candidateProcessed, Long jobId, boolean ignoreMobile, Optional<User> createdBy){
         log.info("inside processData");
 
@@ -131,12 +131,12 @@ public class UploadDataProcessService implements IUploadDataProcessService {
     public Candidate validateDataAndSaveJcmAndJcmCommModel(UploadResponseBean uploadResponseBean, Candidate candidate, User loggedInUser, Boolean ignoreMobile, Job job) throws Exception {
 
         log.info("Inside validateDataAndSaveJcmAndJcmCommModel method");
-        if (null != candidate.getFirstName()) {
+        if (Util.isNotNull(candidate.getFirstName())) {
             //validate candidate used in multiple places so create util method
              candidate.setFirstName(Util.validateCandidateName(candidate.getFirstName()));
         }
 
-        if (null != candidate.getLastName()) {
+        if (Util.isNotNull(candidate.getLastName())) {
             candidate.setLastName(Util.validateCandidateName(candidate.getLastName()));
         }
 

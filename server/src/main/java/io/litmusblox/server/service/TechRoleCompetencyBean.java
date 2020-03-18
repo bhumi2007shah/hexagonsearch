@@ -20,6 +20,7 @@ import java.util.List;
 @Data
 public class TechRoleCompetencyBean {
     private Candidate candidate;
+    private Integer score;
     private List<TechResponseJson> techResponseJson;
     private String candidateProfileLink;
 }

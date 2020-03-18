@@ -1214,7 +1214,7 @@ public class JobService implements IJobService {
         List<ExportFormatDetail> defaultExportColumns = exportFormatDetailRepository.findByExportFormatMasterOrderByPositionAsc(exportFormatMaster);
 
         defaultExportColumns = defaultExportColumns.stream().filter(exportFormatDetail -> {
-            return (exportFormatDetail.getStage().isEmpty() || exportFormatDetail.getStage().equalsIgnoreCase(stage));
+            return (null==exportFormatDetail.getStage() || exportFormatDetail.getStage().isEmpty() || exportFormatDetail.getStage().equalsIgnoreCase(stage));
         }).collect(Collectors.toList());
 
         if(((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getRole().equalsIgnoreCase(IConstant.UserRole.Names.SUPER_ADMIN)){
@@ -1291,7 +1291,7 @@ public class JobService implements IJobService {
      * @return List of jobs
      */
     static String SELECT_QUERY_PREFIX = "Select jobId from jobDetailsView where companyId = ";
-    static String AND = " and ", IN_BEGIN = " in (", BRACKET_CLOSE = ")", LIKE_BEGIN = " LIKE \'%", LIKE_END = "%\'", LOWER_BEGIN = "LOWER(", OR = " or ";
+    static String AND = " and ", IN_BEGIN = " in (", BRACKET_CLOSE = ")", LIKE_BEGIN = " LIKE \'%", LIKE_END = "%\'", LOWER_BEGIN = "LOWER(", OR = " or ", SINGLE_QUOTE = "\'", BRACKET_OPEN = "(", COMMA = ",";
     @Transactional(readOnly = true)
     public List<Job> searchJobs(SearchRequestBean searchRequest) {
         StringBuffer query = new StringBuffer().append(SELECT_QUERY_PREFIX);
@@ -1308,14 +1308,24 @@ public class JobService implements IJobService {
         final AtomicBoolean firstSearchParam = new AtomicBoolean(true);
         searchRequest.getSearchParam().forEach(searchParam -> {
             if(firstSearchParam.get()) {
-                query.append("(");
+                query.append(BRACKET_OPEN);
                 firstSearchParam.set(false);
             }
             else
-                query.append(OR);
+                query.append(BRACKET_CLOSE).append(AND).append(BRACKET_OPEN);
 
-            if(searchParam.isMultiSelect())
-                query.append(searchParam.getKey()).append(IN_BEGIN).append(searchParam.getValue()).append(BRACKET_CLOSE);
+            if(searchParam.isMultiSelect()) {
+                if (searchParam.getValue().indexOf('\'') > -1) {
+                    String[] searchValues = searchParam.getValue().toLowerCase().split(COMMA);
+                    for (int i=0;i<searchValues.length;i++) {
+                        if (i > 0)
+                            query.append(OR);
+                        query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(COMMA).append(searchValues[i].toLowerCase().replaceAll(SINGLE_QUOTE, "").trim()).append(COMMA).append(LIKE_END);
+                    }
+                }
+                else
+                    query.append(searchParam.getKey()).append(IN_BEGIN).append(searchParam.getValue().toLowerCase()).append(BRACKET_CLOSE);
+            }
             else {
                 String[] searchValues = searchParam.getValue().toLowerCase().split(",");
                 for (int i=0;i<searchValues.length;i++) {
@@ -1323,14 +1333,14 @@ public class JobService implements IJobService {
                         query.append(OR);
                     query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(searchValues[i].toLowerCase()).append(LIKE_END);
                 }
-                //query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(searchParam.getValue().toLowerCase()).append(LIKE_END);
             }
         });
         if(searchRequest.getSearchParam().size()>0)
             query.append(BRACKET_CLOSE);
 
+        query.append("\n order by jobPublishedOn desc");
         log.info("Query generated:\n {}", query.toString());
-        return customQueryExecutor.executeSearchQuery(query.toString());//"Select id from job where id < 20;");
+        return customQueryExecutor.executeSearchQuery(query.toString());
     }
 
     /**
@@ -1370,6 +1380,7 @@ public class JobService implements IJobService {
                 try {
                     TechRoleCompetencyBean techRoleCompetencyBean = new TechRoleCompetencyBean();
                     techRoleCompetencyBean.setCandidate(new Candidate(jcm.getDisplayName(), jcm.getEmail(), jcm.getMobile()));
+                    techRoleCompetencyBean.setScore(jcm.getScore());
                     techRoleCompetencyBean.setTechResponseJson(
                             jcm.getTechResponseData().getTechResponse()!=null?
                                     //Map string of array of TechResponseJson to array of TechResponseBean
@@ -1378,7 +1389,11 @@ public class JobService implements IJobService {
                                     :
                                     null
                     );
-                    techRoleCompetencyBean.setCandidateProfileLink((environment.getProperty("shareProfileLink") + jcm.getChatbotUuid()));
+
+                    List<JcmProfileSharingDetails> jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.findByJobCandidateMappingId(jcm.getId());
+                    if(jcmProfileSharingDetails.size()>0){
+                        techRoleCompetencyBean.setCandidateProfileLink(environment.getProperty("shareProfileLink") + jcmProfileSharingDetails.get(0).getId());
+                    }
                     techRoleCompetencyBeans.add(techRoleCompetencyBean);
                 } catch (IOException e) {
                     e.printStackTrace();
