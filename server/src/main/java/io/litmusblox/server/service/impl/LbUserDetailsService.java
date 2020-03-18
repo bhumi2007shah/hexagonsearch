@@ -302,10 +302,19 @@ public class LbUserDetailsService implements UserDetailsService {
         if(null != user.getId()){
             u.setUpdatedOn(new Date());
             u.setUpdatedBy(loggedInUser.getId());
-            u.setStatus(IConstant.UserStatus.Inactive.name());
-            u.setPassword(null);
-            u.setResetPasswordFlag(true);
-            u.setResetPasswordEmailTimestamp(null);
+            u.setPassword(userFromDb.getPassword());
+            u.setStatus(userFromDb.getStatus());
+            u.setCreatedBy(userFromDb.getCreatedBy());
+            u.setCreatedOn(userFromDb.getCreatedOn());
+            u.setUserUuid(userFromDb.getUserUuid());
+            if(!userFromDb.getEmail().equals(user.getEmail().toLowerCase()) && !IConstant.UserType.BUSINESS.getValue().equals(userFromDb.getUserType()) && !IConstant.UserStatus.New.name().equals(userFromDb.getStatus())){
+                log.info("Reset password because update email, Old email : {}, new email : {}",userFromDb.getEmail(), user.getEmail().toLowerCase());
+                u.setStatus(IConstant.UserStatus.Inactive.name());
+                u.setPassword(null);
+                u.setResetPasswordFlag(true);
+                u.setResetPasswordEmailTimestamp(null);
+                u.setUserUuid(UUID.randomUUID());
+            }
             log.info("Update User : {}", user.getId());
         }else{
             u.setUserUuid(UUID.randomUUID());
@@ -488,5 +497,28 @@ public class LbUserDetailsService implements UserDetailsService {
 
     public User findById(Long userId) throws Exception {
         return userRepository.getOne(userId);
+    }
+
+    /**
+     *Service method to fetch user details
+     * @param userId for which user we want details
+     * @return user details
+     * @throws Exception
+     */
+    public User getUserDetails(Long userId) throws Exception {
+        log.info("Inside getUserDetails");
+        User user = findById(userId);
+        if(null == user)
+            throw new ValidationException("User not found for userId : "+userId, HttpStatus.BAD_REQUEST);
+        else{
+            if(IConstant.UserRole.Names.RECRUITER.equals(user.getRole()))
+                user.setRole(IConstant.HR_RECRUITER);
+            else if(IConstant.UserRole.Names.CLIENT_ADMIN.equals(user.getRole()))
+                user.setRole(IConstant.ADMIN);
+            else if(IConstant.UserRole.Names.BUSINESS_USER.equals(user.getRole()))
+                user.setRole(IConstant.HIRING_MANAGER);
+
+            return user;
+        }
     }
 }

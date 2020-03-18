@@ -5,6 +5,7 @@
 package io.litmusblox.server.service;
 
 import io.litmusblox.server.model.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
@@ -207,6 +208,13 @@ public interface IJobCandidateMappingService {
     void uploadResume(MultipartFile candidateCv, Long jcmId) throws Exception;
 
     /**
+     * Service to upload resume against chatbot UUID
+     * @param chatbotUuid
+     * @param candidateCv
+     */
+    ResponseEntity uploadResume(MultipartFile candidateCv, UUID chatbotUuid) throws Exception;
+
+    /**
      *Service to add candidate via career page, job portal, employee referral
      *
      * @param candidateSource from where we source the candidate
@@ -284,5 +292,13 @@ public interface IJobCandidateMappingService {
      * @throws Exception
      */
     JobCandidateMapping getCandidateConfirmationStatus(UUID interviewReferenceId) throws Exception;
+
+    /**
+     * Service method to get address data(area, city, state) for live job's from job location
+     *
+     * @param companyShortName first find company then find jobList by companyId
+     * @return address string set(eg. "Baner, Pune, Maharashtra")
+     */
+    Set<String> getLiveJobAddressStringSetByCompanyId(String companyShortName);
 
 }

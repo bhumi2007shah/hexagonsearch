@@ -126,6 +126,7 @@ public class CompanyService implements ICompanyService {
         company.setId(companyFromDb.getId());
         company.setShortName(companyFromDb.getShortName());
         company.setCountryId(companyFromDb.getCountryId());
+        company.setCompanyUniqueId(companyFromDb.getCompanyUniqueId());
 
         if(company.getNewCompanyBu()!=null || company.getDeletedCompanyBu()!=null) {
             updateBusinessUnit(company, loggedInUser);
@@ -175,7 +176,7 @@ public class CompanyService implements ICompanyService {
                 fileName = StoreFileUtil.storeFile(logo, company.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.Logo.toString(), null, null);
             }
             catch (Exception e){
-                e.printStackTrace();
+                log.info(Util.getStackTrace(e));
             }
             log.info("Company " + company.getCompanyName() + " uploaded " + fileName);
             company.setLogo(fileName);
@@ -318,7 +319,7 @@ public class CompanyService implements ICompanyService {
                 try {
                     coordinates = GoogleMapsCoordinates.getCoordinates(address.getAddress());
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.info(Util.getStackTrace(e));
                 }
 
                 //check if company address title already exists
@@ -392,7 +393,7 @@ public class CompanyService implements ICompanyService {
                         try {
                             newCoordinates = GoogleMapsCoordinates.getCoordinates(companyAddress.getAddress());
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            log.info(Util.getStackTrace(e));
                         }
                         if(null!=newCoordinates){
                             companyAddressFromDb.setLongitude(newCoordinates.lat);
@@ -415,7 +416,10 @@ public class CompanyService implements ICompanyService {
 
                     companyAddressFromDb.setUpdatedBy(loggedInUser.getId());
                     companyAddressFromDb.setUpdatedOn(new Date());
-
+                    companyAddressFromDb.setArea(companyAddress.getArea());
+                    companyAddressFromDb.setCountry(companyAddress.getCountry());
+                    companyAddressFromDb.setCity(companyAddress.getCity());
+                    companyAddressFromDb.setState(companyAddress.getState());
                     companyAddressRepository.save(companyAddressFromDb);
                     log.info("updated company address with id: "+companyAddress.getId());
                 }
@@ -578,6 +582,7 @@ public class CompanyService implements ICompanyService {
     public Company createCompanyByAgency(Company company) {
         log.info("inside createCompanyByAgency method");
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Company recruitmentAgency = companyRepository.findById(company.getRecruitmentAgencyId()).orElse(null);
         Company companyFromDb = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(company.getCompanyName(), company.getRecruitmentAgencyId());
 
         if(null != companyFromDb)
@@ -588,6 +593,7 @@ public class CompanyService implements ICompanyService {
 
         company.setCreatedOn(new Date());
         company.setCreatedBy(loggedInUser.getId());
+        company.setCountryId(recruitmentAgency.getCountryId());
         company = truncateField(company);
         Company newCompany = companyRepository.save(company);
         return newCompany;
@@ -642,7 +648,7 @@ public class CompanyService implements ICompanyService {
             try {
                 responseFromGoDaddy = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestObj), createSubdomainApi, HttpMethod.PATCH, new StringBuffer("sso-key ").append(createSubdomainKey).append(":").append(createSubdomainSecret).toString());
             } catch (Exception ex) {
-                ex.printStackTrace();
+                log.info(Util.getStackTrace(ex));
                 log.error("Error while creating subdomain for {}.\n{}", company, ex.getMessage());
                 log.info("Duplicate subdomain creation attempt. Setting flag and creating conf files.");
             }
@@ -777,9 +783,12 @@ public class CompanyService implements ICompanyService {
                 if(null == companyFromDb){
                     isUniqueIdPresent = false;
                     company.setCompanyUniqueId(companyUniqueId);
+                    log.info("Create new company unique id : {}, For company : {}",company.getCompanyUniqueId(), company.getShortName());
                 }
             }
-        }
+        }else
+            log.info("For recruitment agency Company unique id not generated");
+
         return company;
     }
 

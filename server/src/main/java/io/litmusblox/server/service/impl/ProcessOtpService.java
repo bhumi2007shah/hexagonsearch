@@ -122,11 +122,13 @@ public class ProcessOtpService implements IProcessOtpService {
     public boolean verifyOtp(String otpRequestKey, int otp) throws Exception {
         if(null == otpCache)
             return false;
-        Object otpObj = otpCache.remove(otpRequestKey);
+        Object otpObj = otpCache.get(otpRequestKey);
         if(null == otpObj)
             return false;
         int cachedOtp = Integer.parseInt(otpObj.toString());
         log.info("Otp: from request:: {} from cache:: {}",otp,cachedOtp);
+        if(cachedOtp == otp)
+            otpCache.remove(otpRequestKey);
         return (cachedOtp == otp);
     }
 }
