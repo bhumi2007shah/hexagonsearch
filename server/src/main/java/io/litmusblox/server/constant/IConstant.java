@@ -47,6 +47,7 @@ public interface IConstant {
     String REGEX_FOR_DOT_IN_NAME = "(?<=[a.zA-Z\\.]\\s)+";
     String REGEX_TO_FIND_ONLINE_PROFILE_UNIQUE_ID = "(?<=\\/)(?:[\\w\\-]+)(?:\\/)?$";
     String REGEX_TO_VALIDATE_COMPANY_SHORT_NAME = "^[a-zA-Z]+[a-zA-Z0-9]+$";
+    String REGEX_TO_VALIDATE_JOB_SHORT_CODE = "[A-Z]{2}[0-9]{6}$";
 
 
     // lengths
@@ -59,7 +60,7 @@ public interface IConstant {
     Integer COMPANY_SHORT_NAME = 25;
 
     String REPO_LOCATION = "repoLocation";
-    String TEMP_REPO_LOCATION = "temprepolocation";
+    String TEMP_REPO_LOCATION = "tempRepoLocation";
     String ERROR_FILES_REPO_LOCATION = "error_files";
     String CV_STORAGE_LOCATION = "cvStorageUrl";
     String DATE_FORMAT_yyyymmdd_hhmm = "yyyyMMdd_HHmm";
@@ -68,6 +69,9 @@ public interface IConstant {
     String TOKEN_HEADER = "Authorization";
     String TOKEN_PREFIX = "Bearer ";
     String CANDIDATE_CV = "CandidateCv";
+    String MASS_MAIL = "MassMail";
+    String JOB_POSTING = "JobPosting";
+    String DRAG_AND_DROP = "DragAndDrop";
     String SENTRY_DSN = "sentryDSN";
     String UPLOAD_FILE_TYPE = "Upload file type";
     String LOCALHOST_LOOPBACK = "0:0:0:0:0:0:0:1";
@@ -334,6 +338,8 @@ public interface IConstant {
     String PARSING_RESPONSE_ML = "PARSING_RESPONSE_ML";
 
     int SCHEDULER_THREAD_POOL_SIZE = 20;
+    int ASYNC_CORE_THREAD_POOL_SIZE = 5;
+    int ASYNC_MAX_THREAD_POOL_SIZE = 10;
 
     String COMPANY_NAME_VARIABLE = "$companyName";
 
@@ -344,4 +350,12 @@ public interface IConstant {
     String CHAT_LINK_HEADER="Chatbot Link";
 
     String [] apacheReloadCommand = {"sudo", "apache2ctl", "graceful"};
+    int OTP_EXPIRY_SECONDS = 90;
+
+    enum ASYNC_OPERATIONS {
+        FileUpload, InviteCandidates
+    }
+
+    String LB_SHORT_CODE = "LB";
+    int LB_SHORT_CODE_LENGTH = 6;
 }

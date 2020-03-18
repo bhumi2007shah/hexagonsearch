@@ -221,6 +221,13 @@ public class Job implements Serializable {
     @Transient
     private List<List<Long>> hiringTeamStepMapping = new ArrayList<>();
 
+    @Transient
+    private String jobShortCode;
+
     //Remove minExperience, maxExperience, experienceRange because add masterdata for experience
     //Also add jobdetail model in job
+
+    public String getJobShortCode() {
+        return IConstant.LB_SHORT_CODE+String.format("%0"+(IConstant.LB_SHORT_CODE_LENGTH-String.valueOf(this.getId()).length())+"d%s", 0, this.getId());
+    }
 }

@@ -5,6 +5,7 @@
 package io.litmusblox.server.uploadProcessor;
 
 import io.litmusblox.server.model.Candidate;
+import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.UploadResponseBean;
 
 import java.util.List;
@@ -18,6 +19,6 @@ import java.util.List;
  */
 public interface IUploadFileProcessorService {
 
-    List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation, String countryCode);
+    List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation, User loggedInUser);
 
 }

@@ -302,10 +302,19 @@ public class LbUserDetailsService implements UserDetailsService {
         if(null != user.getId()){
             u.setUpdatedOn(new Date());
             u.setUpdatedBy(loggedInUser.getId());
-            u.setStatus(IConstant.UserStatus.Inactive.name());
-            u.setPassword(null);
-            u.setResetPasswordFlag(true);
-            u.setResetPasswordEmailTimestamp(null);
+            u.setPassword(userFromDb.getPassword());
+            u.setStatus(userFromDb.getStatus());
+            u.setCreatedBy(userFromDb.getCreatedBy());
+            u.setCreatedOn(userFromDb.getCreatedOn());
+            u.setUserUuid(userFromDb.getUserUuid());
+            if(!userFromDb.getEmail().equals(user.getEmail().toLowerCase()) && !IConstant.UserType.BUSINESS.getValue().equals(userFromDb.getUserType()) && !IConstant.UserStatus.New.name().equals(userFromDb.getStatus())){
+                log.info("Reset password because update email, Old email : {}, new email : {}",userFromDb.getEmail(), user.getEmail().toLowerCase());
+                u.setStatus(IConstant.UserStatus.Inactive.name());
+                u.setPassword(null);
+                u.setResetPasswordFlag(true);
+                u.setResetPasswordEmailTimestamp(null);
+                u.setUserUuid(UUID.randomUUID());
+            }
             log.info("Update User : {}", user.getId());
         }else{
             u.setUserUuid(UUID.randomUUID());

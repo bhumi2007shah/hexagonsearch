@@ -822,3 +822,15 @@ Insert into MASTER_DATA (TYPE, VALUE) values
 ('noShowReasons','Logistics'),
 ('noShowReasons','Not reachable'),
 ('noShowReasons','Client Cancellation');
+
+INSERT INTO CV_PARSING_API_DETAILS (API_URL, API_SEQUENCE, ACTIVE, COLUMN_TO_UPDATE, QUERY_ATTRIBUTES) VALUES
+('https://rest.rchilli.com/RChilliParser/Rchilli/parseResume', 1, false, 'PARSING_RESPONSE_JSON',
+'"userkey" => "2SNEDYNPV30",
+"version" => "7.0.0",
+"subuserid" => "Hexagon Search"'
+),
+('http://cvparser.litmusblox.net/parsecv', 2, true, 'PARSING_RESPONSE_PYTHON',null
+),
+('https://cia1z4r0d4.execute-api.ap-south-1.amazonaws.com/Test/resumeParser-Test', 3, true, 'PARSING_RESPONSE_ML',
+null
+);

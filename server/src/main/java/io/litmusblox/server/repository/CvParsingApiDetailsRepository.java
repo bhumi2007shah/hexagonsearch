@@ -22,7 +22,7 @@ import java.util.List;
 public interface CvParsingApiDetailsRepository extends JpaRepository<CvParsingApiDetails, Long> {
 
     @Transactional(readOnly = true)
-    List<CvParsingApiDetails> findAllByOrderByApiSequenceAsc();
+    List<CvParsingApiDetails> findAllByActiveOrderByApiSequenceAsc(boolean isActive);
 
     @Transactional(readOnly = true)
     CvParsingApiDetails findByColumnToUpdate(String columnToUpdate);

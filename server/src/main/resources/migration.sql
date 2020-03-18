@@ -1468,7 +1468,7 @@ CONSTRAINT UNIQUE_API_SEQUENCE UNIQUE(API_SEQUENCE)
 );
 
 INSERT INTO CV_PARSING_API_DETAILS (API_URL, API_SEQUENCE, ACTIVE, COLUMN_TO_UPDATE, QUERY_ATTRIBUTES) VALUES
-('https://rest.rchilli.com/RChilliParser/Rchilli/parseResume', 1, true, 'PARSING_RESPONSE_JSON',
+('https://rest.rchilli.com/RChilliParser/Rchilli/parseResume', 1, false, 'PARSING_RESPONSE_JSON',
 '"userkey" => "2SNEDYNPV30",
 "version" => "7.0.0",
 "subuserid" => "Hexagon Search"'
@@ -1908,3 +1908,23 @@ CREATE TABLE IF NOT EXISTS JCM_CANDIDATE_SOURCE_HISTORY(
 );
 
 insert into jcm_candidate_source_history(job_candidate_mapping_id, candidate_source, created_on, created_by) select id, candidate_source, created_on, created_by from job_candidate_mapping;
+
+
+-- For ticket #379 - Async handling of upload candidates from a file and invite candidates
+CREATE TABLE ASYNC_OPERATIONS_ERROR_RECORDS (
+ID serial PRIMARY KEY NOT NULL,
+JOB_ID INTEGER REFERENCES JOB(ID),
+CANDIDATE_FIRST_NAME varchar(45),
+CANDIDATE_LAST_NAME varchar(45),
+EMAIL VARCHAR (50),
+MOBILE VARCHAR (15),
+ASYNC_OPERATION VARCHAR(20),
+ERROR_MESSAGE VARCHAR(100),
+JOB_CANDIDATE_MAPPING_ID INTEGER REFERENCES JOB_CANDIDATE_MAPPING(ID),
+FILE_NAME VARCHAR(255),
+CREATED_ON TIMESTAMP NOT NULL,
+CREATED_BY INTEGER REFERENCES USERS(ID) NOT NULL
+);
+
+--For ticket #456
+UPDATE CV_PARSING_API_DETAILS SET ACTIVE = 'f' WHERE COLUMN_TO_UPDATE = 'PARSING_RESPONSE_JSON';
