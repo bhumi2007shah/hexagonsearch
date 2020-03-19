@@ -1892,3 +1892,22 @@ FILE_NAME VARCHAR(255),
 CREATED_ON TIMESTAMP NOT NULL,
 CREATED_BY INTEGER REFERENCES USERS(ID) NOT NULL
 );
+-- For ticket #323
+drop view if exists job_candidate_mapping_all_details;
+create view job_candidate_mapping_all_details
+as select
+job_candidate_mapping.id, job_candidate_mapping.job_id, job_candidate_mapping.candidate_id, job_candidate_mapping.email, job_candidate_mapping.mobile, job_candidate_mapping.country_code, job_candidate_mapping.stage, job_candidate_mapping.created_on, job_candidate_mapping.candidate_first_name, job_candidate_mapping.candidate_last_name, job_candidate_mapping.chatbot_status, job_candidate_mapping.score,job_candidate_mapping.rejected,
+cv_rating.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name, candidateCompany.designation, candidateCompany.notice_period, candidate_details.total_experience
+from users,job_candidate_mapping
+left join cv_rating on job_candidate_mapping.id = cv_rating.job_candidate_mapping_id
+left join candidate_details on candidate_details.candidate_id = job_candidate_mapping.candidate_id
+left join
+	(select ccd.company_name, ccd.designation, ccd.candidate_id, master_data.value as notice_period
+	from master_data, candidate_company_details ccd
+	join (select min(id) as id, candidate_id from candidate_company_details group by candidate_id) singleRow
+	on ccd.candidate_id = singleRow.candidate_id and ccd.id = singleRow.id
+	where master_data.id = ccd.notice_period
+	) as candidateCompany
+on candidateCompany.candidate_id = job_candidate_mapping.candidate_id
+where users.id = job_candidate_mapping.created_by
+order by job_candidate_mapping.created_on desc, job_candidate_mapping.candidate_first_name asc, job_candidate_mapping.candidate_last_name asc;

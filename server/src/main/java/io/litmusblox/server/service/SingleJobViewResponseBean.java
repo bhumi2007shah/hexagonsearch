@@ -4,7 +4,6 @@
 
 package io.litmusblox.server.service;
 
-import io.litmusblox.server.model.JobCandidateMapping;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -25,6 +24,6 @@ import java.util.Map;
  */
 @Data
 public class SingleJobViewResponseBean {
-    private List<JobCandidateMapping> candidateList = new ArrayList<>();
+    List<JCMAllDetails> jcmAllDetailsList = new ArrayList<>();
     private Map<String,Integer> candidateCountByStage = new HashMap<>();
 }

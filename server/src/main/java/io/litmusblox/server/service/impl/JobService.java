@@ -409,7 +409,7 @@ public class JobService implements IJobService {
 
         SingleJobViewResponseBean responseBean = new SingleJobViewResponseBean();
 
-        List<JobCandidateMapping> jcmList;
+        /*List<JobCandidateMapping> jcmList;
 
         if(IConstant.Stage.Reject.getValue().equals(stage))
             jcmList = jobCandidateMappingRepository.findByJobAndRejectedIsTrue(job);
@@ -457,15 +457,15 @@ public class JobService implements IJobService {
         Collections.sort(jcmList);
 
         log.info("****Sorting of jcmlist done in {} ms", (System.currentTimeMillis()-startTime));
-        startTime = System.currentTimeMillis();
+        startTime = System.currentTimeMillis();*/
 
-        responseBean.setCandidateList(jcmList);
+        //responseBean.setCandidateList(jcmList);
 
         //log.info("****Populated list of candidates in {} ms", (System.currentTimeMillis() - startTime));
         //startTime = System.currentTimeMillis();
 
         Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
-
+/*
         List<Object[]> stageCountList = jobCandidateMappingRepository.findCandidateCountByStage(jobId);
 
         stageCountList.stream().forEach(objArray -> {
@@ -476,9 +476,29 @@ public class JobService implements IJobService {
                 responseBean.getCandidateCountByStage().put(key,responseBean.getCandidateCountByStage().get(key)  + ((BigInteger) objArray[1]).intValue());
         });
         //add count of rejected candidates
-        responseBean.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(),  jobCandidateMappingRepository.findRejectedCandidateCount(jobId));
+        //responseBean.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(),  jobCandidateMappingRepository.findRejectedCandidateCount(jobId));
         log.info("****Populated response bean with various stage specific counts in {} ms", (System.currentTimeMillis() - startTime));
-        log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.", jobId, stage ,(System.currentTimeMillis() - startTimeMethod));
+        log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.", jobId, stage ,(System.currentTimeMillis() - startTimeMethod));*/
+
+
+        long viewStartTime = System.currentTimeMillis();
+        if(IConstant.Stage.Reject.getValue().equals(stage))
+            responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndRejectedIsTrue(job));
+        else
+            responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage))));
+
+        List<Object[]> stageCountListView = jobCandidateMappingRepository.findCandidateCountByStage(jobId);
+
+        stageCountListView.stream().forEach(objArray -> {
+            String key = stageStepMasterMap.get(((Integer) objArray[0]).longValue()).getStage();
+            if (null == responseBean.getCandidateCountByStage().get(key))
+                responseBean.getCandidateCountByStage().put(key, ((BigInteger) objArray[1]).intValue());
+            else //stage exists in response bean, add the count of the other step to existing value
+                responseBean.getCandidateCountByStage().put(key,responseBean.getCandidateCountByStage().get(key)  + ((BigInteger) objArray[1]).intValue());
+        });
+
+        log.info("Found {} records.", responseBean.getJcmAllDetailsList().size());
+        log.info("Completed processing request to find candidates for job {}  and stage: {} in {}ms",jobId, stage, (System.currentTimeMillis() - viewStartTime));
 
         return responseBean;
     }
