@@ -71,6 +71,7 @@ public class MasterDataBean {
     private Map<Long, String> cancellationReasons = new HashMap<>();
     private Map<Long, String> noShowReasons = new HashMap<>();
     private Map<String, MasterData> interviewConfirmation = new LinkedHashMap<>();
+    private Map<String, List<RejectionReasonMasterData>> candidateRejectionReasonMap = new LinkedHashMap<>();
 
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;

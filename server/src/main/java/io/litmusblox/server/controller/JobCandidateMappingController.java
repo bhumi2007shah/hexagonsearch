@@ -249,13 +249,14 @@ public class JobCandidateMappingController {
      *
      * @param jcmList The list of candidates for the job that need to be moved to the specified stage
      * @param stage the new stage
+     * @param candidateRejectionValue which is id of rejection master data
      * @throws Exception
      */
     @PutMapping("/setStage/{stage}")
     @ResponseBody
     @ResponseStatus(value = HttpStatus.OK)
-    void setStageForCandidates(@RequestBody List<Long> jcmList, @PathVariable("stage") @NotNull String stage) throws Exception {
-        jobCandidateMappingService.setStageForCandidates(jcmList, stage);
+    void setStageForCandidates(@RequestBody List<Long> jcmList, @PathVariable("stage") @NotNull String stage, @RequestParam(required = false, value = "candidateRejectionValue") Optional<Long> candidateRejectionValue) throws Exception {
+        jobCandidateMappingService.setStageForCandidates(jcmList, stage, candidateRejectionValue.isPresent()?candidateRejectionValue.get():null);
     }
 
     @GetMapping("cvuploaderror/{jobId}")

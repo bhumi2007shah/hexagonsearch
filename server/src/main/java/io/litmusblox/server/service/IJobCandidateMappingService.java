@@ -173,9 +173,10 @@ public interface IJobCandidateMappingService {
      *
      * @param jcmList The list of candidates for the job that need to be moved to the specified stage
      * @param stage the new stage
+     * @param candidateRejectionValue If stage is reject then set its reason(RejectionReasonMasterData id)
      * @throws Exception
      */
-    void setStageForCandidates(List<Long> jcmList, String stage) throws Exception;
+    void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue) throws Exception;
 
     /**
      * Service to return error list for drag and drop CV's for a job

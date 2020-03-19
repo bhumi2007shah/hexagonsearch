@@ -85,8 +85,8 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     int countDistinctStageForJcmList(List<Long> jcmList) throws Exception;
 
     @Modifying
-    @Query(nativeQuery = true, value = "update job_candidate_mapping set rejected=true, updated_by=:updatedBy, updated_on = :updatedOn where id in :jcmList")
-    void updateForRejectStage(List<Long> jcmList, Long updatedBy, Date updatedOn);
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set rejected=true,candidate_rejection_value =:candidateRejectionValue, updated_by=:updatedBy, updated_on = :updatedOn where id in :jcmList")
+    void updateForRejectStage(List<Long> jcmList, String candidateRejectionValue, Long updatedBy, Date updatedOn);
 
     @Transactional
     @Query(value = "select count(jcd.id)\n" +

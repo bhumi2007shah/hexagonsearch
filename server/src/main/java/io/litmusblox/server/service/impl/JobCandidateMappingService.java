@@ -161,6 +161,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     CompanyRepository companyRepository;
 
     @Resource
+    RejectionReasonMasterDataRepository rejectionReasonMasterDataRepository;
+
+    @Resource
     AsyncOperationsErrorRecordsRepository asyncOperationsErrorRecordsRepository;
 
     @Transactional(readOnly = true)
@@ -1643,10 +1646,11 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      *
      * @param jcmList The list of candidates for the job that need to be moved to the specified stage
      * @param stage   the new stage
+     * @param candidateRejectionValue which is id of rejection master data
      * @throws Exception
      */
     @Transactional
-    public void setStageForCandidates(List<Long> jcmList, String stage) throws Exception {
+    public void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue) throws Exception {
         long startTime = System.currentTimeMillis();
         log.info("Setting {} jcms to {} stage", jcmList, stage);
         //check that all the jcm are currently in the same stage
@@ -1656,9 +1660,11 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<JcmHistory> jcmHistoryList = new ArrayList<>(jcmList.size());
 
-        //check if new stage is rejected stage
+        //check if new stage is rejected stage so update candidate rejection reason and rejected flag
+        RejectionReasonMasterData reasonMasterData = null;
         if (IConstant.Stage.Reject.getValue().equals(stage)) {
-            jobCandidateMappingRepository.updateForRejectStage(jcmList, loggedInUser.getId(), new Date());
+            reasonMasterData = rejectionReasonMasterDataRepository.getOne(candidateRejectionValue);
+            jobCandidateMappingRepository.updateForRejectStage(jcmList,(null != reasonMasterData)?reasonMasterData.getValue():null, loggedInUser.getId(), new Date());
         }
         else {
 
@@ -1666,9 +1672,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             Map<String, Long> jobStageIds = MasterDataBean.getInstance().getStageStepMasterMap();
             jobCandidateMappingRepository.updateStageStepId(jcmList, jobCandidateMappingObj.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
         }
+        RejectionReasonMasterData finalReasonMasterData = reasonMasterData;
         jcmList.stream().forEach(jcm -> {
             JobCandidateMapping mappingObj = jobCandidateMappingRepository.getOne(jcm);
-            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage":"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage()));
+            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage "+((null != finalReasonMasterData)? "for reason "+finalReasonMasterData.getLabel():""):"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage()));
 
         });
         jcmHistoryRepository.saveAll(jcmHistoryList);

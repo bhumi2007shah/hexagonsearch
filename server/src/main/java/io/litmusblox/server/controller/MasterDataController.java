@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -62,6 +63,7 @@ public class MasterDataController {
             new HashMap<String, List<String>>(){{
                 put("ScreeningQuestions", new ArrayList<>(0));
                 put("MasterData", new ArrayList<>(0));
+                put("RejectionReasonMasterData", Arrays.asList("stageId"));
             }});
     }
 
