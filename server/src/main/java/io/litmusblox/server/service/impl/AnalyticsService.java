@@ -96,7 +96,7 @@ public class AnalyticsService implements IAnalyticsService {
 
         // throw exception if job  not found in db
         if(null == job){
-            log.error("JOb not found for id: {}", jobId);
+            log.error("Job not found for id: {}", jobId);
             throw new WebException("No job found for id: "+jobId, HttpStatus.BAD_REQUEST);
         }
 

@@ -131,7 +131,7 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     Long countByJobId(Long jobId);
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Query(nativeQuery = true, value = "select count(*) as count from job_candidate_mapping where jobId=:jobId and created_on>=:startDate and created_on<=:endDate")
     Long countByJobIdAndDate(Long jobId, Date startDate, Date endDate);
 }
