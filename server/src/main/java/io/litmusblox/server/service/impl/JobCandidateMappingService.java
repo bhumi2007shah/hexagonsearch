@@ -161,9 +161,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     CompanyRepository companyRepository;
 
     @Resource
-    RejectionReasonMasterDataRepository rejectionReasonMasterDataRepository;
-
-    @Resource
     AsyncOperationsErrorRecordsRepository asyncOperationsErrorRecordsRepository;
 
     @Transactional(readOnly = true)
@@ -1663,7 +1660,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         //check if new stage is rejected stage so update candidate rejection reason and rejected flag
         RejectionReasonMasterData reasonMasterData = null;
         if (IConstant.Stage.Reject.getValue().equals(stage)) {
-            reasonMasterData = rejectionReasonMasterDataRepository.getOne(candidateRejectionValue);
+            reasonMasterData = MasterDataBean.getInstance().getCandidateRejections().get(candidateRejectionValue);
             jobCandidateMappingRepository.updateForRejectStage(jcmList,(null != reasonMasterData)?reasonMasterData.getValue():null, loggedInUser.getId(), new Date());
         }
         else {

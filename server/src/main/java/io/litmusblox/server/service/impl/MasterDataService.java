@@ -172,6 +172,10 @@ public class MasterDataService implements IMasterDataService {
             MasterDataBean.getInstance().getCandidateRejectionReasonMap().put(IConstant.Stage.Offer.getValue(), setRejectionReasonList(rejectionReasonMasterDataList, new ArrayList<>(), IConstant.Stage.Offer.getValue()));
             MasterDataBean.getInstance().getCandidateRejectionReasonMap().put(IConstant.Stage.Join.getValue(), setRejectionReasonList(rejectionReasonMasterDataList, new ArrayList<>(), IConstant.Stage.Join.getValue()));
             MasterDataBean.getInstance().getCandidateRejectionReasonMap().put(IConstant.Stage.ResumeSubmit.getValue(), setRejectionReasonList(rejectionReasonMasterDataList, new ArrayList<>(), IConstant.Stage.ResumeSubmit.getValue()));
+
+            rejectionReasonMasterDataList.forEach(rejectionData ->{
+               MasterDataBean.getInstance().getCandidateRejections().put(rejectionData.getId(), rejectionData);
+            });
         }
     }
 
