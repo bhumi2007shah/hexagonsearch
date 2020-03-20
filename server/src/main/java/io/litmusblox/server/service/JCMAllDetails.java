@@ -4,11 +4,16 @@
 
 package io.litmusblox.server.service;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.litmusblox.server.model.JcmProfileSharingDetails;
 import lombok.Data;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Transient;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author : Shital Raval
@@ -40,4 +45,16 @@ public class JCMAllDetails {
     String designation;
     String notice_period;
     Double total_experience;
+
+    @Transient
+    @JsonProperty
+    List<JcmProfileSharingDetails> interestedHiringManagers = new ArrayList<>();
+
+    @Transient
+    @JsonProperty
+    List<JcmProfileSharingDetails> notInterestedHiringManagers = new ArrayList<>();
+
+    @Transient
+    @JsonProperty
+    List<JcmProfileSharingDetails> notRespondedHiringManagers = new ArrayList<>();
 }
