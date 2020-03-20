@@ -1939,7 +1939,7 @@ STAGE INTEGER REFERENCES STAGE_STEP_MASTER(ID) NOT NULL
 );
 
 INSERT INTO REJECTION_REASON_MASTER_DATA (VALUE, LABEL, TYPE, STAGE) VALUES
-('Company', '','Candidate Reasons', 1),
+('Company', 'Candidate does not want to work with our Company','Candidate Reasons', 1),
 ('Shift', 'Candidate does not want to work in shifts','Candidate Reasons', 1),
 ('Commute', 'Candidate not willing to commute','Candidate Reasons', 1),
 ('IC Role', 'Candidate not willing to work in Individual Contributor (IC) role','Candidate Reasons', 1),
