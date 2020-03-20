@@ -6,6 +6,8 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.service.AnalyticsResponseBean;
+import io.litmusblox.server.service.JobAnalytics.*;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +15,7 @@ import javax.annotation.Resource;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,6 +27,7 @@ import java.util.stream.Collectors;
  * Project Name : server
  */
 @Service
+@Log4j2
 public class CustomQueryExecutor {
     @PersistenceContext
     EntityManager entityManager;
@@ -55,6 +59,75 @@ public class CustomQueryExecutor {
     private static final String groupByClause = "group by company.id";
     private static final String selectionStartDate = " and job.date_published >= '";
     private static final String selectionEndDate = " and job.date_published <= '";
+
+    //Job Analytics queries;
+
+    private static final String jobAnalyticsStartDate = " and created_on >= '";
+    private static final String jobAnalyticsEndDate =" and created_on <= '";
+    private static final String groupByJobId = " group by job_id;";
+
+    //Source Analytics query
+    private static final String jobSourcesAnalyticsMainQuery = "select \n" +
+            "job_id as job_id,\n" +
+            "sum((candidate_source like 'Individual')\\:\\:INT) as individual,\n" +
+            "sum((candidate_source like 'File')\\:\\:INT) as file,\n" +
+            "sum((candidate_source like 'Naukri')\\:\\:INT) as naukri,\n" +
+            "sum((candidate_source like 'LinkedIn')\\:\\:INT) as linkedIn,\n" +
+            "sum((candidate_source like 'IIMJobs')\\:\\:INT) as iimjobs,\n" +
+            "sum((candidate_source like 'DragDropCv')\\:\\:INT) as drag_drop_cv,\n" +
+            "sum((candidate_source like 'NaukriMassMail')\\:\\:INT) as naukri_mass_mail,\n" +
+            "sum((candidate_source like 'NaukriJobPosting')\\:\\:INT) as naukri_job_posting,\n" +
+            "sum((candidate_source like 'EmployeeReferral')\\:\\:INT) as employee_referral,\n" +
+            "sum((candidate_source like 'CareerPage')\\:\\:INT) as career_page,\n" +
+            "sum((candidate_source like 'JobPosting')\\:\\:INT) as job_posting\n" +
+            "from job_candidate_mapping where job_id = ";
+
+    //Skill Strength analytics query
+    private static final String jobSkillStrengthAnalyticsMainQuery = "select \n" +
+            "job_id as job_id,\n" +
+            "sum((score is null or score = 0)\\:\\:INT) as not_measured,\n" +
+            "sum((score=1)\\:\\:INT) as very_weak,\n" +
+            "sum((score=2)\\:\\:INT) as weak,\n" +
+            "sum((score=3)\\:\\:INT) as good,\n" +
+            "sum((score=4)\\:\\:INT) as strong,\n" +
+            "sum((score=5)\\:\\:INT) as very_strong\n" +
+            "from job_candidate_mapping where job_id = ";
+
+    //screening status analytics query
+    private static final String jobScreeningStatusAnalyticsMainQuery = "select \n" +
+            "job_id as job_id,\n" +
+            "sum((chatbot_status is null)\\:\\:INT) as not_invited,\n" +
+            "sum((chatbot_status like 'Invited')\\:\\:INT) as invited,\n" +
+            "sum((chatbot_status like 'Incomplete')\\:\\:INT) as incomplete,\n" +
+            "sum((chatbot_status like 'Completed')\\:\\:INT) as completed,\n" +
+            "sum((chatbot_status like 'Not Interested')\\:\\:INT) as not_interested\n" +
+            "from job_candidate_mapping where job_id = ";
+
+    //submitted analytics query
+    private static final String jobSubmittedAnalyticsMainQuery = "select \n" +
+            "job_id as job_id,\n" +
+            "sum((jpsd.id is not null and jpsd.hiring_manager_interest = 't' )\\:\\:INT) as interested,\n" +
+            "sum((jpsd.id is not null and jpsd.hiring_manager_interest = 'f' and jpsd.hiring_manager_interest_date is not null )\\:\\:INT) as cv_reject,\n" +
+            "sum((jpsd.id is not null and jpsd.hiring_manager_interest = 'f' )\\:\\:INT) as not_reviewed\n" +
+            "from job_candidate_mapping jcm left join jcm_profile_sharing_details jpsd\n" +
+            "on jcm.id = jpsd.job_candidate_mapping_id\n" +
+            "where job_id = ";
+
+    //interview analytics query
+    private static final String jobInterviewAnalyticsMainQuery = "select job_id, \n" +
+            "sum((interview.id is null)\\:\\:INT) as not_scheduled,\n" +
+            "sum((interview.id is not null and interview.show_no_show = 't')\\:\\:INT) as show,\n" +
+            "sum((interview.id is not null and interview.show_no_show = 'f')\\:\\:INT) as no_show,\n" +
+            "sum((interview.id is not null and interviewCount.scheduleCount>1)\\:\\:INT) as rescheduled,\n" +
+            "sum((interview.id is not null and interviewCount.scheduleCount=1)\\:\\:INT) as scheduled\n" +
+            "from job_candidate_mapping jcm left join interview_details interview\n" +
+            "on jcm.id=interview.job_candidate_mapping_id\n" +
+            "left join \n" +
+            "(select count(id) as scheduleCount, job_candidate_mapping_id from interview_details group by job_candidate_mapping_id)\n" +
+            "as interviewCount on\n" +
+            "jcm.id = interviewCount.job_candidate_mapping_id\n" +
+            "where job_id = ";
+
     @Transactional(readOnly = true)
     public List<AnalyticsResponseBean> analyticsByCompany(String startDate, String endDate, String companyIdList) throws Exception {
         StringBuffer queryString = new StringBuffer(analyticsMainQuery).append(companyIdList).append(") ");
@@ -65,5 +138,75 @@ public class CustomQueryExecutor {
         queryString.append(groupByClause);
         Query query =  entityManager.createNativeQuery(queryString.toString(), AnalyticsResponseBean.class);
         return query.getResultList();
+    }
+
+    @Transactional(readOnly = true)
+    public CandidateSourceAnalyticsBean sourcesAnalyticsByJob(Long jobId, Date startDate, Date endDate){
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(jobSourcesAnalyticsMainQuery);
+        queryString.append(jobId);
+        if(null!=startDate && null!=endDate){
+            queryString.append(jobAnalyticsStartDate).append(endDate).append("' ");
+            queryString.append(jobAnalyticsEndDate).append(endDate).append("' ");
+        }
+        queryString.append(groupByJobId);
+        Query query = entityManager.createNativeQuery(queryString.toString(), CandidateSourceAnalyticsBean.class);
+        return (CandidateSourceAnalyticsBean) query.getSingleResult();
+    }
+
+    @Transactional(readOnly = true)
+    public KeySkillStrengthAnalyticsBean skillStrengthAnalyticsByJob(Long jobId, Date startDate, Date endDate){
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(jobSkillStrengthAnalyticsMainQuery);
+        queryString.append(jobId);
+        if(null!=startDate && null!=endDate){
+            queryString.append(jobAnalyticsStartDate).append(endDate).append("' ");
+            queryString.append(jobAnalyticsEndDate).append(endDate).append("' ");
+        }
+        queryString.append(groupByJobId);
+        Query query =  entityManager.createNativeQuery(queryString.toString(), KeySkillStrengthAnalyticsBean.class);
+        return (KeySkillStrengthAnalyticsBean) query.getSingleResult();
+    }
+
+    @Transactional(readOnly = true)
+    public ScreeningStatusAnalyticsBean screeningStatusAnalyticsByJob(Long jobId, Date startDate, Date endDate){
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(jobScreeningStatusAnalyticsMainQuery);
+        queryString.append(jobId);
+        if(null!=startDate && null!=endDate){
+            queryString.append(jobAnalyticsStartDate).append(endDate).append("' ");
+            queryString.append(jobAnalyticsEndDate).append(endDate).append("' ");
+        }
+        queryString.append(groupByJobId);
+        Query query =  entityManager.createNativeQuery(queryString.toString(), ScreeningStatusAnalyticsBean.class);
+        return (ScreeningStatusAnalyticsBean) query.getSingleResult();
+    }
+
+    @Transactional(readOnly = true)
+    public SubmittedAnalyticsBean submittedAnalyticsByJob(Long jobId, Date startDate, Date endDate){
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(jobSubmittedAnalyticsMainQuery);
+        queryString.append(jobId);
+        if(null!=startDate && null!=endDate){
+            queryString.append(jobAnalyticsStartDate).append(endDate).append("' ");
+            queryString.append(jobAnalyticsEndDate).append(endDate).append("' ");
+        }
+        queryString.append(groupByJobId);
+        Query query =  entityManager.createNativeQuery(queryString.toString(), SubmittedAnalyticsBean.class);
+        return (SubmittedAnalyticsBean) query.getSingleResult();
+    }
+
+    @Transactional(readOnly = true)
+    public InterviewAnalyticsBean interviewAnalyticsByJob(Long jobId, Date startDate, Date endDate){
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(jobInterviewAnalyticsMainQuery);
+        queryString.append(jobId);
+        if(null!=startDate && null!=endDate){
+            queryString.append(jobAnalyticsStartDate).append(endDate).append("' ");
+            queryString.append(jobAnalyticsEndDate).append(endDate).append("' ");
+        }
+        queryString.append(groupByJobId);
+        Query query =  entityManager.createNativeQuery(queryString.toString(), InterviewAnalyticsBean.class);
+        return (InterviewAnalyticsBean) query.getSingleResult();
     }
 }
