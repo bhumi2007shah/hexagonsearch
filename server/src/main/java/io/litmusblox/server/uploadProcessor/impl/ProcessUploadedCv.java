@@ -102,19 +102,25 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             File directoryPath = new File(environment.getProperty(IConstant.TEMP_REPO_LOCATION));
             File filesList[] = directoryPath.listFiles();
             String candidateSource = null;
+            String tempFolderName = null;
             for (File file : filesList){
-                if(IConstant.JOB_POSTING.equals(file.getName()))
+                if(IConstant.JOB_POSTING.equals(file.getName())){
                     candidateSource = IConstant.CandidateSource.NaukriJobPosting.getValue();
-                else if(IConstant.MASS_MAIL.equals(file.getName()))
+                    tempFolderName = IConstant.JOB_POSTING;
+                } else if(IConstant.MASS_MAIL.equals(file.getName())) {
                     candidateSource = IConstant.CandidateSource.NaukriMassMail.getValue();
-                else if(IConstant.DRAG_AND_DROP.equals(file.getName()))
+                    tempFolderName = IConstant.MASS_MAIL;
+                } else if(IConstant.DRAG_AND_DROP.equals(file.getName())) {
                     candidateSource = IConstant.CandidateSource.DragDropCv.getValue();
+                    tempFolderName = IConstant.DRAG_AND_DROP;
+                }
 
                 Stream<Path> filePathStream= Files.walk(Paths.get(file.getAbsolutePath()));
                 String finalCandidateSource = candidateSource;
+                String finalTempFolderName = tempFolderName;
                 filePathStream.forEach(filePath -> {
                             if (Files.isRegularFile(filePath)) {
-                                processSingleCv(filePath, finalCandidateSource);
+                                processSingleCv(filePath, finalCandidateSource, finalTempFolderName);
                             }
                 });
             }
@@ -129,7 +135,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
      * @param filePath cv file path
      * @param candidateSource from which source candidate upload(DraDrop, MassMail or JobPosting)
      */
-    private void processSingleCv(Path filePath, String candidateSource) {
+    private void processSingleCv(Path filePath, String candidateSource, String tempFolderName) {
         log.info("Inside processSingleCv");
         log.info("Temp folder Cv path : " + filePath.getFileName());
         AtomicReference<Candidate> candidate = new AtomicReference<>();
@@ -146,7 +152,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     long PythonStartTime = System.currentTimeMillis();
                     StringBuffer queryString = new StringBuffer(cvParsingApiDetails.getApiUrl());
                     queryString.append("?file=");
-                    queryString.append(environment.getProperty(IConstant.FILE_STORAGE_URL) + fileName);
+                    queryString.append(environment.getProperty(IConstant.FILE_STORAGE_URL)+tempFolderName+"/"+ fileName);
                     try {
                         pythonResponse.set(rest.consumeRestApi(null, queryString.toString(), HttpMethod.GET, null).getResponseBody());
                         log.info("Python parser response : {}",pythonResponse.get());
@@ -165,7 +171,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     long mlStartTime = System.currentTimeMillis();
                     StringBuffer queryObjectString = new StringBuffer("{");
                     queryObjectString.append("\"link\":");
-                    queryObjectString.append("\"" + environment.getProperty(IConstant.FILE_STORAGE_URL) + fileName + "\"");
+                    queryObjectString.append("\"" + environment.getProperty(IConstant.FILE_STORAGE_URL)+tempFolderName+"/"+ fileName + "\"");
                     queryObjectString.append("}");
                     try {
                         candidate.get().getCvParsingDetails().setParsingResponseMl(rest.consumeRestApi(queryObjectString.toString(), cvParsingApiDetails.getApiUrl(), HttpMethod.POST, null).getResponseBody());
