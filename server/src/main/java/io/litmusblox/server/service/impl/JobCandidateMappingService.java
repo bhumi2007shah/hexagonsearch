@@ -1565,6 +1565,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         candidateTechResponseDataRepository.deleteByJobCandidateMappingId(jcmFromDb);
         jobCandidateMappingRepository.delete(jcmFromDb);
         jcmForExistingCandidate.setUpdatedBy(loggedInUser);
+        jobCandidateMappingRepository.flush();
         jobCandidateMappingRepository.save(jcmForExistingCandidate);
     }
 
