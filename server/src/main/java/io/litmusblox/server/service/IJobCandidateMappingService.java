@@ -173,9 +173,10 @@ public interface IJobCandidateMappingService {
      *
      * @param jcmList The list of candidates for the job that need to be moved to the specified stage
      * @param stage the new stage
+     * @param candidateRejectionValue If stage is reject then set its reason(RejectionReasonMasterData id)
      * @throws Exception
      */
-    void setStageForCandidates(List<Long> jcmList, String stage) throws Exception;
+    void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue) throws Exception;
 
     /**
      * Service to return error list for drag and drop CV's for a job
@@ -222,13 +223,13 @@ public interface IJobCandidateMappingService {
      *
      * @param candidateSource from where we source the candidate
      * @param candidate candidate all info
-     * @param jobReferenceId In which job upload candidate
+     * @param jobShortCode In which job upload candidate
      * @param candidateCv candidate cv
      * @param employeeReferrer if candidate upload by employee referral then this model come
      * @return UploadResponseBean
      * @throws Exception
      */
-    UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception;
+    UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, String jobShortCode, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception;
 
     /**
      * Service method to fetch a list of count of candidate per chatbot status per job

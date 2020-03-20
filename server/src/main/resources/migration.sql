@@ -1468,7 +1468,7 @@ CONSTRAINT UNIQUE_API_SEQUENCE UNIQUE(API_SEQUENCE)
 );
 
 INSERT INTO CV_PARSING_API_DETAILS (API_URL, API_SEQUENCE, ACTIVE, COLUMN_TO_UPDATE, QUERY_ATTRIBUTES) VALUES
-('https://rest.rchilli.com/RChilliParser/Rchilli/parseResume', 1, true, 'PARSING_RESPONSE_JSON',
+('https://rest.rchilli.com/RChilliParser/Rchilli/parseResume', 1, false, 'PARSING_RESPONSE_JSON',
 '"userkey" => "2SNEDYNPV30",
 "version" => "7.0.0",
 "subuserid" => "Hexagon Search"'
@@ -1877,6 +1877,39 @@ order by jobPublishedOn desc, jobId asc;
 -- For ticket #35 litmusblox-scheduler
 ALTER TABLE JCM_COMMUNICATION_DETAILS ADD COLUMN REJECTED_TIMESTAMP_EMAIL TIMESTAMP DEFAULT NULL;
 
+update jcm_communication_details set rejected_timestamp_email = NOW() where jcm_id in (select id from job_candidate_mapping where rejected='t' and stage=(select id from stage_step_master where stage='Screening'));
+
+-- For ticket #55 chatbot
+update CUSTOMIZED_CHATBOT_PAGE_CONTENT set PAGE_INFO='"introText"=>"As a part of org level role baselining, we seek your inputs on various aspects of your work experience regarding the role of",
+"thankYouText"=>"No further action is required from your side",
+"showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false", "showUploadResumePage"=>"false"' where company_id = 6;
+
+update CUSTOMIZED_CHATBOT_PAGE_CONTENT set PAGE_INFO='"introText"=>"Automation premier League requires you to get tested on", "thankYouText"=>"The score of your test will be communicated to you via email tomorrow", "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false", "showUploadResumePage"=>"false"' where company_id=43;
+
+-- #427 backend Url shortener ticket
+DROP TABLE IF EXISTS SHORT_URL;
+CREATE TABLE SHORT_URL(
+	ID SERIAL PRIMARY KEY NOT NULL,
+  URL TEXT NOT NULL DEFAULT '',
+  HASH VARCHAR(10) NOT NULL DEFAULT '',
+  SHORT_URL TEXT NOT NULL DEFAULT '',
+  CREATED_ON TIMESTAMP
+);
+
+
+-- ticket #469 litmusblox-backend
+DROP TABLE IF EXISTS JCM_CANDIDATE_SOURCE_HISTORY;
+CREATE TABLE IF NOT EXISTS JCM_CANDIDATE_SOURCE_HISTORY(
+	ID SERIAL PRIMARY KEY NOT NULL,
+  JOB_CANDIDATE_MAPPING_ID INTEGER REFERENCES JOB_CANDIDATE_MAPPING(ID) NOT NULL,
+  CANDIDATE_SOURCE VARCHAR(17) NOT NULL,
+  CREATED_ON TIMESTAMP NOT NULL,
+  CREATED_BY INTEGER REFERENCES USERS(ID) NOT NULL
+);
+
+insert into jcm_candidate_source_history(job_candidate_mapping_id, candidate_source, created_on, created_by) select id, candidate_source, created_on, created_by from job_candidate_mapping;
+
+
 -- For ticket #379 - Async handling of upload candidates from a file and invite candidates
 CREATE TABLE ASYNC_OPERATIONS_ERROR_RECORDS (
 ID serial PRIMARY KEY NOT NULL,
@@ -1892,6 +1925,116 @@ FILE_NAME VARCHAR(255),
 CREATED_ON TIMESTAMP NOT NULL,
 CREATED_BY INTEGER REFERENCES USERS(ID) NOT NULL
 );
+
+--For ticket #456
+UPDATE CV_PARSING_API_DETAILS SET ACTIVE = 'f' WHERE COLUMN_TO_UPDATE = 'PARSING_RESPONSE_JSON';
+
+--For ticket #473
+CREATE TABLE REJECTION_REASON_MASTER_DATA(
+ID serial PRIMARY KEY NOT NULL,
+VALUE VARCHAR (50) NOT NULL,
+LABEL VARCHAR (100) NOT NULL,
+TYPE VARCHAR(20) DEFAULT NULL,
+STAGE INTEGER REFERENCES STAGE_STEP_MASTER(ID) NOT NULL
+);
+
+INSERT INTO REJECTION_REASON_MASTER_DATA (VALUE, LABEL, TYPE, STAGE) VALUES
+('Company', 'Candidate does not want to work with our Company','Candidate Reasons', 1),
+('Shift', 'Candidate does not want to work in shifts','Candidate Reasons', 1),
+('Commute', 'Candidate not willing to commute','Candidate Reasons', 1),
+('IC Role', 'Candidate not willing to work in Individual Contributor (IC) role','Candidate Reasons', 1),
+('People Role', 'Candidate not willing to work in People Management role','Candidate Reasons', 1),
+
+('Company', '','Candidate Reasons', 2),
+('Shift', 'Candidate does not want to work in shifts','Candidate Reasons', 2),
+('Commute', 'Candidate not willing to commute','Candidate Reasons', 2),
+('IC Role', 'Candidate not willing to work in Individual Contributor (IC) role','Candidate Reasons', 2),
+('People Role', 'Candidate not willing to work in People Management role','Candidate Reasons', 2),
+
+('Job Hops', 'Candidate has many job changes','Recruiter Reasons', 1),
+('Over Budget', 'Candidates salary expectation is higher than budget','Recruiter Reasons', 1),
+('No Poach', 'Candidate works in No Poach company','Recruiter Reasons', 1),
+('Skill Missing', 'Candidate is missing required skills','Recruiter Reasons', 1),
+('Already interviewed', 'Candidate has given interview earlier','Recruiter Reasons', 1),
+('Over-Qualified', 'Candidate has more experience than required','Recruiter Reasons', 1),
+('Under-Qualified', 'Candidate has less experience than required','Recruiter Reasons', 1),
+('Education', 'Candidate does not have the correct education qualifications','Recruiter Reasons', 1),
+('Communication', 'Candidate does not have adequate communication skills','Recruiter Reasons', 1),
+('Notice Period', 'Candidates Notice Period is too long','Recruiter Reasons', 1),
+('Not Available', 'Candidate not available for interview on a specific date','Recruiter Reasons', 1),
+('Not interested', 'Candidate not interested in this job','Recruiter Reasons', 1),
+('Not looking', 'Candidate is not looking for a job change','Recruiter Reasons', 1),
+('Key Skill Strength', 'Candidate Key Skill Strength is poor','Recruiter Reasons', 1),
+('No Response', 'Candidate has not responded to chatbot invitation','Recruiter Reasons', 1),
+('Chatbot Incomplete', 'Candidate has not completed the chatbot','Recruiter Reasons', 1),
+('Not Interested', 'Candidate has expressed disinterest in the job','Recruiter Reasons', 1),
+
+('Job Hops', 'Candidate has many job changes','Recruiter Reasons', 2),
+('Over Budget', 'Candidates salary expectation is higher than budget','Recruiter Reasons', 2),
+('No Poach', 'Candidate works in No Poach company','Recruiter Reasons', 2),
+('Skill Missing', 'Candidate is missing required skills','Recruiter Reasons', 2),
+('Already interviewed', 'Candidate has given interview earlier','Recruiter Reasons', 2),
+('Over-Qualified', 'Candidate has more experience than required','Recruiter Reasons', 2),
+('Under-Qualified', 'Candidate has less experience than required','Recruiter Reasons', 2),
+('Education', 'Candidate does not have the correct education qualifications','Recruiter Reasons', 2),
+('Communication', 'Candidate does not have adequate communication skills','Recruiter Reasons', 2),
+('Notice Period', 'Candidates Notice Period is too long','Recruiter Reasons', 2),
+('Not Available', 'Candidate not available for interview on a specific date','Recruiter Reasons', 2),
+('Not interested', 'Candidate not interested in this job','Recruiter Reasons', 2),
+('Not looking', 'Candidate is not looking for a job change','Recruiter Reasons', 2),
+('Key Skill Strength', 'Candidate Key Skill Strength is poor','Recruiter Reasons', 2),
+('No Response', 'Candidate has not responded to chatbot invitation','Recruiter Reasons', 2),
+('Chatbot Incomplete', 'Candidate has not completed the chatbot','Recruiter Reasons', 2),
+('Not Interested', 'Candidate has expressed disinterest in the job','Recruiter Reasons', 2),
+
+('Skill Missing', 'Candidate is missing required skills',null, 3),
+('Industry / Domain', 'Candidate is missing Industry / Domain background',null, 3),
+('Already interviewed', 'Candidate has been interviewed earlier',null, 3),
+('Over-Qualified', 'Candidate has more experience than required',null, 3),
+('Under-Qualified', 'Candidate has less experience than required',null, 3),
+('Education', 'Candidate does not have the required education qualifications',null, 3),
+('Communication', 'Candidate does not have adequate communication skills',null, 3),
+('Assessment', 'Candidate did not clear the assessment test',null, 3),
+
+('Technical', 'Technical skills not adequate',null, 4),
+('Managerial', 'Managerial / People skills not adequate',null, 4),
+('Culture', 'Not a culture fit for the company',null, 4),
+('Industry / Domain', 'Industry / Domain experience not adequate',null, 4),
+('Behavioral', 'Behavioral competencies not adequate',null, 4),
+('Compensation fitment', 'Not able to fit candidate in the compensation band',null, 4),
+('Another Candidate', 'Another candidate selected for this job',null, 4),
+
+('Personal/Family', 'Personal or Family emergency',null, 4),
+('Professional', 'Unexpected meeting, Client visit, Production issue',null, 4),
+('Medical', 'Medical Emergency, Candidate unwell',null, 4),
+('Logistics', 'Weather / Accident / Vehicle problems',null, 4),
+('No Response', 'Candidate has stopped responding to calls',null, 4),
+('Hiring Manager', 'Hiring Manager cancelled / rescheduled the interview',null, 4),
+
+('Position Scrapped', 'Position has been scrapped',null, 5),
+('No Approval', 'No approval for position / Approval withdrawn',null, 5),
+('Other Offer', 'Candidate received another offer',null, 5),
+('Withdraw Candidature', 'Candidate is no longer interested in the job',null, 5),
+
+('Role', 'Candidate did not like the Role offered',null, 6),
+('Title', 'Candidate did not like the Title offered',null, 6),
+('Compensation', 'Candidate did not like to Compensation offered',null, 6),
+('Interview experience', 'Candidate did not like the Interview expereince',null, 6),
+('Relocation', 'Candidate does not want to Relocate',null, 6),
+('Counteroffer', 'Candidate accepted counter-offer from his company',null, 6),
+('Onsite', 'Candidate received an onsite opportunity',null, 6),
+('Other Offer', 'Candidate accepted offer from another company',null, 6),
+('Withdraw Offer', 'Company withdrew the offer',null, 6),
+
+('Performance', 'Candidate was asked to leave on Performance grounds',null, 7),
+('Background Verification', 'Candidates Background Verification (BGV) report was negative',null, 7),
+('Integrity', 'Candidate was asked to leave on grounds of integrity',null, 7),
+('Voluntary exit', 'Candidate left on their own accord',null, 7);
+
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN CANDIDATE_REJECTION_VALUE VARCHAR(50);
+
+
 -- For ticket #323
 drop view if exists job_candidate_mapping_all_details;
 create view job_candidate_mapping_all_details

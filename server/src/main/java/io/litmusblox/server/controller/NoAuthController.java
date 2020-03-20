@@ -144,7 +144,7 @@ public class NoAuthController {
                     put("Candidate",Arrays.asList("id","createdBy","createdOn","updatedBy","updatedOn","uploadErrorMessage", "firstName", "lastName","email","mobile", "candidateSource"));
                     put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company", "questionType"));
                     put("UserScreeningQuestion", Arrays.asList("createdOn","createdBy","updatedOn","userId","questionType"));
-                    put("JobCandidateMapping", Arrays.asList("createdOn","createdBy","updatedOn","updatedBy","techResponseData","candidateSource","candidateInterest","candidateInterestDate","candidateFirstName","candidateLastName","chatbotUuid", "stage"));
+                    put("JobCandidateMapping", Arrays.asList("createdOn","createdBy","updatedOn","updatedBy","techResponseData","candidateSource","candidateInterest","candidateInterestDate","candidateFirstName","candidateLastName","chatbotUuid", "stage", "candidateSourceHistories"));
                     put("JobCapabilities", Arrays.asList("jobCapabilityStarRatingMappingList","jobId"));
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateEducationDetails", Arrays.asList("id","candidateId"));
@@ -204,17 +204,17 @@ public class NoAuthController {
     }
 
     /**
-     * API to return job details based on job reference id
+     * API to return job details based on job short code
      *
-     * @param jobReferenceId job reference id to search for
+     * @param jobShortCode job short code to search for
      * @return String representation of the job details information
      * @throws Exception
      */
-    @GetMapping(value = "/jobDetailsByReferenceId/{jobReferenceId}")
-    String jobDetailsByReferenceId(@PathVariable("jobReferenceId") UUID jobReferenceId) throws Exception {
-        return Util.stripExtraInfoFromResponseBean(jobService.findByJobReferenceId(jobReferenceId),
+    @GetMapping(value = "/jobDetailsByJobShortCode/{jobShortCode}")
+    String jobDetailsByReferenceId(@PathVariable("jobShortCode") String jobShortCode) throws Exception {
+        return Util.stripExtraInfoFromResponseBean(jobService.findJobByJobShortCode(jobShortCode),
                 new HashMap<String, List<String>>() {{
-                    put("Job",Arrays.asList("id","jobTitle","jobDescription", "jobLocation" , "function"));
+                    put("Job",Arrays.asList("id","jobTitle","jobDescription", "jobLocation" , "function","jobShortCode"));
                     put("MasterData", Arrays.asList("value"));
                 }}, null);
     }
@@ -234,7 +234,7 @@ public class NoAuthController {
         log.info("Complete processing search operation in {} ms.", (System.currentTimeMillis() - startTime));
         return Util.stripExtraInfoFromResponseBean(jobsFound,
                 new HashMap<String, List<String>>() {{
-                    put("Job", Arrays.asList("id","jobTitle", "jobDescription", "jobLocation", "function", "jobReferenceId","jobType"));
+                    put("Job", Arrays.asList("id","jobTitle", "jobDescription", "jobLocation", "function", "jobReferenceId","jobType", "jobShortCode"));
                     put("CompanyAddress", Arrays.asList("address"));
                     put("MasterData", Arrays.asList("value"));
                 }}, null);
@@ -247,14 +247,14 @@ public class NoAuthController {
      * @param candidateSource From where we source the candidate
      * @param candidateCv candidate cv
      * @param candidateString  Candidate all info string
-     * @param jobReferenceId In which job upload candidate
+     * @param jobShortCode In which job upload candidate
      * @param employeeReferrerString employee info string
      * @return UploadResponseBean
      * @throws Exception
      */
     @PostMapping(value = "/addCandidate/{candidateSource}")
     @ResponseStatus(value = HttpStatus.OK)
-    String uploadCandidate(@PathVariable("candidateSource") String candidateSource, @RequestParam(name = "candidateCv", required = false) MultipartFile candidateCv, @RequestParam("candidate") String candidateString, @RequestParam("jobReferenceId") UUID jobReferenceId, @RequestParam(name = "employeeReferrer", required = false) String employeeReferrerString, @RequestParam("otp") String otp) throws Exception{
+    String uploadCandidate(@PathVariable("candidateSource") String candidateSource, @RequestParam(name = "candidateCv", required = false) MultipartFile candidateCv, @RequestParam("candidate") String candidateString, @RequestParam("jobShortCode") String jobShortCode, @RequestParam(name = "employeeReferrer", required = false) String employeeReferrerString, @RequestParam("otp") String otp) throws Exception{
         EmployeeReferrer employeeReferrer = null;
         ObjectMapper objectMapper=new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -264,7 +264,7 @@ public class NoAuthController {
             employeeReferrer =objectMapper.readValue(employeeReferrerString, EmployeeReferrer.class);
 
         long startTime = System.currentTimeMillis();
-        UploadResponseBean responseBean = jobCandidateMappingService.uploadCandidateByNoAuthCall(candidateSource, candidate, jobReferenceId, candidateCv, employeeReferrer, otp);
+        UploadResponseBean responseBean = jobCandidateMappingService.uploadCandidateByNoAuthCall(candidateSource, candidate, jobShortCode, candidateCv, employeeReferrer, otp);
         log.info("Candidate upload in {}ms",(System.currentTimeMillis()-startTime));
         return Util.stripExtraInfoFromResponseBean(responseBean, null,
                 new HashMap<String, List<String>>() {{
@@ -315,7 +315,7 @@ public class NoAuthController {
                 new HashMap<String, List<String>>() {{
                     put("Job",Arrays.asList("jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy","companyJobId","noOfPositions","mlDataAvailable","status","createdOn","createdBy","userEnteredKeySkill"));
                     put("Company", Arrays.asList("companyAddressList", "companyBuList"));
-                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData", "candidateReferralDetail"));
+                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData", "candidateReferralDetail", "candidateSourceHistories"));
                     put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
                     put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
                     put("JcmCommunicationDetails", Arrays.asList("id","jcmId"));

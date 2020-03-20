@@ -117,12 +117,16 @@ public class CandidateService implements ICandidateService {
 
         if (null == dupCandidateByEmail) {
             if (null != dupCandidateByMobile) {
-                //Candidate by mobile exists, add email history
-                candidateEmailHistoryRepository.save(new CandidateEmailHistory(dupCandidateByMobile, email, new Date(), loggedInUser));
+                if(!isEmailExist(email, dupCandidateByMobile)){
+                    //Candidate by mobile exists, add email history
+                    candidateEmailHistoryRepository.save(new CandidateEmailHistory(dupCandidateByMobile, email, new Date(), loggedInUser));
+                }
                 return dupCandidateByMobile;
             } else if (null != dupCandidateByAlternateMobile) {
-                //Candidate by Alternate mobile exists, add email history
-                candidateEmailHistoryRepository.save(new CandidateEmailHistory(dupCandidateByAlternateMobile, email, new Date(), loggedInUser));
+                if(!isEmailExist(email, dupCandidateByAlternateMobile)) {
+                    //Candidate by Alternate mobile exists, add email history
+                    candidateEmailHistoryRepository.save(new CandidateEmailHistory(dupCandidateByAlternateMobile, email, new Date(), loggedInUser));
+                }
                 return dupCandidateByAlternateMobile;
             }
 
@@ -140,6 +144,19 @@ public class CandidateService implements ICandidateService {
             return dupCandidateByEmail;
         }
         return dupCandidateByEmail;
+    }
+
+    private boolean isEmailExist(String email, Candidate candidate){
+        log.info("Inside isEmailExist");
+        List<CandidateEmailHistory> candidateEmailHistoryFormDb;
+        if(email.contains("@notavailable.io")){
+            candidateEmailHistoryFormDb = candidateEmailHistoryRepository.findByCandidateIdOrderByIdDesc(candidate.getId());
+            if(candidateEmailHistoryFormDb.size()>0){
+                candidate.setEmail(candidateEmailHistoryFormDb.get(0).getEmail());
+                return true;
+            }
+        }
+        return false;
     }
 
     public Candidate findByProfileTypeAndUniqueId(List<CandidateOnlineProfile> candidateOnlineProfiles) throws Exception{

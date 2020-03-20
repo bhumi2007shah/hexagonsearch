@@ -1390,4 +1390,12 @@ public class JobService implements IJobService {
 
         return techRoleCompetencyBeans;
     }
+
+    @Transactional(readOnly = true)
+    public Job findJobByJobShortCode(String jobShortCode) {
+        log.info("Inside findJobByJobShortCode or jobShortCode : {}",jobShortCode);
+        return jobRepository.getOne(Long.parseLong(jobShortCode.substring(IConstant.LB_SHORT_CODE.length())));
+    }
+
+
 }

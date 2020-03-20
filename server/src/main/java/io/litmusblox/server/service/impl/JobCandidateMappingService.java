@@ -70,6 +70,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Autowired
     Environment environment;
 
+    @Autowired
+    IJobService jobService;
+
     @Resource
     CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
 
@@ -996,6 +999,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         Integer[] countArray = new Integer[0];
 
         for (MultipartFile fileToProcess :multipartFiles) {
+            StringBuffer location = new StringBuffer(environment.getProperty(IConstant.TEMP_REPO_LOCATION));
+            location.append(IConstant.DRAG_AND_DROP).append(File.separator);
             String extension = Util.getFileExtension(fileToProcess.getOriginalFilename()).toLowerCase();
             if (filesProcessed == MasterDataBean.getInstance().getConfigSettings().getMaxCvFiles()) {
                 responseBean.getCvUploadMessage().put(fileToProcess.getOriginalFilename(), IErrorMessages.MAX_FILES_PER_UPLOAD);
@@ -1016,7 +1021,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
                 User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
                 try {
-                    filePath = StoreFileUtil.storeFile(fileToProcess, jobId, environment.getProperty(IConstant.TEMP_REPO_LOCATION), fileType,null, loggedInUser);
+                    filePath = StoreFileUtil.storeFile(fileToProcess, jobId, location.toString(), fileType,null, loggedInUser);
                     successCount++;
                 } catch (Exception e) {
                     log.error(fileToProcess.getOriginalFilename()+" not save to temp location : "+e.getMessage());
@@ -1026,7 +1031,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
                 if(IConstant.FILE_TYPE.zip.toString().equals(fileType) || IConstant.FILE_TYPE.rar.toString().equals(fileType)){
                     successCount--;
-                    countArray=ZipFileProcessUtil.extractZipFile(filePath, environment.getProperty(IConstant.TEMP_REPO_LOCATION), loggedInUser.getId(),jobId, responseBean, failureCount,successCount);
+                    countArray=ZipFileProcessUtil.extractZipFile(filePath, location.toString(), loggedInUser.getId(),jobId, responseBean, failureCount,successCount);
                     failureCount=countArray[0];
                     successCount=countArray[1];
                 }
@@ -1560,6 +1565,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         candidateTechResponseDataRepository.deleteByJobCandidateMappingId(jcmFromDb);
         jobCandidateMappingRepository.delete(jcmFromDb);
         jcmForExistingCandidate.setUpdatedBy(loggedInUser);
+        jobCandidateMappingRepository.flush();
         jobCandidateMappingRepository.save(jcmForExistingCandidate);
     }
 
@@ -1637,10 +1643,11 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      *
      * @param jcmList The list of candidates for the job that need to be moved to the specified stage
      * @param stage   the new stage
+     * @param candidateRejectionValue which is id of rejection master data
      * @throws Exception
      */
     @Transactional
-    public void setStageForCandidates(List<Long> jcmList, String stage) throws Exception {
+    public void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue) throws Exception {
         long startTime = System.currentTimeMillis();
         log.info("Setting {} jcms to {} stage", jcmList, stage);
         //check that all the jcm are currently in the same stage
@@ -1650,9 +1657,11 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<JcmHistory> jcmHistoryList = new ArrayList<>(jcmList.size());
 
-        //check if new stage is rejected stage
+        //check if new stage is rejected stage so update candidate rejection reason and rejected flag
+        RejectionReasonMasterData reasonMasterData = null;
         if (IConstant.Stage.Reject.getValue().equals(stage)) {
-            jobCandidateMappingRepository.updateForRejectStage(jcmList, loggedInUser.getId(), new Date());
+            reasonMasterData = MasterDataBean.getInstance().getCandidateRejections().get(candidateRejectionValue);
+            jobCandidateMappingRepository.updateForRejectStage(jcmList,(null != reasonMasterData)?reasonMasterData.getValue():null, loggedInUser.getId(), new Date());
         }
         else {
 
@@ -1660,9 +1669,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             Map<String, Long> jobStageIds = MasterDataBean.getInstance().getStageStepMasterMap();
             jobCandidateMappingRepository.updateStageStepId(jcmList, jobCandidateMappingObj.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
         }
+        RejectionReasonMasterData finalReasonMasterData = reasonMasterData;
         jcmList.stream().forEach(jcm -> {
             JobCandidateMapping mappingObj = jobCandidateMappingRepository.getOne(jcm);
-            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage":"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage()));
+            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage "+((null != finalReasonMasterData)? "for reason "+finalReasonMasterData.getLabel():""):"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage()));
 
         });
         jcmHistoryRepository.saveAll(jcmHistoryList);
@@ -1802,14 +1812,14 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      *
      * @param candidateSource from where we source the candidate
      * @param candidate candidate all info
-     * @param jobReferenceId In which job upload candidate
+     * @param jobShortCode In which job upload candidate
      * @param candidateCv candidate cv
      * @param employeeReferrer if candidate upload by employee referral then this model come
      * @return UploadResponseBean
      * @throws Exception
      */
     @Transactional
-    public UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception {
+    public UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, String jobShortCode, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception {
         log.info("Inside uploadCandidateByNoAuthCall");
         UploadResponseBean responseBean = null;
         CandidateDetails candidateDetails = null;
@@ -1852,7 +1862,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 }
                 candidate.getCandidateDetails().setCvFileType("."+cvFileType);
             }
-            Job job = jobRepository.findByJobReferenceId(jobReferenceId);
+            Job job = jobService.findJobByJobShortCode(jobShortCode);
             candidate.setCandidateSource(candidateSource);
 
             if(null != employeeReferrer){

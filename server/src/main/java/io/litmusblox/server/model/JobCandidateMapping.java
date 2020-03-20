@@ -148,6 +148,9 @@ public class JobCandidateMapping implements Serializable {
     @Column(name = "AUTOSOURCED")
     private boolean autoSourced;
 
+    @Column(name = "CANDIDATE_REJECTION_VALUE")
+    private String candidateRejectionValue;
+
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private CandidateTechResponseData techResponseData;
@@ -186,6 +189,9 @@ public class JobCandidateMapping implements Serializable {
 
     @Transient
     private String inviteErrorMessage;
+
+    @OneToMany(cascade = {CascadeType.MERGE}, mappedBy = "jobCandidateMappingId")
+    private List<JcmCandidateSourceHistory> candidateSourceHistories = new ArrayList<>(0);
 
     public String getDisplayName() {
         return candidateFirstName + " " + candidateLastName;

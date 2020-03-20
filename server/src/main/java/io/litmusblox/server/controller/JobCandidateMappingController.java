@@ -181,7 +181,7 @@ public class JobCandidateMappingController {
                     put("Candidate",Arrays.asList("id","createdBy","createdOn","updatedBy","updatedOn","uploadErrorMessage", "firstName", "lastName","email","mobile", "candidateSource"));
                     put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company", "questionType"));
                     put("UserScreeningQuestion", Arrays.asList("createdOn","createdBy","updatedOn","userId","questionType"));
-                    put("JobCandidateMapping", Arrays.asList("createdOn","createdBy","updatedOn","updatedBy","techResponseData","candidateSource","candidateInterest","candidateInterestDate","candidateFirstName","candidateLastName","chatbotUuid", "stage", "candidateReferralDetail"));
+                    put("JobCandidateMapping", Arrays.asList("createdOn","createdBy","updatedOn","updatedBy","techResponseData","candidateSource","candidateInterest","candidateInterestDate","candidateFirstName","candidateLastName","chatbotUuid", "stage", "candidateReferralDetail", "candidateSourceHistories"));
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateEducationDetails", Arrays.asList("id","candidateId"));
                     put("CandidateLanguageProficiency", Arrays.asList("id","candidateId"));
@@ -249,13 +249,14 @@ public class JobCandidateMappingController {
      *
      * @param jcmList The list of candidates for the job that need to be moved to the specified stage
      * @param stage the new stage
+     * @param candidateRejectionValue which is id of rejection master data
      * @throws Exception
      */
     @PutMapping("/setStage/{stage}")
     @ResponseBody
     @ResponseStatus(value = HttpStatus.OK)
-    void setStageForCandidates(@RequestBody List<Long> jcmList, @PathVariable("stage") @NotNull String stage) throws Exception {
-        jobCandidateMappingService.setStageForCandidates(jcmList, stage);
+    void setStageForCandidates(@RequestBody List<Long> jcmList, @PathVariable("stage") @NotNull String stage, @RequestParam(required = false, value = "candidateRejectionValue") Optional<Long> candidateRejectionValue) throws Exception {
+        jobCandidateMappingService.setStageForCandidates(jcmList, stage, candidateRejectionValue.isPresent()?candidateRejectionValue.get():null);
     }
 
     @GetMapping("cvuploaderror/{jobId}")
