@@ -5,7 +5,9 @@
 package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.Job;
+import io.litmusblox.server.model.StageStepMaster;
 import io.litmusblox.server.service.AnalyticsResponseBean;
+import io.litmusblox.server.service.JCMAllDetails;
 import io.litmusblox.server.service.JobAnalytics.*;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -208,5 +210,18 @@ public class CustomQueryExecutor {
         queryString.append(groupByJobId);
         Query query =  entityManager.createNativeQuery(queryString.toString(), InterviewAnalyticsBean.class);
         return (InterviewAnalyticsBean) query.getSingleResult();
+    }
+
+
+    //single job view for rejected = true
+    public List<JCMAllDetails> findByJobAndRejectedIsTrue(Job job) {
+        Query query = entityManager.createNativeQuery("Select * from job_candidate_mapping_all_details where job_id = " + job.getId() + " and rejected is true;", JCMAllDetails.class);
+        return query.getResultList();
+    }
+
+    //single job view for rejected = false
+    public List<JCMAllDetails> findByJobAndStageInAndRejectedIsFalse(Job job, StageStepMaster stageStepMaster) {
+        Query query = entityManager.createNativeQuery("Select * from job_candidate_mapping_all_details where job_id = " + job.getId() + " and stage = " + stageStepMaster.getId() + " and rejected is false;", JCMAllDetails.class);
+        return query.getResultList();
     }
 }

@@ -31,7 +31,7 @@ import java.util.*;
 @Table(name="JOB_CANDIDATE_MAPPING")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonFilter("JobCandidateMapping")
-public class JobCandidateMapping implements Serializable, Comparable {
+public class JobCandidateMapping implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285047L;
 
@@ -169,18 +169,6 @@ public class JobCandidateMapping implements Serializable, Comparable {
 
     @Transient
     @JsonProperty
-    List<JcmProfileSharingDetails> interestedHiringManagers = new ArrayList<>();
-
-    @Transient
-    @JsonProperty
-    List<JcmProfileSharingDetails> notInterestedHiringManagers = new ArrayList<>();
-
-    @Transient
-    @JsonProperty
-    List<JcmProfileSharingDetails> notRespondedHiringManagers = new ArrayList<>();
-
-    @Transient
-    @JsonProperty
     CvRating cvRating;
 
     @Transient
@@ -232,7 +220,7 @@ public class JobCandidateMapping implements Serializable, Comparable {
         this.id = id;
     }
 
-    @Override
+ /*   @Override
     public int compareTo(Object o) {
         int returnVal = 0;
 
@@ -259,7 +247,7 @@ public class JobCandidateMapping implements Serializable, Comparable {
             returnVal = this.getCandidateLastName().compareTo(objToCompare.getCandidateLastName());
 
         return returnVal;
-    }
+    }*/
 
     public InterviewDetails getCurrentInterviewDetail(){
         if(this.getInterviewDetails().size()>0)
