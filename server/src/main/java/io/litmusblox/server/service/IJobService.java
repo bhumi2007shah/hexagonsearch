@@ -147,12 +147,5 @@ public interface IJobService {
      * @param jobId
      * @return List of AsyncOperationsErrorRecords
      */
-    List<AsyncOperationsErrorRecords> findAsyncInviteErrors(Long jobId);
-
-    /**
-     * Service method to find all async upload error records for a job.
-     * @param jobId
-     * @return List of AsyncOperationsErrorRecords
-     */
-    List<AsyncOperationsErrorRecords> findAsyncUploadErrors(Long jobId);
+    List<AsyncOperationsErrorRecords> findAsyncErrors(Long jobId, String asyncOperation);
 }

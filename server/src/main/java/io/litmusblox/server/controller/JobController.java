@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
@@ -246,7 +247,7 @@ public class JobController {
     String getAsyncInviteError(@PathVariable("jobId") Long jobId){
         log.info("Received request to fetch error report for async invite operation for jobId: {}", jobId);
         long startTime = System.currentTimeMillis();
-        String response = Util.stripExtraInfoFromResponseBean(jobService.findAsyncInviteErrors(jobId),
+        String response = Util.stripExtraInfoFromResponseBean(jobService.findAsyncErrors(jobId, IConstant.ASYNC_OPERATIONS.InviteCandidates.name()),
                 null,
                 new HashMap<String, List<String>>(){{
                     put("AsyncOperationsErrorRecords", Arrays.asList("id", "jobId", "jobCandidateMappingId", "asyncOperation", "createdBy"));
@@ -260,7 +261,7 @@ public class JobController {
     String getAsyncUploadError(@PathVariable("jobId") Long jobId){
         log.info("Received request to fetch error report for async invite operation for jobId: {}", jobId);
         long startTime = System.currentTimeMillis();
-        String response = Util.stripExtraInfoFromResponseBean(jobService.findAsyncUploadErrors(jobId),
+        String response = Util.stripExtraInfoFromResponseBean(jobService.findAsyncErrors(jobId, IConstant.ASYNC_OPERATIONS.FileUpload.name()),
                 null,
                 new HashMap<String, List<String>>(){{
                     put("AsyncOperationsErrorRecords", Arrays.asList("id", "jobId", "jobCandidateMappingId", "asyncOperation", "createdBy"));
