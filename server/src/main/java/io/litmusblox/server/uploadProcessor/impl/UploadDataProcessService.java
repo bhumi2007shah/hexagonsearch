@@ -235,7 +235,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             }
 
             //string to store detail about jcmHistory
-            String candidateDetail = "jcm created for "+msg;
+            String candidateDetail = "candidate ("+msg+") uploaded for this job";
             jcmHistoryRepository.save(new JcmHistory(savedObj, candidateDetail, new Date(), loggedInUser, savedObj.getStage()));
             savedObj.setTechResponseData(new CandidateTechResponseData(savedObj));
             jobCandidateMappingRepository.save(savedObj);

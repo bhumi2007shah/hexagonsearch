@@ -2034,7 +2034,6 @@ INSERT INTO REJECTION_REASON_MASTER_DATA (VALUE, LABEL, TYPE, STAGE) VALUES
 ALTER TABLE JOB_CANDIDATE_MAPPING
 ADD COLUMN CANDIDATE_REJECTION_VALUE VARCHAR(50);
 
-
 -- For ticket #323
 drop view if exists job_candidate_mapping_all_details;
 create view job_candidate_mapping_all_details
@@ -2054,3 +2053,9 @@ left join
 on candidateCompany.candidate_id = job_candidate_mapping.candidate_id
 where users.id = job_candidate_mapping.created_by
 order by job_candidate_mapping.created_on desc, job_candidate_mapping.candidate_first_name asc, job_candidate_mapping.candidate_last_name asc;
+
+--For ticket https://github.com/hexagonsearch/litmusblox-scheduler/issues/49
+INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
+('InterviewDaySMSNoInPerson', 'You have a interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewTime}]]. Good Luck!');
+
+update sms_templates set template_content = 'You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewTime}]]. Below is the Google Maps link to the interview address. Please report 15 mins before. See you there! [[${commBean.interviewAddressLink}]]' where template_name = 'InterviewDay';

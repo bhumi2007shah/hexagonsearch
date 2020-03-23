@@ -107,7 +107,7 @@ public class CompanyService implements ICompanyService {
     public Company addCompany(Company company, User loggedInUser) throws Exception {
         company = generateAndSetCompanyUniqueId(company);
         companyRepository.save(company);
-        saveCompanyHistory(company.getId(), "New company, "+company.getCompanyName()+", created", loggedInUser);
+        saveCompanyHistory(company.getId(), loggedInUser.getDisplayName() + " created a new company " +company.getCompanyName(), loggedInUser);
         return company;
     }
 
@@ -193,7 +193,7 @@ public class CompanyService implements ICompanyService {
             company.setIndustry(null);
         //Update Company
         companyRepository.save(company);
-        saveCompanyHistory(company.getId(), "Update company information", loggedInUser);
+        saveCompanyHistory(company.getId(), loggedInUser.getDisplayName()+" update company information for "+company.getCompanyName(), loggedInUser);
         log.info("Company Updated "+company.getId());
     }
 
@@ -275,7 +275,7 @@ public class CompanyService implements ICompanyService {
         }
 
         companyBuRepository.flush();
-        saveCompanyHistory(company.getId(), "Updated company BUs", loggedInUser);
+        saveCompanyHistory(company.getId(), loggedInUser.getDisplayName()+" updated company BUs for "+company.getCompanyName(), loggedInUser);
 
         if(errorResponse.size()>0) {
             log.info("Updated Company BU's with errors: " + errorResponse);
@@ -430,7 +430,7 @@ public class CompanyService implements ICompanyService {
         }
 
         companyAddressRepository.flush();
-        saveCompanyHistory(company.getId(), "Updated company Addresses", loggedInUser);
+        saveCompanyHistory(company.getId(), loggedInUser.getDisplayName()+" updated company Addresses", loggedInUser);
 
         if(errorResponse.size()>0) {
             log.info("Updated Company Addresses with errors: " + errorResponse);
@@ -458,7 +458,7 @@ public class CompanyService implements ICompanyService {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         companyObjFromDb.setUpdatedBy(loggedInUser.getId());
         companyRepository.save(companyObjFromDb);
-        saveCompanyHistory(companyObjFromDb.getId(), blockCompany ? "Unblocked":"Blocked", loggedInUser);
+        saveCompanyHistory(companyObjFromDb.getId(), loggedInUser.getDisplayName()+(blockCompany ? " unblocked company : ":" blocked company : ") + companyObjFromDb.getCompanyName(), loggedInUser);
     }
 
     /**
