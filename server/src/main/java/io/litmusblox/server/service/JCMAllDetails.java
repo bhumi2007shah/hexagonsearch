@@ -4,7 +4,9 @@
 
 package io.litmusblox.server.service;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.litmusblox.server.model.InterviewDetails;
 import io.litmusblox.server.model.JcmProfileSharingDetails;
 import lombok.Data;
 
@@ -57,4 +59,15 @@ public class JCMAllDetails {
     @Transient
     @JsonProperty
     List<JcmProfileSharingDetails> notRespondedHiringManagers = new ArrayList<>();
+
+    @Transient
+    @JsonIgnore
+    private List<InterviewDetails> interviewDetails = new ArrayList<>();
+
+    public InterviewDetails getCurrentInterviewDetail(){
+        if(this.getInterviewDetails().size()>0)
+            return this.getInterviewDetails().get(0);
+
+        return null;
+    }
 }
