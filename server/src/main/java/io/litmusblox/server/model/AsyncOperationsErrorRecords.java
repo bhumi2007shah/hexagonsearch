@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.model;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,6 +25,7 @@ import java.util.Date;
 @Entity
 @Table(name = "ASYNC_OPERATIONS_ERROR_RECORDS")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonFilter("AsyncOperationsErrorRecords")
 @NoArgsConstructor
 public class AsyncOperationsErrorRecords implements Serializable {
 

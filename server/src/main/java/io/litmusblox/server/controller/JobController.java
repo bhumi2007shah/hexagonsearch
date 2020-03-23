@@ -241,4 +241,32 @@ public class JobController {
         log.info("Completed processing fetch Tech role competency list for job {} in {}", jobId, (System.currentTimeMillis()-startTime) + "ms.");
         return response;
     }
+
+    @GetMapping(value = "/inviteError/{jobId}")
+    String getAsyncInviteError(@PathVariable("jobId") Long jobId){
+        log.info("Received request to fetch error report for async invite operation for jobId: {}", jobId);
+        long startTime = System.currentTimeMillis();
+        String response = Util.stripExtraInfoFromResponseBean(jobService.findAsyncInviteErrors(jobId),
+                null,
+                new HashMap<String, List<String>>(){{
+                    put("AsyncOperationsErrorRecords", Arrays.asList("id", "jobId", "jobCandidateMappingId", "asyncOperation", "createdBy"));
+                }}
+                );
+        log.info("Completed processing request to fetch async invite errors for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
+        return response;
+    }
+
+    @GetMapping(value = "/uploadError/{jobId}")
+    String getAsyncUploadError(@PathVariable("jobId") Long jobId){
+        log.info("Received request to fetch error report for async invite operation for jobId: {}", jobId);
+        long startTime = System.currentTimeMillis();
+        String response = Util.stripExtraInfoFromResponseBean(jobService.findAsyncUploadErrors(jobId),
+                null,
+                new HashMap<String, List<String>>(){{
+                    put("AsyncOperationsErrorRecords", Arrays.asList("id", "jobId", "jobCandidateMappingId", "asyncOperation", "createdBy"));
+                }}
+                );
+        log.info("Completed processing request to fetch async invite errors for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
+        return response;
+    }
 }

@@ -120,6 +120,9 @@ public class JobService implements IJobService {
     @Resource
     ExportFormatDetailRepository exportFormatDetailRepository;
 
+    @Resource
+    AsyncOperationsErrorRecordsRepository asyncOperationsErrorRecordsRepository;
+
     @Autowired
     ICompanyService companyService;
 
@@ -1397,5 +1400,31 @@ public class JobService implements IJobService {
         return jobRepository.getOne(Long.parseLong(jobShortCode.substring(IConstant.LB_SHORT_CODE.length())));
     }
 
+    /**
+     * Service method to find all async invite error records for a job.
+     * @param jobId
+     * @return List of AsyncOperationsErrorRecords
+     */
+    public List<AsyncOperationsErrorRecords> findAsyncInviteErrors(Long jobId){
+        Job job = jobRepository.getOne(jobId);
+        if(null == job){
+            throw new WebException("Job not found.", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
 
+        return asyncOperationsErrorRecordsRepository.findAllByJobIdAndAsyncOperation(jobId, IConstant.ASYNC_OPERATIONS.InviteCandidates.name());
+    }
+
+    /**
+     * Service method to find all async invite error records for a job.
+     * @param jobId
+     * @return List of AsyncOperationsErrorRecords
+     */
+    public List<AsyncOperationsErrorRecords> findAsyncUploadErrors(Long jobId){
+        Job job = jobRepository.getOne(jobId);
+        if(null == job){
+            throw new WebException("Job not found.", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        return asyncOperationsErrorRecordsRepository.findAllByJobIdAndAsyncOperation(jobId, IConstant.ASYNC_OPERATIONS.FileUpload.name());
+    }
 }
