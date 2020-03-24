@@ -2045,10 +2045,11 @@ left join cv_rating on job_candidate_mapping.id = cv_rating.job_candidate_mappin
 left join candidate_details on candidate_details.candidate_id = job_candidate_mapping.candidate_id
 left join
 	(select ccd.company_name, ccd.designation, ccd.candidate_id, master_data.value as notice_period
-	from master_data, candidate_company_details ccd
+	from candidate_company_details ccd
 	join (select min(id) as id, candidate_id from candidate_company_details group by candidate_id) singleRow
 	on ccd.candidate_id = singleRow.candidate_id and ccd.id = singleRow.id
-	where master_data.id = ccd.notice_period
+	left join master_data
+    on master_data.id = ccd.notice_period
 	) as candidateCompany
 on candidateCompany.candidate_id = job_candidate_mapping.candidate_id
 where users.id = job_candidate_mapping.created_by
