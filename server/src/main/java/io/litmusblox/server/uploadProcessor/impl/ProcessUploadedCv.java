@@ -248,12 +248,12 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     StoreFileUtil.storeFile(Util.createMultipartFile(file), jobId, environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(), uploadResponseBean.getSuccessfulCandidates().get(0), null);
                 }else if(null == candidate.getCvParsingDetails().getParsingResponseJson()){
                     candidate.getCvParsingDetails().setProcessingStatus(IConstant.UPLOAD_STATUS.Failure.name());
-                    if(null != uploadResponseBean && null != uploadResponseBean.getFailedCandidates() && null != uploadResponseBean.getFailedCandidates().get(0).getUploadErrorMessage())
+                    if(null != uploadResponseBean && null != uploadResponseBean.getFailedCandidates() && uploadResponseBean.getFailedCandidates().size()>0 && null != uploadResponseBean.getFailedCandidates().get(0).getUploadErrorMessage())
                         candidate.getCvParsingDetails().setErrorMessage(uploadResponseBean.getFailedCandidates().get(0).getUploadErrorMessage());
                     else
                         candidate.getCvParsingDetails().setErrorMessage(errorMessage);
 
-                    if(null != uploadResponseBean && null != uploadResponseBean.getFailedCandidates().get(0).getId())
+                    if(null != uploadResponseBean && null != uploadResponseBean.getFailedCandidates() && uploadResponseBean.getFailedCandidates().size()>0 && null != uploadResponseBean.getFailedCandidates().get(0).getId())
                         StoreFileUtil.storeFile(Util.createMultipartFile(file), jobId, environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(), uploadResponseBean.getFailedCandidates().get(0), null);
                     else
                         StoreFileUtil.storeFile(Util.createMultipartFile(file), jobId, environment.getProperty(IConstant.REPO_LOCATION), IConstant.ERROR_FILES, null, userRepository.findById(userId).orElse(null));

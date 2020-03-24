@@ -249,6 +249,8 @@ public class JobCandidateMapping implements Serializable {
         return returnVal;
     }*/
 
+ //TODO: remove the following at the end of successful regression
+ //this should not be used as the logic has been moved to JCMAllDetails as per #323
     public InterviewDetails getCurrentInterviewDetail(){
         if(this.getInterviewDetails().size()>0)
             return this.getInterviewDetails().get(0);

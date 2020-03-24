@@ -123,6 +123,9 @@ public class JobService implements IJobService {
     @Resource
     AsyncOperationsErrorRecordsRepository asyncOperationsErrorRecordsRepository;
 
+    @Resource
+    InterviewDetailsRepository interviewDetailsRepository;
+
     @Autowired
     ICompanyService companyService;
 
@@ -381,7 +384,7 @@ public class JobService implements IJobService {
      */
     @Transactional
     public SingleJobViewResponseBean getJobViewById(Long jobId, String stage) throws Exception {
-        log.info("Received request to request to find a list of all candidates for job: {} and stage {} ",jobId, stage);
+        log.info("Received request to find a list of all candidates for job: {} and stage {} ",jobId, stage);
         long startTimeMethod = System.currentTimeMillis(), startTime = System.currentTimeMillis();
         //If the job is not published, do not process the request
         Job job = jobRepository.getOne(jobId);
@@ -421,11 +424,21 @@ public class JobService implements IJobService {
 
         Map<Long, JCMAllDetails> jcmAllDetailsMap = responseBean.getJcmAllDetailsList().stream().collect(Collectors.toMap(JCMAllDetails::getId, Function.identity()));
 
+        //List of JcmIds
+        List<Long> jcmListFromDb = jcmAllDetailsMap.keySet().stream().collect(Collectors.toList());
+
+        //find all interview details for the jcms
+        if (IConstant.Stage.Interview.getValue().equalsIgnoreCase(stage)) {
+            List<InterviewDetails> interviewDetails = interviewDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
+            interviewDetails.stream().parallel().forEach(interviewDtls -> {
+                jcmAllDetailsMap.get(interviewDtls.getJobCandidateMappingId()).getInterviewDetails().add(interviewDtls);
+            });
+        }
 
         //Find profile sharing details only in case of stage = submitted
         if (IConstant.Stage.ResumeSubmit.getValue().equalsIgnoreCase(stage)) {
 
-            List<JcmProfileSharingDetails> profileSharingForAllJcms = jcmProfileSharingDetailsRepository.findByJobCandidateMappingIdIn(jcmAllDetailsMap.keySet().stream().collect(Collectors.toList()));
+            List<JcmProfileSharingDetails> profileSharingForAllJcms = jcmProfileSharingDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
 
             Map<Long, List<JcmProfileSharingDetails>> profileSharingGroupedByJcmId = profileSharingForAllJcms.stream().collect(Collectors.groupingBy(JcmProfileSharingDetails::getJobCandidateMappingId));
 
