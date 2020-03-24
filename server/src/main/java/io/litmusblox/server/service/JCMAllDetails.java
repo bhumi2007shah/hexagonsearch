@@ -47,6 +47,7 @@ public class JCMAllDetails {
     String designation;
     String notice_period;
     Double total_experience;
+    String chatbot_uuid;
 
     @Transient
     @JsonProperty
