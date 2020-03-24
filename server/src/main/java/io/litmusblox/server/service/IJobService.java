@@ -143,7 +143,7 @@ public interface IJobService {
     Job findJobByJobShortCode(String jobShortCode);
 
     /**
-     * Service method to find all async invite error records for a job.
+     * Service method to find all async error records for a job and async operation.
      * @param jobId
      * @return List of AsyncOperationsErrorRecords
      */

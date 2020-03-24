@@ -1415,7 +1415,7 @@ public class JobService implements IJobService {
 
     /**
      *
-     * Service method to find all async invite error records for a job and async opperation
+     * Service method to find all async error records for a job and async operation
      *
      * @param jobId
      * @param asyncOperation
