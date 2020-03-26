@@ -219,7 +219,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     candidateFromPython.setLastName(IConstant.NOT_LAST_NAME);
 
 
-                if (candidateFromPython.getAlternateMobile().length() == 0)
+                if (null != candidateFromPython.getAlternateMobile() && candidateFromPython.getAlternateMobile().length() == 0)
                     candidateFromPython.setAlternateMobile(null);
 
                  uploadResponseBean = jobCandidateMappingService.uploadIndividualCandidate(Arrays.asList(candidateFromPython), jobId, false, userRepository.findById(userId));
