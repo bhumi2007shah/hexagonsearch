@@ -152,7 +152,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             candidate.setEmail(cleanEmail.toLowerCase());
         }
 
-        StringBuffer msg = new  StringBuffer(candidate.getFirstName()).append(" ").append(candidate.getLastName()).append(" ~ ").append(candidate.getEmail());
+        StringBuffer msg = new  StringBuffer(candidate.getFirstName()).append(" ").append(candidate.getLastName()).append(" (").append(candidate.getEmail());
 
         if(Util.isNotNull(candidate.getMobile())) {
             candidate.setMobile(Util.indianMobileConvertor(candidate.getMobile(), (null != candidate.getCountryCode())?candidate.getCountryCode():job.getCompanyId().getCountryId().getCountryCode()));
@@ -163,7 +163,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
                     throw new ValidationException(IErrorMessages.MOBILE_INVALID_DATA + " - " + candidate.getMobile(), HttpStatus.BAD_REQUEST);
                 candidate.setMobile(cleanMobile);
             }
-            msg.append("-").append(candidate.getMobile());
+            msg.append(",").append(candidate.getMobile()).append(") ");
         }else {
             //mobile number of candidate is null
             //check if ignore mobile flag is set
@@ -196,7 +196,6 @@ public class UploadDataProcessService implements IUploadDataProcessService {
                 candidate.setCountryCode(job.getCompanyId().getCountryId().getCountryCode());
             candidateObjToUse = candidateService.createCandidate(candidate.getFirstName(), candidate.getLastName(), candidate.getEmail(), candidate.getMobile(), candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
             candidate.setId(candidateObjToUse.getId());
-            msg.append(" New");
         }
         else {
             log.info("Found existing candidate: " + existingCandidate.getId());
@@ -235,8 +234,8 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             }
 
             //string to store detail about jcmHistory
-            String candidateDetail = "candidate ("+msg+") uploaded for this job";
-            jcmHistoryRepository.save(new JcmHistory(savedObj, candidateDetail, new Date(), loggedInUser, savedObj.getStage()));
+            msg.append("sourced for - ").append(job.getJobTitle()).append(" - ").append(job.getId());
+            jcmHistoryRepository.save(new JcmHistory(savedObj, msg.toString(), new Date(), loggedInUser, savedObj.getStage()));
             savedObj.setTechResponseData(new CandidateTechResponseData(savedObj));
             jobCandidateMappingRepository.save(savedObj);
             //create an empty record in jcm Communication details table
