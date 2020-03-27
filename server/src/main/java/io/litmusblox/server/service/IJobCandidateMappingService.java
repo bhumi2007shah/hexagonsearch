@@ -37,13 +37,15 @@ public interface IJobCandidateMappingService {
     /**
      * Service method to add candidates from a file in one of the supported formats
      *
-     * @param multipartFile the file with candidate information
+     * @param fileName the file with candidate information
      * @param jobId the job for which the candidates have to be added
      * @param fileFormat the format of file, for e.g. Naukri, LB format
-     * @return the status of upload operation
+     * @param loggedInUser the logged in user
+     * @param candidatesProcessed candidates processed by the user for the current day
+     * @param originalFileName the name of the file uploaded by user
      * @throws Exception
      */
-    UploadResponseBean uploadCandidatesFromFile(MultipartFile multipartFile, Long jobId, String fileFormat) throws Exception;
+    void uploadCandidatesFromFile(String fileName, Long jobId, String fileFormat, User loggedInUser, int candidatesProcessed, String originalFileName) throws Exception;
 
     /**
      * Service method to source and add a candidate from a plugin, for example Naukri plugin
@@ -93,9 +95,10 @@ public interface IJobCandidateMappingService {
      * Service method to invite candidates to fill chatbot for a job
      *
      * @param jcmList list of jcm ids for chatbot invitation
+     * @param loggedInUser the logged in user
      * @throws Exception
      */
-    InviteCandidateResponseBean inviteCandidates(List<Long> jcmList, User loggedInUser) throws Exception;
+    void inviteCandidates(List<Long> jcmList, User loggedInUser) throws Exception;
 
     /**
      * Service method to process sharing of candidate profiles with Hiring managers
@@ -170,9 +173,10 @@ public interface IJobCandidateMappingService {
      *
      * @param jcmList The list of candidates for the job that need to be moved to the specified stage
      * @param stage the new stage
+     * @param candidateRejectionValue If stage is reject then set its reason(RejectionReasonMasterData id)
      * @throws Exception
      */
-    void setStageForCandidates(List<Long> jcmList, String stage) throws Exception;
+    void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue) throws Exception;
 
     /**
      * Service to return error list for drag and drop CV's for a job
@@ -219,13 +223,13 @@ public interface IJobCandidateMappingService {
      *
      * @param candidateSource from where we source the candidate
      * @param candidate candidate all info
-     * @param jobReferenceId In which job upload candidate
+     * @param jobShortCode In which job upload candidate
      * @param candidateCv candidate cv
      * @param employeeReferrer if candidate upload by employee referral then this model come
      * @return UploadResponseBean
      * @throws Exception
      */
-    UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, UUID jobReferenceId, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception;
+    UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, String jobShortCode, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception;
 
     /**
      * Service method to fetch a list of count of candidate per chatbot status per job

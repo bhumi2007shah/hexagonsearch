@@ -25,10 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -73,6 +70,9 @@ public class MasterDataService implements IMasterDataService {
 
     @Resource
     ExportFormatMasterRepository exportFormatMasterRepository;
+
+    @Resource
+    RejectionReasonMasterDataRepository rejectionReasonMasterDataRepository;
 
     @Autowired
     Environment environment;
@@ -161,6 +161,32 @@ public class MasterDataService implements IMasterDataService {
         // sentryDSN is only read from application.properties file as per profile it is not save in database
         MasterDataBean.getInstance().setSentryDSN(environment.getProperty(IConstant.SENTRY_DSN));
         MasterDataBean.getInstance().setOtpExpiryMinutes(MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes());
+
+        //Set Candidate rejection reasons
+        List<RejectionReasonMasterData> rejectionReasonMasterDataList = rejectionReasonMasterDataRepository.findAll();
+        if(rejectionReasonMasterDataList.size()>0) {
+            MasterDataBean.getInstance().getCandidateRejectionReasonMap().put(IConstant.Stage.Screen.getValue(), setRejectionReasonList(rejectionReasonMasterDataList, new ArrayList<>(), IConstant.Stage.Screen.getValue()));
+            MasterDataBean.getInstance().getCandidateRejectionReasonMap().put(IConstant.Stage.Source.getValue(), setRejectionReasonList(rejectionReasonMasterDataList, new ArrayList<>(), IConstant.Stage.Source.getValue()));
+            MasterDataBean.getInstance().getCandidateRejectionReasonMap().put(IConstant.Stage.Interview.getValue(), setRejectionReasonList(rejectionReasonMasterDataList, new ArrayList<>(), IConstant.Stage.Interview.getValue()));
+            MasterDataBean.getInstance().getCandidateRejectionReasonMap().put(IConstant.Stage.MakeOffer.getValue(), setRejectionReasonList(rejectionReasonMasterDataList, new ArrayList<>(), IConstant.Stage.MakeOffer.getValue()));
+            MasterDataBean.getInstance().getCandidateRejectionReasonMap().put(IConstant.Stage.Offer.getValue(), setRejectionReasonList(rejectionReasonMasterDataList, new ArrayList<>(), IConstant.Stage.Offer.getValue()));
+            MasterDataBean.getInstance().getCandidateRejectionReasonMap().put(IConstant.Stage.Join.getValue(), setRejectionReasonList(rejectionReasonMasterDataList, new ArrayList<>(), IConstant.Stage.Join.getValue()));
+            MasterDataBean.getInstance().getCandidateRejectionReasonMap().put(IConstant.Stage.ResumeSubmit.getValue(), setRejectionReasonList(rejectionReasonMasterDataList, new ArrayList<>(), IConstant.Stage.ResumeSubmit.getValue()));
+
+            rejectionReasonMasterDataList.forEach(rejectionData ->{
+               MasterDataBean.getInstance().getCandidateRejections().put(rejectionData.getId(), rejectionData);
+            });
+        }
+    }
+
+    private List<RejectionReasonMasterData> setRejectionReasonList(List<RejectionReasonMasterData> rejectionReasons, List<RejectionReasonMasterData> rejectionsPerStage, String stage){
+        log.info("Inside setRejectionReasonList for stage : {}",stage);
+        rejectionReasons.stream()
+                .filter(rejectionReasonMasterData -> rejectionReasonMasterData.getStageId().getStage().equals(stage))
+                .collect(Collectors.toList()).forEach(rejectionReasonMasterData->{
+            rejectionsPerStage.add(rejectionReasonMasterData);
+        });
+        return rejectionsPerStage;
     }
 
     /**
@@ -278,6 +304,7 @@ public class MasterDataService implements IMasterDataService {
     private static final String INTERVIEW_NO_SHOW_REASONS = "noShowReasons";
     private static final String INTERVIEW_CONFIRMATION = "interviewConfirmation";
     private static final String OTP_EXPIRY_MINUTES = "otpExpiryMinutes";
+    private static final String CANDIDATE_REJECTION_REASONS = "candidateRejectionReasons";
 
     /**
      * Method to fetch specific master data from cache
@@ -347,6 +374,9 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case OTP_EXPIRY_MINUTES:
                 master.setOtpExpiryMinutes(MasterDataBean.getInstance().getOtpExpiryMinutes());
+                break;
+            case CANDIDATE_REJECTION_REASONS:
+                master.getCandidateRejectionReasonMap().putAll(MasterDataBean.getInstance().getCandidateRejectionReasonMap());
                 break;
             default: //for all other properties, use reflection
 

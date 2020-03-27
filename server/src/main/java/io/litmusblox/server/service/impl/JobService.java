@@ -120,6 +120,9 @@ public class JobService implements IJobService {
     @Resource
     ExportFormatDetailRepository exportFormatDetailRepository;
 
+    @Resource
+    InterviewDetailsRepository interviewDetailsRepository;
+
     @Autowired
     ICompanyService companyService;
 
@@ -378,7 +381,7 @@ public class JobService implements IJobService {
      */
     @Transactional
     public SingleJobViewResponseBean getJobViewById(Long jobId, String stage) throws Exception {
-        log.info("Received request to request to find a list of all candidates for job: {} and stage {} ",jobId, stage);
+        log.info("Received request to find a list of all candidates for job: {} and stage {} ",jobId, stage);
         long startTimeMethod = System.currentTimeMillis(), startTime = System.currentTimeMillis();
         //If the job is not published, do not process the request
         Job job = jobRepository.getOne(jobId);
@@ -409,66 +412,61 @@ public class JobService implements IJobService {
 
         SingleJobViewResponseBean responseBean = new SingleJobViewResponseBean();
 
-        List<JobCandidateMapping> jcmList;
-
-        if(IConstant.Stage.Reject.getValue().equals(stage))
-            jcmList = jobCandidateMappingRepository.findByJobAndRejectedIsTrue(job);
-        else
-            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage)));
-
-        log.info("****Time to fetch jcmList {} ms", (System.currentTimeMillis() - startTime));
-        startTime = System.currentTimeMillis();
-
-        jcmList.parallelStream().forEach(jcmFromDb-> {
-            jcmFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(jcmFromDb.getId()));
-            jcmFromDb.setCvRating(cvRatingRepository.findByJobCandidateMappingId(jcmFromDb.getId()));
-
-            if (IConstant.Stage.ResumeSubmit.getValue().equalsIgnoreCase(stage) || IConstant.Stage.Interview.getValue().equalsIgnoreCase(stage)) {
-                List<JcmProfileSharingDetails>jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.findByJobCandidateMappingId(jcmFromDb.getId());
-                jcmProfileSharingDetails.forEach(detail->{
-                    detail.setHiringManagerName(detail.getProfileSharingMaster().getReceiverName());
-                    detail.setHiringManagerEmail(detail.getProfileSharingMaster().getReceiverEmail());
-                });
-                jcmFromDb.setInterestedHiringManagers(
-                        jcmProfileSharingDetails
-                                .stream()
-                                .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()!=null && jcmProfileSharingDetail.getHiringManagerInterest())
-                                .collect(Collectors.toList())
-                );
-
-                jcmFromDb.setNotInterestedHiringManagers(
-                        jcmProfileSharingDetails
-                                .stream()
-                                .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()!=null && !jcmProfileSharingDetail.getHiringManagerInterest())
-                                .collect(Collectors.toList())
-                );
-
-                jcmFromDb.setNotRespondedHiringManagers(
-                        jcmProfileSharingDetails
-                                .stream()
-                                .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()==null )
-                                .collect(Collectors.toList())
-                );
-            }
-        });
-        log.info("****JCM list populated with profile sharing, hiring manager and all details in {} ms", (System.currentTimeMillis() - startTime));
-        startTime = System.currentTimeMillis();
-
-        Collections.sort(jcmList);
-
-        log.info("****Sorting of jcmlist done in {} ms", (System.currentTimeMillis()-startTime));
-        startTime = System.currentTimeMillis();
-
-        responseBean.setCandidateList(jcmList);
-
-        //log.info("****Populated list of candidates in {} ms", (System.currentTimeMillis() - startTime));
-        //startTime = System.currentTimeMillis();
-
         Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
+        long viewStartTime = System.currentTimeMillis();
+        if(IConstant.Stage.Reject.getValue().equals(stage))
+            responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndRejectedIsTrue(job));
+        else
+            responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage))));
 
-        List<Object[]> stageCountList = jobCandidateMappingRepository.findCandidateCountByStage(jobId);
+        Map<Long, JCMAllDetails> jcmAllDetailsMap = responseBean.getJcmAllDetailsList().stream().collect(Collectors.toMap(JCMAllDetails::getId, Function.identity()));
 
-        stageCountList.stream().forEach(objArray -> {
+        //List of JcmIds
+        List<Long> jcmListFromDb = jcmAllDetailsMap.keySet().stream().collect(Collectors.toList());
+
+        //find all interview details for the jcms
+        if (IConstant.Stage.Interview.getValue().equalsIgnoreCase(stage)) {
+            List<InterviewDetails> interviewDetails = interviewDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
+            interviewDetails.stream().parallel().forEach(interviewDtls -> {
+                jcmAllDetailsMap.get(interviewDtls.getJobCandidateMappingId()).getInterviewDetails().add(interviewDtls);
+            });
+        }
+
+        //Find profile sharing details only in case of stage = submitted
+        if (IConstant.Stage.ResumeSubmit.getValue().equalsIgnoreCase(stage)) {
+
+            List<JcmProfileSharingDetails> profileSharingForAllJcms = jcmProfileSharingDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
+
+            Map<Long, List<JcmProfileSharingDetails>> profileSharingGroupedByJcmId = profileSharingForAllJcms.stream().collect(Collectors.groupingBy(JcmProfileSharingDetails::getJobCandidateMappingId));
+
+            profileSharingGroupedByJcmId.keySet().stream().parallel().forEach(jcmId -> {
+                List<JcmProfileSharingDetails> jcmProfileSharingDetails = profileSharingGroupedByJcmId.get(jcmId);
+
+                jcmAllDetailsMap.get(jcmId).setInterestedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() != null && jcmProfileSharingDetail.getHiringManagerInterest())
+                                .collect(Collectors.toList())
+                );
+
+                jcmAllDetailsMap.get(jcmId).setNotInterestedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() != null && !jcmProfileSharingDetail.getHiringManagerInterest())
+                                .collect(Collectors.toList())
+                );
+
+                jcmAllDetailsMap.get(jcmId).setNotRespondedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() == null)
+                                .collect(Collectors.toList())
+                );
+            });
+        }
+        List<Object[]> stageCountListView = jobCandidateMappingRepository.findCandidateCountByStage(jobId);
+
+        stageCountListView.stream().forEach(objArray -> {
             String key = stageStepMasterMap.get(((Integer) objArray[0]).longValue()).getStage();
             if (null == responseBean.getCandidateCountByStage().get(key))
                 responseBean.getCandidateCountByStage().put(key, ((BigInteger) objArray[1]).intValue());
@@ -477,8 +475,9 @@ public class JobService implements IJobService {
         });
         //add count of rejected candidates
         responseBean.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(),  jobCandidateMappingRepository.findRejectedCandidateCount(jobId));
-        log.info("****Populated response bean with various stage specific counts in {} ms", (System.currentTimeMillis() - startTime));
-        log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.", jobId, stage ,(System.currentTimeMillis() - startTimeMethod));
+
+        log.info("Found {} records.", responseBean.getJcmAllDetailsList().size());
+        log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.",jobId, stage, (System.currentTimeMillis() - viewStartTime));
 
         return responseBean;
     }
@@ -1406,4 +1405,12 @@ public class JobService implements IJobService {
 
         return techRoleCompetencyBeans;
     }
+
+    @Transactional(readOnly = true)
+    public Job findJobByJobShortCode(String jobShortCode) {
+        log.info("Inside findJobByJobShortCode or jobShortCode : {}",jobShortCode);
+        return jobRepository.getOne(Long.parseLong(jobShortCode.substring(IConstant.LB_SHORT_CODE.length())));
+    }
+
+
 }

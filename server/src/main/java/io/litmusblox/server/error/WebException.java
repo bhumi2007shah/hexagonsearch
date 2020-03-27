@@ -50,9 +50,11 @@ public class WebException extends RuntimeException implements Serializable {
     public WebException(String errorMessage, HttpStatus errorCode, Map<String, String> breadCrumb)
     {
         super();
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        this.userId = user.getId();
-        this.userEmail = user.getEmail();
+        if(null != SecurityContextHolder.getContext().getAuthentication() && !SecurityContextHolder.getContext().getAuthentication().getPrincipal().equals("anonymousUser")){
+            User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            this.userId = user.getId();
+            this.userEmail = user.getEmail();
+        }
         this.errorMessage = errorMessage;
         this.errorCode = errorCode;
         this.breadCrumb = breadCrumb;
@@ -61,18 +63,22 @@ public class WebException extends RuntimeException implements Serializable {
     public WebException(String errorMessage, HttpStatus errorCode, Throwable cause)
     {
         super(cause);
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        this.userId = user.getId();
-        this.userEmail = user.getEmail();
+        if(null != SecurityContextHolder.getContext().getAuthentication() && !SecurityContextHolder.getContext().getAuthentication().getPrincipal().equals("anonymousUser")){
+            User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            this.userId = user.getId();
+            this.userEmail = user.getEmail();
+        }
         this.errorMessage = errorMessage;
         this.errorCode = errorCode;
     }
     public WebException(String errorMessage, HttpStatus errorCode, Map<String, String> breadCrumb, Throwable cause)
     {
         super(cause);
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        this.userId = user.getId();
-        this.userEmail = user.getEmail();
+        if(null != SecurityContextHolder.getContext().getAuthentication() && !SecurityContextHolder.getContext().getAuthentication().getPrincipal().equals("anonymousUser")){
+            User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            this.userId = user.getId();
+            this.userEmail = user.getEmail();
+        }
         this.errorMessage = errorMessage;
         this.errorCode = errorCode;
         this.breadCrumb = breadCrumb;

@@ -63,4 +63,12 @@ public class JcmProfileSharingDetails {
         this.profileSharingMaster = profileSharingMasterId;
         this.jobCandidateMappingId = jobCandidateMappingId;
     }
+
+    public String getHiringManagerName() {
+        return this.getProfileSharingMaster().getReceiverName();
+    }
+
+    public String getHiringManagerEmail() {
+        return this.getProfileSharingMaster().getReceiverEmail();
+    }
 }

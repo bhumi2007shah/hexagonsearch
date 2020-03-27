@@ -27,4 +27,7 @@ public interface InterviewDetailsRepository extends JpaRepository<InterviewDetai
 
     @Transactional(readOnly = true)
     InterviewDetails findByInterviewReferenceId(UUID interviewReferenceId);
+
+    @Transactional(readOnly = true)
+    List<InterviewDetails> findByJobCandidateMappingIdIn(List<Long> jcmList);
 }

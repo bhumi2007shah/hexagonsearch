@@ -25,6 +25,8 @@ public interface JcmProfileSharingDetailsRepository extends JpaRepository<JcmPro
 
     List<JcmProfileSharingDetails> findByJobCandidateMappingId(Long jcmId);
 
+    List<JcmProfileSharingDetails> findByJobCandidateMappingIdIn(List<Long> jcmIdList);
+
     @Transactional
     void deleteByJobCandidateMappingId(Long jobCandidateMappingId);
 

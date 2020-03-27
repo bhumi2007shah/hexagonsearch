@@ -89,7 +89,7 @@ public class StoreFileUtil {
             try {
                 is.close();
             }catch (IOException ex){
-                ex.printStackTrace();
+                log.info(Util.getStackTrace(ex));
             }
         }
     }

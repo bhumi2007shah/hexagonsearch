@@ -4,7 +4,11 @@
 
 package io.litmusblox.server.service;
 
+import io.litmusblox.server.service.JobAnalytics.JobAnalyticsResponseBean;
+
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service interface for all analytics related queries
@@ -24,4 +28,16 @@ public interface IAnalyticsService {
      * @throws Exception
      */
     List<AnalyticsResponseBean> analyticsByCompany (String startDate, String endDate) throws Exception;
+
+    /**
+     *
+     * Service for fetching analytics for a job id.
+     *
+     * @param jobId jobId for which analytics will be generated
+     * @param startDate optional parameter
+     * @param endDate optional parameter
+     * @return JobAnalyticsResponseBean
+     * @throws Exception
+     */
+     JobAnalyticsResponseBean getJobAnalyticsData(Long jobId, Optional<Date> startDate, Optional<Date> endDate) throws Exception;
 }
