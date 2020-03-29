@@ -512,7 +512,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             jcmCommunicationDetailsRepository.updateByJcmId(objFromDb.getId());
         }*/
         jobCandidateMappingRepository.save(objFromDb);
-        jcmHistoryRepository.save(new JcmHistory(objFromDb, "Candidate is"+ (interest?" interested.":" not interested."), new Date(), null, objFromDb.getStage()));
+        StringBuffer historyMsg = new StringBuffer(objFromDb.getCandidateFirstName());
+        historyMsg.append(" ").append(objFromDb.getCandidateLastName()).append(" is ").append(interest?" interested - ":" not interested - ").append(objFromDb.getJob().getJobTitle()).append(" - ").append(objFromDb.getJob().getId());
+        jcmHistoryRepository.save(new JcmHistory(objFromDb, historyMsg.toString(), new Date(), null, objFromDb.getStage()));
     }
 
     /**
@@ -783,7 +785,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         for (Long jcmId : jcmList) {
             JobCandidateMapping tempObj = jobCandidateMappingRepository.getOne(jcmId);
-            jcmHistoryList.add(new JcmHistory(tempObj, "Candidate invited", new Date(), loggedInUser, tempObj.getStage()));
+            StringBuffer historyMessage = new StringBuffer(tempObj.getCandidateFirstName());
+            historyMessage.append(" ").append(tempObj.getCandidateLastName()).append(" invited for - ").append(tempObj.getJob().getJobTitle()).append(" - ").append(tempObj.getJob().getId());
+            jcmHistoryList.add(new JcmHistory(tempObj, historyMessage.toString(), new Date(), loggedInUser, tempObj.getStage()));
         }
 
         if (jcmHistoryList.size() > 0) {
