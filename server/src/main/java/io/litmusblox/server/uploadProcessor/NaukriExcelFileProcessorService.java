@@ -37,7 +37,7 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
         List<Candidate> candidateList = new ArrayList<>();
         try {
             DataFormatter dataFormatter = new DataFormatter();
-
+            HashMap<String, Integer> columnPositionMap = new HashMap<>();
             // Finds the workbook instance for XLSX file
             Workbook myWorkBook;
             try {
@@ -67,49 +67,188 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
             // Traversing over each row of XLSX file
             boolean headingRow = true;
             IConstant.NAUKRI_FILE_COLUMNS[] naukriColumns = IConstant.NAUKRI_FILE_COLUMNS.values();
+            boolean downloadedFlag = false;
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();
 
-                if (row.getRowNum() <= 1)
-                    continue; //skip first 2 rows
+//                log.info("Inside row "+row.getRowNum());
+//                log.info("Number of cells in this row are: "+row.getPhysicalNumberOfCells());
+                if (row.getRowNum() <= 1) {
+                    if(row.getRowNum()==0 && row.getCell(0).getStringCellValue().toLowerCase().contains("downloaded")) {
+                        log.info("'Downloaded' exists. Skipping first two rows.");
+                        downloadedFlag=true;
+                    }
+                    if(downloadedFlag) {
+                        continue; //skip first 2 rows
+                    }
+                }
 
                 if(headingRow) {
-                    try {
-                        //check that the row contains column names in correct order
-                        if ((row.getPhysicalNumberOfCells() == 0) || !checkForCells(row)){
-                            Map<String, String> breadCrumb = new HashMap<>();
-                            breadCrumb.put(IConstant.UPLOAD_FILE_TYPE,IConstant.PROCESS_FILE_TYPE.ExcelFile.toString());
-                            breadCrumb.put("File Name", fileName);
-                            breadCrumb.put("File Type", IConstant.PROCESS_FILE_TYPE.NaukriExcelFile.toString());
-                            breadCrumb.put("Row name", row.toString());
-                            throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY, breadCrumb);
+//                    try {
+//                        //check that the row contains column names in correct order
+//                        if ((row.getPhysicalNumberOfCells() == 0) || !checkForCells(row)){
+//                            Map<String, String> breadCrumb = new HashMap<>();
+//                            breadCrumb.put(IConstant.UPLOAD_FILE_TYPE,IConstant.PROCESS_FILE_TYPE.ExcelFile.toString());
+//                            breadCrumb.put("File Name", fileName);
+//                            breadCrumb.put("File Type", IConstant.PROCESS_FILE_TYPE.NaukriExcelFile.toString());
+//                            breadCrumb.put("Row name", row.toString());
+//                            throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY, breadCrumb);
+//                        }
+//                    } catch (Exception e) {
+//                        throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY);
+//                    }
+
+                    //Check the Header Column Names with the IConstant.NaukriFileHeader names and map them
+                    if(row.getPhysicalNumberOfCells()!=0 || checkForCells(row)){
+                        String[] naukriFileHeadersArray = new String[row.getPhysicalNumberOfCells()];
+                        Iterator<Cell> cellIterator = row.cellIterator();
+                        while(cellIterator.hasNext()) {
+//                            log.info("Inside cell");
+                            Cell cell = cellIterator.next();
+                            String cellValue = dataFormatter.formatCellValue(cell);
+                            int cellIndex = cell.getColumnIndex();
+                            naukriFileHeadersArray[cellIndex] = cellValue;
                         }
-                    } catch (Exception e) {
-                        throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY);
+                        for(IConstant.NAUKRI_FILE_COLUMNS naukriColumn:naukriColumns){
+                            columnPositionMap.putIfAbsent(naukriColumn.name(),-1);
+//                            log.info(naukriColumn.name()+" has been initialized");
+                        }
+                        for(int arrayIndex=row.getFirstCellNum();arrayIndex<naukriFileHeadersArray.length;arrayIndex++){
+                            int finalArrayIndex = arrayIndex;
+                            String naukriFileHeaderValue = naukriFileHeadersArray[finalArrayIndex];
+                            boolean skipFlag = false;
+//                            log.info("Inside for loop for column index");
+
+                            if(naukriFileHeaderValue.equalsIgnoreCase("Name")){
+                                columnPositionMap.compute("CandidateName",(k,v)->v=finalArrayIndex);
+                                skipFlag=true;
+//                                log.info("Column name and index is: CandidateName - " + finalArrayIndex);
+                            }
+
+                            if(naukriFileHeaderValue.equalsIgnoreCase("Post P. G. Course")){
+                                columnPositionMap.compute("PPGCourse",(k,v)->v=finalArrayIndex);
+                                skipFlag=true;
+//                                log.info("Column name and index is: PPGCourse - " + finalArrayIndex);
+                            }
+
+                            if(naukriFileHeaderValue.equalsIgnoreCase("Email ID")){
+                                columnPositionMap.compute("Email",(k,v)->v=finalArrayIndex);
+                                skipFlag=true;
+//                                log.info("Column name and index is: Email - " + finalArrayIndex);
+                            }
+
+                            if(naukriFileHeaderValue.equalsIgnoreCase("Phone Number")){
+                                columnPositionMap.compute("Mobile",(k,v)->v=finalArrayIndex);
+                                skipFlag=true;
+//                                log.info("Column name and index is: Mobile - " + finalArrayIndex);
+                            }
+
+                            if(naukriFileHeaderValue.equalsIgnoreCase("Preferred Locations")){
+                                columnPositionMap.compute("PreferredLocation",(k,v)->v=finalArrayIndex);
+                                skipFlag=true;
+//                                log.info("Column name and index is: PreferredLocation - " + finalArrayIndex);
+                            }
+
+                            if(naukriFileHeaderValue.equalsIgnoreCase("Total Experience")){
+                                columnPositionMap.compute("WorkExperience",(k,v)->v=finalArrayIndex);
+                                skipFlag=true;
+//                                log.info("Column name and index is: WorkExperience - " + finalArrayIndex);
+                            }
+
+                            if(naukriFileHeaderValue.equalsIgnoreCase("Curr. Company name")){
+                                columnPositionMap.compute("CurrentEmployer",(k,v)->v=finalArrayIndex);
+                                skipFlag=true;
+//                                log.info("Column name and index is: CurrentEmployer - " + finalArrayIndex);
+                            }
+
+                            if(naukriFileHeaderValue.equalsIgnoreCase("Curr. Company Designation")){
+                                columnPositionMap.compute("CurrentDesignation",(k,v)->v=finalArrayIndex);
+                                skipFlag=true;
+//                                log.info("Column name and index is: CurrentDesignation - " + finalArrayIndex);
+                            }
+
+                            if(naukriFileHeaderValue.equalsIgnoreCase("Under Graduation degree")){
+                                columnPositionMap.compute("UGCourse",(k,v)->v=finalArrayIndex);
+                                skipFlag=true;
+//                                log.info("Column name and index is: UGCourse - " + finalArrayIndex);
+                            }
+
+                            if(naukriFileHeaderValue.equalsIgnoreCase("Post graduation degree")){
+                                columnPositionMap.compute("PGCourse",(k,v)->v=finalArrayIndex);
+                                skipFlag=true;
+//                                log.info("Column name and index is: PGCourse - " + finalArrayIndex);
+                            }
+
+                            if(naukriFileHeaderValue.equalsIgnoreCase("Doctorate degree")){
+                                columnPositionMap.compute("PPGCourse",(k,v)->v=finalArrayIndex);
+                                skipFlag=true;
+//                                log.info("Column name and index is: PPGCourse - " + finalArrayIndex);
+                            }
+
+                            if(naukriFileHeaderValue.equalsIgnoreCase("Time when Stage updated")){
+                                columnPositionMap.compute("LastActive",(k,v)->v=finalArrayIndex);
+                                skipFlag=true;
+//                                log.info("Column name and index is: LastActive - " + finalArrayIndex);
+                            }
+
+                            if(!skipFlag) {
+                                for (IConstant.NAUKRI_FILE_COLUMNS naukriColumn : naukriColumns) {
+                                    if (naukriColumn.getValue().equalsIgnoreCase(naukriFileHeaderValue)) {
+                                        columnPositionMap.compute(naukriColumn.name(), (key, value) -> value = finalArrayIndex);
+//                                        log.info("Column name and index is: " + naukriColumn.name() + " - " + finalArrayIndex);
+                                    }
+//                                log.info("The header is: "+naukriFileHeaderValue);
+//                                log.info("The naukriColumn value is: "+naukriColumn.getValue());
+                                }
+                            }
+                        }
+                        //for removing non existent key-value pairs
+                        log.info("Working on removal of non existent keys");
+//                        log.info("The original size of columnPositionMap is: "+columnPositionMap.size());
+                        Set<String> mapKeySet = columnPositionMap.keySet();
+                        Iterator<String> mapIterator = mapKeySet.iterator();
+                        while(mapIterator.hasNext()){
+                            String mapKey = mapIterator.next();
+                            if(columnPositionMap.get(mapKey)<0){
+                                mapIterator.remove();
+                                log.info("removed "+mapKey);
+                            }
+                        }
+                        log.info("Number of matching headers present in Excel are: "+columnPositionMap.size());
                     }
+
+//                    log.info("Initialized Array and Map ");
                     headingRow = false;
                     continue;
                 }
 
                 //check if the row is empty
                 if(row.getPhysicalNumberOfCells() > 0) {
-
                     // For each row, iterate through each columns
                     Iterator<Cell> cellIterator = row.cellIterator();
                     int index = 0;
                     boolean discardRow = true;
                     NaukriFileRow naukriRow = null;
-                    while (cellIterator.hasNext() && index < naukriColumns.length) {
+                    while (cellIterator.hasNext() && index < columnPositionMap.size()) {
                         Cell cell = cellIterator.next();
                         String cellValue = dataFormatter.formatCellValue(cell);
+                        String naukriColumn;
                         if (Util.isNotNull(cellValue) && discardRow) {
                             discardRow = false;
                             naukriRow = new NaukriFileRow();
                         }
-                        naukriRow.getClass().getField(naukriColumns[index].name()).set(naukriRow, cellValue.trim());
+                        for(String mapKey:columnPositionMap.keySet()){
+                            if(columnPositionMap.get(mapKey)==index){
+                                naukriColumn = mapKey;
+                                naukriRow.getClass().getField(naukriColumn).set(naukriRow, cellValue.trim());
+                                log.info("Naukri Row filled ");
+                            }
+                        }
                         index++;
+                        log.info(cellValue);
                     }
                     if (!discardRow) {
+                        log.info("Candidate creation started ");
                         Candidate candidate = new Candidate();
                         candidate.setCandidateSource(IConstant.CandidateSource.File.getValue());
                         convertNaukriRowToCandidate(candidate, naukriRow);
@@ -117,6 +256,7 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
                     }
                 }
             }
+            log.info("End reached");
         } catch(WebException we) {
             log.error("Error while parsing file " + fileName + " :: " + we.getMessage());
             throw we;
