@@ -4,8 +4,7 @@
 
 package io.litmusblox.server.constant;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author : Sumit
@@ -171,11 +170,51 @@ public interface IConstant {
         }
     }
 
+    public static Map<String, ArrayList<String>> NAUKRI_FILE_COLUMNS_MAP =
+            Collections.unmodifiableMap(new HashMap<String, ArrayList<String>>(){
+                {
+                    put("SerialNumber",new ArrayList<String>(Arrays.asList("Serial Number")));
+                    put("ResumeId",new ArrayList<String>(Arrays.asList("Resume ID")));
+                    put("ResumeTitle",new ArrayList<String>(Arrays.asList("Resume Title")));
+                    put("PostalAddress",new ArrayList<String>(Arrays.asList("Postal Address")));
+                    put("Telephone",new ArrayList<String>(Arrays.asList("Telephone No.")));
+                    put("DOB",new ArrayList<String>(Arrays.asList("Date of Birth")));
+                    put("AnnualSalary",new ArrayList<String>(Arrays.asList("Annual Salary")));
+
+                    put("CandidateName",new ArrayList<String>(Arrays.asList("Name of the Candidate", "Name")));
+                    put("Mobile",new ArrayList<String>(Arrays.asList("Mobile No.", "Phone Number")));
+                    put("Email",new ArrayList<String>(Arrays.asList("Email","Email ID")));
+                    put("WorkExperience",new ArrayList<String>(Arrays.asList("Work Experience", "Total Experience")));
+                    put("CurrentLocation",new ArrayList<String>(Arrays.asList("Current Location")));
+                    put("PreferredLocation",new ArrayList<String>(Arrays.asList("Preferred Location","Preferred Locations")));
+                    put("CurrentEmployer",new ArrayList<String>(Arrays.asList("Curr. Company name","Current Employer")));
+                    put("CurrentDesignation",new ArrayList<String>(Arrays.asList("Curr. Company Designation","Current Designation")));
+                    put("UGCourse",new ArrayList<String>(Arrays.asList("U.G. Course","Under Graduation degree")));
+                    put("PGCourse",new ArrayList<String>(Arrays.asList("Post graduation degree","P. G. Course")));
+                    put("PPGCourse",new ArrayList<String>(Arrays.asList("Doctorate degree","P.P.G. Course")));
+                    put("LastActive",new ArrayList<String>(Arrays.asList("Time when Stage updated","Last Active Date")));
+
+                }
+            });
+
     enum NAUKRI_FILE_COLUMNS {
         SerialNumber("Serial Number"), CandidateName("Name of the Candidate"), ResumeId("Resume ID"), PostalAddress("Postal Address"), Telephone("Telephone No."), Mobile("Mobile No."), DOB("Date of Birth"), Email("Email"), WorkExperience("Work Experience"), ResumeTitle("Resume Title"), CurrentLocation("Current Location"), PreferredLocation("Preferred Location"), CurrentEmployer("Current Employer"), CurrentDesignation("Current Designation"), AnnualSalary("Annual Salary"), UGCourse("U.G. Course"), PGCourse("P. G. Course"), PPGCourse("P.P.G. Course"), LastActive("Last Active Date");
         private String value;
 
         NAUKRI_FILE_COLUMNS(String val) {
+            this.value = val;
+        }
+
+        public String getValue() {
+            return this.value;
+        }
+    }
+
+    enum NAUKRI_ALTERNATE_FILE_COLUMNS {
+        CandidateName("Name"), Mobile("Phone Number"), Email("Email ID"), WorkExperience("Total Experience"), PreferredLocation("Preferred Locations"), CurrentEmployer("Curr. Company name"), CurrentDesignation("Curr. Company Designation"), UGCourse("Under Graduation degree"), PGCourse("Post graduation degree"), PPGCourse("Doctorate degree"), LastActive("Time when Stage updated");
+        private String value;
+
+        NAUKRI_ALTERNATE_FILE_COLUMNS(String val) {
             this.value = val;
         }
 
@@ -358,4 +397,5 @@ public interface IConstant {
 
     String LB_SHORT_CODE = "LB";
     int LB_SHORT_CODE_LENGTH = 6;
+
 }
