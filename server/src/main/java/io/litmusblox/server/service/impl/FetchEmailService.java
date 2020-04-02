@@ -105,7 +105,6 @@ public class FetchEmailService {
             for (Message message : messages) {
                 try {
                     //check if mail is from an application from Naukri Massmail
-                    log.info("message subject: {}", message.getSubject());
                     if (null != message.getSubject() && (((Matcher)pattern.matcher(message.getSubject())).find() || ((Matcher)lbJobCodePattern.matcher(message.getSubject())).find())) {
 
                         //check if the mail is an application from Naukri
