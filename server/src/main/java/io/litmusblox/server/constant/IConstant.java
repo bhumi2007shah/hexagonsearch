@@ -210,19 +210,6 @@ public interface IConstant {
         }
     }
 
-    enum NAUKRI_ALTERNATE_FILE_COLUMNS {
-        CandidateName("Name"), Mobile("Phone Number"), Email("Email ID"), WorkExperience("Total Experience"), PreferredLocation("Preferred Locations"), CurrentEmployer("Curr. Company name"), CurrentDesignation("Curr. Company Designation"), UGCourse("Under Graduation degree"), PGCourse("Post graduation degree"), PPGCourse("Doctorate degree"), LastActive("Time when Stage updated");
-        private String value;
-
-        NAUKRI_ALTERNATE_FILE_COLUMNS(String val) {
-            this.value = val;
-        }
-
-        public String getValue() {
-            return this.value;
-        }
-    }
-
     enum NAUKRI_XLS_FILE_COLUMNS {
         SerialNumber("Serial Number"), CandidateName("Name of the Candidate"), ResumeId("Resume ID"), PostalAddress("Postal Address"), Telephone("Telephone No."), Mobile("Mobile No."), DOB("Date of Birth"), Email("Email"), WorkExperience("Work Experience"), ResumeTitle("Resume Title"), CurrentLocation("Current Location"), PreferredLocation("Preferred Location"), CurrentEmployer("Current Employer"), CurrentDesignation("Current Designation"), AnnualSalary("Annual Salary"), UGCourse("U.G. Course"), PGCourse("P. G. Course"), PPGCourse("Post P. G. Course"), LastActive("Last Active Date");
         private String value;
