@@ -76,6 +76,7 @@ public class FetchEmailService {
 
     Pattern pattern = Pattern.compile(IConstant.REF_ID_MATCH_REGEX);
     Pattern shortCodePattern = Pattern.compile(IConstant.REGEX_TO_VALIDATE_JOB_SHORT_CODE);
+    Pattern lbJobCodePattern = Pattern.compile(IConstant.LB_JOB_CODE_REGEX);
 
     public void processEmail() {
         try {
@@ -104,7 +105,9 @@ public class FetchEmailService {
             for (Message message : messages) {
                 try {
                     //check if mail is from an application from Naukri Massmail
-                    if (null != message.getSubject() && ((Matcher)pattern.matcher(message.getSubject())).find()) {
+                    log.info("message subject: {}", message.getSubject());
+                    if (null != message.getSubject() && (((Matcher)pattern.matcher(message.getSubject())).find() || ((Matcher)lbJobCodePattern.matcher(message.getSubject())).find())) {
+
                         //check if the mail is an application from Naukri
                         if (null != message.getSubject()) {
                             log.info("Subject: {}", message.getSubject());
@@ -199,7 +202,7 @@ public class FetchEmailService {
         }
         else{
             log.error("Reference Id not found in subject : {}", subject);
-            Matcher shortCodeMatcher = shortCodePattern.matcher(subject);
+            Matcher shortCodeMatcher = lbJobCodePattern.matcher(subject);
             if(shortCodeMatcher.find()){
                 jobShortCode = shortCodeMatcher.group();
                 log.info("Extracted jobShortCode: {}", jobShortCode);
