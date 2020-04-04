@@ -36,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -106,7 +107,7 @@ public class CompanyService implements ICompanyService {
     public Company addCompany(Company company, User loggedInUser) throws Exception {
         company = generateAndSetCompanyUniqueId(company);
         companyRepository.save(company);
-        saveCompanyHistory(company.getId(), "New company, "+company.getCompanyName()+", created", loggedInUser);
+        saveCompanyHistory(company.getId(), loggedInUser.getDisplayName() + " created a new company " +company.getCompanyName(), loggedInUser);
         return company;
     }
 
@@ -125,6 +126,7 @@ public class CompanyService implements ICompanyService {
         company.setId(companyFromDb.getId());
         company.setShortName(companyFromDb.getShortName());
         company.setCountryId(companyFromDb.getCountryId());
+        company.setCompanyUniqueId(companyFromDb.getCompanyUniqueId());
 
         if(company.getNewCompanyBu()!=null || company.getDeletedCompanyBu()!=null) {
             updateBusinessUnit(company, loggedInUser);
@@ -174,7 +176,7 @@ public class CompanyService implements ICompanyService {
                 fileName = StoreFileUtil.storeFile(logo, company.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.Logo.toString(), null, null);
             }
             catch (Exception e){
-                e.printStackTrace();
+                log.info(Util.getStackTrace(e));
             }
             log.info("Company " + company.getCompanyName() + " uploaded " + fileName);
             company.setLogo(fileName);
@@ -191,7 +193,7 @@ public class CompanyService implements ICompanyService {
             company.setIndustry(null);
         //Update Company
         companyRepository.save(company);
-        saveCompanyHistory(company.getId(), "Update company information", loggedInUser);
+        saveCompanyHistory(company.getId(), loggedInUser.getDisplayName()+" update company information for "+company.getCompanyName(), loggedInUser);
         log.info("Company Updated "+company.getId());
     }
 
@@ -273,7 +275,7 @@ public class CompanyService implements ICompanyService {
         }
 
         companyBuRepository.flush();
-        saveCompanyHistory(company.getId(), "Updated company BUs", loggedInUser);
+        saveCompanyHistory(company.getId(), loggedInUser.getDisplayName()+" updated company BUs for "+company.getCompanyName(), loggedInUser);
 
         if(errorResponse.size()>0) {
             log.info("Updated Company BU's with errors: " + errorResponse);
@@ -317,7 +319,7 @@ public class CompanyService implements ICompanyService {
                 try {
                     coordinates = GoogleMapsCoordinates.getCoordinates(address.getAddress());
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.info(Util.getStackTrace(e));
                 }
 
                 //check if company address title already exists
@@ -391,7 +393,7 @@ public class CompanyService implements ICompanyService {
                         try {
                             newCoordinates = GoogleMapsCoordinates.getCoordinates(companyAddress.getAddress());
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            log.info(Util.getStackTrace(e));
                         }
                         if(null!=newCoordinates){
                             companyAddressFromDb.setLongitude(newCoordinates.lat);
@@ -414,7 +416,10 @@ public class CompanyService implements ICompanyService {
 
                     companyAddressFromDb.setUpdatedBy(loggedInUser.getId());
                     companyAddressFromDb.setUpdatedOn(new Date());
-
+                    companyAddressFromDb.setArea(companyAddress.getArea());
+                    companyAddressFromDb.setCountry(companyAddress.getCountry());
+                    companyAddressFromDb.setCity(companyAddress.getCity());
+                    companyAddressFromDb.setState(companyAddress.getState());
                     companyAddressRepository.save(companyAddressFromDb);
                     log.info("updated company address with id: "+companyAddress.getId());
                 }
@@ -425,7 +430,7 @@ public class CompanyService implements ICompanyService {
         }
 
         companyAddressRepository.flush();
-        saveCompanyHistory(company.getId(), "Updated company Addresses", loggedInUser);
+        saveCompanyHistory(company.getId(), loggedInUser.getDisplayName()+" updated company Addresses", loggedInUser);
 
         if(errorResponse.size()>0) {
             log.info("Updated Company Addresses with errors: " + errorResponse);
@@ -453,7 +458,7 @@ public class CompanyService implements ICompanyService {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         companyObjFromDb.setUpdatedBy(loggedInUser.getId());
         companyRepository.save(companyObjFromDb);
-        saveCompanyHistory(companyObjFromDb.getId(), blockCompany ? "Unblocked":"Blocked", loggedInUser);
+        saveCompanyHistory(companyObjFromDb.getId(), loggedInUser.getDisplayName()+(blockCompany ? " unblocked company : ":" blocked company : ") + companyObjFromDb.getCompanyName(), loggedInUser);
     }
 
     /**
@@ -577,6 +582,7 @@ public class CompanyService implements ICompanyService {
     public Company createCompanyByAgency(Company company) {
         log.info("inside createCompanyByAgency method");
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Company recruitmentAgency = companyRepository.findById(company.getRecruitmentAgencyId()).orElse(null);
         Company companyFromDb = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(company.getCompanyName(), company.getRecruitmentAgencyId());
 
         if(null != companyFromDb)
@@ -587,6 +593,7 @@ public class CompanyService implements ICompanyService {
 
         company.setCreatedOn(new Date());
         company.setCreatedBy(loggedInUser.getId());
+        company.setCountryId(recruitmentAgency.getCountryId());
         company = truncateField(company);
         Company newCompany = companyRepository.save(company);
         return newCompany;
@@ -641,7 +648,7 @@ public class CompanyService implements ICompanyService {
             try {
                 responseFromGoDaddy = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestObj), createSubdomainApi, HttpMethod.PATCH, new StringBuffer("sso-key ").append(createSubdomainKey).append(":").append(createSubdomainSecret).toString());
             } catch (Exception ex) {
-                ex.printStackTrace();
+                log.info(Util.getStackTrace(ex));
                 log.error("Error while creating subdomain for {}.\n{}", company, ex.getMessage());
                 log.info("Duplicate subdomain creation attempt. Setting flag and creating conf files.");
             }
@@ -670,12 +677,6 @@ public class CompanyService implements ICompanyService {
                     Files.delete(link);
                 }
                 Files.createSymbolicLink(link, Paths.get("/etc/apache2/sites-available/" + company.getShortName() + ".conf"));
-
-                // Reload apache configuration to enable virtual host for new sub-domains
-                Process process = Runtime.getRuntime().exec(IConstant.apacheReloadCommand);
-                process.waitFor();
-                log.info("process completed to reload apache, exit code: {}", process.exitValue());
-                process.destroy();
             } else {
                 log.error("Error creating subdomain on GoDaddy for company {}", company.getCompanyName());
             }
@@ -704,7 +705,34 @@ public class CompanyService implements ICompanyService {
                 log.error("Error creating subdomain for company {}:\n {}", company.getCompanyName(), e.getMessage());
             }
         });
+        if(companyList.size()>0)
+            reloadApache(companyList);
         log.info("Completed processing request to create subdomains in {} ms.", (System.currentTimeMillis() - startTime));
+    }
+
+    /**
+     * functioon to reload Apache if new subdomain vitua host configuration is added in sites-available directory
+     * @param companyList
+     */
+    public void reloadApache(List<Company> companyList){
+        // Reload apache configuration to enable virtual host for new sub-domains
+        try {
+            Process process = Runtime.getRuntime().exec(IConstant.apacheReloadCommand);
+            process.waitFor();
+            log.info("process completed to reload apache, exit code: {}", process.exitValue());
+            process.destroy();
+        }
+        catch (IOException e){
+            SentryUtil.logWithStaticAPI(null, "Error while reloading apache after creating virtual host configuration for subdomains: "+String.join(",", companyList.stream().map(Company::getShortName).collect(Collectors.toList())), null);
+            log.error("Error while creating process to reload apache: {}", e.getCause());
+        }
+        catch (InterruptedException e){
+            SentryUtil.logWithStaticAPI(null, "Error while reloading apache after creating virtual host configuration for subdomains: "+String.join(",", companyList.stream().map(Company::getShortName).collect(Collectors.toList())), null);
+            log.error("Reload apache process interrupted while executing: {}", e.getCause());
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+        }
     }
 
     @Transactional(readOnly = true)
@@ -723,6 +751,7 @@ public class CompanyService implements ICompanyService {
         companies.forEach(company -> {
             company = generateAndSetCompanyUniqueId(company);
         });
+        companyRepository.saveAll(companies);
         return companies;
     }
 
@@ -754,9 +783,12 @@ public class CompanyService implements ICompanyService {
                 if(null == companyFromDb){
                     isUniqueIdPresent = false;
                     company.setCompanyUniqueId(companyUniqueId);
+                    log.info("Create new company unique id : {}, For company : {}",company.getCompanyUniqueId(), company.getShortName());
                 }
             }
-        }
+        }else
+            log.info("For recruitment agency Company unique id not generated");
+
         return company;
     }
 

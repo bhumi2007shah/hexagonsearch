@@ -43,6 +43,9 @@ import java.util.*;
 public class JobCandidateMappingController {
 
     @Autowired
+    IAsyncServicesWrapper asyncServicesWrapper;
+
+    @Autowired
     IJobCandidateMappingService jobCandidateMappingService;
 
     @Autowired
@@ -88,18 +91,11 @@ public class JobCandidateMappingController {
      */
     @PostMapping(value = "/addCandidate/file")
     @ResponseStatus(value = HttpStatus.OK)
-    String addCandidatesFromFile(@RequestParam("file") MultipartFile multipartFile, @RequestParam("jobId")Long jobId, @RequestParam("fileFormat")String fileFormat) throws Exception {
+    void addCandidatesFromFile(@RequestParam("file") MultipartFile multipartFile, @RequestParam("jobId")Long jobId, @RequestParam("fileFormat")String fileFormat) throws Exception {
         log.info("Received request to add candidates from a file.");
         long startTime = System.currentTimeMillis();
-        UploadResponseBean responseBean = jobCandidateMappingService.uploadCandidatesFromFile(multipartFile, jobId, fileFormat);
-        log.info("Completed processing candidates from file in " + (System.currentTimeMillis()-startTime) + "ms.");
-        return Util.stripExtraInfoFromResponseBean(responseBean, null,
-                new HashMap<String, List<String>>() {{
-                    put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
-                            "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
-                    put("User", Arrays.asList("createdBy","company"));
-                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
-                }});
+        asyncServicesWrapper.uploadCandidatesFromFile(multipartFile, jobId, fileFormat);
+        log.info("{} - Completed processing candidates from file in {} ms.",Thread.currentThread().getName(),(System.currentTimeMillis()-startTime));
     }
 
     /**
@@ -136,15 +132,11 @@ public class JobCandidateMappingController {
      */
     @PostMapping(value = "/inviteCandidates")
     @ResponseStatus(value = HttpStatus.OK)
-    String inviteCandidates(@RequestBody List<Long> jcmList) throws Exception {
+    void inviteCandidates(@RequestBody List<Long> jcmList) throws Exception {
         log.info("Received request to invite candidates");
         long startTime = System.currentTimeMillis();
-        InviteCandidateResponseBean inviteCandidateResponseBean = jobCandidateMappingService.inviteCandidates(jcmList, null);
-        log.info("Completed inviting candidates in " + (System.currentTimeMillis()-startTime)+"ms.");
-        return Util.stripExtraInfoFromResponseBean(inviteCandidateResponseBean,
-                new HashMap<String, List<String>>() {{
-                    put("Candidate", new ArrayList<>(0));
-                }}, null);
+        asyncServicesWrapper.inviteCandidates(jcmList);
+        log.info("Thread - {} : Completed inviting candidates in {} ms.",Thread.currentThread().getName(),(System.currentTimeMillis()-startTime));
     }
 
     /**
@@ -189,7 +181,7 @@ public class JobCandidateMappingController {
                     put("Candidate",Arrays.asList("id","createdBy","createdOn","updatedBy","updatedOn","uploadErrorMessage", "firstName", "lastName","email","mobile", "candidateSource"));
                     put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company", "questionType"));
                     put("UserScreeningQuestion", Arrays.asList("createdOn","createdBy","updatedOn","userId","questionType"));
-                    put("JobCandidateMapping", Arrays.asList("createdOn","createdBy","updatedOn","updatedBy","techResponseData","candidateSource","candidateInterest","candidateInterestDate","candidateFirstName","candidateLastName","chatbotUuid", "stage"));
+                    put("JobCandidateMapping", Arrays.asList("createdOn","createdBy","updatedOn","updatedBy","techResponseData","candidateSource","candidateInterest","candidateInterestDate","candidateFirstName","candidateLastName","chatbotUuid", "stage", "candidateReferralDetail", "candidateSourceHistories"));
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateEducationDetails", Arrays.asList("id","candidateId"));
                     put("CandidateLanguageProficiency", Arrays.asList("id","candidateId"));
@@ -257,13 +249,14 @@ public class JobCandidateMappingController {
      *
      * @param jcmList The list of candidates for the job that need to be moved to the specified stage
      * @param stage the new stage
+     * @param candidateRejectionValue which is id of rejection master data
      * @throws Exception
      */
     @PutMapping("/setStage/{stage}")
     @ResponseBody
     @ResponseStatus(value = HttpStatus.OK)
-    void setStageForCandidates(@RequestBody List<Long> jcmList, @PathVariable("stage") @NotNull String stage) throws Exception {
-        jobCandidateMappingService.setStageForCandidates(jcmList, stage);
+    void setStageForCandidates(@RequestBody List<Long> jcmList, @PathVariable("stage") @NotNull String stage, @RequestParam(required = false, value = "candidateRejectionValue") Optional<Long> candidateRejectionValue) throws Exception {
+        jobCandidateMappingService.setStageForCandidates(jcmList, stage, candidateRejectionValue.isPresent()?candidateRejectionValue.get():null);
     }
 
     @GetMapping("cvuploaderror/{jobId}")

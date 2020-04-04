@@ -1468,7 +1468,7 @@ CONSTRAINT UNIQUE_API_SEQUENCE UNIQUE(API_SEQUENCE)
 );
 
 INSERT INTO CV_PARSING_API_DETAILS (API_URL, API_SEQUENCE, ACTIVE, COLUMN_TO_UPDATE, QUERY_ATTRIBUTES) VALUES
-('https://rest.rchilli.com/RChilliParser/Rchilli/parseResume', 1, true, 'PARSING_RESPONSE_JSON',
+('https://rest.rchilli.com/RChilliParser/Rchilli/parseResume', 1, false, 'PARSING_RESPONSE_JSON',
 '"userkey" => "2SNEDYNPV30",
 "version" => "7.0.0",
 "subuserid" => "Hexagon Search"'
@@ -1630,6 +1630,14 @@ CANDIDATE_CONFIRMATION bool,
 CANDIDATE_CONFIRMATION_TIME TIMESTAMP,
 CANCELLATION_COMMENTS VARCHAR(250),
 SHOW_NO_SHOW_COMMENTS VARCHAR(250),
+INTERVIEW_SCHEDULED_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_CONFIRMED_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_REMINDER_PREVIOUS_DAY_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_REMINDER_SAME_DAY_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_REMINDER_SAME_DAY_SMS_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_NO_SHOW_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_CANCELLED_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+INTERVIEW_REJECTION_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
 CREATED_ON TIMESTAMP NOT NULL,
 CREATED_BY INTEGER REFERENCES USERS(ID) NOT NULL,
 UPDATED_ON TIMESTAMP,
@@ -1691,16 +1699,18 @@ VALUES
 (1, 'mobile','Mobile', 10, null),
 (1, 'totalExperience','Total Experience', 11, null),
 (1, 'createdBy','Created By', 12, null),
-(1, 'interviewDate','Interview Date', 13, 'Interview'),
-(1, 'interviewType','Interview Type', 14, 'Interview'),
-(1, 'interviewMode','Interview Mode', 15, 'Interview'),
-(1, 'interviewLocation','Interview location', 16, 'Interview'),
-(1, 'candidateConfirmation','Candidate Confirmation', 17, 'Interview'),
-(1, 'candidateConfirmationTime','Candidate Confirmation Time', 18, 'Interview'),
-(1, 'showNoShow','Show No Show', 19, 'Interview'),
-(1, 'noShowReason','No Show Reason' ,20, 'Interview'),
-(1, 'cancelled', 'Interview Cancelled', 21, 'Interview'),
-(1, 'cancellationReason','Cancellation Reason', 22, 'Interview');
+(1, 'createdOn','Created On', 13, ''),
+(1, 'capabilityScore', 'Capability Score', 14, ''),
+(1, 'interviewDate','Interview Date', 15, 'Interview'),
+(1, 'interviewType','Interview Type', 16, 'Interview'),
+(1, 'interviewMode','Interview Mode', 17, 'Interview'),
+(1, 'interviewLocation','Interview location', 18, 'Interview'),
+(1, 'candidateConfirmation','Candidate Confirmation', 19, 'Interview'),
+(1, 'candidateConfirmationTime','Candidate Confirmation Time', 20, 'Interview'),
+(1, 'showNoShow','Show No Show', 21, 'Interview'),
+(1, 'noShowReason','No Show Reason' ,22, 'Interview'),
+(1, 'cancelled', 'Interview Cancelled', 23, 'Interview'),
+(1, 'cancellationReason','Cancellation Reason', 24, 'Interview');
 
 --For ticket #336
 UPDATE COMPANY SET SHORT_NAME =
@@ -1732,12 +1742,23 @@ case
  when COMPANY_NAME = 'Princeton IT Services' then 'PrincetonIT'
  when COMPANY_NAME = 'Tricentis' then 'Tricentis'
  when COMPANY_NAME = 'Evolent Health International Private Limited' then 'Evolent'
- when COMPANY_NAME = 'Imperial Auto Industries Ltd.' then 'ImperialAuto'
- when COMPANY_NAME = 'Xpanxion International Private Limited' then 'Xpanxion'
  when COMPANY_NAME = 'Techprimelab Software Pvt. Ltd.' then 'TechPrimeLab'
  when COMPANY_NAME = 'Melzer' then 'Melzer'
  when COMPANY_NAME = 'Shinde Developers Private Limited' then 'ShindeDevelopers'
- when COMPANY_NAME = 'Z&A Infotek Inc.' then 'ZenArt'
+ when COMPANY_NAME = 'Hexagon' then 'Hexa'
+ when COMPANY_NAME = 'MRP Technologies' then 'MRPTech'
+ when COMPANY_NAME = 'MRF' then 'MRF'
+ when COMPANY_NAME = 'Witmans Advanced Fluids' then 'WitmansAdvF'
+ when COMPANY_NAME = 'MPR' then 'MPR'
+ when COMPANY_NAME = 'Spar Solutions' then 'SparSoln'
+ when COMPANY_NAME = 'SR Pawar and company.' then 'SRPCompany'
+ when COMPANY_NAME = 'Sci edge abstracts' then 'SciEdgeA'
+ when COMPANY_NAME = 'Aventior' then 'Aventior'
+ when COMPANY_NAME = 'Excellon Software' then 'ExcellonSoft'
+ when COMPANY_NAME = 'Samrat Books' then 'SamratBook'
+ when COMPANY_NAME = 'KK Tech' then 'KKTech'
+ when COMPANY_NAME = 'Apna Job' then 'ApnaJob'
+ when COMPANY_NAME = 'Mera Job' then 'MeraJob'
  ELSE SHORT_NAME
 end;
 
@@ -1748,11 +1769,303 @@ ADD COLUMN COMPANY_UNIQUE_ID VARCHAR(8) UNIQUE;
 --For ticket #364
 ALTER TABLE INTERVIEW_DETAILS ALTER COLUMN INTERVIEW_LOCATION DROP NOT NULL;
 
+--For scheduler ticket #33
+ALTER TABLE INTERVIEW_DETAILS
+ADD COLUMN INTERVIEW_SCHEDULED_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_CONFIRMED_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_REMINDER_PREVIOUS_DAY_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_REMINDER_SAME_DAY_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_REMINDER_SAME_DAY_SMS_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_NO_SHOW_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_CANCELLED_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL,
+ADD COLUMN INTERVIEW_REJECTION_EMAIL_TIMESTAMP TIMESTAMP DEFAULT NULL;
+
+insert into sms_templates(template_name, template_content) values
+('InterviewDay', 'You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewDate}]]. Below is the Google Maps link to the interview address. Please report 15 mins before. See you there! [[${commBean.interviewAddressLink}]]');
+
 -- For ticket #410
 ALTER TABLE COMPANY
 ADD COLUMN SEND_COMMUNICATION bool NOT NULL DEFAULT 't';
 
+-- For ticket #380
+INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
+('OTPSms','Your OTP for LitmusBlox is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] seconds.');
+
+-- For ticket Update sms content #38
+delete from sms_templates;
+INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
+('ChatInvite','NEW JOB ALERT - [[${commBean.receiverfirstname}]], your profile is shortlisted by [[${commBean.sendercompany}]] for [[${commBean.jobtitle}]]. Click [[${commBean.chatlink}]] to see JD and apply.'),
+('ChatCompleted','Congratulations [[${commBean.receiverfirstname}]]! Your application is complete for the [[${commBean.jobtitle}]] position at [[${commBean.sendercompany}]]. We will be in touch with you soon.'),
+('ChatIncompleteReminder1','Your application to [[${commBean.sendercompany}]] was incomplete. Just click the [[${commBean.chatlink}]] to continue and complete.'),
+('ChatIncompleteReminder2','FINAL REMINDER - Complete your application for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. It will take only 5 minutes. Click [[${commBean.chatlink}]] to continue.'),
+('LinkNotVisitedReminder1','[[${commBean.receiverfirstname}]], [[${commBean.sendercompany}]] has shortlisted you for [[${commBean.jobtitle}]] Job. Click [[${commBean.chatlink}]] to know more and apply.'),
+('LinkNotVisitedReminder2','Not interested in this job? [[${commBean.sendercompany}]] has invited you to apply for the [[${commBean.jobtitle}]] position. Click [[${commBean.chatlink}]] to start.'),
+('ChatNotVisitedReminder1','[[${commBean.receiverfirstname}]], this is link to apply for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. It is valid only for 24 hours. Click [[${commBean.chatlink}]] to begin.'),
+('ChatNotVisitedReminder2','[[${commBean.receiverfirstname}]], Just a reminder to complete your application for [[${commBean.jobtitle}]] job at [[${commBean.sendercompany}]]. This link will expire in 24 hours. [[${commBean.chatlink}]] '),
+('AutosourceAcknowledgement', 'Hi [[${commBean.receiverfirstname}]], Your application for [[${commBean.jobtitle}]] position at [[${commBean.sendercompany}]] has been received. Good luck!'),
+('AutosourceApplicationShortlisted', '[[${commBean.receiverfirstname}]], [[${commBean.sendercompany}]] has shortlisted you for [[${commBean.jobtitle}]] position. Click on link to complete your profile. [[${commBean.chatlink}]] '),
+('AutosourceLinkNotVisited', 'Last Reminder [[${commBean.receiverfirstname}]] - [[${commBean.sendercompany}]] has shortlisted your application. Click link to complete your profile. [[${commBean.chatlink}]]'),
+('OTPSms','Your OTP for LitmusBlox is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] seconds.'),
+('InterviewDay', 'INTERVIEW REMINDER FOR [[${commBean.receiverfirstname}]] - You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewdate}]]. Please report 15 mins before. Click Google Maps link for directions. See you there! [[${commBean.interviewAddressLink}]]');
+
+-- For #441
+INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
+(6, '"introText"=>"As a part of org level role baselining, we seek your inputs on various aspects of your work experience regarding the role of",
+"thankYouText"=>"No further action is required from your side",
+"showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false"');
+
+-- For ticket #443
+UPDATE SMS_TEMPLATES
+SET TEMPLATE_CONTENT = 'Your OTP for LitmusBlox job application is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] minutes.'
+WHERE TEMPLATE_NAME = 'OTPSms';
+
+--For ticket #430
+ALTER TABLE USERS ADD CONSTRAINT UNIQUE_USERS_EMAIL_KEY UNIQUE(EMAIL);
 
 
+-- For ticket #444
+UPDATE SMS_TEMPLATES
+SET TEMPLATE_CONTENT = 'Your OTP for [[${commBean.sendercompany}]] job application is [[${commBean.otp}]]. This OTP will expire in [[${commBean.otpExpiry}]] minutes.'
+WHERE TEMPLATE_NAME = 'OTPSms';
+
+INSERT INTO CONFIGURATION_SETTINGS(CONFIG_NAME, CONFIG_VALUE)
+VALUES ('otpExpiryMinutes', 3);
+
+--For ticket #452
+ALTER TABLE COMPANY_ADDRESS
+ADD COLUMN AREA VARCHAR(50) DEFAULT NULL;
+
+--For ticket https://github.com/hexagonsearch/litmusblox-scheduler/issues/48
+update sms_templates set template_content = 'You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewdate}]]. Below is the Google Maps link to the interview address. Please report 15 mins before. See you there! [[${commBean.interviewAddressLink}]]' where template_name = 'InterviewDay';
+
+--For ticket #450
+drop view if exists jobDetailsView;
+drop view if exists jobKeySkillAggregation;
+
+create view jobKeySkillAggregation as
+select job_key_skills.job_id as jobId, string_agg(trim(lower(skills_master.skill_name)), ',') as keySkills
+from skills_master, job_key_skills
+where skills_master.id = job_key_skills.skill_id
+group by job_key_skills.job_id;
+
+create view jobDetailsView AS
+select
+	job.id as jobId,
+	job.company_id as companyId,
+	job.job_title as jobTitle,
+	job.job_type as jobType,
+	job.created_on as jobCreatedOn,
+	job.date_published as jobPublishedOn,
+	company_address.address as jobLocation,
+	company_address.city as jobLocationCity,
+	company_address.state as jobLocationState,
+	company_address.country as jobLocationCountry,
+	exp.value as jobExperience,
+	education.value as education, jobKeySkillAggregation.keyskills as keyskills
+from job
+left join company_address
+on job.job_location = company_address.id
+left join master_data exp
+on job.experience_range = exp.id
+left join master_data education
+on job.education = education.id
+left join jobKeySkillAggregation
+on job.id = jobKeySkillAggregation.jobId
+where job.status = 'Live'
+order by jobPublishedOn desc, jobId asc;
+
+-- For ticket #35 litmusblox-scheduler
+ALTER TABLE JCM_COMMUNICATION_DETAILS ADD COLUMN REJECTED_TIMESTAMP_EMAIL TIMESTAMP DEFAULT NULL;
+
+--Update for all already reject candidate
+update jcm_communication_details set rejected_timestamp_email = NOW() where jcm_id in (select id from job_candidate_mapping where rejected='t' and stage=(select id from stage_step_master where stage='Screening'));
+
+-- For ticket #55 chatbot
+update CUSTOMIZED_CHATBOT_PAGE_CONTENT set PAGE_INFO='"introText"=>"As a part of org level role baselining, we seek your inputs on various aspects of your work experience regarding the role of",
+"thankYouText"=>"No further action is required from your side",
+"showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false", "showUploadResumePage"=>"false"' where company_id = 6;
+
+update CUSTOMIZED_CHATBOT_PAGE_CONTENT set PAGE_INFO='"introText"=>"Automation premier League requires you to get tested on", "thankYouText"=>"The score of your test will be communicated to you via email tomorrow", "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false", "showUploadResumePage"=>"false"' where company_id=43;
+
+-- #427 backend Url shortener ticket
+DROP TABLE IF EXISTS SHORT_URL;
+CREATE TABLE SHORT_URL(
+	ID SERIAL PRIMARY KEY NOT NULL,
+  URL TEXT NOT NULL DEFAULT '',
+  HASH VARCHAR(10) NOT NULL DEFAULT '',
+  SHORT_URL TEXT NOT NULL DEFAULT '',
+  CREATED_ON TIMESTAMP
+);
 
 
+-- ticket #469 litmusblox-backend
+DROP TABLE IF EXISTS JCM_CANDIDATE_SOURCE_HISTORY;
+CREATE TABLE IF NOT EXISTS JCM_CANDIDATE_SOURCE_HISTORY(
+	ID SERIAL PRIMARY KEY NOT NULL,
+  JOB_CANDIDATE_MAPPING_ID INTEGER REFERENCES JOB_CANDIDATE_MAPPING(ID) NOT NULL,
+  CANDIDATE_SOURCE VARCHAR(17) NOT NULL,
+  CREATED_ON TIMESTAMP NOT NULL,
+  CREATED_BY INTEGER REFERENCES USERS(ID) NOT NULL
+);
+
+insert into jcm_candidate_source_history(job_candidate_mapping_id, candidate_source, created_on, created_by) select id, candidate_source, created_on, created_by from job_candidate_mapping;
+
+
+-- For ticket #379 - Async handling of upload candidates from a file and invite candidates
+CREATE TABLE ASYNC_OPERATIONS_ERROR_RECORDS (
+ID serial PRIMARY KEY NOT NULL,
+JOB_ID INTEGER REFERENCES JOB(ID),
+CANDIDATE_FIRST_NAME varchar(45),
+CANDIDATE_LAST_NAME varchar(45),
+EMAIL VARCHAR (50),
+MOBILE VARCHAR (15),
+ASYNC_OPERATION VARCHAR(20),
+ERROR_MESSAGE TEXT,
+JOB_CANDIDATE_MAPPING_ID INTEGER REFERENCES JOB_CANDIDATE_MAPPING(ID),
+FILE_NAME VARCHAR(255),
+CREATED_ON TIMESTAMP NOT NULL,
+CREATED_BY INTEGER REFERENCES USERS(ID) NOT NULL
+);
+
+--For ticket #456
+UPDATE CV_PARSING_API_DETAILS SET ACTIVE = 'f' WHERE COLUMN_TO_UPDATE = 'PARSING_RESPONSE_JSON';
+
+--For ticket #473
+CREATE TABLE REJECTION_REASON_MASTER_DATA(
+ID serial PRIMARY KEY NOT NULL,
+VALUE VARCHAR (50) NOT NULL,
+LABEL VARCHAR (100) NOT NULL,
+TYPE VARCHAR(20) DEFAULT NULL,
+STAGE INTEGER REFERENCES STAGE_STEP_MASTER(ID) NOT NULL
+);
+
+INSERT INTO REJECTION_REASON_MASTER_DATA (VALUE, LABEL, TYPE, STAGE) VALUES
+('Company', 'Candidate does not want to work with our Company','Candidate Reasons', 1),
+('Shift', 'Candidate does not want to work in shifts','Candidate Reasons', 1),
+('Commute', 'Candidate not willing to commute','Candidate Reasons', 1),
+('IC Role', 'Candidate not willing to work in Individual Contributor (IC) role','Candidate Reasons', 1),
+('People Role', 'Candidate not willing to work in People Management role','Candidate Reasons', 1),
+
+('Company', '','Candidate Reasons', 2),
+('Shift', 'Candidate does not want to work in shifts','Candidate Reasons', 2),
+('Commute', 'Candidate not willing to commute','Candidate Reasons', 2),
+('IC Role', 'Candidate not willing to work in Individual Contributor (IC) role','Candidate Reasons', 2),
+('People Role', 'Candidate not willing to work in People Management role','Candidate Reasons', 2),
+
+('Job Hops', 'Candidate has many job changes','Recruiter Reasons', 1),
+('Over Budget', 'Candidates salary expectation is higher than budget','Recruiter Reasons', 1),
+('No Poach', 'Candidate works in No Poach company','Recruiter Reasons', 1),
+('Skill Missing', 'Candidate is missing required skills','Recruiter Reasons', 1),
+('Already interviewed', 'Candidate has given interview earlier','Recruiter Reasons', 1),
+('Over-Qualified', 'Candidate has more experience than required','Recruiter Reasons', 1),
+('Under-Qualified', 'Candidate has less experience than required','Recruiter Reasons', 1),
+('Education', 'Candidate does not have the correct education qualifications','Recruiter Reasons', 1),
+('Communication', 'Candidate does not have adequate communication skills','Recruiter Reasons', 1),
+('Notice Period', 'Candidates Notice Period is too long','Recruiter Reasons', 1),
+('Not Available', 'Candidate not available for interview on a specific date','Recruiter Reasons', 1),
+('Not interested', 'Candidate not interested in this job','Recruiter Reasons', 1),
+('Not looking', 'Candidate is not looking for a job change','Recruiter Reasons', 1),
+('Key Skill Strength', 'Candidate Key Skill Strength is poor','Recruiter Reasons', 1),
+('No Response', 'Candidate has not responded to chatbot invitation','Recruiter Reasons', 1),
+('Chatbot Incomplete', 'Candidate has not completed the chatbot','Recruiter Reasons', 1),
+('Not Interested', 'Candidate has expressed disinterest in the job','Recruiter Reasons', 1),
+
+('Job Hops', 'Candidate has many job changes','Recruiter Reasons', 2),
+('Over Budget', 'Candidates salary expectation is higher than budget','Recruiter Reasons', 2),
+('No Poach', 'Candidate works in No Poach company','Recruiter Reasons', 2),
+('Skill Missing', 'Candidate is missing required skills','Recruiter Reasons', 2),
+('Already interviewed', 'Candidate has given interview earlier','Recruiter Reasons', 2),
+('Over-Qualified', 'Candidate has more experience than required','Recruiter Reasons', 2),
+('Under-Qualified', 'Candidate has less experience than required','Recruiter Reasons', 2),
+('Education', 'Candidate does not have the correct education qualifications','Recruiter Reasons', 2),
+('Communication', 'Candidate does not have adequate communication skills','Recruiter Reasons', 2),
+('Notice Period', 'Candidates Notice Period is too long','Recruiter Reasons', 2),
+('Not Available', 'Candidate not available for interview on a specific date','Recruiter Reasons', 2),
+('Not interested', 'Candidate not interested in this job','Recruiter Reasons', 2),
+('Not looking', 'Candidate is not looking for a job change','Recruiter Reasons', 2),
+('Key Skill Strength', 'Candidate Key Skill Strength is poor','Recruiter Reasons', 2),
+('No Response', 'Candidate has not responded to chatbot invitation','Recruiter Reasons', 2),
+('Chatbot Incomplete', 'Candidate has not completed the chatbot','Recruiter Reasons', 2),
+('Not Interested', 'Candidate has expressed disinterest in the job','Recruiter Reasons', 2),
+
+('Skill Missing', 'Candidate is missing required skills',null, 3),
+('Industry / Domain', 'Candidate is missing Industry / Domain background',null, 3),
+('Already interviewed', 'Candidate has been interviewed earlier',null, 3),
+('Over-Qualified', 'Candidate has more experience than required',null, 3),
+('Under-Qualified', 'Candidate has less experience than required',null, 3),
+('Education', 'Candidate does not have the required education qualifications',null, 3),
+('Communication', 'Candidate does not have adequate communication skills',null, 3),
+('Assessment', 'Candidate did not clear the assessment test',null, 3),
+
+('Technical', 'Technical skills not adequate',null, 4),
+('Managerial', 'Managerial / People skills not adequate',null, 4),
+('Culture', 'Not a culture fit for the company',null, 4),
+('Industry / Domain', 'Industry / Domain experience not adequate',null, 4),
+('Behavioral', 'Behavioral competencies not adequate',null, 4),
+('Compensation fitment', 'Not able to fit candidate in the compensation band',null, 4),
+('Another Candidate', 'Another candidate selected for this job',null, 4),
+
+('Personal/Family', 'Personal or Family emergency',null, 4),
+('Professional', 'Unexpected meeting, Client visit, Production issue',null, 4),
+('Medical', 'Medical Emergency, Candidate unwell',null, 4),
+('Logistics', 'Weather / Accident / Vehicle problems',null, 4),
+('No Response', 'Candidate has stopped responding to calls',null, 4),
+('Hiring Manager', 'Hiring Manager cancelled / rescheduled the interview',null, 4),
+
+('Position Scrapped', 'Position has been scrapped',null, 5),
+('No Approval', 'No approval for position / Approval withdrawn',null, 5),
+('Other Offer', 'Candidate received another offer',null, 5),
+('Withdraw Candidature', 'Candidate is no longer interested in the job',null, 5),
+
+('Role', 'Candidate did not like the Role offered',null, 6),
+('Title', 'Candidate did not like the Title offered',null, 6),
+('Compensation', 'Candidate did not like to Compensation offered',null, 6),
+('Interview experience', 'Candidate did not like the Interview expereince',null, 6),
+('Relocation', 'Candidate does not want to Relocate',null, 6),
+('Counteroffer', 'Candidate accepted counter-offer from his company',null, 6),
+('Onsite', 'Candidate received an onsite opportunity',null, 6),
+('Other Offer', 'Candidate accepted offer from another company',null, 6),
+('Withdraw Offer', 'Company withdrew the offer',null, 6),
+
+('Performance', 'Candidate was asked to leave on Performance grounds',null, 7),
+('Background Verification', 'Candidates Background Verification (BGV) report was negative',null, 7),
+('Integrity', 'Candidate was asked to leave on grounds of integrity',null, 7),
+('Voluntary exit', 'Candidate left on their own accord',null, 7);
+
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN CANDIDATE_REJECTION_VALUE VARCHAR(50);
+
+-- For ticket #323
+drop view if exists job_candidate_mapping_all_details;
+create view job_candidate_mapping_all_details
+as select
+job_candidate_mapping.id, job_candidate_mapping.job_id, job_candidate_mapping.candidate_id, job_candidate_mapping.email, job_candidate_mapping.mobile, job_candidate_mapping.country_code, job_candidate_mapping.stage, job_candidate_mapping.created_on, job_candidate_mapping.candidate_first_name, job_candidate_mapping.candidate_last_name, job_candidate_mapping.chatbot_status, job_candidate_mapping.score,job_candidate_mapping.rejected,
+cv_rating.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name, candidateCompany.designation, candidateCompany.notice_period, candidate_details.total_experience
+from users,job_candidate_mapping
+left join cv_rating on job_candidate_mapping.id = cv_rating.job_candidate_mapping_id
+left join candidate_details on candidate_details.candidate_id = job_candidate_mapping.candidate_id
+left join
+	(select ccd.company_name, ccd.designation, ccd.candidate_id, master_data.value as notice_period
+	from candidate_company_details ccd
+	join (select min(id) as id, candidate_id from candidate_company_details group by candidate_id) singleRow
+	on ccd.candidate_id = singleRow.candidate_id and ccd.id = singleRow.id
+	left join master_data
+    on master_data.id = ccd.notice_period
+	) as candidateCompany
+on candidateCompany.candidate_id = job_candidate_mapping.candidate_id
+where users.id = job_candidate_mapping.created_by
+order by job_candidate_mapping.created_on desc, job_candidate_mapping.candidate_first_name asc, job_candidate_mapping.candidate_last_name asc;
+
+--For ticket https://github.com/hexagonsearch/litmusblox-scheduler/issues/49
+INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
+('InterviewDaySMSNoInPerson', 'You have a interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewTime}]]. Good Luck!');
+
+update sms_templates set template_content = 'You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewTime}]]. Below is the Google Maps link to the interview address. Please report 15 mins before. See you there! [[${commBean.interviewAddressLink}]]' where template_name = 'InterviewDay';
+
+-- migration for ail received from savita mam
+update company set subscription='LDEB', send_communication='f' where id=70;
+
+INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
+(70, '"introText"=>"As a part of org level role baselining, we seek your inputs on various aspects of your work experience regarding the role of",
+"thankYouText"=>"No further action is required from your side",
+"showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false", "showUploadResumePage"=>"false"');

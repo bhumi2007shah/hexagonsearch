@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
@@ -117,10 +118,9 @@ public class JobController {
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy"));
                     put("Candidate", Arrays.asList("candidateProjectDetails","candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies",
                             "candidateSkillDetails","createdOn","createdBy", "firstName", "lastName", "displayName"));
-                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData", "interviewDetails", "candidateReferralDetail"));
+                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData", "interviewDetails", "candidateReferralDetail", "candidateSourceHistories"));
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateCompanyDetails", Arrays.asList("candidateId"));
-                    put("MasterData", new ArrayList<>(0));
                 }})
         );
     }
@@ -233,12 +233,41 @@ public class JobController {
         String response = Util.stripExtraInfoFromResponseBean(jobService.getTechRoleCompetencyByJob(jobId),
                 new HashMap<String, List<String>>() {{
                     put("Candidate",Arrays.asList("displayName","email", "mobile"));
+                    put("Integer", Arrays.asList("score"));
                     put("TechResponseJson", Arrays.asList("name", "complexities", "score", "capabilityStarRating"));
                     put("String", Arrays.asList("candidateProfileLink"));
                 }},
                 new HashMap<String, List<String>>() {{
                 }});
         log.info("Completed processing fetch Tech role competency list for job {} in {}", jobId, (System.currentTimeMillis()-startTime) + "ms.");
+        return response;
+    }
+
+    @GetMapping(value = "/inviteError/{jobId}")
+    String getAsyncInviteError(@PathVariable("jobId") Long jobId){
+        log.info("Received request to fetch error report for async invite operation for jobId: {}", jobId);
+        long startTime = System.currentTimeMillis();
+        String response = Util.stripExtraInfoFromResponseBean(jobService.findAsyncErrors(jobId, IConstant.ASYNC_OPERATIONS.InviteCandidates.name()),
+                null,
+                new HashMap<String, List<String>>(){{
+                    put("AsyncOperationsErrorRecords", Arrays.asList("id", "jobId", "jobCandidateMappingId", "asyncOperation", "createdBy"));
+                }}
+                );
+        log.info("Completed processing request to fetch async invite errors for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
+        return response;
+    }
+
+    @GetMapping(value = "/uploadError/{jobId}")
+    String getAsyncUploadError(@PathVariable("jobId") Long jobId){
+        log.info("Received request to fetch error report for async invite operation for jobId: {}", jobId);
+        long startTime = System.currentTimeMillis();
+        String response = Util.stripExtraInfoFromResponseBean(jobService.findAsyncErrors(jobId, IConstant.ASYNC_OPERATIONS.FileUpload.name()),
+                null,
+                new HashMap<String, List<String>>(){{
+                    put("AsyncOperationsErrorRecords", Arrays.asList("id", "jobId", "jobCandidateMappingId", "asyncOperation", "createdBy"));
+                }}
+                );
+        log.info("Completed processing request to fetch async invite errors for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
         return response;
     }
 }

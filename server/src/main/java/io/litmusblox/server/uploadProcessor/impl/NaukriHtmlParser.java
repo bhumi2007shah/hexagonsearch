@@ -7,6 +7,7 @@ package io.litmusblox.server.uploadProcessor.impl;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.uploadProcessor.HtmlParser;
+import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -44,20 +45,20 @@ public class NaukriHtmlParser implements HtmlParser {
             candidateFromNaukriEmail.setCandidateCompanyDetails(new ArrayList<CandidateCompanyDetails>(1));
         } catch (Exception e) {
             log.error("Error when populating candidate company details {}", e.getMessage());
-            e.printStackTrace();
+            log.info(Util.getStackTrace(e));
         }
         try {
             populateCandidateCompanyDetails(candidateFromNaukriEmail, doc.getElementsContainingOwnText(" at ").text());
         } catch (Exception e) {
             log.error("Error when populating candidate company details {}", e.getMessage());
-            e.printStackTrace();
+            log.info(Util.getStackTrace(e));
         }
 
         try {
             populateCandidateDetails(candidateFromNaukriEmail, doc);
         } catch (Exception e) {
             log.error("Error when populating candidate details {}", e.getMessage());
-            e.printStackTrace();
+            log.info(Util.getStackTrace(e));
         }
         //before at is designation, after at is current company
         log.info("Completed processing html");

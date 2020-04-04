@@ -14,26 +14,23 @@ package io.litmusblox.server.service;
 public interface IProcessOtpService {
     /**
      * Service method to handle send Otp request from search job page
-     * @param mobile mobile number to send otp to
-     * @param email email address to send otp to
+     *
+     * @param isEmployeeReferral true if the send otp request was from employee referral flow
+     * @param mobileNumber mobile number to send otp to
+     * @param countryCode country code
+     * @param email email address of the employee
+     * @param recepientName name of the message receiver
+     * @param companyShortName shortname of the company
      * @throws Exception
      */
-    void sendOtp(String mobile, String email) throws Exception;
+    void sendOtp(boolean isEmployeeReferral, String mobileNumber, String countryCode, String email, String recepientName, String companyShortName) throws Exception;
 
     /**
      * Service method to validate Otp against a mobile number
-     * @param mobile the mobile number for the otp
+     * @param otpRequestKey the mobile number or  for the otp
      * @param otp the otp value
      * @return boolean indicating whether the otp verification succeeded or failed
      * @throws Exception
      */
-    boolean verifyOtp(String mobile, String otp);
-
-    /**
-     * Service method to handle request for resend otp for a mobile number
-     * @param mobile the mobile number for which the otp needs to be resent
-     * @throws Exception
-     */
-    //Since we are not getting sms and email for a resend request to Msg91, commenting out this api
-    //void resendOtp(String mobile);
+    boolean verifyOtp(String otpRequestKey, int otp) throws Exception;
 }

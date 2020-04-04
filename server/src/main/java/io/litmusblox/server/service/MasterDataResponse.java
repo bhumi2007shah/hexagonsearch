@@ -48,4 +48,6 @@ public class MasterDataResponse {
     private Map<Long, String> cancellationReasons = new HashMap<>();
     private Map<Long, String> noShowReasons = new HashMap<>();
     private List<String> interviewConfirmation = new ArrayList<>();
+    private Map<String, List<RejectionReasonMasterData>> candidateRejectionReasonMap = new LinkedHashMap<>();
+    private int otpExpiryMinutes;
 }

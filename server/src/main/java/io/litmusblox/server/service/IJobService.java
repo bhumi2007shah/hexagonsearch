@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.service;
 
+import io.litmusblox.server.model.AsyncOperationsErrorRecords;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobHistory;
 import io.litmusblox.server.service.impl.SearchRequestBean;
@@ -132,4 +133,19 @@ public interface IJobService {
      * @throws Exception
      */
     List<TechRoleCompetencyBean> getTechRoleCompetencyByJob(Long jobId) throws Exception;
+
+    /**
+     * Service method to find job by jobShortCode
+     *
+     * @param jobShortCode jobShortCode
+     * @return job object
+     */
+    Job findJobByJobShortCode(String jobShortCode);
+
+    /**
+     * Service method to find all async error records for a job and async operation.
+     * @param jobId
+     * @return List of AsyncOperationsErrorRecords
+     */
+    List<AsyncOperationsErrorRecords> findAsyncErrors(Long jobId, String asyncOperation);
 }

@@ -120,6 +120,12 @@ public class JobService implements IJobService {
     @Resource
     ExportFormatDetailRepository exportFormatDetailRepository;
 
+    @Resource
+    AsyncOperationsErrorRecordsRepository asyncOperationsErrorRecordsRepository;
+
+    @Resource
+    InterviewDetailsRepository interviewDetailsRepository;
+
     @Autowired
     ICompanyService companyService;
 
@@ -378,7 +384,7 @@ public class JobService implements IJobService {
      */
     @Transactional
     public SingleJobViewResponseBean getJobViewById(Long jobId, String stage) throws Exception {
-        log.info("Received request to request to find a list of all candidates for job: {} and stage {} ",jobId, stage);
+        log.info("Received request to find a list of all candidates for job: {} and stage {} ",jobId, stage);
         long startTimeMethod = System.currentTimeMillis(), startTime = System.currentTimeMillis();
         //If the job is not published, do not process the request
         Job job = jobRepository.getOne(jobId);
@@ -409,66 +415,61 @@ public class JobService implements IJobService {
 
         SingleJobViewResponseBean responseBean = new SingleJobViewResponseBean();
 
-        List<JobCandidateMapping> jcmList;
-
-        if(IConstant.Stage.Reject.getValue().equals(stage))
-            jcmList = jobCandidateMappingRepository.findByJobAndRejectedIsTrue(job);
-        else
-            jcmList= jobCandidateMappingRepository.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage)));
-
-        log.info("****Time to fetch jcmList {} ms", (System.currentTimeMillis() - startTime));
-        startTime = System.currentTimeMillis();
-
-        jcmList.parallelStream().forEach(jcmFromDb-> {
-            jcmFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(jcmFromDb.getId()));
-            jcmFromDb.setCvRating(cvRatingRepository.findByJobCandidateMappingId(jcmFromDb.getId()));
-
-            if (IConstant.Stage.ResumeSubmit.getValue().equalsIgnoreCase(stage) || IConstant.Stage.Interview.getValue().equalsIgnoreCase(stage)) {
-                List<JcmProfileSharingDetails>jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.findByJobCandidateMappingId(jcmFromDb.getId());
-                jcmProfileSharingDetails.forEach(detail->{
-                    detail.setHiringManagerName(detail.getProfileSharingMaster().getReceiverName());
-                    detail.setHiringManagerEmail(detail.getProfileSharingMaster().getReceiverEmail());
-                });
-                jcmFromDb.setInterestedHiringManagers(
-                        jcmProfileSharingDetails
-                                .stream()
-                                .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()!=null && jcmProfileSharingDetail.getHiringManagerInterest())
-                                .collect(Collectors.toList())
-                );
-
-                jcmFromDb.setNotInterestedHiringManagers(
-                        jcmProfileSharingDetails
-                                .stream()
-                                .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()!=null && !jcmProfileSharingDetail.getHiringManagerInterest())
-                                .collect(Collectors.toList())
-                );
-
-                jcmFromDb.setNotRespondedHiringManagers(
-                        jcmProfileSharingDetails
-                                .stream()
-                                .filter( jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate()==null )
-                                .collect(Collectors.toList())
-                );
-            }
-        });
-        log.info("****JCM list populated with profile sharing, hiring manager and all details in {} ms", (System.currentTimeMillis() - startTime));
-        startTime = System.currentTimeMillis();
-
-        Collections.sort(jcmList);
-
-        log.info("****Sorting of jcmlist done in {} ms", (System.currentTimeMillis()-startTime));
-        startTime = System.currentTimeMillis();
-
-        responseBean.setCandidateList(jcmList);
-
-        //log.info("****Populated list of candidates in {} ms", (System.currentTimeMillis() - startTime));
-        //startTime = System.currentTimeMillis();
-
         Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
+        long viewStartTime = System.currentTimeMillis();
+        if(IConstant.Stage.Reject.getValue().equals(stage))
+            responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndRejectedIsTrue(job));
+        else
+            responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage))));
 
-        List<Object[]> stageCountList = jobCandidateMappingRepository.findCandidateCountByStage(jobId);
+        Map<Long, JCMAllDetails> jcmAllDetailsMap = responseBean.getJcmAllDetailsList().stream().collect(Collectors.toMap(JCMAllDetails::getId, Function.identity()));
 
-        stageCountList.stream().forEach(objArray -> {
+        //List of JcmIds
+        List<Long> jcmListFromDb = jcmAllDetailsMap.keySet().stream().collect(Collectors.toList());
+
+        //find all interview details for the jcms
+        if (IConstant.Stage.Interview.getValue().equalsIgnoreCase(stage)) {
+            List<InterviewDetails> interviewDetails = interviewDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
+            interviewDetails.stream().parallel().forEach(interviewDtls -> {
+                jcmAllDetailsMap.get(interviewDtls.getJobCandidateMappingId()).getInterviewDetails().add(interviewDtls);
+            });
+        }
+
+        //Find profile sharing details only in case of stage = submitted
+        if (IConstant.Stage.ResumeSubmit.getValue().equalsIgnoreCase(stage)) {
+
+            List<JcmProfileSharingDetails> profileSharingForAllJcms = jcmProfileSharingDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
+
+            Map<Long, List<JcmProfileSharingDetails>> profileSharingGroupedByJcmId = profileSharingForAllJcms.stream().collect(Collectors.groupingBy(JcmProfileSharingDetails::getJobCandidateMappingId));
+
+            profileSharingGroupedByJcmId.keySet().stream().parallel().forEach(jcmId -> {
+                List<JcmProfileSharingDetails> jcmProfileSharingDetails = profileSharingGroupedByJcmId.get(jcmId);
+
+                jcmAllDetailsMap.get(jcmId).setInterestedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() != null && jcmProfileSharingDetail.getHiringManagerInterest())
+                                .collect(Collectors.toList())
+                );
+
+                jcmAllDetailsMap.get(jcmId).setNotInterestedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() != null && !jcmProfileSharingDetail.getHiringManagerInterest())
+                                .collect(Collectors.toList())
+                );
+
+                jcmAllDetailsMap.get(jcmId).setNotRespondedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() == null)
+                                .collect(Collectors.toList())
+                );
+            });
+        }
+        List<Object[]> stageCountListView = jobCandidateMappingRepository.findCandidateCountByStage(jobId);
+
+        stageCountListView.stream().forEach(objArray -> {
             String key = stageStepMasterMap.get(((Integer) objArray[0]).longValue()).getStage();
             if (null == responseBean.getCandidateCountByStage().get(key))
                 responseBean.getCandidateCountByStage().put(key, ((BigInteger) objArray[1]).intValue());
@@ -477,8 +478,9 @@ public class JobService implements IJobService {
         });
         //add count of rejected candidates
         responseBean.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(),  jobCandidateMappingRepository.findRejectedCandidateCount(jobId));
-        log.info("****Populated response bean with various stage specific counts in {} ms", (System.currentTimeMillis() - startTime));
-        log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.", jobId, stage ,(System.currentTimeMillis() - startTimeMethod));
+
+        log.info("Found {} records.", responseBean.getJcmAllDetailsList().size());
+        log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.",jobId, stage, (System.currentTimeMillis() - viewStartTime));
 
         return responseBean;
     }
@@ -1026,6 +1028,8 @@ public class JobService implements IJobService {
         if(null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
             log.info("Subdomain does not exist for company: {}. Creating one.", publishedJob.getCompanyId().getCompanyName());
             companyService.createSubdomain(publishedJob.getCompanyId());
+            log.info("Reloading apache for subdomain {}.", publishedJob.getCompanyId().getShortName());
+            companyService.reloadApache(Arrays.asList(publishedJob.getCompanyId()));
         }
         if(publishedJob.getJobCapabilityList().size() == 0)
             log.info("No capabilities exist for the job: " + jobId + " Scoring engine api call will NOT happen");
@@ -1212,7 +1216,7 @@ public class JobService implements IJobService {
         List<ExportFormatDetail> defaultExportColumns = exportFormatDetailRepository.findByExportFormatMasterOrderByPositionAsc(exportFormatMaster);
 
         defaultExportColumns = defaultExportColumns.stream().filter(exportFormatDetail -> {
-            return (exportFormatDetail.getStage().isEmpty() || exportFormatDetail.getStage().equalsIgnoreCase(stage));
+            return (null==exportFormatDetail.getStage() || exportFormatDetail.getStage().isEmpty() || exportFormatDetail.getStage().equalsIgnoreCase(stage));
         }).collect(Collectors.toList());
 
         if(((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getRole().equalsIgnoreCase(IConstant.UserRole.Names.SUPER_ADMIN)){
@@ -1289,7 +1293,7 @@ public class JobService implements IJobService {
      * @return List of jobs
      */
     static String SELECT_QUERY_PREFIX = "Select jobId from jobDetailsView where companyId = ";
-    static String AND = " and ", IN_BEGIN = " in (", BRACKET_CLOSE = ")", LIKE_BEGIN = " LIKE \'%", LIKE_END = "%\'", LOWER_BEGIN = "LOWER(", OR = " or ";
+    static String AND = " and ", IN_BEGIN = " in (", BRACKET_CLOSE = ")", LIKE_BEGIN = " LIKE \'%", LIKE_END = "%\'", LOWER_BEGIN = "LOWER(", OR = " or ", SINGLE_QUOTE = "\'", BRACKET_OPEN = "(", COMMA = ",";
     @Transactional(readOnly = true)
     public List<Job> searchJobs(SearchRequestBean searchRequest) {
         StringBuffer query = new StringBuffer().append(SELECT_QUERY_PREFIX);
@@ -1306,14 +1310,24 @@ public class JobService implements IJobService {
         final AtomicBoolean firstSearchParam = new AtomicBoolean(true);
         searchRequest.getSearchParam().forEach(searchParam -> {
             if(firstSearchParam.get()) {
-                query.append("(");
+                query.append(BRACKET_OPEN);
                 firstSearchParam.set(false);
             }
             else
-                query.append(OR);
+                query.append(BRACKET_CLOSE).append(AND).append(BRACKET_OPEN);
 
-            if(searchParam.isMultiSelect())
-                query.append(searchParam.getKey()).append(IN_BEGIN).append(searchParam.getValue()).append(BRACKET_CLOSE);
+            if(searchParam.isMultiSelect()) {
+                if (searchParam.getValue().indexOf('\'') > -1) {
+                    String[] searchValues = searchParam.getValue().toLowerCase().split(COMMA);
+                    for (int i=0;i<searchValues.length;i++) {
+                        if (i > 0)
+                            query.append(OR);
+                        query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(COMMA).append(searchValues[i].toLowerCase().replaceAll(SINGLE_QUOTE, "").trim()).append(COMMA).append(LIKE_END);
+                    }
+                }
+                else
+                    query.append(searchParam.getKey()).append(IN_BEGIN).append(searchParam.getValue().toLowerCase()).append(BRACKET_CLOSE);
+            }
             else {
                 String[] searchValues = searchParam.getValue().toLowerCase().split(",");
                 for (int i=0;i<searchValues.length;i++) {
@@ -1321,14 +1335,14 @@ public class JobService implements IJobService {
                         query.append(OR);
                     query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(searchValues[i].toLowerCase()).append(LIKE_END);
                 }
-                //query.append(LOWER_BEGIN).append(searchParam.getKey()).append(BRACKET_CLOSE).append(LIKE_BEGIN).append(searchParam.getValue().toLowerCase()).append(LIKE_END);
             }
         });
         if(searchRequest.getSearchParam().size()>0)
             query.append(BRACKET_CLOSE);
 
+        query.append("\n order by jobPublishedOn desc");
         log.info("Query generated:\n {}", query.toString());
-        return customQueryExecutor.executeSearchQuery(query.toString());//"Select id from job where id < 20;");
+        return customQueryExecutor.executeSearchQuery(query.toString());
     }
 
     /**
@@ -1343,34 +1357,45 @@ public class JobService implements IJobService {
         Job job = jobRepository.getOne(jobId);
 
         //check if job is null for jobId
-        if(job == null){
+        if( null  == job ){
             log.error("job not found for id {}", jobId);
             throw new WebException("No job with id "+jobId+" found.", HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
         // check if company has LDEB subscription or not
-        if(!job.getCompanyId().getSubscription().equalsIgnoreCase(IConstant.CompanySubscription.LDEB.toString())){
+        if(!IConstant.CompanySubscription.LDEB.toString().equalsIgnoreCase(job.getCompanyId().getSubscription())){
             log.error("Unauthorized access");
             throw new WebException("You don't have LDEB subscription.", HttpStatus.UNAUTHORIZED);
         }
 
         List<TechRoleCompetencyBean> techRoleCompetencyBeans = new ArrayList<>();
 
+        //Find all jcm for job id
         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.findAllByJobId(jobId);
+
+        log.info("Found {} records", jobCandidateMappings.size());
 
         if(jobCandidateMappings.size()>0){
             ObjectMapper mapper = new ObjectMapper();
+            //Create TechRoleCompetencyBean object and add it to list of TechRoleCompetencyBean
             jobCandidateMappings.stream().parallel().forEach(jcm->{
                 try {
                     TechRoleCompetencyBean techRoleCompetencyBean = new TechRoleCompetencyBean();
                     techRoleCompetencyBean.setCandidate(new Candidate(jcm.getDisplayName(), jcm.getEmail(), jcm.getMobile()));
+                    techRoleCompetencyBean.setScore(jcm.getScore());
                     techRoleCompetencyBean.setTechResponseJson(
                             jcm.getTechResponseData().getTechResponse()!=null?
+                                    //Map string of array of TechResponseJson to array of TechResponseBean
+                                    // and convert it to list, then assign it to techRoleCompetencyBean object
                                     Arrays.asList(mapper.readValue(jcm.getTechResponseData().getTechResponse(), TechResponseJson[].class))
                                     :
                                     null
                     );
-                    techRoleCompetencyBean.setCandidateProfileLink((environment.getProperty("shareProfileLink") + jcm.getChatbotUuid()));
+
+                    List<JcmProfileSharingDetails> jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.findByJobCandidateMappingId(jcm.getId());
+                    if(jcmProfileSharingDetails.size()>0){
+                        techRoleCompetencyBean.setCandidateProfileLink(environment.getProperty("shareProfileLink") + jcmProfileSharingDetails.get(0).getId());
+                    }
                     techRoleCompetencyBeans.add(techRoleCompetencyBean);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -1382,5 +1407,28 @@ public class JobService implements IJobService {
         }
 
         return techRoleCompetencyBeans;
+    }
+
+    @Transactional(readOnly = true)
+    public Job findJobByJobShortCode(String jobShortCode) {
+        log.info("Inside findJobByJobShortCode or jobShortCode : {}",jobShortCode);
+        return jobRepository.getOne(Long.parseLong(jobShortCode.substring(IConstant.LB_SHORT_CODE.length())));
+    }
+
+    /**
+     *
+     * Service method to find all async error records for a job and async operation
+     *
+     * @param jobId
+     * @param asyncOperation
+     * @return AsyncOperationErrorRecords
+     */
+    public List<AsyncOperationsErrorRecords> findAsyncErrors(Long jobId, String asyncOperation){
+        Job job = jobRepository.getOne(jobId);
+        if(null == job){
+            throw new WebException("Job not found.", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        return asyncOperationsErrorRecordsRepository.findAllByJobIdAndAsyncOperation(jobId, asyncOperation);
     }
 }

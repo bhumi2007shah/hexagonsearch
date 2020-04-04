@@ -4,7 +4,7 @@
 
 package io.litmusblox.server.service;
 
-import io.litmusblox.server.model.Candidate;
+import io.litmusblox.server.model.JobCandidateMapping;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -24,5 +24,6 @@ public class InviteCandidateResponseBean {
     private String status;
     private int successCount;
     private int failureCount;
-    private List<Candidate> failedCandidates = new ArrayList<>();
+    private Long jobId;
+    private List<JobCandidateMapping> failedJcm = new ArrayList<>();
 }

@@ -71,6 +71,9 @@ public interface JobRepository extends JpaRepository<Job, Long> {
             "FROM job where company_id =:companyId", nativeQuery = true)
     List<Object[]> getJobCountPerStatusByCompanyId(Long companyId);
 
+    @Transactional(readOnly = true)
+    List<Job> findByCompanyIdInAndStatus(List<Company> companyList, String status);
+
 
 
 

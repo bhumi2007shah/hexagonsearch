@@ -31,7 +31,7 @@ import java.util.*;
 @Table(name="JOB_CANDIDATE_MAPPING")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonFilter("JobCandidateMapping")
-public class JobCandidateMapping implements Serializable, Comparable {
+public class JobCandidateMapping implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285047L;
 
@@ -148,6 +148,9 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Column(name = "AUTOSOURCED")
     private boolean autoSourced;
 
+    @Column(name = "CANDIDATE_REJECTION_VALUE")
+    private String candidateRejectionValue;
+
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private CandidateTechResponseData techResponseData;
@@ -163,18 +166,6 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Transient
     @JsonProperty
     private JcmCommunicationDetails jcmCommunicationDetails;
-
-    @Transient
-    @JsonProperty
-    List<JcmProfileSharingDetails> interestedHiringManagers = new ArrayList<>();
-
-    @Transient
-    @JsonProperty
-    List<JcmProfileSharingDetails> notInterestedHiringManagers = new ArrayList<>();
-
-    @Transient
-    @JsonProperty
-    List<JcmProfileSharingDetails> notRespondedHiringManagers = new ArrayList<>();
 
     @Transient
     @JsonProperty
@@ -195,6 +186,12 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Transient
     @JsonProperty
     private String cvLocation;
+
+    @Transient
+    private String inviteErrorMessage;
+
+    @OneToMany(cascade = {CascadeType.MERGE}, mappedBy = "jobCandidateMappingId")
+    private List<JcmCandidateSourceHistory> candidateSourceHistories = new ArrayList<>(0);
 
     public String getDisplayName() {
         return candidateFirstName + " " + candidateLastName;
@@ -223,7 +220,7 @@ public class JobCandidateMapping implements Serializable, Comparable {
         this.id = id;
     }
 
-    @Override
+ /*   @Override
     public int compareTo(Object o) {
         int returnVal = 0;
 
@@ -250,8 +247,10 @@ public class JobCandidateMapping implements Serializable, Comparable {
             returnVal = this.getCandidateLastName().compareTo(objToCompare.getCandidateLastName());
 
         return returnVal;
-    }
+    }*/
 
+ //TODO: remove the following at the end of successful regression
+ //this should not be used as the logic has been moved to JCMAllDetails as per #323
     public InterviewDetails getCurrentInterviewDetail(){
         if(this.getInterviewDetails().size()>0)
             return this.getInterviewDetails().get(0);

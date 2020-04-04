@@ -21,8 +21,4 @@ public interface CandidateRepository extends JpaRepository<Candidate, Long> {
     @Transactional
     @Query(nativeQuery = true, value = "select * from candidate where id=(select candidate_id from candidate_online_profile where profile_type=:profileType and url like CONCAT('%', :uniqueId, '%'))")
     Candidate findCandidateByProfileTypeAndUniqueId(String profileType, String uniqueId);
-
-    /*@Transactional
-    @Query(nativeQuery = true, value = "select * from candidate where id in (select candidate_id from job_candidate_mapping where job_id=:jobId)")
-    List<Candidate> findAllCandidateByJobId(Long jobId);*/
 }

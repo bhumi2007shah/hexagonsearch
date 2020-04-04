@@ -38,7 +38,7 @@ public interface IConstant {
 
     String INDIAN_MOBILE_PATTERN = "(0/91)?[6-9][0-9]{9}";
     String JUNK_MOBILE_PATTERN = "([0-9])\\1{8,}";
-    String REGEX_FOR_EMAIL_VALIDATION = "^[a-z0-9A-Z]+[\\w.]+@[a-zA-Z]+[a-zA-Z0-9.-]+[a-zA-Z]$";
+    String REGEX_FOR_EMAIL_VALIDATION = "^[a-z0-9A-Z]+[\\w.-]+@[a-zA-Z]+[a-zA-Z0-9.-]+[a-zA-Z]$";
     String REGEX_FOR_MOBILE_VALIDATION = "[\\d]+";
     String REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL = "[^\\d\\w@.-]";
     String REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_MOBILE = "[^\\d]";
@@ -47,7 +47,8 @@ public interface IConstant {
     String REGEX_FOR_DOT_IN_NAME = "(?<=[a.zA-Z\\.]\\s)+";
     String REGEX_TO_FIND_ONLINE_PROFILE_UNIQUE_ID = "(?<=\\/)(?:[\\w\\-]+)(?:\\/)?$";
     String REGEX_TO_VALIDATE_COMPANY_SHORT_NAME = "^[a-zA-Z]+[a-zA-Z0-9]+$";
-
+    String REGEX_TO_VALIDATE_JOB_SHORT_CODE = "[A-Z]{2}[0-9]{6}$";
+    String LB_JOB_CODE_REGEX = "[a-zA-Z]{2}\\d{6}";
 
     // lengths
     Integer TITLE_MAX_LENGTH = 100;
@@ -59,7 +60,7 @@ public interface IConstant {
     Integer COMPANY_SHORT_NAME = 25;
 
     String REPO_LOCATION = "repoLocation";
-    String TEMP_REPO_LOCATION = "temprepolocation";
+    String TEMP_REPO_LOCATION = "tempRepoLocation";
     String ERROR_FILES_REPO_LOCATION = "error_files";
     String CV_STORAGE_LOCATION = "cvStorageUrl";
     String DATE_FORMAT_yyyymmdd_hhmm = "yyyyMMdd_HHmm";
@@ -68,6 +69,9 @@ public interface IConstant {
     String TOKEN_HEADER = "Authorization";
     String TOKEN_PREFIX = "Bearer ";
     String CANDIDATE_CV = "CandidateCv";
+    String MASS_MAIL = "MassMail";
+    String JOB_POSTING = "JobPosting";
+    String DRAG_AND_DROP = "DragAndDrop";
     String SENTRY_DSN = "sentryDSN";
     String UPLOAD_FILE_TYPE = "Upload file type";
     String LOCALHOST_LOOPBACK = "0:0:0:0:0:0:0:1";
@@ -321,26 +325,10 @@ public interface IConstant {
     String NOT_AVAILABLE_EMAIL = "@notavailable.io";
     String SYSTEM_USER_EMAIL = "systemuser@hex.com";
 
-    String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation"};
+    String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countries", "education","otpExpiryMinutes"};
 
     String REPLACEMENT_KEY_FOR_SHORTNAME = "_shortName_";
     String GODADDY_SUCCESS_RESPONSE = "\"code\":";
-
-    //Constants for process otp
-    enum OtpMsg91 {
-
-        AUTH_KEY("authkey"), SEND_OTP_URL("sendOtpUrl"), VERIFY_OTP("verifyOtpUrl"), RETRY_OTP("retrySendOtp"), SENDER("sender"), TEMPLATE_ID("template_id"), OTP_LENGTH("otp_length"), RETRY_TYPE("text");
-
-        private String value;
-
-        OtpMsg91(String val) {
-            this.value = val;
-        }
-
-        public String getValue() {
-            return this.value;
-        }
-    }
 
     String NAUKRI_SUBJECT_STRING = "Naukri.com -";
     String REF_ID_MATCH_REGEX = "[a-fA-F0-9]{8}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{12}";
@@ -349,7 +337,9 @@ public interface IConstant {
     String PARSING_RESPONSE_PYTHON = "PARSING_RESPONSE_PYTHON";
     String PARSING_RESPONSE_ML = "PARSING_RESPONSE_ML";
 
-    int SCHEDULER_THREAD_POOL_SIZE = 6;
+    int SCHEDULER_THREAD_POOL_SIZE = 20;
+    int ASYNC_CORE_THREAD_POOL_SIZE = 5;
+    int ASYNC_MAX_THREAD_POOL_SIZE = 10;
 
     String COMPANY_NAME_VARIABLE = "$companyName";
 
@@ -360,4 +350,12 @@ public interface IConstant {
     String CHAT_LINK_HEADER="Chatbot Link";
 
     String [] apacheReloadCommand = {"sudo", "apache2ctl", "graceful"};
+    int OTP_EXPIRY_SECONDS = 90;
+
+    enum ASYNC_OPERATIONS {
+        FileUpload, InviteCandidates
+    }
+
+    String LB_SHORT_CODE = "LB";
+    int LB_SHORT_CODE_LENGTH = 6;
 }

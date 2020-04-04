@@ -63,7 +63,10 @@ public class UploadDataProcessService implements IUploadDataProcessService {
     @Autowired
     ICandidateService candidateService;
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Autowired
+    JcmCandidateSourceHistoryRepository jcmCandidateSourceHistoryRepository;
+
+    //@Transactional(propagation = Propagation.REQUIRED)
     public void processData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, int candidateProcessed, Long jobId, boolean ignoreMobile, Optional<User> createdBy){
         log.info("inside processData");
 
@@ -131,12 +134,12 @@ public class UploadDataProcessService implements IUploadDataProcessService {
     public Candidate validateDataAndSaveJcmAndJcmCommModel(UploadResponseBean uploadResponseBean, Candidate candidate, User loggedInUser, Boolean ignoreMobile, Job job) throws Exception {
 
         log.info("Inside validateDataAndSaveJcmAndJcmCommModel method");
-        if (null != candidate.getFirstName()) {
+        if (Util.isNotNull(candidate.getFirstName())) {
             //validate candidate used in multiple places so create util method
              candidate.setFirstName(Util.validateCandidateName(candidate.getFirstName()));
         }
 
-        if (null != candidate.getLastName()) {
+        if (Util.isNotNull(candidate.getLastName())) {
             candidate.setLastName(Util.validateCandidateName(candidate.getLastName()));
         }
 
@@ -149,7 +152,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             candidate.setEmail(cleanEmail.toLowerCase());
         }
 
-        StringBuffer msg = new  StringBuffer(candidate.getFirstName()).append(" ").append(candidate.getLastName()).append(" ~ ").append(candidate.getEmail());
+        StringBuffer msg = new  StringBuffer(candidate.getFirstName()).append(" ").append(candidate.getLastName()).append(" (").append(candidate.getEmail());
 
         if(Util.isNotNull(candidate.getMobile())) {
             candidate.setMobile(Util.indianMobileConvertor(candidate.getMobile(), (null != candidate.getCountryCode())?candidate.getCountryCode():job.getCompanyId().getCountryId().getCountryCode()));
@@ -160,7 +163,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
                     throw new ValidationException(IErrorMessages.MOBILE_INVALID_DATA + " - " + candidate.getMobile(), HttpStatus.BAD_REQUEST);
                 candidate.setMobile(cleanMobile);
             }
-            msg.append("-").append(candidate.getMobile());
+            msg.append(",").append(candidate.getMobile()).append(") ");
         }else {
             //mobile number of candidate is null
             //check if ignore mobile flag is set
@@ -193,11 +196,12 @@ public class UploadDataProcessService implements IUploadDataProcessService {
                 candidate.setCountryCode(job.getCompanyId().getCountryId().getCountryCode());
             candidateObjToUse = candidateService.createCandidate(candidate.getFirstName(), candidate.getLastName(), candidate.getEmail(), candidate.getMobile(), candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
             candidate.setId(candidateObjToUse.getId());
-            msg.append(" New");
         }
         else {
             log.info("Found existing candidate: " + existingCandidate.getId());
             candidate.setId(existingCandidate.getId());
+            if(Util.isNotNull(existingCandidate.getEmail()))
+                candidate.setEmail(existingCandidate.getEmail());
         }
 
         log.info(msg);
@@ -206,9 +210,13 @@ public class UploadDataProcessService implements IUploadDataProcessService {
         JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByJobAndCandidate(job, candidateObjToUse);
 
         if(null!=jobCandidateMapping){
+            //saving candidate source history even if candidate is duplicate for this job
+            jcmCandidateSourceHistoryRepository.save(new JcmCandidateSourceHistory(jobCandidateMapping.getId(), candidate.getCandidateSource(), loggedInUser));
+
             log.error(IErrorMessages.DUPLICATE_CANDIDATE + " : " + candidateObjToUse.getId() + candidate.getEmail() + " : " + candidate.getMobile());
             candidate.setUploadErrorMessage(IErrorMessages.DUPLICATE_CANDIDATE);
             candidate.setId(candidateObjToUse.getId());
+
             throw new ValidationException(IErrorMessages.DUPLICATE_CANDIDATE + " - " +"JobId: " + job.getId(), HttpStatus.BAD_REQUEST);
         }else{
             //Create new entry for JobCandidateMapping
@@ -226,12 +234,16 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             }
 
             //string to store detail about jcmHistory
-            String candidateDetail = "jcm created for "+msg;
-            jcmHistoryRepository.save(new JcmHistory(savedObj, candidateDetail, new Date(), loggedInUser, savedObj.getStage()));
+            msg.append("sourced for - ").append(job.getJobTitle()).append(" - ").append(job.getId());
+            jcmHistoryRepository.save(new JcmHistory(savedObj, msg.toString(), new Date(), loggedInUser, savedObj.getStage()));
             savedObj.setTechResponseData(new CandidateTechResponseData(savedObj));
             jobCandidateMappingRepository.save(savedObj);
             //create an empty record in jcm Communication details table
             jcmCommunicationDetailsRepository.save(new JcmCommunicationDetails(savedObj.getId()));
+
+            //saving candidate source history
+            jcmCandidateSourceHistoryRepository.save(new JcmCandidateSourceHistory(savedObj.getId(), savedObj.getCandidateSource(), loggedInUser));
+
         }
 
         if(null!=uploadResponseBean){

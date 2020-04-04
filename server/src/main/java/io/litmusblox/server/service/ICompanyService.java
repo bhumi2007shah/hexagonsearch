@@ -137,4 +137,10 @@ public interface ICompanyService {
      * @throws Exception
      */
     List<Company> setCompanyUniqueId();
+
+    /**
+     * functioon to reload Apache if new subdomain vitua host configuration is added in sites-available directory
+     * @param companyList
+     */
+    public void reloadApache(List<Company> companyList);
 }

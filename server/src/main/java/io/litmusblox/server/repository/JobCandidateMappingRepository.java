@@ -85,8 +85,8 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     int countDistinctStageForJcmList(List<Long> jcmList) throws Exception;
 
     @Modifying
-    @Query(nativeQuery = true, value = "update job_candidate_mapping set rejected=true, updated_by=:updatedBy, updated_on = :updatedOn where id in :jcmList")
-    void updateForRejectStage(List<Long> jcmList, Long updatedBy, Date updatedOn);
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set rejected=true,candidate_rejection_value =:candidateRejectionValue, updated_by=:updatedBy, updated_on = :updatedOn where id in :jcmList")
+    void updateForRejectStage(List<Long> jcmList, String candidateRejectionValue, Long updatedBy, Date updatedOn);
 
     @Transactional
     @Query(value = "select count(jcd.id)\n" +
@@ -114,6 +114,7 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
             "sum((chatbot_status LIKE 'Incomplete')\\:\\:INT) AS incompleteCount\n" +
             "FROM job_candidate_mapping, stage_step_master\n" +
             "where job_candidate_mapping.job_id = :jobId\n" +
+            "and job_candidate_mapping.rejected = false\n" +
             "and job_candidate_mapping.stage = stage_step_master.id\n" +
             "and stage_step_master.stage = :stage")
     List<Object[]> getCandidateCountPerStage(Long jobId, String stage) throws Exception;
@@ -123,8 +124,14 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     List<JobCandidateMapping> getNewAutoSourcedJcmList();
 
     @Transactional
-    @Query(nativeQuery = true, value="select * from job_candidate_mapping where job_id in (select id from job where company_id in (select id from company where send_communication='f')) and stage=(select id from stage_step_master where stage='Sourcing')")
+    @Query(nativeQuery = true, value="select * from job_candidate_mapping where job_id in (select id from job where company_id in (select id from company where send_communication='f')) and stage=(select id from stage_step_master where stage='Sourcing') and chatbot_status is null")
     List<JobCandidateMapping> getLDEBCandidates();
 
     List<JobCandidateMapping> findAllByJobId(Long jobId);
+
+    Long countByJobId(Long jobId);
+
+    @Transactional(readOnly = true)
+    @Query(nativeQuery = true, value = "select count(*) as count from job_candidate_mapping where jobId=:jobId and created_on>=:startDate and created_on<=:endDate")
+    Long countByJobIdAndDate(Long jobId, Date startDate, Date endDate);
 }

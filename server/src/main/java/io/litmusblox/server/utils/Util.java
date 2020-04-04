@@ -136,7 +136,7 @@ public class Util {
 
         String domainString = domainName.substring(domainName.indexOf('.')+1);
 
-        if(domainString.length()>3)
+        if(domainString.length()<2)
             return false;
 
         if(!email.matches(IConstant.REGEX_FOR_EMAIL_VALIDATION)) {
@@ -470,4 +470,30 @@ public class Util {
             }
         }
     }
+
+    //This method is used for comparing interview date with current date time
+    public static String getDateWithTimezone(TimeZone timeZone, Date date){
+        log.info("Inside getCurrentDateWithTimezone, TimeZone : ",timeZone.getDisplayName());
+        //DateFormat
+        SimpleDateFormat dateTimeInIST = new SimpleDateFormat("dd/MM/yyyy hh:mm a");
+        //Setting the time zone
+        dateTimeInIST.setTimeZone(timeZone);
+        try {
+            log.info("Date before convert to IST: {}, After convert to IST date : {}", date,dateTimeInIST.format(date));
+            return dateTimeInIST.format(date);
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("Issue in getCurrentDateWithIstTimezone : {}",e.getMessage());
+        }
+        return null;
+    }
+
+    //Method to get exception stackTrace if we want to print in logs
+    public static String getStackTrace(Exception e){
+        log.info("Inside getStackTrace");
+        StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
+    }
+
 }
