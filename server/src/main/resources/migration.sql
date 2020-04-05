@@ -1920,7 +1920,7 @@ CANDIDATE_LAST_NAME varchar(45),
 EMAIL VARCHAR (50),
 MOBILE VARCHAR (15),
 ASYNC_OPERATION VARCHAR(20),
-ERROR_MESSAGE VARCHAR(100),
+ERROR_MESSAGE TEXT,
 JOB_CANDIDATE_MAPPING_ID INTEGER REFERENCES JOB_CANDIDATE_MAPPING(ID),
 FILE_NAME VARCHAR(255),
 CREATED_ON TIMESTAMP NOT NULL,
@@ -2061,3 +2061,11 @@ INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
 ('InterviewDaySMSNoInPerson', 'You have a interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewTime}]]. Good Luck!');
 
 update sms_templates set template_content = 'You have an interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewTime}]]. Below is the Google Maps link to the interview address. Please report 15 mins before. See you there! [[${commBean.interviewAddressLink}]]' where template_name = 'InterviewDay';
+
+-- migration for ail received from savita mam
+update company set subscription='LDEB', send_communication='f' where id=70;
+
+INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
+(70, '"introText"=>"As a part of org level role baselining, we seek your inputs on various aspects of your work experience regarding the role of",
+"thankYouText"=>"No further action is required from your side",
+"showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false", "showUploadResumePage"=>"false"');
