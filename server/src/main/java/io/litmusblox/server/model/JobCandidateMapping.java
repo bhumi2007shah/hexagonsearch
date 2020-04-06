@@ -145,9 +145,6 @@ public class JobCandidateMapping implements Serializable {
     @Column(name = "CV_FILE_TYPE")
     private String cvFileType;
 
-    @Column(name = "AUTOSOURCED")
-    private boolean autoSourced;
-
     @Column(name = "CANDIDATE_REJECTION_VALUE")
     private String candidateRejectionValue;
 
@@ -213,7 +210,6 @@ public class JobCandidateMapping implements Serializable {
         this.candidateFirstName = candidateFirstName;
         this.candidateLastName = candidateLastName;
         this.cvFileType = cvFileType;
-        this.autoSourced = autosourced;
     }
 
     public JobCandidateMapping(Long id) {

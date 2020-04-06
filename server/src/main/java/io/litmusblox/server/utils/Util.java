@@ -15,6 +15,7 @@ import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.Candidate;
+import io.litmusblox.server.model.ScreeningQuestions;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.repository.CandidateRepository;
 import io.litmusblox.server.service.MasterDataBean;
@@ -494,6 +495,16 @@ public class Util {
         StringWriter sw = new StringWriter();
         e.printStackTrace(new PrintWriter(sw));
         return sw.toString();
+    }
+
+    public static String parseCustomizeQuestion(Map<String, String> customizeQuestionData, ScreeningQuestions screeningQuestions){
+        log.info("Inside parseCustomizeQuestion");
+        customizeQuestionData.entrySet().forEach(data ->{
+            if(screeningQuestions.getCustomizeQuestion().contains(data.getKey())){
+                screeningQuestions.setCustomizeQuestion(screeningQuestions.getCustomizeQuestion().replace("$"+data.getKey(), data.getValue()));
+            }
+        });
+        return screeningQuestions.getCustomizeQuestion();
     }
 
 }

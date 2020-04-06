@@ -94,3 +94,33 @@ create view exportDataView AS
         )
     )as ivd on ivd.jcm_id = jcm.id
   order by jobId, email, jsq.jsqId;
+
+
+-- view to select all required fields for search query
+drop view if exists jobDetailsView;
+reate view jobDetailsView AS
+select
+	job.id as jobId,
+	job.visible_to_career_page as visibleToCareerPage,
+	job.company_id as companyId,
+	job.job_title as jobTitle,
+	job.job_type as jobType,
+	job.created_on as jobCreatedOn,
+	job.date_published as jobPublishedOn,
+	company_address.address as jobLocation,
+	company_address.city as jobLocationCity,
+	company_address.state as jobLocationState,
+	company_address.country as jobLocationCountry,
+	exp.value as jobExperience,
+	education.value as education, jobKeySkillAggregation.keyskills as keyskills
+from job
+left join company_address
+on job.job_location = company_address.id
+left join master_data exp
+on job.experience_range = exp.id
+left join master_data education
+on job.education = education.id
+left join jobKeySkillAggregation
+on job.id = jobKeySkillAggregation.jobId
+where job.status = 'Live'
+order by jobPublishedOn desc, jobId asc;

@@ -7,10 +7,7 @@ package io.litmusblox.server.service;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import io.litmusblox.server.AbstractTest;
 import io.litmusblox.server.constant.IConstant;
-import io.litmusblox.server.model.Company;
-import io.litmusblox.server.model.Job;
-import io.litmusblox.server.model.MasterData;
-import io.litmusblox.server.model.User;
+import io.litmusblox.server.model.*;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.AfterEach;
@@ -242,6 +239,7 @@ class JobServiceTest extends AbstractTest {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         boolean testPass = true;
         try {
+            Integer educationArray[] = {15};
             Job testJob = Job.builder()
                     .jobTitle("job title")
                     .jobDescription("job description")
@@ -250,10 +248,11 @@ class JobServiceTest extends AbstractTest {
                     .createdBy(User.builder().id(1L).build())
                     .createdOn(new Date())
                     .companyId(Company.builder().id(2L).build())
-                    .education(MasterData.builder().id(15L).build())
+                    .education(educationArray)
                     .experienceRange(MasterData.builder().id(125L).build())
                     .expertise(MasterData.builder().id(122L).build())
-                    .function(MasterData.builder().id(130L).build())
+                    .jobIndustry(IndustryMasterData.builder().id(1L).build())
+                    .function(FunctionMasterData.builder().id(13L).build())
                     .jobReferenceId(UUID.randomUUID())
                     .recruiter(User.builder().id(1L).build())
                     .hiringManager(User.builder().id(1L).build())

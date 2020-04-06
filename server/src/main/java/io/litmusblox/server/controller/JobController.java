@@ -270,4 +270,18 @@ public class JobController {
         log.info("Completed processing request to fetch async invite errors for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
         return response;
     }
+
+    /**
+     * API to update visibility flag for career pages
+     * @param jobId jobId For chich we update flag
+     */
+    @PutMapping(value = "/updateJobVisibilityFlag/{jobId}")
+    @ResponseStatus(HttpStatus.OK)
+    void updateJobVisibilityFlagForCareerPage(@PathVariable("jobId") Long jobId, @RequestParam("visibilityFlag") Boolean visibilityFlag) throws Exception {
+        log.info("Received request to update job visibility flag for careerPage for JobId : "+jobId);
+        long startTime = System.currentTimeMillis();
+        jobService.updateJobVisibilityFlagOnCareerPage(jobId, visibilityFlag);
+        log.info("Completed processing request to update job visibility flag for careerPage for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
+    }
+
 }

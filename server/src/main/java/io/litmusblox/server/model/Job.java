@@ -101,8 +101,8 @@ public class Job implements Serializable {
     private CompanyBu buId;
 
     @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "FUNCTION")
-    private MasterData function;
+    @JoinColumn(name = "OLD_FUNCTION")
+    private MasterData oldFunction;
 
     @Column(name = "CURRENCY")
     private String currency = "INR";
@@ -113,9 +113,8 @@ public class Job implements Serializable {
     @Column(name = "MAX_SALARY")
     private Long maxSalary;
 
-    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "EDUCATION")
-    private MasterData education;
+    private Integer[] education;
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "JOB_LOCATION")
@@ -193,6 +192,24 @@ public class Job implements Serializable {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private List<JobCapabilities> jobCapabilityList=new ArrayList<>();
 
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "JOB_INDUSTRY")
+    private IndustryMasterData jobIndustry;
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "FUNCTION")
+    private FunctionMasterData function;
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "ROLE")
+    private RoleMasterData role;
+
+    @Column(name = "AUTO_INVITE")
+    private boolean autoInvite;
+
+    @Column(name = "VISIBLE_TO_CAREER_PAGE")
+    private Boolean visibleToCareerPage;
+
     @Transient
     @JsonInclude
     private List<String> userEnteredKeySkill=new ArrayList<>();
@@ -223,6 +240,9 @@ public class Job implements Serializable {
 
     @Transient
     private String jobShortCode;
+
+    @Transient
+    private List<String> selectedKeySkills;
 
     //Remove minExperience, maxExperience, experienceRange because add masterdata for experience
     //Also add jobdetail model in job

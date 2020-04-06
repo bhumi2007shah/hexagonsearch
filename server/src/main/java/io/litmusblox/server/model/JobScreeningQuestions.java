@@ -8,14 +8,15 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.litmusblox.server.utils.Util;
 import lombok.Data;
+import lombok.extern.log4j.Log4j2;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author : Sumit
@@ -25,6 +26,7 @@ import java.util.List;
  * Project Name : server
  */
 @Data
+@Log4j2
 @Entity
 @Table(name = "JOB_SCREENING_QUESTIONS")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -71,8 +73,21 @@ public class JobScreeningQuestions implements Serializable {
     @Column(name = "UPDATED_BY")
     private Long updatedBy;
 
+    @Type(type="hstore")
+    @Column(name = "CUSTOMIZE_QUESTION_DATA", columnDefinition = "hstore")
+    private Map<String,String> customizeQuestionData = new HashMap<>();
+
     @JsonProperty
     @Transient
     private List<String> candidateResponse = new ArrayList<>();
+
+    //If customize question is add then parse this question
+    public ScreeningQuestions getMasterScreeningQuestionId(){
+        log.info("Inside getUserScreeningQuestionId");
+        if(null != this.customizeQuestionData && null != this.masterScreeningQuestionId.getCustomizeQuestion()){
+            Util.parseCustomizeQuestion(this.customizeQuestionData, this.masterScreeningQuestionId);
+        }
+        return this.masterScreeningQuestionId;
+    }
 
 }

@@ -577,7 +577,7 @@ public class JobService implements IJobService {
         log.info("inside callMl method");
         String mlResponse = null;
         String mlRequest = null;
-        String function = MasterDataBean.getInstance().getFunction().get(job.getFunction().getId());
+        String function = MasterDataBean.getInstance().getFunction().get(job.getFunction().getId()).getFunction();
         Map breadCrumb = new HashMap<String, String>();
         try {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -899,6 +899,14 @@ public class JobService implements IJobService {
         oldJob.setCompanyJobId(job.getCompanyJobId());
         oldJob.setNoOfPositions(job.getNoOfPositions());
 
+        //Update JobIndustry
+        if (null == masterDataBean.getJobIndustryMap().get(job.getJobIndustry().getId())) {
+            //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
+            log.error("In Job, jobIndustry " + IErrorMessages.NULL_MESSAGE + job.getId());
+        }else{
+            oldJob.setJobIndustry(job.getJobIndustry());
+        }
+
         //Update Function
         if (null == masterDataBean.getFunction().get(job.getFunction().getId())) {
             //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
@@ -906,6 +914,10 @@ public class JobService implements IJobService {
         }else{
             oldJob.setFunction(job.getFunction());
         }
+
+        //Update Role
+        if (null != masterDataBean.getRole().get(job.getRole().getId()))
+            oldJob.setJobIndustry(job.getJobIndustry());
 
         //Update Currency
         if (null == job.getCurrency()) {
@@ -962,13 +974,14 @@ public class JobService implements IJobService {
 
             //Update Education
             if(null != job.getEducation()){
-                if (null == masterDataBean.getEducation().get(job.getEducation().getId())) {
-                    //throw new ValidationException("In Job, education " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
-                    log.error("In Job, education " + IErrorMessages.NULL_MESSAGE + job.getId());
-                }else{
-                    oldJob.setEducation(job.getEducation());
+                for (Integer educationId : job.getEducation()) {
+                    if (null == masterDataBean.getEducation().get(educationId))
+                        throw new ValidationException("EducationId : "+educationId +" not match with master data for jobId : "+ job.getId(), HttpStatus.BAD_REQUEST);
                 }
-            }
+                oldJob.setEducation(job.getEducation());
+            }else
+                log.error("In Job, education " + IErrorMessages.NULL_MESSAGE + job.getId());
+
             //Update Notice period
             oldJob.setNoticePeriod(job.getNoticePeriod());
         }
@@ -1292,7 +1305,7 @@ public class JobService implements IJobService {
      * @param searchRequest the request bean with company id and map of search paramters
      * @return List of jobs
      */
-    static String SELECT_QUERY_PREFIX = "Select jobId from jobDetailsView where companyId = ";
+    static String SELECT_QUERY_PREFIX = "Select jobId from jobDetailsView where visibleToCareerPage = 't' and companyId = ";
     static String AND = " and ", IN_BEGIN = " in (", BRACKET_CLOSE = ")", LIKE_BEGIN = " LIKE \'%", LIKE_END = "%\'", LOWER_BEGIN = "LOWER(", OR = " or ", SINGLE_QUOTE = "\'", BRACKET_OPEN = "(", COMMA = ",";
     @Transactional(readOnly = true)
     public List<Job> searchJobs(SearchRequestBean searchRequest) {
@@ -1430,5 +1443,17 @@ public class JobService implements IJobService {
         }
 
         return asyncOperationsErrorRecordsRepository.findAllByJobIdAndAsyncOperation(jobId, asyncOperation);
+    }
+
+    /**
+     * Service method to update visibility flag for career pages
+     * @param jobId jobId For which we update flag
+     */
+    @Transactional
+    public void updateJobVisibilityFlagOnCareerPage(Long jobId, Boolean visibilityFlag) {
+        log.info("Inside updateJobVisibilityFlagOnCareerPage");
+        Job job = jobRepository.getOne(jobId);
+        job.setVisibleToCareerPage(visibilityFlag);
+        jobRepository.save(job);
     }
 }

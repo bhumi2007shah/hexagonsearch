@@ -701,12 +701,12 @@ VALUES
 ( 'experienceRange', '15 - 20 Years'),
 ( 'experienceRange', '20+ Years'),
 
-( 'function','Accounting / Tax / Company Secretary / Audit'),
-( 'function','Agent'),
-( 'function','Airline / Reservations / Ticketing / Travel'),
-( 'function','Analytics & Business Intelligence'),
-( 'function','Anchoring / TV / Films / Production'),
-( 'function','Architects / Interior Design / Naval Arch');
+( 'oldFunction','Accounting / Tax / Company Secretary / Audit'),
+( 'oldFunction','Agent'),
+( 'oldFunction','Airline / Reservations / Ticketing / Travel'),
+( 'oldFunction','Analytics & Business Intelligence'),
+( 'oldFunction','Anchoring / TV / Films / Production'),
+( 'oldFunction','Architects / Interior Design / Naval Arch');
 
 delete from weightage_cutoff_mapping;
 insert into weightage_cutoff_mapping (weightage, percentage, cutoff, star_rating)
@@ -745,11 +745,11 @@ VALUES ('Sourcing','Sourcing'),
 ('Hired','Hired');
 
 INSERT INTO public.master_data(type, value, value_to_use) VALUES
-('role', 'HR Recruiter', 'Recruiter'),
-('role', 'HR Head', 'ClientAdmin'),
-('role', 'Admin', 'ClientAdmin'),
-('role', 'Hiring Manager', 'BusinessUser'),
-('role', 'Interviewer', 'BusinessUser');
+('uerRole', 'HR Recruiter', 'Recruiter'),
+('uerRole', 'HR Head', 'ClientAdmin'),
+('uerRole', 'Admin', 'ClientAdmin'),
+('uerRole', 'Hiring Manager', 'BusinessUser'),
+('uerRole', 'Interviewer', 'BusinessUser');
 
 --Ticket #258
 INSERT INTO export_format_master
@@ -927,3 +927,169 @@ INSERT INTO REJECTION_REASON_MASTER_DATA (VALUE, LABEL, TYPE, STAGE) VALUES
 ('Background Verification', 'Candidates Background Verification (BGV) report was negative',null, 7),
 ('Integrity', 'Candidate was asked to leave on grounds of integrity',null, 7),
 ('Voluntary exit', 'Candidate left on their own accord',null, 7);
+
+INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES
+('industry', 'IT'),
+('industry', 'Manufacturing - Products');
+
+INSERT INTO MASTER_DATA(TYPE, VALUE, VALUE_TO_USE) VALUES
+('function', 'Coding / Programming', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Testing', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Project/ Program Management', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'SI / ERP / CRM Product Integration', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Architecture & Design', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'UI / UX', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Digital / Social Media Marketing', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Pre-Sales & Proposals', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Application / Product Support', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Team / Module Lead'),
+('function', 'Business Analysis / Requirement Analysis / BPM', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Product Management', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'System Administration', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Global Service Desk / End User Computing', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Database Administration', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Network Management', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'PMO, Contracts & Governance', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Business Development', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Customer Care', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'HR', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Training / L&D', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Recruitment', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Media & Content', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Admin / Facility Management', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Accounts / Finance', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Vendor Contracts & Commercials', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Business Analytics & MIS', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Quality Systems / Business Excellence', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Health & Safety', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Corporate Social Responsibilities', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'CFO, Legal & Secreterial', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Corporate Communication & Brand Management', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Corporate Governance', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Business Strategy Planning', (select id from master_data where type = 'industry' and value = 'IT')),
+('function', 'Product Development / R&D', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Manufacturing / Process / Industrial Engineering', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Plant Equipment & Machinery Engineering', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Tool Engineering', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Production', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Quality', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Plant Maintenance', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Production Planning & Control', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Vendor Development / Sourcing / Purchase / Procurement', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Stores, Warehouse & Inventory Control', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Logistics', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Operator / Technician', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Health, Safety & Environment', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Sales - Direct', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Sales - Channel', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Marketing & Lead Generation', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Pre-Sales, Proposals & Tenders', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Customer Care', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'After Sales / Field Service', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'HR', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Training / L&D', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Recruitment', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Media & Content', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Admin / Facility Management', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Accounts / Finance', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'IT Infra management / ITES', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'IT Enterprise Systems (CIO)', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Business Analytics & MIS', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Quality Systems / Business Excellence', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Corporate Social Responsibilities', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Corporate Finance, Legal & Secreterial', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Corporate Communication & Brand Management', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products')),
+('function', 'Business Strategy Planning', (select id from master_data where type = 'industry' and value = 'Manufacturing - Products'));
+
+INSERT INTO MASTER_DATA(TYPE, VALUE, VALUE_TO_USE) VALUES
+('role', 'Manual Tester', (select id from master_data where type = 'function' and value = 'Testing')),
+('role', 'Automation Tester', (select id from master_data where type = 'function' and value = 'Testing')),
+('role', 'Project Manager - Testing', (select id from master_data where type = 'function' and value = 'Testing')),
+('role', 'Test Architect', (select id from master_data where type = 'function' and value = 'Testing')),
+('role', 'Testing Team Lead', (select id from master_data where type = 'function' and value = 'Testing')),
+
+('role', 'Project /Program  Manager - ADMS', (select id from master_data where type = 'function' and value = 'Project/ Program Management')),
+('role', 'Project / Program Manager - SI projects', (select id from master_data where type = 'function' and value = 'Project/ Program Management')),
+('role', 'Project / Program Manager - Product Development', (select id from master_data where type = 'function' and value = 'Project/ Program Management')),
+('role', 'Client Account & Delivery Manager', (select id from master_data where type = 'function' and value = 'Project/ Program Management')),
+('role', 'Program Management Office & Contracts', (select id from master_data where type = 'function' and value = 'Project/ Program Management')),
+('role', 'SCRUM Master', (select id from master_data where type = 'function' and value = 'Project/ Program Management')),
+
+('role', 'Functional Consultant - SI /ERP/CRM integration', (select id from master_data where type = 'function' and value = 'SI / ERP / CRM Product Integration')),
+('role', 'Technical Consultant - SI /ERP/CRM integration', (select id from master_data where type = 'function' and value = 'SI / ERP / CRM Product Integration')),
+('role', 'SI / ERP / CRM- Platform Build & Support', (select id from master_data where type = 'function' and value = 'SI / ERP / CRM Product Integration')),
+
+('role', 'Enterprise Architect', (select id from master_data where type = 'function' and value = 'Architecture & Design')),
+('role', 'Technical Architect', (select id from master_data where type = 'function' and value = 'Architecture & Design')),
+('role', 'Infra Architect', (select id from master_data where type = 'function' and value = 'Architecture & Design')),
+('role', 'Product Architect', (select id from master_data where type = 'function' and value = 'Architecture & Design')),
+
+('role', 'UI Designer', (select id from master_data where type = 'function' and value = 'UI / UX')),
+('role', 'UI Programmer', (select id from master_data where type = 'function' and value = 'UI / UX')),
+('role', 'UX Designer', (select id from master_data where type = 'function' and value = 'UI / UX')),
+
+('role', 'SEO & Analytics Specialist', (select id from master_data where type = 'function' and value = 'Digital / Social Media Marketing')),
+('role', 'Social Media Marketing Expert', (select id from master_data where type = 'function' and value = 'Digital / Social Media Marketing')),
+('role', 'Content Developer / Copywriter', (select id from master_data where type = 'function' and value = 'Digital / Social Media Marketing')),
+('role', 'Campaign Manager', (select id from master_data where type = 'function' and value = 'Digital / Social Media Marketing')),
+('role', 'InBound Marketing', (select id from master_data where type = 'function' and value = 'Digital / Social Media Marketing')),
+
+('role', 'Pre Sales - Manager / Coordinator', (select id from master_data where type = 'function' and value = 'Pre-Sales & Proposals')),
+('role', 'Pre Sales - Solution Architect', (select id from master_data where type = 'function' and value = 'Pre-Sales & Proposals')),
+
+('role', 'L1 Support', (select id from master_data where type = 'function' and value = 'Application / Product Support')),
+('role', 'L2 Support', (select id from master_data where type = 'function' and value = 'Application / Product Support')),
+('role', 'Application Development & Maintenance', (select id from master_data where type = 'function' and value = 'Application / Product Support')),
+('role', 'Service Manager', (select id from master_data where type = 'function' and value = 'Application / Product Support')),
+('role', 'Release & Deployment Manager', (select id from master_data where type = 'function' and value = 'Application / Product Support')),
+
+('role', 'Development Team Lead', (select id from master_data where type = 'function' and value = 'Team / Module Lead')),
+('role', 'Testing Team Lead', (select id from master_data where type = 'function' and value = 'Team / Module Lead')),
+('role', 'Team Lead - Application support', (select id from master_data where type = 'function' and value = 'Team / Module Lead')),
+
+('role', 'Business Analyst', (select id from master_data where type = 'function' and value = 'Business Analysis / Requirement Analysis / BPM')),
+('role', 'Business Consultant', (select id from master_data where type = 'function' and value = 'Business Analysis / Requirement Analysis / BPM')),
+('role', 'Requirements Manager', (select id from master_data where type = 'function' and value = 'Business Analysis / Requirement Analysis / BPM')),
+('role', 'Bus Process Consultant', (select id from master_data where type = 'function' and value = 'Business Analysis / Requirement Analysis / BPM')),
+
+('role', 'Product Manager / Owner', (select id from master_data where type = 'function' and value = 'Product Management')),
+('role', 'SCRUM Master', (select id from master_data where type = 'function' and value = 'Product Management')),
+('role', 'Product Module Lead', (select id from master_data where type = 'function' and value = 'Product Management')),
+('role', 'Product Release Manager', (select id from master_data where type = 'function' and value = 'Product Management')),
+
+('role', 'System Admin - OS & Servers', (select id from master_data where type = 'function' and value = 'System Administration')),
+('role', 'Storage Admin', (select id from master_data where type = 'function' and value = 'System Administration')),
+('role', 'Backup Admin', (select id from master_data where type = 'function' and value = 'System Administration')),
+('role', 'Cloud Infra Admin', (select id from master_data where type = 'function' and value = 'System Administration')),
+('role', 'Mail Server Admin', (select id from master_data where type = 'function' and value = 'System Administration')),
+('role', 'Middleware Admin', (select id from master_data where type = 'function' and value = 'System Administration')),
+
+('role', 'Database Admin', (select id from master_data where type = 'function' and value = 'Database Administration')),
+('role', 'Storage Admin', (select id from master_data where type = 'function' and value = 'Database Administration')),
+('role', 'Backup Admin', (select id from master_data where type = 'function' and value = 'Database Administration')),
+
+('role', 'Network Administrator', (select id from master_data where type = 'function' and value = 'Network Management')),
+('role', 'Firewall Internet Network Security Administrator', (select id from master_data where type = 'function' and value = 'Network Management')),
+
+('role', 'Contract Scoping & Initiation', (select id from master_data where type = 'function' and value = 'PMO, Contracts & Governance')),
+('role', 'Contract Management & Governance', (select id from master_data where type = 'function' and value = 'PMO, Contracts & Governance')),
+
+('role', 'B2B Sales / Business Development', (select id from master_data where type = 'function' and value = 'Business Development')),
+('role', 'Account Manager', (select id from master_data where type = 'function' and value = 'Business Development')),
+('role', 'Marketing & Lead Generation', (select id from master_data where type = 'function' and value = 'Business Development')),
+
+('role', 'Customer Care Manager / Executive', (select id from master_data where type = 'function' and value = 'Customer Care')),
+
+('role', 'Global Service Desk / End User Computing', (select id from master_data where type = 'function' and value = 'Global Service Desk / End User Computing'));
+
+Insert into MASTER_DATA (TYPE, VALUE) values
+('questionCategory','City/Location'),
+('questionCategory','Shifts'),
+('questionCategory','Domain'),
+('questionCategory','Team Lead or Individual Contributor'),
+('questionCategory','Notice Period'),
+('questionCategory','Contract/Perm'),
+('questionCategory','Salary'),
+('questionCategory','Reason for job change'),
+('questionCategory','Other Offers'),
+('questionCategory','Interview');
