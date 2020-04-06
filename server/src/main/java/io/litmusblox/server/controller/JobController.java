@@ -277,7 +277,7 @@ public class JobController {
      */
     @PutMapping(value = "/updateJobVisibilityFlag/{jobId}")
     @ResponseStatus(HttpStatus.OK)
-    void updateJobVisibilityFlagForCareerPage(@PathVariable("jobId") Long jobId, @RequestParam("visibilityFlag") Boolean visibilityFlag) throws Exception {
+    void updateJobVisibilityFlagForCareerPage(@PathVariable("jobId") Long jobId, @RequestParam("visibilityFlag") boolean visibilityFlag) throws Exception {
         log.info("Received request to update job visibility flag for careerPage for JobId : "+jobId);
         long startTime = System.currentTimeMillis();
         jobService.updateJobVisibilityFlagOnCareerPage(jobId, visibilityFlag);

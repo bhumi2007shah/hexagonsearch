@@ -74,9 +74,4 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     @Transactional(readOnly = true)
     List<Job> findByCompanyIdInAndStatus(List<Company> companyList, String status);
 
-
-
-
-
-
 }

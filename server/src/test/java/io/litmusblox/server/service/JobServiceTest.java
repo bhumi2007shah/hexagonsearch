@@ -239,7 +239,7 @@ class JobServiceTest extends AbstractTest {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         boolean testPass = true;
         try {
-            Integer educationArray[] = {15};
+            int educationArray[] = {15};
             Job testJob = Job.builder()
                     .jobTitle("job title")
                     .jobDescription("job description")

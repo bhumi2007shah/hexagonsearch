@@ -7,6 +7,7 @@ package io.litmusblox.server.model;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.vladmihalcea.hibernate.type.array.IntArrayType;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.service.MasterDataBean;
@@ -14,6 +15,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
+import org.hibernate.annotations.TypeDefs;
 import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
@@ -39,6 +43,7 @@ import java.util.*;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @NoArgsConstructor
 @AllArgsConstructor
+@TypeDefs({@TypeDef(name = "int-array",typeClass = IntArrayType.class)})
 public class Job implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
@@ -113,8 +118,9 @@ public class Job implements Serializable {
     @Column(name = "MAX_SALARY")
     private Long maxSalary;
 
-    @JoinColumn(name = "EDUCATION")
-    private Integer[] education;
+    @Type(type = "int-array")
+    @Column(name = "EDUCATION", columnDefinition = "integer[]")
+    private int[] education;
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "JOB_LOCATION")
@@ -208,7 +214,7 @@ public class Job implements Serializable {
     private boolean autoInvite;
 
     @Column(name = "VISIBLE_TO_CAREER_PAGE")
-    private Boolean visibleToCareerPage;
+    private boolean visibleToCareerPage;
 
     @Transient
     @JsonInclude

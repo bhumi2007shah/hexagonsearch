@@ -975,7 +975,7 @@ public class JobService implements IJobService {
             //Update Education
             if(null != job.getEducation()){
                 for (Integer educationId : job.getEducation()) {
-                    if (null == masterDataBean.getEducation().get(educationId))
+                    if (null == masterDataBean.getEducation().get(Long.valueOf(educationId)))
                         throw new ValidationException("EducationId : "+educationId +" not match with master data for jobId : "+ job.getId(), HttpStatus.BAD_REQUEST);
                 }
                 oldJob.setEducation(job.getEducation());
@@ -1450,7 +1450,7 @@ public class JobService implements IJobService {
      * @param jobId jobId For which we update flag
      */
     @Transactional
-    public void updateJobVisibilityFlagOnCareerPage(Long jobId, Boolean visibilityFlag) {
+    public void updateJobVisibilityFlagOnCareerPage(Long jobId, boolean visibilityFlag) {
         log.info("Inside updateJobVisibilityFlagOnCareerPage");
         Job job = jobRepository.getOne(jobId);
         job.setVisibleToCareerPage(visibilityFlag);

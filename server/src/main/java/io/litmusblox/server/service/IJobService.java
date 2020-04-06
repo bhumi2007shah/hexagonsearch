@@ -153,5 +153,5 @@ public interface IJobService {
      * Service method to update visibility flag for career pages
      * @param jobId jobId For which we update flag
      */
-    void updateJobVisibilityFlagOnCareerPage(Long jobId, Boolean visibilityFlag);
+    void updateJobVisibilityFlagOnCareerPage(Long jobId, boolean visibilityFlag);
 }
