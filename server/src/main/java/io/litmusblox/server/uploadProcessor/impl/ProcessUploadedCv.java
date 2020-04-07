@@ -317,7 +317,6 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
     @Transactional
     public void cvToCvText() {
         log.info("inside CvToCvText");
-        List<CvParsingDetails> cvParsingDetailsList = new ArrayList<>();
         List<CvParsingDetails> cvParsingDetails = cvParsingDetailsRepository.getDataForConvertCvToCvText();
         if(null != cvParsingDetails && cvParsingDetails.size()>0){
             cvParsingDetails.forEach(cvParsingDetailsFromDb-> {
@@ -328,12 +327,12 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                 breadCrumb.put("cvParsingDetailsId", cvParsingDetailsFromDb.getId().toString());
                 breadCrumb.put("Jcm id", cvParsingDetailsFromDb.getJobCandidateMappingId().getId().toString());
                 try {
-                    queryParameters.put("file", environment.getProperty(IConstant.CV_STORAGE_LOCATION) + cvParsingDetailsFromDb.getJobCandidateMappingId().getJob().getId() + "/" + cvParsingDetailsFromDb.getCandidateId() + cvParsingDetailsFromDb.getJobCandidateMappingId().getCvFileType());
-                    log.info("CvFile path : {}", queryParameters.get("file"));
+                    queryParameters.put("file", environment.getProperty(IConstant.CV_STORAGE_LOCATION)/* + cvParsingDetailsFromDb.getJobCandidateMappingId().getJob().getId() + "/" + cvParsingDetailsFromDb.getCandidateId() + cvParsingDetailsFromDb.getJobCandidateMappingId().getCvFileType()*/);
+                    log.info("Cv storage file path : {}", queryParameters.get("file"));
                     breadCrumb.put("FilePath", queryParameters.get("file"));
                     long apiCallStartTime = System.currentTimeMillis();
-                    cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), null).getResponseBody();
-                    log.info("Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", (System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
+                    cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), Optional.of(IConstant.REST_CONNECTION_TIME_OUT_FOR_CV_TEXT)).getResponseBody();
+                    log.info("Finished rest call- Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", (System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
                     if (null != cvText && cvText.trim().length()>IConstant.CV_TEXT_API_RESPONSE_MIN_LENGTH && !cvText.isEmpty()) {
                         cvParsingDetailsFromDb.setParsingResponseText(cvText);
                     }else{
@@ -374,11 +373,9 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     SentryUtil.logWithStaticAPI(null, "Failed to convert cv to text", breadCrumb);
                 }finally {
                     cvParsingDetailsFromDb.setCvConvertApiFlag(true);
-                    cvParsingDetailsList.add(cvParsingDetailsFromDb);
+                    cvParsingDetailsRepository.save(cvParsingDetailsFromDb);
                 }
             });
-            if(cvParsingDetailsList.size()>0)
-                cvParsingDetailsRepository.saveAll(cvParsingDetailsList);
         }
     }
 
