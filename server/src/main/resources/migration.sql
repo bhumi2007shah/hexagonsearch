@@ -2269,18 +2269,48 @@ UPDATE MASTER_DATA SET TYPE = 'userRole' WHERE TYPE = 'role';
 alter table job drop constraint job_education_fkey;
 alter table job alter education type integer[] using array[education];
 
-update screening_questions set counry = (select id from country where country_name = 'India');
-
+-- Insert script for question category master data
 Insert into MASTER_DATA (TYPE, VALUE) values
-('questionCategory','City/Location'),
+('questionCategory','Location'),
 ('questionCategory','Shifts'),
 ('questionCategory','Domain'),
-('questionCategory','Team Lead or Individual Contributor'),
+('questionCategory','Team Size (Direct)'),
+('questionCategory','Team Size (Indirect)'),
 ('questionCategory','Notice Period'),
-('questionCategory','Contract/Perm'),
+('questionCategory','Contract'),
 ('questionCategory','Salary'),
 ('questionCategory','Reason for job change'),
 ('questionCategory','Other Offers'),
-('questionCategory','Interview');
+('questionCategory','Interview'),
+('questionCategory','Remote Working'),
+('questionCategory','Education'),
+('questionCategory','Travel'),
+('questionCategory','Required Docs'),
+('questionCategory','Languages'),
+('questionCategory','Start Date');
 
+-- Insert script for master screening questions
+INSERT INTO SCREENING_QUESTION (QUESTION, QUESTION_TYPE, OPTIONS, MULTILEVELOPTIONS, QUESTION_CATEGORY, COUNTRY_ID) VALUES
+('Are you available to work in Shifts?', (select id from master_data where value = 'Checkbox'), '{"No shifts, I want to work regular day timings (9:00 AM – 6:00 PM)","Morning / APAC shift (6:00 AM – 3:00 PM)","Evening / UK shift (12:00  PM – 9:00 PM)","Night / US shift (6:00 PM – 4:00 AM)","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Shifts'), (select id from country where country_name = 'India')),
+('What is your total team size including indirect reports?', (select id from master_data where value = 'Radio button'), '{<10,11-25,26-50,51-100,101-500,501-1000,1001-5000, 5000+}', null, (select id from master_data where type = 'questionCategory' and value = 'Team Size (Indirect)'), (select id from country where country_name = 'India')),
+('What is your expected annual salary requirement?', (select id from master_data where value = 'Slider'),null, null, (select id from master_data where type = 'questionCategory' and value = 'Salary'), (select id from country where country_name = 'India')),
+('Are you willing to work remotely?', (select id from master_data where value = 'Radio button'), '{"Yes","No"}', null, (select id from master_data where type = 'questionCategory' and value = 'Remote Working'), (select id from country where country_name = 'India')),
+('What is your highest level of education?', (select id from master_data where value = 'Radio button'), '{"Secondary (10th Grade)","Higher Secondary (12th Grade)","Diploma","Bachelor’s","Master’s","Doctorate"}', null, (select id from master_data where type = 'questionCategory' and value = 'Education'), (select id from country where country_name = 'India')),
+('This job may require outstation travel. How long are you willing to travel every month?', (select id from master_data where value = 'Radio button'), '{"I am not willing to travel","25% of the time","50% of the time","75% of the time","100% of the time"}', null, (select id from master_data where type = 'questionCategory' and value = 'Travel'), (select id from country where country_name = 'India')),
+('If required, which of the following documents can you provide?', (select id from master_data where value = 'Checkbox'), '{"Address Proof","PAN Card","Aadhar Card","Passport","Driver’s Licence","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Required Docs'), (select id from country where country_name = 'India')),
+('Which of these languages can you speak fluently?', (select id from master_data where value = 'Checkbox'), '{"English","Hindi","Bengali","Marathi","Telugu","Tamil","Gujarati","Urdu","Kannada","Oriya","Malayalam","Punjabi","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Languages'), (select id from country where country_name = 'India')),
+('What is the earliest start date that you can commit to?', (select id from master_data where value = 'Calendar'), null, null, (select id from master_data where type = 'questionCategory' and value = 'Start Date'), (select id from country where country_name = 'India'));
 
+-- Update old maseter screening questions
+UPDATE SCREENING_QUESTION SET QUESTION_TYPE = (select id from master_data where value = 'Radio button'),  QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Location'), COUNTRY_ID= (select id from country where country_name = 'India')) where QUESTION = 'Which City are you currently based in?';
+UPDATE SCREENING_QUESTION SET QUESTION_TYPE = (select id from master_data where value = 'Checkbox'),  QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Location'), COUNTRY_ID= (select id from country where country_name = 'India')) where QUESTION = 'For a great job opportunity, which cities are you willing to relocate?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Shifts'), COUNTRY_ID= (select id from country where country_name = 'India'), OPTIONS = '{"No shifts, I work regular day timings (9:00 AM – 6:00 PM)","UK shift (12:00  PM – 9:00 PM)","US shift (6:00 PM – 4:00 AM)","APAC shift (6:00 AM – 3:00 PM)","Other"}' where QUESTION = 'Does your current job require you to work in Shifts?';
+UPDATE SCREENING_QUESTION SET QUESTION_TYPE = (select id from master_data where value = 'Checkbox'), QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Domain'), COUNTRY_ID= (select id from country where country_name = 'India'), OPTIONS = '{"Banking","Financial Services","Insurance","Telecom","Retail","Healthcare","E-Commerce","Travel & Hospitality","Media & Entertainment","Gaming","Consulting","Other""}' where QUESTION = 'Do you have a strong experience in any of these Industry Domains?';
+UPDATE SCREENING_QUESTION SET QUESTION = 'Do you lead a team of direct reports?', QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Team Size (Direct)'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'Do you lead a team?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Notice Period'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'What is the Official Notice Period you are required to serve in your current company?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Notice Period'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'If the need arises, can you buyout your notice period?';
+UPDATE SCREENING_QUESTION SET QUESTION = 'Would you be willing to work on a Contract position?', QUESTION_TYPE = (select id from master_data where value = 'Radio button'),OPTIONS = '{"Yes, certainly","Yes, for the right opportunity","No, I will not work on contract"}', QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Contract'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'If an opportunity to work with a great company came along, would you be willing to work on Contract?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Salary'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'What is your Current Annual Salary?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Reason for job change'),OPTIONS = '{"Too much time spent in commuting to work","Too much travelling in the job","Have been in same company for too long","Company has shut down","Company is downsizing/got a layoff","Am a contract employee, want to shift to a permanent job","Want to work in a different domain", "Want to work in a different project", "Not getting paid my salary on time","Have not been promoted for a long time","Want to work with a larger company/brand","Want to work with a smaller company", "Want to work regular shifts","Have been on maternity break","Have been on Sabbatical","Other"}', COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'What is the main reason that you are looking for a job change?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Other Offers'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'Do you have other offers in hand?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Interview'), MULTILEVELOPTIONS = '{"No": [],"Yes": ["Do you roughly remember when you were interviewed?"]}', COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'Have you been interviewed by `$companyName` in the last 6 months?';
