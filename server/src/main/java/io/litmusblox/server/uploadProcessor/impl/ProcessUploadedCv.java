@@ -314,69 +314,75 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
      * Method to convert cv file to cv text
      * In cv_parsing_detail if parsing_response_text is null then convert cv to text and save
      */
-    @Transactional
     public void cvToCvText() {
         log.info("inside CvToCvText");
         List<CvParsingDetails> cvParsingDetails = cvParsingDetailsRepository.getDataForConvertCvToCvText();
         if(null != cvParsingDetails && cvParsingDetails.size()>0){
             cvParsingDetails.forEach(cvParsingDetailsFromDb-> {
-                String cvText = null;
-                Candidate candidateFromPython = null;
-                Map<String, String> queryParameters = new HashMap<>();
-                Map<String, String> breadCrumb = new HashMap<>();
-                breadCrumb.put("cvParsingDetailsId", cvParsingDetailsFromDb.getId().toString());
-                breadCrumb.put("Jcm id", cvParsingDetailsFromDb.getJobCandidateMappingId().getId().toString());
-                try {
-                    queryParameters.put("file", environment.getProperty(IConstant.CV_STORAGE_LOCATION) + cvParsingDetailsFromDb.getJobCandidateMappingId().getJob().getId() + "/" + cvParsingDetailsFromDb.getCandidateId() + cvParsingDetailsFromDb.getJobCandidateMappingId().getCvFileType());
-                    log.info("Cv storage file path : {}", queryParameters.get("file"));
-                    breadCrumb.put("FilePath", queryParameters.get("file"));
-                    long apiCallStartTime = System.currentTimeMillis();
-                    cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), Optional.of(IConstant.REST_CONNECTION_TIME_OUT_FOR_CV_TEXT)).getResponseBody();
-                    log.info("Finished rest call- Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", (System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
-                    if (null != cvText && cvText.trim().length()>IConstant.CV_TEXT_API_RESPONSE_MIN_LENGTH && !cvText.isEmpty()) {
-                        cvParsingDetailsFromDb.setParsingResponseText(cvText);
-                    }else{
-                        breadCrumb.put("CvText", cvText);
-                        SentryUtil.logWithStaticAPI(null, "Cv convert python response not good", breadCrumb);
-                    }
-
-                    if(cvParsingDetailsFromDb.getJobCandidateMappingId().getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL) || null == cvParsingDetailsFromDb.getJobCandidateMappingId().getMobile()){
-                        String validMobile = null;
-                        boolean isEditCandidate = false;
-                        JobCandidateMapping jcmFromDb = cvParsingDetailsFromDb.getJobCandidateMappingId();
-                        log.info("Update edit candidate for candidateId : {}", cvParsingDetailsFromDb.getCandidateId());
-                        CvParsingApiDetails cvParsingApiDetails = cvParsingApiDetailsRepository.findByColumnToUpdate(PARSING_RESPONSE_PYTHON);
-                        StringBuffer queryString = new StringBuffer(cvParsingApiDetails.getApiUrl());
-                        queryString.append("?file=");
-                        queryString.append(environment.getProperty(IConstant.CV_STORAGE_LOCATION)).append(jcmFromDb.getJob().getId()).append(File.separator).append(cvParsingDetailsFromDb.getCandidateId()).append(jcmFromDb.getCvFileType());
-                        candidateFromPython = pythonCvParser(queryString.toString());
-                        if(Util.isNotNull(candidateFromPython.getEmail()) && Util.isValidateEmail(candidateFromPython.getEmail())){
-                            log.info("candidate old email : {}, python response email : {}", jcmFromDb.getEmail(), candidateFromPython.getEmail());
-                            cvParsingDetailsFromDb.getJobCandidateMappingId().setEmail(candidateFromPython.getEmail());
-                            isEditCandidate = true;
-                        }
-                        if(Util.isNull(jcmFromDb.getMobile()) && Util.isNotNull(candidateFromPython.getMobile())){
-                            validMobile = Util.indianMobileConvertor(candidateFromPython.getMobile(), cvParsingDetailsFromDb.getJobCandidateMappingId().getCountryCode());
-                            if(Util.validateMobile(validMobile, cvParsingDetailsFromDb.getJobCandidateMappingId().getCountryCode())){
-                                log.info("candidate old mobile : {}, python response mobile : {}, For JcmId : {}", jcmFromDb.getMobile(), candidateFromPython.getMobile(), jcmFromDb.getId());
-                                cvParsingDetailsFromDb.getJobCandidateMappingId().setMobile(validMobile);
-                                isEditCandidate = true;
-                            }
-                        }
-                        if(isEditCandidate)
-                            jobCandidateMappingService.updateOrCreateEmailMobile(cvParsingDetailsFromDb.getJobCandidateMappingId(), jcmFromDb, jcmFromDb.getCreatedBy());
-                    }
-                } catch (Exception e) {
-                    log.info(Util.getStackTrace(e));
-                    log.error("Error while convert cv to text cvFilePath : {}, for cvParsingDetailsId  : {}, error message : {}", queryParameters.get("file"), cvParsingDetailsFromDb.getId(), e.getMessage());
-                    breadCrumb.put("Error Msg", ExceptionUtils.getStackTrace(e));
-                    SentryUtil.logWithStaticAPI(null, "Failed to convert cv to text", breadCrumb);
-                }finally {
-                    cvParsingDetailsFromDb.setCvConvertApiFlag(true);
-                    cvParsingDetailsRepository.save(cvParsingDetailsFromDb);
-                }
+                cvParsingDetailsFromDb = processCvForCvToText(cvParsingDetailsFromDb);
+                cvParsingDetailsFromDb.setCvConvertApiFlag(true);
+                cvParsingDetailsRepository.save(cvParsingDetailsFromDb);
             });
         }
+    }
+
+    @Transactional
+    private CvParsingDetails processCvForCvToText(CvParsingDetails cvParsingDetailsFromDb){
+        log.info("Inside processCvForCvToText");
+        String cvText = null;
+        Candidate candidateFromPython = null;
+        Map<String, String> queryParameters = new HashMap<>();
+        Map<String, String> breadCrumb = new HashMap<>();
+        breadCrumb.put("cvParsingDetailsId", cvParsingDetailsFromDb.getId().toString());
+        breadCrumb.put("Jcm id", cvParsingDetailsFromDb.getJobCandidateMappingId().getId().toString());
+        try {
+            queryParameters.put("file", environment.getProperty(IConstant.CV_STORAGE_LOCATION) + cvParsingDetailsFromDb.getJobCandidateMappingId().getJob().getId() + "/" + cvParsingDetailsFromDb.getCandidateId() + cvParsingDetailsFromDb.getJobCandidateMappingId().getCvFileType());
+            log.info("Cv storage file path : {}", queryParameters.get("file"));
+            breadCrumb.put("FilePath", queryParameters.get("file"));
+            long apiCallStartTime = System.currentTimeMillis();
+            cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), Optional.of(IConstant.REST_CONNECTION_TIME_OUT_FOR_CV_TEXT)).getResponseBody();
+            log.info("Finished rest call- Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", (System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
+            if (null != cvText && cvText.trim().length()>IConstant.CV_TEXT_API_RESPONSE_MIN_LENGTH && !cvText.isEmpty()) {
+                cvParsingDetailsFromDb.setParsingResponseText(cvText);
+            }else{
+                breadCrumb.put("CvText", cvText);
+                SentryUtil.logWithStaticAPI(null, "Cv convert python response not good", breadCrumb);
+            }
+
+            if(cvParsingDetailsFromDb.getJobCandidateMappingId().getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL) || null == cvParsingDetailsFromDb.getJobCandidateMappingId().getMobile()){
+                String validMobile = null;
+                boolean isEditCandidate = false;
+                JobCandidateMapping jcmFromDb = cvParsingDetailsFromDb.getJobCandidateMappingId();
+                log.info("Update edit candidate for candidateId : {}", cvParsingDetailsFromDb.getCandidateId());
+                CvParsingApiDetails cvParsingApiDetails = cvParsingApiDetailsRepository.findByColumnToUpdate(PARSING_RESPONSE_PYTHON);
+                StringBuffer queryString = new StringBuffer(cvParsingApiDetails.getApiUrl());
+                queryString.append("?file=");
+                queryString.append(environment.getProperty(IConstant.CV_STORAGE_LOCATION)).append(jcmFromDb.getJob().getId()).append(File.separator).append(cvParsingDetailsFromDb.getCandidateId()).append(jcmFromDb.getCvFileType());
+                candidateFromPython = pythonCvParser(queryString.toString());
+                if(Util.isNotNull(candidateFromPython.getEmail()) && Util.isValidateEmail(candidateFromPython.getEmail())){
+                    log.info("candidate old email : {}, python response email : {}", jcmFromDb.getEmail(), candidateFromPython.getEmail());
+                    cvParsingDetailsFromDb.getJobCandidateMappingId().setEmail(candidateFromPython.getEmail());
+                    isEditCandidate = true;
+                }
+                if(Util.isNull(jcmFromDb.getMobile()) && Util.isNotNull(candidateFromPython.getMobile())){
+                    validMobile = Util.indianMobileConvertor(candidateFromPython.getMobile(), cvParsingDetailsFromDb.getJobCandidateMappingId().getCountryCode());
+                    if(Util.validateMobile(validMobile, cvParsingDetailsFromDb.getJobCandidateMappingId().getCountryCode())){
+                        log.info("candidate old mobile : {}, python response mobile : {}, For JcmId : {}", jcmFromDb.getMobile(), candidateFromPython.getMobile(), jcmFromDb.getId());
+                        cvParsingDetailsFromDb.getJobCandidateMappingId().setMobile(validMobile);
+                        isEditCandidate = true;
+                    }
+                }
+                if(isEditCandidate)
+                    jobCandidateMappingService.updateOrCreateEmailMobile(cvParsingDetailsFromDb.getJobCandidateMappingId(), jcmFromDb, jcmFromDb.getCreatedBy());
+            }
+        } catch (Exception e) {
+            log.info(Util.getStackTrace(e));
+            log.error("Error while convert cv to text cvFilePath : {}, for cvParsingDetailsId  : {}, error message : {}", queryParameters.get("file"), cvParsingDetailsFromDb.getId(), e.getMessage());
+            cvParsingDetailsFromDb.setErrorMessage("Connection timeout issue while rest call to cvParser for converting cv to text");
+            breadCrumb.put("Error Msg", ExceptionUtils.getStackTrace(e));
+            SentryUtil.logWithStaticAPI(null, "Failed to convert cv to text", breadCrumb);
+        }
+        return cvParsingDetailsFromDb;
     }
 
     private Candidate pythonCvParser(String queryString){
