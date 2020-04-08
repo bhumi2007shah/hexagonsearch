@@ -327,7 +327,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                 breadCrumb.put("cvParsingDetailsId", cvParsingDetailsFromDb.getId().toString());
                 breadCrumb.put("Jcm id", cvParsingDetailsFromDb.getJobCandidateMappingId().getId().toString());
                 try {
-                    queryParameters.put("file", environment.getProperty(IConstant.CV_STORAGE_LOCATION)/* + cvParsingDetailsFromDb.getJobCandidateMappingId().getJob().getId() + "/" + cvParsingDetailsFromDb.getCandidateId() + cvParsingDetailsFromDb.getJobCandidateMappingId().getCvFileType()*/);
+                    queryParameters.put("file", environment.getProperty(IConstant.CV_STORAGE_LOCATION) + cvParsingDetailsFromDb.getJobCandidateMappingId().getJob().getId() + "/" + cvParsingDetailsFromDb.getCandidateId() + cvParsingDetailsFromDb.getJobCandidateMappingId().getCvFileType());
                     log.info("Cv storage file path : {}", queryParameters.get("file"));
                     breadCrumb.put("FilePath", queryParameters.get("file"));
                     long apiCallStartTime = System.currentTimeMillis();
