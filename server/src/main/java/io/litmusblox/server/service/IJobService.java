@@ -57,9 +57,9 @@ public interface IJobService {
     /**
      * Service method to publish a job
      *
-     * @param jobId id of the job to be published
+     * @param job to be published
      */
-    void publishJob(Long jobId) throws Exception;
+    void publishJob(Job job) throws Exception;
 
     /**
      * Service method to archive a job

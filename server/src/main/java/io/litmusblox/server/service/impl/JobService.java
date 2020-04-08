@@ -1031,13 +1031,13 @@ public class JobService implements IJobService {
     /**
      * Service method to publish a job
      *
-     * @param jobId id of the job to be published
+     * @param job to be published
      */
     @Transactional(propagation=Propagation.REQUIRES_NEW)
-    public void publishJob(Long jobId) throws Exception {
-        log.info("Received request to publish job with id: " + jobId);
-        Job publishedJob = changeJobStatus(jobId,IConstant.JobStatus.PUBLISHED.getValue());
-        log.info("Completed publishing job with id: " + jobId);
+    public void publishJob(Job job) throws Exception {
+        log.info("Received request to publish job with id: " + job.getId());
+        Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite());
+        log.info("Completed publishing job with id: " + job.getId());
         if(null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
             log.info("Subdomain does not exist for company: {}. Creating one.", publishedJob.getCompanyId().getCompanyName());
             companyService.createSubdomain(publishedJob.getCompanyId());
@@ -1045,13 +1045,13 @@ public class JobService implements IJobService {
             companyService.reloadApache(Arrays.asList(publishedJob.getCompanyId()));
         }
         if(publishedJob.getJobCapabilityList().size() == 0)
-            log.info("No capabilities exist for the job: " + jobId + " Scoring engine api call will NOT happen");
-        else if(jobCapabilitiesRepository.findByJobIdAndSelected(jobId, true).size() == 0)
-            log.info("No capabilities have been selected for the job: {}. Scoring engine api call will NOT happen", jobId);
+            log.info("No capabilities exist for the job: " + job.getId() + " Scoring engine api call will NOT happen");
+        else if(jobCapabilitiesRepository.findByJobIdAndSelected(job.getId(), true).size() == 0)
+            log.info("No capabilities have been selected for the job: {}. Scoring engine api call will NOT happen", job.getId());
         else {
             log.info("Calling Scoring Engine Api to create a job");
             try {
-                String scoringEngineResponse = RestClient.getInstance().consumeRestApi(convertJobToRequestPayload(jobId, publishedJob), scoringEngineBaseUrl + scoringEngineAddJobUrlSuffix, HttpMethod.POST, null).getResponseBody();
+                String scoringEngineResponse = RestClient.getInstance().consumeRestApi(convertJobToRequestPayload(job.getId(), publishedJob), scoringEngineBaseUrl + scoringEngineAddJobUrlSuffix, HttpMethod.POST, null).getResponseBody();
                 publishedJob.setScoringEngineJobAvailable(true);
                 jobRepository.save(publishedJob);
             } catch (Exception e) {
@@ -1088,7 +1088,7 @@ public class JobService implements IJobService {
     @Transactional
     public void archiveJob(Long jobId) {
         log.info("Received request to archive job with id: " + jobId);
-        changeJobStatus(jobId,IConstant.JobStatus.ARCHIVED.getValue());
+        changeJobStatus(jobId,IConstant.JobStatus.ARCHIVED.getValue(), null, null);
         log.info("Completed archiving job with id: " + jobId);
     }
 
@@ -1100,7 +1100,7 @@ public class JobService implements IJobService {
     @Transactional
     public void unarchiveJob(Long jobId) throws Exception {
         log.info("Received request to unarchive job with id: " + jobId);
-        changeJobStatus(jobId,null);
+        changeJobStatus(jobId,null, null, null);
         log.info("Completed unarchiving job with id: " + jobId);
     }
 
@@ -1109,7 +1109,7 @@ public class JobService implements IJobService {
      * @param jobId the job on which the operation is to be performed
      * @param status the status to be set. If the job is being unarchived, the status will be sent as null
      */
-    private Job changeJobStatus(Long jobId, String status) {
+    private Job changeJobStatus(Long jobId, String status, Boolean visibleToCareerPage, Boolean autoInvite) {
         Job job = jobRepository.getOne(jobId);
         if (null == job) {
             throw new WebException("Job with id " + jobId + "does not exist", HttpStatus.UNPROCESSABLE_ENTITY);
@@ -1124,13 +1124,18 @@ public class JobService implements IJobService {
             else
                 job.setStatus(IConstant.JobStatus.PUBLISHED.getValue());
 
+
             job.setDateArchived(null);
         }
         else  {
             if (status.equals(IConstant.JobStatus.ARCHIVED.getValue()))
                 job.setDateArchived(new Date());
-            else
+            else{
+                job.setAutoInvite(autoInvite);
+                job.setVisibleToCareerPage(visibleToCareerPage);
                 job.setDatePublished(new Date());
+            }
+
             job.setStatus(status);
         }
 
