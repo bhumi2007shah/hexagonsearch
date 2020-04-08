@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.utils;
 
+import io.litmusblox.server.constant.IConstant;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -77,15 +78,21 @@ public class RestClient {
     public RestClientResponseBean consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken, Optional<Map> queryParameters, Optional<Integer> customTimeout) throws Exception {
         RestTemplate restTemplate = new RestTemplate();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
-        if(null != customTimeout && customTimeout.isPresent())
+        int connectionTimeoutValue = 0;
+        if(null != customTimeout && customTimeout.isPresent()){
             requestFactory.setConnectTimeout(customTimeout.get().intValue());
-        else
-            requestFactory.setConnectTimeout(connectionTimeout);
+            connectionTimeoutValue = customTimeout.get().intValue();
+        }
+        else{
+            requestFactory.setConnectTimeout(IConstant.REST_CONNECTION_TIME_OUT);
+            connectionTimeoutValue = IConstant.REST_CONNECTION_TIME_OUT;
+        }
 
-        requestFactory.setReadTimeout(readTimeout);
+        requestFactory.setReadTimeout(IConstant.REST_READ_TIME_OUT);
 
         restTemplate.setRequestFactory(requestFactory);
 
+        log.info("Rest client Connection timeout value : {}ms, and read time out value : {}ms.",connectionTimeoutValue, IConstant.REST_READ_TIME_OUT);
         //log.info("Request object sent: " + requestObj);
 
         HttpEntity<String> entity;
