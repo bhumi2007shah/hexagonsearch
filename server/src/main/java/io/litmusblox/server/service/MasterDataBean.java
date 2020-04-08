@@ -2,6 +2,7 @@ package io.litmusblox.server.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.*;
 import lombok.Data;
 
@@ -80,6 +81,9 @@ public class MasterDataBean {
     private Map<Long, Map<String, Long>> functionMap = new HashMap<>();
     private Map<Long, Map<String, Long>> roleMap = new HashMap<>();
     private Map<String, MasterData> questionCategory = new HashMap<>();
+    private Integer restConnectionTimeout = IConstant.REST_CONNECTION_TIME_OUT;
+    private Integer restReadTimeout = IConstant.REST_READ_TIME_OUT;
+    private Integer restReadTimeoutForCvParser = IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT;
 
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;

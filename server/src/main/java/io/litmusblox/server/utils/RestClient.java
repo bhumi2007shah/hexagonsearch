@@ -4,7 +4,7 @@
 
 package io.litmusblox.server.utils;
 
-import io.litmusblox.server.constant.IConstant;
+import io.litmusblox.server.service.MasterDataBean;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -71,28 +71,24 @@ public class RestClient {
      * @param requestType GET / POST / PUT
      * @param authToken authorization information
      * @param queryParameters Map of query parameters if any
-     * @param customTimeout use this parameter when the rest client's connection should wait for a longer duration than the default value
+     * @param customReadTimeout use this parameter when the time-out applied from the moment you have established a connection
      * @return response
      * @throws Exception
      */
-    public RestClientResponseBean consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken, Optional<Map> queryParameters, Optional<Integer> customTimeout) throws Exception {
+    public RestClientResponseBean consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken, Optional<Map> queryParameters, Optional<Integer> customReadTimeout) throws Exception {
         RestTemplate restTemplate = new RestTemplate();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
-        int connectionTimeoutValue = 0;
-        if(null != customTimeout && customTimeout.isPresent()){
-            requestFactory.setConnectTimeout(customTimeout.get().intValue());
-            connectionTimeoutValue = customTimeout.get().intValue();
-        }
-        else{
-            requestFactory.setConnectTimeout(IConstant.REST_CONNECTION_TIME_OUT);
-            connectionTimeoutValue = IConstant.REST_CONNECTION_TIME_OUT;
-        }
+        if(null != customReadTimeout && customReadTimeout.isPresent())
+            requestFactory.setReadTimeout(customReadTimeout.get().intValue());
+        else
+            requestFactory.setReadTimeout(MasterDataBean.getInstance().getRestReadTimeout());
 
-        requestFactory.setReadTimeout(IConstant.REST_READ_TIME_OUT);
+        requestFactory.setConnectTimeout(MasterDataBean.getInstance().getRestConnectionTimeout());
 
         restTemplate.setRequestFactory(requestFactory);
 
-        log.info("Rest client Connection timeout value : {}ms, and read time out value : {}ms.",connectionTimeoutValue, IConstant.REST_READ_TIME_OUT);
+        log.info("Rest client Connection timeout value : {}ms, and read time out value : {}ms.",MasterDataBean.getInstance().getRestConnectionTimeout(),
+                ((null != customReadTimeout && customReadTimeout.isPresent())?customReadTimeout.get():MasterDataBean.getInstance().getRestReadTimeout()));
         //log.info("Request object sent: " + requestObj);
 
         HttpEntity<String> entity;
