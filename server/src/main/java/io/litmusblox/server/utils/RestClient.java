@@ -78,21 +78,21 @@ public class RestClient {
     public RestClientResponseBean consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken, Optional<Map> queryParameters, Optional<Integer> customTimeout) throws Exception {
         RestTemplate restTemplate = new RestTemplate();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
-        int connectionTimeoutValue = 0;
+        int readTimeoutValue = 0;
         if(null != customTimeout && customTimeout.isPresent()){
-            requestFactory.setConnectTimeout(customTimeout.get().intValue());
-            connectionTimeoutValue = customTimeout.get().intValue();
+            requestFactory.setReadTimeout(customTimeout.get().intValue());
+            readTimeoutValue = customTimeout.get().intValue();
         }
         else{
-            requestFactory.setConnectTimeout(IConstant.REST_CONNECTION_TIME_OUT);
-            connectionTimeoutValue = IConstant.REST_CONNECTION_TIME_OUT;
+            requestFactory.setReadTimeout(IConstant.REST_READ_TIME_OUT);
+            readTimeoutValue = IConstant.REST_READ_TIME_OUT;
         }
 
-        requestFactory.setReadTimeout(IConstant.REST_READ_TIME_OUT);
+        requestFactory.setConnectTimeout(IConstant.REST_CONNECTION_TIME_OUT);
 
         restTemplate.setRequestFactory(requestFactory);
 
-        log.info("Rest client Connection timeout value : {}ms, and read time out value : {}ms.",connectionTimeoutValue, IConstant.REST_READ_TIME_OUT);
+        log.info("Rest client Connection timeout value : {}ms, and read time out value : {}ms.", IConstant.REST_CONNECTION_TIME_OUT, readTimeoutValue);
         //log.info("Request object sent: " + requestObj);
 
         HttpEntity<String> entity;

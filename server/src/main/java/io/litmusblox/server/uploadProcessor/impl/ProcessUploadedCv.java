@@ -340,7 +340,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             log.info("Cv storage file path : {}", queryParameters.get("file"));
             breadCrumb.put("FilePath", queryParameters.get("file"));
             long apiCallStartTime = System.currentTimeMillis();
-            cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), Optional.of(IConstant.REST_CONNECTION_TIME_OUT_FOR_CV_TEXT)).getResponseBody();
+            cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), Optional.of(IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT)).getResponseBody();
             log.info("Finished rest call- Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", (System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
             if (null != cvText && cvText.trim().length()>IConstant.CV_TEXT_API_RESPONSE_MIN_LENGTH && !cvText.isEmpty()) {
                 cvParsingDetailsFromDb.setParsingResponseText(cvText);
