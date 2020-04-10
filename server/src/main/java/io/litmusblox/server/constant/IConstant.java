@@ -361,10 +361,6 @@ public interface IConstant {
 
     //value for rest call timeout
     Integer REST_CONNECTION_TIME_OUT = 1000;
-    Integer REST_READ_TIME_OUT_FOR_CV_TEXT = 10000;
-    Integer REST_READ_TIME_OUT = 5000;
-    //Temp value for rest call timeout
-    Integer REST_READ_TIME_OUT = 10000;
     Integer REST_READ_TIME_OUT_FOR_CV_TEXT = 20000;
-    Integer REST_CONNECTION_TIME_OUT = 2000;
+    Integer REST_READ_TIME_OUT = 10000;
 }
