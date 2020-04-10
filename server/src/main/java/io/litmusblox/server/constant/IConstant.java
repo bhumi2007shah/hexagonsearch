@@ -47,7 +47,7 @@ public interface IConstant {
     String REGEX_TO_FIND_ONLINE_PROFILE_UNIQUE_ID = "(?<=\\/)(?:[\\w\\-]+)(?:\\/)?$";
     String REGEX_TO_VALIDATE_COMPANY_SHORT_NAME = "^[a-zA-Z]+[a-zA-Z0-9]+$";
     String REGEX_TO_VALIDATE_JOB_SHORT_CODE = "[A-Z]{2}[0-9]{6}$";
-
+    String LB_JOB_CODE_REGEX = "[a-zA-Z]{2}\\d{6}";
 
     // lengths
     Integer TITLE_MAX_LENGTH = 100;
@@ -385,4 +385,8 @@ public interface IConstant {
     String LB_SHORT_CODE = "LB";
     int LB_SHORT_CODE_LENGTH = 6;
 
+    //Temp value for rest call timeout
+    Integer REST_READ_TIME_OUT = 10000;
+    Integer REST_READ_TIME_OUT_FOR_CV_TEXT = 20000;
+    Integer REST_CONNECTION_TIME_OUT = 2000;
 }
