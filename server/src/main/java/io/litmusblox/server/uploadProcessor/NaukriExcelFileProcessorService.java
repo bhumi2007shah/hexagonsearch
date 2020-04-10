@@ -36,7 +36,7 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
     @Override
     public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation, User loggedInUser) {
         List<Candidate> candidateList = new ArrayList<>();
-        long startTime = System.nanoTime();
+        long startTime = System.currentTimeMillis();
         try {
             DataFormatter dataFormatter = new DataFormatter();
             HashMap<String, Integer> columnPositionMap = new HashMap<>();
@@ -190,9 +190,9 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
             log.error("Error while processing file " + fileName + " :: " + ex.getMessage());
             responseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
         }
-        long endTime = System.nanoTime();
-        long timetaken = (startTime-endTime)/1000000;
-        log.info("Naukri File Processing time {}ms", timetaken);
+        long endTime = System.currentTimeMillis();
+        long timeTaken = endTime-startTime;
+        log.info("Naukri File Processing time {}ms", timeTaken);
         return candidateList;
     }
 }
