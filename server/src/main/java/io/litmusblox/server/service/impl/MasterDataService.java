@@ -20,6 +20,7 @@ import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,11 +98,11 @@ public class MasterDataService implements IMasterDataService {
 
         MasterDataBean.getInstance().getCountryList().addAll(countryRepository.findAll());
 
+        //Page Data logic also move to getMasterData method because while load master data we don't have loggedIn user
         //add all pages that need to be displayed for the add job process
-        createJobPageSequenceRepository.findByDisplayFlagIsTrueOrderByPageDisplayOrderAsc().stream().forEach(page-> {
-            MasterDataBean.getInstance().getAddJobPages().add(page);
+        /*createJobPageSequenceRepository.findByDisplayFlagIsTrueAndSubscriptionAvailabilityOrderByPageDisplayOrderAsc(loggedInUser.getCompany().getSubscription()).stream().forEach(page-> {
             MasterDataBean.getInstance().getJobPageNamesInOrder().add(page.getPageName());
-        });
+        });*/
 
        stageStepMasterRepository.findAllByOrderByIdAsc().forEach(stageStepMaster -> {
             MasterDataBean.getInstance().getStage().add(stageStepMaster.getStage());
@@ -148,14 +149,11 @@ public class MasterDataService implements IMasterDataService {
                 MasterDataBean.getInstance().setDefaultJobType(data);
         });
 
+        //Add this logic in getMasterData method because while load master data we don't have loggedIn user
         //set master screening questions depend on country id
-        MasterDataBean.getInstance().getCountryList().forEach(country -> {
-            Map<String, List<ScreeningQuestions>> questionsMap = new HashMap<>();
-            MasterDataBean.getInstance().getQuestionCategory().entrySet().forEach(category->{
-                questionsMap.put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategory(country, category.getValue()));
-            });
-            MasterDataBean.getInstance().getScreeningQuestions().put(country.getId(), questionsMap);
-        });
+            /*MasterDataBean.getInstance().getQuestionCategory().entrySet().forEach(category->{
+                MasterDataBean.getInstance().getScreeningQuestions().put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategory(loggedInUser.getCountryId(), category.getValue()));
+            });*/
 
         //populate various configuration settings like max limits, send sms/email flag,etc
         List<ConfigurationSettings> configurationSettings = configurationSettingsRepository.findAll();
@@ -361,6 +359,7 @@ public class MasterDataService implements IMasterDataService {
      *
      */
     private void getMasterData(MasterDataResponse master, String input) {
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         switch (input) {
             case COUNTRY_MASTER_DATA:
@@ -370,9 +369,16 @@ public class MasterDataService implements IMasterDataService {
                 master.getStageStepMasterMap().putAll(MasterDataBean.getInstance().getStageStepMasterMap());
                 break;
             case ADD_JOB_PAGES:
+                createJobPageSequenceRepository.findByDisplayFlagIsTrueAndSubscriptionAvailabilityOrderByPageDisplayOrderAsc(loggedInUser.getCompany().getSubscription()).stream().forEach(page-> {
+                    MasterDataBean.getInstance().getAddJobPages().add(page);
+                    MasterDataBean.getInstance().getJobPageNamesInOrder().add(page.getPageName());
+                });
                 master.getAddJobPages().addAll(MasterDataBean.getInstance().getAddJobPages());
                 break;
             case SCREENING_QUESTIONS_MASTER_DATA:
+                MasterDataBean.getInstance().getQuestionCategory().entrySet().forEach(category->{
+                    MasterDataBean.getInstance().getScreeningQuestions().put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategory(loggedInUser.getCountryId(), category.getValue()));
+                });
                 master.getScreeningQuestions().putAll(MasterDataBean.getInstance().getScreeningQuestions());
                 break;
             case CONFIG_SETTINGS:

@@ -154,4 +154,11 @@ public interface IJobService {
      * @param jobId jobId For which we update flag
      */
     void updateJobVisibilityFlagOnCareerPage(Long jobId, boolean visibilityFlag);
+
+    /**
+     * New Add job flow
+     * @return Response bean with jobId, and optionally list of skills from ML
+     * @throws Exception
+     */
+    Job newAddJobFlow(Job job, String pageName) throws Exception;
 }

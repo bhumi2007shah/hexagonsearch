@@ -686,9 +686,11 @@ VALUES
 
 INSERT INTO MASTER_DATA (TYPE, VALUE, VALUE_TO_USE, COMMENTS)
 VALUES
- ( 'expertise','Beginner', 1, 'Candidate has 1-2 years of relevant work experience and works on given tasks on day to day basis. Exposure to job complexities is limited and needs support/guidance for complex tasks.'),
- ( 'expertise','Competent', 2, 'Candidate can independently handle all tasks. Typically has 2 - 5 years of relevant work experience. Dependable on senior for assigned work. Can participate in training/grooming of juniors'),
- ( 'expertise','Expert', 3, 'Considered as a Master in the organization/industry. Candidate can handle highly complex scenarios and is the go-to person for others. Such candidates are rare to find and often come at a high cost. Select this option if you want to hire a expert.');
+ ( 'expertise','Fresher', 1, 'Candidate has 1-2 years of relevant work experience and works on given tasks on day to day basis. Exposure to job complexities is limited and needs support/guidance for complex tasks.'),
+ ( 'expertise','Junior', 2, null),
+ ( 'expertise','Mid', 3, 'Candidate can independently handle all tasks. Typically has 2 - 5 years of relevant work experience. Dependable on senior for assigned work. Can participate in training/grooming of juniors'),
+ ( 'expertise','Senior', 4, 'Considered as a Master in the organization/industry. Candidate can handle highly complex scenarios and is the go-to person for others. Such candidates are rare to find and often come at a high cost. Select this option if you want to hire a expert.'),
+ ( 'expertise','Top Management', 5, null);
 
 INSERT INTO MASTER_DATA (TYPE, VALUE)
 VALUES
@@ -1122,3 +1124,9 @@ INSERT INTO SCREENING_QUESTION (QUESTION, QUESTION_TYPE, OPTIONS, MULTILEVELOPTI
 ('If required, which of the following documents can you provide?', (select id from master_data where value = 'Checkbox'), '{"Address Proof","PAN Card","Aadhar Card","Passport","Driver’s Licence","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Required Docs'), (select id from country where country_name = 'India')),
 ('Which of these languages can you speak fluently?', (select id from master_data where value = 'Checkbox'), '{"English","Hindi","Bengali","Marathi","Telugu","Tamil","Gujarati","Urdu","Kannada","Oriya","Malayalam","Punjabi","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Languages'), (select id from country where country_name = 'India')),
 ('What is the earliest start date that you can commit to?', (select id from master_data where value = 'Calendar'), null, null, (select id from master_data where type = 'questionCategory' and value = 'Start Date'), (select id from country where country_name = 'India'));
+
+INSERT INTO CREATE_JOB_PAGE_SEQUENCE (PAGE_DISPLAY_NAME, PAGE_NAME, PAGE_DISPLAY_ORDER, DISPLAY_FLAG,SUBSCRIPTION_AVAILABILITY) VALUES
+('Job Details', 'jobDetail', 1, 'T','Lite'),
+('Job Screening', 'jobScreening', 2, 'T','Lite'),
+('Hr screening', 'hrScreening', 3, 'T','Lite'),
+('Custom Questions', 'customQuestions', 4, 'T','Lite');

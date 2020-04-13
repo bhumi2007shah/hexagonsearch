@@ -55,6 +55,10 @@ public class JobScreeningQuestions implements Serializable {
     @JoinColumn(name = "USER_SCREENING_QUESTION_ID")
     private UserScreeningQuestion userScreeningQuestionId;
 
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "TECH_SCREENING_QUESTION_ID")
+    private TechScreeningQuestion techScreeningQuestionId;
+
     @NotNull
     @Column(name = "CREATED_ON")
     @Temporal(TemporalType.TIMESTAMP)
@@ -83,11 +87,12 @@ public class JobScreeningQuestions implements Serializable {
 
     //If customize question is add then parse this question
     public ScreeningQuestions getMasterScreeningQuestionId(){
-        log.info("Inside getUserScreeningQuestionId");
-        if(null != this.customizeQuestionData && null != this.masterScreeningQuestionId.getCustomizeQuestion()){
-            Util.parseCustomizeQuestion(this.customizeQuestionData, this.masterScreeningQuestionId);
-        }
+        if(null != this.masterScreeningQuestionId)
+            if (this.customizeQuestionData.size() > 0 && null != this.masterScreeningQuestionId.getCustomizeQuestion()) {
+                Util.parseCustomizeQuestion(this.customizeQuestionData, this.masterScreeningQuestionId);
+            }
         return this.masterScreeningQuestionId;
     }
+
 
 }

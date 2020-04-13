@@ -30,7 +30,7 @@ public class MasterDataResponse {
     private Map<Long,String> industry = new HashMap<>();
     private Map<Long, String> keySkills = new HashMap<>();
     private Map<Long, String> noticePeriod = new HashMap<>();
-    private Map<Long, Map<String, List<ScreeningQuestions>>> screeningQuestions = new HashMap<>();
+    private Map<String, List<ScreeningQuestions>> screeningQuestions = new HashMap<>();
     private ConfigSettings configSettings;
     private List<String> supportedFileFormats = new ArrayList<>();
     private List<String> supportedCvFileFormats = new ArrayList<>();

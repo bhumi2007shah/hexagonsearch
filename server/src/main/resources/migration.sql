@@ -2314,3 +2314,34 @@ UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data wher
 UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Reason for job change'),OPTIONS = '{"Too much time spent in commuting to work","Too much travelling in the job","Have been in same company for too long","Company has shut down","Company is downsizing/got a layoff","Am a contract employee, want to shift to a permanent job","Want to work in a different domain", "Want to work in a different project", "Not getting paid my salary on time","Have not been promoted for a long time","Want to work with a larger company/brand","Want to work with a smaller company", "Want to work regular shifts","Have been on maternity break","Have been on Sabbatical","Other"}', COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'What is the main reason that you are looking for a job change?';
 UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Other Offers'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'Do you have other offers in hand?';
 UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Interview'), MULTILEVELOPTIONS = '{"No": [],"Yes": ["Do you roughly remember when you were interviewed?"]}', COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'Have you been interviewed by `$companyName` in the last 6 months?';
+
+--Update existing expertise maserData
+update master_data set value = 'Fresher' where value = 'Beginner' and type = 'expertise';
+update master_data set value = 'Mid', value_to_use = 3 where value = 'Competent' and type = 'expertise';
+update master_data set value = 'Senior', value_to_use = 4 where value = 'Expert' and type = 'expertise';
+
+--Insert new masterData for expertise
+Insert into MASTER_DATA (TYPE, VALUE, VALUE_TO_USE) values
+('expertise','Junior', 2),
+('expertise','Top Management', 5);
+
+CREATE TABLE TECH_SCREENING_QUESTION(
+ID serial PRIMARY KEY NOT NULL,
+TECH_QUESTION TEXT NOT NULL,
+QUESTION_TYPE INTEGER REFERENCES MASTER_DATA(ID) NOT NULL,
+OPTIONS VARCHAR(250)[],
+MULTI_LEVEL_OPTIONS VARCHAR(500),
+JOB_ID INTEGER REFERENCES JOB(ID) NOT NULL,
+QUESTION_CATEGORY VARCHAR(50)
+);
+
+ALTER TABLE JOB_SCREENING_QUESTIONS
+ADD COLUMN TECH_SCREENING_QUESTION_ID INTEGER REFERENCES TECH_SCREENING_QUESTION(ID);
+
+UPDATE CREATE_JOB_PAGE_SEQUENCE SET SUBSCRIPTION_AVAILABILITY = 'LDEB';
+
+INSERT INTO CREATE_JOB_PAGE_SEQUENCE (PAGE_DISPLAY_NAME, PAGE_NAME, PAGE_DISPLAY_ORDER, DISPLAY_FLAG,SUBSCRIPTION_AVAILABILITY) VALUES
+('Job Details', 'jobDetail', 1, 'T','Lite'),
+('Job Screening', 'jobScreening', 2, 'T','Lite'),
+('Hr screening', 'hrScreening', 3, 'T','Lite'),
+('Custom Questions', 'customQuestions', 4, 'T','Lite');

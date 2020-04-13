@@ -20,4 +20,10 @@ import java.util.List;
 public interface JobScreeningQuestionsRepository extends JpaRepository<JobScreeningQuestions, Long> {
     @Transactional
     List<JobScreeningQuestions> findByJobId(Long jobId);
+
+    void deleteByMasterScreeningQuestionIdIsNotNullAndJobId(Long jobId);
+
+    void deleteByUserScreeningQuestionIdIsNotNullAndJobId(Long jobId);
+
+    void deleteByTechScreeningQuestionIdIsNotNullAndJobId(Long jobId);
 }

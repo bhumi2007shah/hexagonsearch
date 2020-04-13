@@ -110,7 +110,7 @@ public interface IConstant {
     }
 
     enum AddJobPages {
-        overview, screeningQuestions, keySkills, capabilities, jobDetail, hiringTeam, expertise, preview;
+        overview, screeningQuestions, keySkills, capabilities, jobDetail, hiringTeam, expertise, preview, jobScreening;
     }
 
     enum JobStatus {

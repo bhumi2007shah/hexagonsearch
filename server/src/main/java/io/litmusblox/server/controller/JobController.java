@@ -66,6 +66,35 @@ public class JobController {
         );
     }
 
+    @PostMapping(value = "/newCreateJob/{pageName}")
+    String newAddJob(@RequestBody String jobStr, @PathVariable ("pageName") String pageName) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, true);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+        Job job = mapper.readValue(jobStr, Job.class);
+
+        return Util.stripExtraInfoFromResponseBean(
+                jobService.newAddJobFlow(job, pageName),
+                (new HashMap<String, List<String>>(){{
+                    put("User",Arrays.asList("displayName","id"));
+                    put("ScreeningQuestions", Arrays.asList("question","id"));
+                    put("JobStageStep", Arrays.asList("id", "stageStepId"));
+                }}),
+                (new HashMap<String, List<String>>(){{
+                    put("Job",Arrays.asList("createdOn","createdBy", "updatedOn", "updatedBy"));
+                    put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
+                    put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
+                    put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("JobCapabilities", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
+                    put("CompanyAddress", new ArrayList<>(0));
+                    put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
+                    put("StageMaster",new ArrayList<>(0));
+                }})
+        );
+    }
+
     /**
      * Api for retrieving a list of jobs created by user
      * @param archived optional flag indicating if a list of archived jobs is requested. By default only open jobs will be returned
@@ -273,7 +302,7 @@ public class JobController {
 
     /**
      * API to update visibility flag for career pages
-     * @param jobId jobId For chich we update flag
+     * @param jobId jobId For which we update flag
      */
     @PutMapping(value = "/updateJobVisibilityFlag/{jobId}")
     @ResponseStatus(HttpStatus.OK)

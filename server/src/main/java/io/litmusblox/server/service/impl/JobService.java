@@ -126,6 +126,9 @@ public class JobService implements IJobService {
     @Resource
     InterviewDetailsRepository interviewDetailsRepository;
 
+    @Resource
+    RoleMasterDataRepository roleMasterDataRepository;
+
     @Autowired
     ICompanyService companyService;
 
@@ -189,10 +192,10 @@ public class JobService implements IJobService {
 
         switch (IConstant.AddJobPages.valueOf(pageName)) {
             case overview:
-                addJobOverview(job, oldJob, loggedInUser);
+                addJobOverview(job, oldJob, loggedInUser, false);
                 break;
             case screeningQuestions:
-                addJobScreeningQuestions(job, oldJob, loggedInUser);
+                addJobScreeningQuestions(job, oldJob, loggedInUser, false);
                 break;
             case keySkills:
                 addJobKeySkills(job, oldJob, loggedInUser);
@@ -485,7 +488,7 @@ public class JobService implements IJobService {
         return responseBean;
     }
 
-    private void addJobOverview(Job job, Job oldJob, User loggedInUser) { //method for add job for Overview page
+    private Job addJobOverview(Job job, Job oldJob, User loggedInUser, boolean isNewAddJobFlow) { //method for add job for Overview page
         //boolean deleteExistingJobStageStep = (null != job.getId());
 
         //validate title
@@ -509,9 +512,9 @@ public class JobService implements IJobService {
         }*/
 
         if (null != oldJob && !IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())) {//only update existing job
-            if(null != job.getHiringManager())
+            if(!isNewAddJobFlow && null != job.getHiringManager())
                 oldJob.setHiringManager(job.getHiringManager());
-            if(null != job.getRecruiter())
+            if(!isNewAddJobFlow && null != job.getRecruiter())
                 oldJob.setRecruiter(job.getRecruiter());
 
             oldJob.setJobTitle(job.getJobTitle());
@@ -523,10 +526,12 @@ public class JobService implements IJobService {
 
             //remove all data from job_key_skills and job_capabilities
             jobKeySkillsRepository.deleteByJobId(job.getId());
-            jobCapabilitiesRepository.deleteByJobId(job.getId());
-
             jobKeySkillsRepository.flush();
-            jobCapabilitiesRepository.flush();
+
+            if(!isNewAddJobFlow){
+                jobCapabilitiesRepository.deleteByJobId(job.getId());
+                jobCapabilitiesRepository.flush();
+            }
 
         } else if(null == oldJob){ //Create new entry for job
             job.setCreatedOn(new Date());
@@ -554,7 +559,7 @@ public class JobService implements IJobService {
                     if(null != job.getSelectedRole() && job.getSelectedRole().size()>0)
                         rolePrediction.getRecruiterRoles().addAll(job.getSelectedRole());
                     rolePredictionBean.setRolePrediction(rolePrediction);
-                    callMl(rolePredictionBean, job.getId(), job);
+                    callMl(rolePredictionBean, job.getId(), job, isNewAddJobFlow);
                     if(null == oldJob) {
                         job.setMlDataAvailable(true);
                         jobRepository.save(job);
@@ -571,9 +576,10 @@ public class JobService implements IJobService {
         }
         //populate key skills for the job
         job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
+        return oldJob;
     }
 
-    private void callMl(RolePredictionBean requestBean, long jobId, Job job) throws Exception {
+    private void callMl(RolePredictionBean requestBean, long jobId, Job job, boolean isNewAddJobFlow) throws Exception {
         log.info("inside callMl method");
         String mlResponse = null;
         String mlRequest = null;
@@ -608,9 +614,9 @@ public class JobService implements IJobService {
             MLResponseBean responseBean = objectMapper.readValue(mlResponse, MLResponseBean.class);
 
             //if ml status is jdc_jtm_Error
-            if(IConstant.MlRolePredictionStatus.JDC_JTM_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus()) ||
+            if(!isNewAddJobFlow && (IConstant.MlRolePredictionStatus.JDC_JTM_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus()) ||
                     IConstant.MlRolePredictionStatus.JDC_JTN_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus()) ||
-                    IConstant.MlRolePredictionStatus.JDB_JTM_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus())){
+                    IConstant.MlRolePredictionStatus.JDB_JTM_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus()))){
                 log.info("ml response status is " +responseBean.getRolePrediction().getStatus()+" for job id : "+jobId);
                 responseBean.getRolePrediction().getJdRoles().forEach(role -> {
                     roles.add(role.getRoleName());
@@ -620,7 +626,8 @@ public class JobService implements IJobService {
                 });
                 job.setRoles(roles);
                 return;
-            }else if(IConstant.MlRolePredictionStatus.NO_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus())){
+            }else if((isNewAddJobFlow || IConstant.MlRolePredictionStatus.NO_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus()))
+                    && !IConstant.MlRolePredictionStatus.SUFF_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus())){
                 //if ml status is no_Error
                 log.info("ml response status is no_Error for job id : "+jobId);
                 int numUniqueSkills = handleSkillsFromML(responseBean.getTowerGeneration().getSkills(), jobId);
@@ -704,7 +711,7 @@ public class JobService implements IJobService {
         return 10;
     }
 
-    private void addJobScreeningQuestions(Job job, Job oldJob, User loggedInUser) throws Exception { //method for add screening questions
+    private void addJobScreeningQuestions(Job job, Job oldJob, User loggedInUser, boolean isNewAddJobFlow) throws Exception { //method for add screening questions
 
         //commented out the check as per ticket #146
         /*
@@ -716,13 +723,34 @@ public class JobService implements IJobService {
             return;
         }
         String historyMsg = "Added";
+        AtomicBoolean masterQuestions = new AtomicBoolean(false);
+        AtomicBoolean techQuestions = new AtomicBoolean(false);
+        AtomicBoolean userQuestions = new AtomicBoolean(false);
+        if (isNewAddJobFlow && null != job.getJobScreeningQuestionsList() && job.getJobScreeningQuestionsList().size() > 0) {
+            job.getJobScreeningQuestionsList().forEach(jobScreeningQuestions -> {
+                if(null != jobScreeningQuestions.getMasterScreeningQuestionId())
+                    masterQuestions.set(true);
+                else if(null != jobScreeningQuestions.getTechScreeningQuestionId())
+                    techQuestions.set(true);
+                else if(null != jobScreeningQuestions.getUserScreeningQuestionId())
+                    userQuestions.set(true);
+            });
+        }
 
         if (null != oldJob.getJobScreeningQuestionsList() && oldJob.getJobScreeningQuestionsList().size() > 0) {
             historyMsg = "Updated";
-            jobScreeningQuestionsRepository.deleteAll(oldJob.getJobScreeningQuestionsList());//delete old job screening question list
+            if(isNewAddJobFlow){
+                if(masterQuestions.get())
+                    jobScreeningQuestionsRepository.deleteByMasterScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
+                if(techQuestions.get())
+                    jobScreeningQuestionsRepository.deleteByTechScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
+                if(userQuestions.get())
+                    jobScreeningQuestionsRepository.deleteByUserScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
+            }else
+                jobScreeningQuestionsRepository.deleteAll(oldJob.getJobScreeningQuestionsList());//delete old job screening question list
+
             jobScreeningQuestionsRepository.flush();
         }
-
 
         job.getJobScreeningQuestionsList().forEach(n -> {
             n.setCreatedBy(loggedInUser.getId());
@@ -900,7 +928,7 @@ public class JobService implements IJobService {
         oldJob.setNoOfPositions(job.getNoOfPositions());
 
         //Update JobIndustry
-        if (null == masterDataBean.getJobIndustryMap().get(job.getJobIndustry().getId())) {
+        if (null == masterDataBean.getJobIndustry().get(job.getJobIndustry().getId())) {
             //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
             log.error("In Job, jobIndustry " + IErrorMessages.NULL_MESSAGE + job.getId());
         }else{
@@ -1461,4 +1489,39 @@ public class JobService implements IJobService {
         job.setVisibleToCareerPage(visibilityFlag);
         jobRepository.save(job);
     }
+
+    @Transactional
+    public Job newAddJobFlow(Job job, String pageName) throws Exception {
+        log.info("Inside newAddJobFlow");
+        if (null != job.getStatus() && IConstant.JobStatus.ARCHIVED.equals(job.getStatus()))
+            throw new ValidationException("Can't edit job because job in Archived state", HttpStatus.UNPROCESSABLE_ENTITY);
+
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        log.info("Received request to new add job flow for page " + pageName + " from user: " + loggedInUser.getEmail());
+        long startTime = System.currentTimeMillis();
+        Job oldJob = null;
+
+        if (null != job.getId()) {
+            //get handle to existing job object
+            oldJob = jobRepository.findById(job.getId()).orElse(null);
+        }
+
+        switch (IConstant.AddJobPages.valueOf(pageName)) {
+            case jobDetail:
+                oldJob = addJobOverview(job, oldJob, loggedInUser, true);
+                addJobExpertise(job, oldJob);
+                break;
+            case jobScreening:
+                addJobScreeningQuestions(job, oldJob, loggedInUser, true);
+                break;
+            default:
+                throw new OperationNotSupportedException("Unknown page: " + pageName);
+        }
+        List<String> roles = new ArrayList<>();
+        roleMasterDataRepository.findByFunction(job.getFunction()).forEach(roleMasterData -> roles.add(roleMasterData.getRole()));
+        job.setRoles(roles);
+        log.info("Completed processing request to new add job flow in " + (System.currentTimeMillis() - startTime) + "ms");
+        return job;
+     }
 }

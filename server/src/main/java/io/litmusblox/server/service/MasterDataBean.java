@@ -49,7 +49,7 @@ public class MasterDataBean {
     private Map<Long, String> education = new HashMap<>();
     private Map<Long, String> industry = new HashMap<>();
     private Map<Long, String> noticePeriod = new HashMap<>();
-    private Map<Long, Map<String, List<ScreeningQuestions>>> screeningQuestions = new HashMap<>();
+    private Map<String, List<ScreeningQuestions>> screeningQuestions = new HashMap<>();
     private List<CreateJobPageSequence> addJobPages = new ArrayList<>();
     private List<String> jobPageNamesInOrder = new ArrayList<>();
     private List<String> currencyList = new ArrayList<>();
