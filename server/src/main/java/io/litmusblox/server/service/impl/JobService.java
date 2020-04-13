@@ -171,6 +171,12 @@ public class JobService implements IJobService {
             //get handle to existing job object
             oldJob = jobRepository.findById(job.getId()).orElse(null);
            // oldJob = tempJobObj.isPresent() ? tempJobObj.get() : null;
+        } else  {//Is a new job
+            if(IConstant.CompanySubscription.LDEB.toString().equalsIgnoreCase(loggedInUser.getCompany().getSubscription())) {
+                //If LDEB client, set customized chatbot flag & resubmit hr flag = true
+                job.setCustomizedChatbot(true);
+                job.setResubmitHrChatbot(true);
+            }
         }
 
         //set recruiter
