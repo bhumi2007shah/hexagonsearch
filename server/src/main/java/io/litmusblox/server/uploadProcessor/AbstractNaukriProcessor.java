@@ -28,8 +28,6 @@ import java.util.List;
 public abstract class AbstractNaukriProcessor {
 
     private static SimpleDateFormat DATE_PARSER = new SimpleDateFormat("dd MMM yyyy");
-    private static List<String> dateFormatsList = IConstant.DATE_FORMATS_LIST;
-
     protected void convertNaukriRowToCandidate(Candidate candidate, NaukriFileRow naukriRow) throws Exception {
 
         Date date = new Date();
@@ -45,11 +43,14 @@ public abstract class AbstractNaukriProcessor {
         CandidateDetails candidateDetails = new CandidateDetails();
         candidateDetails.setCurrentAddress(naukriRow.getPostalAddress());
         if (!Util.isNull(naukriRow.getDOB()) && naukriRow.getDOB().trim().length() > 0) {
-            for (String dateFormat : dateFormatsList)
+            for (String dateFormat : IConstant.DATE_FORMATS_LIST)
             {
                 try
                 {
                     date = new SimpleDateFormat(dateFormat).parse(naukriRow.getDOB().replaceAll("'", "").replaceAll("\"", ""));
+                    if(!date.equals(null)){
+                        break;
+                    }
                 }
                 catch (ParseException e) {}
             }
