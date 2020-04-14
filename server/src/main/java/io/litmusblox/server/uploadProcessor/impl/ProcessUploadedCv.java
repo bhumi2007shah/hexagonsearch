@@ -154,7 +154,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     queryString.append("?file=");
                     queryString.append(environment.getProperty(IConstant.FILE_STORAGE_URL)+tempFolderName+"/"+ fileName);
                     try {
-                        pythonResponse.set(rest.consumeRestApi(null, queryString.toString(), HttpMethod.GET, null).getResponseBody());
+                        pythonResponse.set(rest.consumeRestApi(null, queryString.toString(), HttpMethod.GET, null,null, java.util.Optional.of(IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT)).getResponseBody());
                         log.info("Python parser response : {}",pythonResponse.get());
                         if(null == candidate.get() || null == candidate.get().getCvParsingDetails()){
                             candidate.set(new Candidate());
