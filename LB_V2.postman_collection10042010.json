@@ -1,0 +1,1660 @@
+{
+	"info": {
+		"_postman_id": "a7543d55-9e54-4c0c-abf0-8b91b4fa8499",
+		"name": "LB_V2",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Fetch Master Data",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfUmVjcnVpdGVyIiwidXNlcklkIjo1LCJjb21wYW55IjoxLCJzdWIiOiJtYXl1cmVzaEBsaXRtdXNibG94LmlvIiwiaWF0IjoxNTg2MTM4MjE3LCJleHAiOjE1ODYyMjQ2MTd9.FOvqWBfynV-wdIepbg0ed8v-7HjpGLNzFcJh2vwO6fJn5mB_fUL19k3XKxP10Ul-fHqxQaxMTUc-_3fSw5SLxg",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n\"screeningQuestions\", \"userRole\", \"jobIndustry\", \"role\",\"function\"\n]"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/masterdata/fetch/items",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"masterdata",
+						"fetch",
+						"items"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Test: Fetch Master Data",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Auth-Token",
+						"value": "sayli_shiralkar@persistent.com:1557398254566:ae1e79d75f1402e1b0a2d079f3b0916d",
+						"disabled": true
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "X-Pseudo-User",
+						"value": "prashant@litmusblox.io",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfUmVjcnVpdGVyIiwidXNlcklkIjoyLCJjb21wYW55IjoxLCJzdWIiOiJzaGl0YWxAaGV4YWdvbnNlYXJjaC5jb20iLCJpYXQiOjE1NjM3ODA2MzQsImV4cCI6MTU2Mzg2NzAzNH0.drTiOUgRK5KxLeeszLK_mzHgVBSrYl-c-lyP_t8gJCvN68lkLDiAYL_DMugYscsbn1tpUFj_GEcN-AIg-bczaQ",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n\"countries\",\"importanceLevel\",\"questionType\",\"stage\",\"experienceRange\",\"function\",\"addressType\",\"process\",\"expertise\",\"education\",\"keySkills\",\"screeningQuestions\"\n]"
+				},
+				"url": {
+					"raw": "http://13.90.151.97:8080/api/masterdata/fetch/items",
+					"protocol": "http",
+					"host": [
+						"13",
+						"90",
+						"151",
+						"97"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"masterdata",
+						"fetch",
+						"items"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Reload Master Data",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjIzLCJjb21wYW55IjoxMywic3ViIjoiZGhpcmVzaEBsaXRtdXNibG94LmlvIiwiaWF0IjoxNTgwOTkwMDMwLCJleHAiOjE1ODEwNzY0MzB9.mzaB-aS5ayqGCZhY9oNf2luwH7ylDaisNNX5rD5bhQ76kGm5FzI7Q92H4xEacl1PMy9mWOG8y4cgdlbZUvXqYA",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://api.litmusblox.io/api/masterdata/reload",
+					"protocol": "https",
+					"host": [
+						"api",
+						"litmusblox",
+						"io"
+					],
+					"path": [
+						"api",
+						"masterdata",
+						"reload"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add UserScreeningQuestion",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"question\":\"Sample Question\",\n\t\"questionType\":{\n\t\t\"id\":99\n\t},\n\t\"userId\": {\n\t\t\"id\":1\n\t}\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/resources/masterdata/add/UserScreeningQuestion",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"resources",
+						"masterdata",
+						"add",
+						"UserScreeningQuestion"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateJob-Overview",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjEsImNvbXBhbnkiOjEsInN1YiI6InN1bWl0QGdtYWlsLmNvbSIsImlhdCI6MTU3MDA5NTczOSwiZXhwIjoxNTcwMTgyMTM5fQ.bM-KA76I79yHrtrZ7JIsUc1VFjFatnDCidajXBRxW44mW7fk-ScH6KonoR19v6Fs4dmqzicRjsY88pYFGK_szg",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"id\": \"\",\n  \"jobTitle\": \"Java Developer\",\n  \"companyJobId\": \"Sumit5678\",\n  \"noOfPositions\": \"2\",\n  \"jobDescription\": \"<h2>Job Description</h2>\\n\\n<p><strong>What We Need Must have: </strong></p>\\n\\n<p>&bull; 24-42 months year of industry experience</p>\\n\\n<p>&bull; Excellent core Java, J2EE &amp; Web Services skills with good knowledge of OOPS principles<br />\\n&bull; Excellent in struts/spring framework &amp; related technologies<br />\\n&bull; Strong handle at software programming practices and principles<br />\\n&bull; Ability to perform low level design or implement given module independently. Demonstrated ability to design application for non-functional requirements<br />\\n&bull; Significant awareness to technological happenings with good web technology and computer science fundamentals<br />\\n&bull; Exposure to tools set related to databases, networking, distributed computing &amp; web technologies<br />\\n&bull; Exposure to full SDLC implementations with contributions to design. Seek diverse technologies/platform background with awareness to industry tools<br />\\n<strong>Good to have:</strong><br />\\n<br />\\n&bull; Experience on Angular<br />\\n<br />\\n<strong>What You will Do</strong></p>\\n\\n<p>&nbsp;</p>\\n\\n<p>&bull; Responsible for performing the low-level design and developing the code base<br />\\n&bull; Collaborate with team in release execution cycles &amp; manage the implementation of suggested module independently<br />\\n&bull; Independently expand the coarse requirements/specifications to engineering details &ndash; be ingenious towards such implementation<br />\\n&bull; Responsible for managing deliveries for small modules<br />\\n<strong>Qualification </strong></p>\\n\\n<p>&bull; Qualification: BE/MCA with good academic track record (&gt;60% in 10/12/G/PG)</p>\\n\\n<p>&nbsp;</p>\\n\",\n  \"jobScreeningQuestionsList\": [\n    \n  ],\n  \"userEnteredKeySkill\": [\n    \n  ],\n  \"jobCapabilityList\": [\n    \n  ],\n  \"jobKeySkillsList\": [\n    \n  ]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/job/createJob/overview",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"job",
+						"createJob",
+						"overview"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "List all jobs",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfU3VwZXJBZG1pbiIsInVzZXJJZCI6MiwiY29tcGFueUlkIjoxLCJzdWIiOiJzaGl0YWxAaGV4YWdvbnNlYXJjaC5jb20iLCJpYXQiOjE1NjM3NzA1OTIsImV4cCI6MTU2Mzg1Njk5Mn0.DZMGgsbD5U2aq3ANTTtf25Lm5bc4rB9AQWBQi3DHVMyOmdxoxTrvKAqnVNYtXTaybVOgOUyMS386deloxy9M3Q",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/job/listOfJobs?",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"job",
+						"listOfJobs"
+					],
+					"query": [
+						{
+							"key": "archived",
+							"value": "true",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Job View By Stage",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfUmVjcnVpdGVyIiwidXNlcklkIjo1LCJjb21wYW55IjoxLCJzdWIiOiJtYXl1cmVzaEBsaXRtdXNibG94LmlvIiwiaWF0IjoxNTg0ODk1ODcxLCJleHAiOjE1ODQ5ODIyNzF9.j70e9OPWo9cUmthm-sulb09QVwo_MFMMeyqgwiQ85cceCAmotzQHpSwJsf_WLAuTk9JrYdC8YV6ZpCIWnoZ1lA",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"job\":{\n\t\t\"id\":9\n\t},\n\t\"stage\":{\n\t\t\"id\":106\n\t}\n}"
+				},
+				"url": {
+					"raw": "http://api.litmusblox.net/api/job/jobViewByStage/1074/Interview",
+					"protocol": "http",
+					"host": [
+						"api",
+						"litmusblox",
+						"net"
+					],
+					"path": [
+						"api",
+						"job",
+						"jobViewByStage",
+						"1074",
+						"Interview"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add job : screening questions",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjEsImNvbXBhbnkiOjEsInN1YiI6InN1bWl0QGdtYWlsLmNvbSIsImlhdCI6MTU3MDA5NTczOSwiZXhwIjoxNTcwMTgyMTM5fQ.bM-KA76I79yHrtrZ7JIsUc1VFjFatnDCidajXBRxW44mW7fk-ScH6KonoR19v6Fs4dmqzicRjsY88pYFGK_szg",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 35,\n   \"jobTitle\": \"Java Developer\",\n  \"companyJobId\": \"Sumit5678\",\n  \"noOfPositions\": \"2\",\n  \"jobScreeningQuestionsList\": [\n  \t{\n      \"masterScreeningQuestionId\": {\"id\": 3}\n    }\n  ],\n  \"userEnteredKeySkill\": [\n    \n  ],\n  \"jobCapabilityList\": [\n    \n  ],\n  \"jobKeySkillsList\": [\n    \n  ]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/job/createJob/screeningQuestions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"job",
+						"createJob",
+						"screeningQuestions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add job : capabilities",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjEsImNvbXBhbnkiOjEsInN1YiI6InN1bWl0QGdtYWlsLmNvbSIsImlhdCI6MTU3MDA5NTczOSwiZXhwIjoxNTcwMTgyMTM5fQ.bM-KA76I79yHrtrZ7JIsUc1VFjFatnDCidajXBRxW44mW7fk-ScH6KonoR19v6Fs4dmqzicRjsY88pYFGK_szg",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 35,\n    \"companyJobId\": \"Sumit5678\",\n    \"jobTitle\": \"Java Developer\",\n    \"noOfPositions\": 2,\n    \"scoringEngineJobAvailable\": false,\n    \"jobKeySkillsList\": [\n        {\n            \"id\": 3001,\n            \"skillId\": {\n                \"id\": 5,\n                \"skillName\": \"j2ee\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3002,\n            \"skillId\": {\n                \"id\": 6,\n                \"skillName\": \"networking\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3003,\n            \"skillId\": {\n                \"id\": 7,\n                \"skillName\": \"sdlc\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3004,\n            \"skillId\": {\n                \"id\": 8,\n                \"skillName\": \"angular\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3005,\n            \"skillId\": {\n                \"id\": 9,\n                \"skillName\": \"struts\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3006,\n            \"skillId\": {\n                \"id\": 1,\n                \"skillName\": \"Java\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3007,\n            \"skillId\": {\n                \"id\": 10,\n                \"skillName\": \"spring\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3008,\n            \"skillId\": {\n                \"id\": 11,\n                \"skillName\": \"requirements\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3009,\n            \"skillId\": {\n                \"id\": 12,\n                \"skillName\": \"record\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3010,\n            \"skillId\": {\n                \"id\": 13,\n                \"skillName\": \"web services\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3011,\n            \"skillId\": {\n                \"id\": 14,\n                \"skillName\": \"web technologies\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        }\n    ],\n    \"jobCapabilityList\": [\n        {\n            \"id\": 10,\n            \"capabilityId\": 10115,\n            \"capabilityName\": \"Server Side scripting\",\n            \"selected\": true,\n            \"weightage\": 10,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 11,\n            \"capabilityId\": 10128,\n            \"capabilityName\": \"Programming Business Logic\",\n            \"selected\": true,\n            \"weightage\": 10,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 12,\n            \"capabilityId\": 10129,\n            \"capabilityName\": \"Middleware Services\",\n            \"selected\": true,\n            \"weightage\": 10,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 13,\n            \"capabilityId\": 10130,\n            \"capabilityName\": \"Database Access Layer Programming\",\n            \"selected\": true,\n            \"weightage\": 10,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 14,\n            \"capabilityId\": 10053,\n            \"capabilityName\": \"Application & Solution Design\",\n            \"selected\": true,\n            \"weightage\": 6,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 15,\n            \"capabilityId\": 10109,\n            \"capabilityName\": \"Programming Basics\",\n            \"selected\": false,\n            \"weightage\": 6,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 16,\n            \"capabilityId\": 10071,\n            \"capabilityName\": \"Handling Client Interactions\",\n            \"selected\": false,\n            \"weightage\": 2,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 17,\n            \"capabilityId\": 10132,\n            \"capabilityName\": \"Agile Team Member\",\n            \"selected\": false,\n            \"weightage\": 2,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 18,\n            \"capabilityId\": 10131,\n            \"capabilityName\": \"Build & Deploy\",\n            \"selected\": false,\n            \"weightage\": 2,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 19,\n            \"capabilityId\": 10070,\n            \"capabilityName\": \"Estimation\",\n            \"selected\": false,\n            \"weightage\": 2,\n            \"jobId\": 35\n        }\n    ],\n    \"userEnteredKeySkill\": [\n        \"Core Java\"\n    ]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/job/createJob/capabilities",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"job",
+						"createJob",
+						"capabilities"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add job : Key skills",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjEsImNvbXBhbnkiOjEsInN1YiI6InN1bWl0QGdtYWlsLmNvbSIsImlhdCI6MTU3MDA5NTczOSwiZXhwIjoxNTcwMTgyMTM5fQ.bM-KA76I79yHrtrZ7JIsUc1VFjFatnDCidajXBRxW44mW7fk-ScH6KonoR19v6Fs4dmqzicRjsY88pYFGK_szg",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "\n{\n\t\"id\": 35,\n   \"jobTitle\": \"Java Developer\",\n  \"companyJobId\": \"Sumit5678\",\n  \"noOfPositions\": \"2\",\n  \"userEnteredKeySkill\": [\n    \"Core Java\"\n  ],\n  \"jobCapabilityList\": [\n    \n  ],\n  \"jobKeySkillsList\": [\n   {\n            \"id\": 3001,\n            \"skillId\": {\n                \"id\": 5,\n                \"skillName\": \"j2ee\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3002,\n            \"skillId\": {\n                \"id\": 6,\n                \"skillName\": \"networking\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3003,\n            \"skillId\": {\n                \"id\": 7,\n                \"skillName\": \"sdlc\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3004,\n            \"skillId\": {\n                \"id\": 8,\n                \"skillName\": \"angular\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3005,\n            \"skillId\": {\n                \"id\": 9,\n                \"skillName\": \"struts\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3006,\n            \"skillId\": {\n                \"id\": 1,\n                \"skillName\": \"Java\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3007,\n            \"skillId\": {\n                \"id\": 10,\n                \"skillName\": \"spring\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3008,\n            \"skillId\": {\n                \"id\": 11,\n                \"skillName\": \"requirements\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3009,\n            \"skillId\": {\n                \"id\": 12,\n                \"skillName\": \"record\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3010,\n            \"skillId\": {\n                \"id\": 13,\n                \"skillName\": \"web services\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        },\n        {\n            \"id\": 3011,\n            \"skillId\": {\n                \"id\": 14,\n                \"skillName\": \"web technologies\"\n            },\n            \"mlProvided\": true,\n            \"selected\": true,\n            \"jobId\": 35\n        }  ]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/job/createJob/keySkills",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"job",
+						"createJob",
+						"keySkills"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add job : Job Detail",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjEsImNvbXBhbnkiOjEsInN1YiI6InN1bWl0QGdtYWlsLmNvbSIsImlhdCI6MTU2OTgxOTczNywiZXhwIjoxNTY5OTA2MTM3fQ.-6zu0ScHRrr5KpsMkoZs-bO3SAazpsC0Tw8PSWB9y36rxB67ndTT4Juvp_l_oKGxVU0dUY1csDm5VqA2CbBDtA",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"id\":24,\n\n\"jobDetail\":{\n \t\"buId\":{\"id\":1},\n \t\"function\":{\"id\":3},\n \t\"currency\":\"INR\",\n \t\"education\":{\"id\":20},\n \t\"jobLocation\":{\"id\":1},\n \t\"interviewLocation\":{\"id\":1},\n \t\"expertise\":{\"id\":117},\n \t\"experienceRange\":{\"id\":119}\n \t}\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/job/createJob/expertise",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"job",
+						"createJob",
+						"expertise"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Company and user screeningQuestions",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/company/screeningQuestions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"company",
+						"screeningQuestions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create User",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfU3VwZXJBZG1pbiIsInVzZXJJZCI6NCwiY29tcGFueSI6MSwic3ViIjoiZGhpcmVzaEBsaXRtdXNibG94LmlvIiwiaWF0IjoxNTgzMzEwNjAwLCJleHAiOjE1ODMzOTcwMDB9.I4-KfK4z5l54ycelzMPRqD4YvLbp4Vm-wEH3MrCqmxJTwGroV0NIQXMvMB3KIKkQzrNSjrdU5d7NwMTy5UyZsQ",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Wagh\",\n  \"email\": \"jwagh32@netset.com\",\n  \"company\": {\n    \"companyName\": \"Net Set\",\n    \"shortName\": \"netset\",\n    \"countryId\": {\"id\": 6}\n  },\n  \"mobile\": \"2657689898\",\n  \"countryId\": {\"id\": 6},\n  \"designation\": \"Director\",\n  \"role\": \"Admin\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/auth/createUpdateUser",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"auth",
+						"createUpdateUser"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Publish Job",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer  eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfUmVjcnVpdGVyIiwidXNlcklkIjo1LCJjb21wYW55IjoxLCJzdWIiOiJtYXl1cmVzaEBsaXRtdXNibG94LmlvIiwiaWF0IjoxNTg2MzQzMDU4LCJleHAiOjE1ODY0Mjk0NTh9.BlWeM_fxJsHMJtaC0s6spIoi3AoyDnr8KNPlTwpuAs-9ePDFwDOfQ7WR4nLftxynnoiV9Pg--XSLbUAmPEPnuw",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 1035,\n    \"visibleToCareerPage\": false,\n    \"autoInvite\": false\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/job/publishJob",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"job",
+						"publishJob"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Test : Login",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"email\":\"shital@hexagonsearch.com\",\n\t\"password\":\"123456\"\n}"
+				},
+				"url": {
+					"raw": "http://13.90.151.97:8080/api/auth/login",
+					"protocol": "http",
+					"host": [
+						"13",
+						"90",
+						"151",
+						"97"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Candidate interest",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/noAuth/candidateInterest?uuid=2462a22e-ad02-11e9-b52e-74e5f9b964b9&interest=false",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"noAuth",
+						"candidateInterest"
+					],
+					"query": [
+						{
+							"key": "uuid",
+							"value": "2462a22e-ad02-11e9-b52e-74e5f9b964b9"
+						},
+						{
+							"key": "interest",
+							"value": "false"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Screening question by uuid",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/noAuth/screeningQuestion?uuid=8a0fd2b9-c0b6-471e-b5b9-917a0ded744d",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"noAuth",
+						"screeningQuestion"
+					],
+					"query": [
+						{
+							"key": "uuid",
+							"value": "8a0fd2b9-c0b6-471e-b5b9-917a0ded744d"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Save Screening question response",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\"74\":\"Pune\",\n\"75\":\"B.E.\",\n\"76\":\"AJAX\",\n\"77\":\"0\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/noAuth/screeningQuestionResponse?uuid=2462a22e-ad02-11e9-b52e-74e5f9b964b9",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"noAuth",
+						"screeningQuestionResponse"
+					],
+					"query": [
+						{
+							"key": "uuid",
+							"value": "2462a22e-ad02-11e9-b52e-74e5f9b964b9"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"email\":\"shital@hexagonsearch.com\",\n\t\"password\":\"123456\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Upload individual candidate",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfU3VwZXJBZG1pbiIsInVzZXJJZCI6MiwiY29tcGFueSI6MSwic3ViIjoic2hpdGFsQGhleGFnb25zZWFyY2guY29tIiwiaWF0IjoxNTYzOTc1NTEyLCJleHAiOjE1NjQwNjE5MTJ9.lH2sOTH7famJAhbcUfaRn7rm0p5hDT6pPr6QAFchug4alF0iPxfkZU8ZCSBcaUJfXtR_COydH94BgjbqL_-GJw",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n\t{\n\t\t\"firstName\":\"Shital\",\n\t\t\"lastName\":\"Raval\",\n\t\t\"email\":\"shital@hexagonsearch.com\",\n\t\t\"mobile\":\"9881409097\",\n\t\t\"countryCode\":\"+91\"\n\t},\n\t{\n\t\t\"firstName\":\"Someone\",\n\t\t\"lastName\":\"Else\",\n\t\t\"email\":\"someone@else.com\",\n\t\t\"mobile\":\"8222222222\",\n\t\t\"countryCode\":\"+91\"\n\t}\n]"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/jcm/addCandidate/individual?jobId=22",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"jcm",
+						"addCandidate",
+						"individual"
+					],
+					"query": [
+						{
+							"key": "jobId",
+							"value": "22"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Upload csv file",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfU3VwZXJBZG1pbiIsInVzZXJJZCI6MiwiY29tcGFueSI6MSwic3ViIjoic2hpdGFsQGhleGFnb25zZWFyY2guY29tIiwiaWF0IjoxNTYzOTc1NTEyLCJleHAiOjE1NjQwNjE5MTJ9.lH2sOTH7famJAhbcUfaRn7rm0p5hDT6pPr6QAFchug4alF0iPxfkZU8ZCSBcaUJfXtR_COydH94BgjbqL_-GJw"
+					},
+					{
+						"key": "Content-Type",
+						"value": "multipart/form-data",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"value": "",
+							"type": "file"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/jcm/addCandidate/file?jobId=22&fileFormat=LitmusBlox",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"jcm",
+						"addCandidate",
+						"file"
+					],
+					"query": [
+						{
+							"key": "jobId",
+							"value": "22"
+						},
+						{
+							"key": "fileFormat",
+							"value": "LitmusBlox"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Upload excel",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfU3VwZXJBZG1pbiIsInVzZXJJZCI6MiwiY29tcGFueSI6MSwic3ViIjoic2hpdGFsQGhleGFnb25zZWFyY2guY29tIiwiaWF0IjoxNTYzOTc1NTEyLCJleHAiOjE1NjQwNjE5MTJ9.lH2sOTH7famJAhbcUfaRn7rm0p5hDT6pPr6QAFchug4alF0iPxfkZU8ZCSBcaUJfXtR_COydH94BgjbqL_-GJw"
+					},
+					{
+						"key": "Content-Type",
+						"value": "multipart/form-data",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"value": "",
+							"type": "file"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/jcm/addCandidate/file?jobId=22&fileFormat=LitmusBlox",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"jcm",
+						"addCandidate",
+						"file"
+					],
+					"query": [
+						{
+							"key": "jobId",
+							"value": "22"
+						},
+						{
+							"key": "fileFormat",
+							"value": "LitmusBlox"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Upload Naukri excel (xls)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfU3VwZXJBZG1pbiIsInVzZXJJZCI6MiwiY29tcGFueSI6MSwic3ViIjoic2hpdGFsQGhleGFnb25zZWFyY2guY29tIiwiaWF0IjoxNTYzOTc1NTEyLCJleHAiOjE1NjQwNjE5MTJ9.lH2sOTH7famJAhbcUfaRn7rm0p5hDT6pPr6QAFchug4alF0iPxfkZU8ZCSBcaUJfXtR_COydH94BgjbqL_-GJw"
+					},
+					{
+						"key": "Content-Type",
+						"value": "multipart/form-data",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"value": "",
+							"type": "file"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/jcm/addCandidate/file?jobId=22&fileFormat=Naukri",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"jcm",
+						"addCandidate",
+						"file"
+					],
+					"query": [
+						{
+							"key": "jobId",
+							"value": "22"
+						},
+						{
+							"key": "fileFormat",
+							"value": "Naukri"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Upload Naukri excel (xlsx)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfU3VwZXJBZG1pbiIsInVzZXJJZCI6MiwiY29tcGFueSI6MSwic3ViIjoic2hpdGFsQGhleGFnb25zZWFyY2guY29tIiwiaWF0IjoxNTYzOTc1NTEyLCJleHAiOjE1NjQwNjE5MTJ9.lH2sOTH7famJAhbcUfaRn7rm0p5hDT6pPr6QAFchug4alF0iPxfkZU8ZCSBcaUJfXtR_COydH94BgjbqL_-GJw"
+					},
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "multipart/form-data",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"value": "",
+							"type": "file"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/jcm/addCandidate/file?jobId=22&fileFormat=Naukri",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"jcm",
+						"addCandidate",
+						"file"
+					],
+					"query": [
+						{
+							"key": "jobId",
+							"value": "22"
+						},
+						{
+							"key": "fileFormat",
+							"value": "Naukri"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "new Publish Job",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer  eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfUmVjcnVpdGVyIiwidXNlcklkIjo1LCJjb21wYW55IjoxLCJzdWIiOiJtYXl1cmVzaEBsaXRtdXNibG94LmlvIiwiaWF0IjoxNTg2MzQzMDU4LCJleHAiOjE1ODY0Mjk0NTh9.BlWeM_fxJsHMJtaC0s6spIoi3AoyDnr8KNPlTwpuAs-9ePDFwDOfQ7WR4nLftxynnoiV9Pg--XSLbUAmPEPnuw",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 1035,\n    \"visibleToCareerPage\": false,\n    \"autoInvite\": false\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/job/publishJob",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"job",
+						"publishJob"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get chatbot details",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/noAuth/chatbotDetails?uuid=f8775b9c-233c-462c-83a0-3af07b20de6a",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"noAuth",
+						"chatbotDetails"
+					],
+					"query": [
+						{
+							"key": "uuid",
+							"value": "f8775b9c-233c-462c-83a0-3af07b20de6a"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Parse cv",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://cvparser.litmusblox.net/parsecv?file=2_1029_Anagha.doc",
+					"protocol": "http",
+					"host": [
+						"cvparser",
+						"litmusblox",
+						"net"
+					],
+					"path": [
+						"parsecv"
+					],
+					"query": [
+						{
+							"key": "file",
+							"value": "2_1029_Anagha.doc"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Reject Candidate",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjIsImNvbXBhbnkiOjEsInN1YiI6InN1bWl0QGxpdG11c2Jsb3guaW8iLCJpYXQiOjE1ODQ2MTAyOTUsImV4cCI6MTU4NDY5NjY5NX0.p067Gh8-5g8kpf1PHhMErThmICfz_RSqFq1baKdHL5QNUesFPYfcQvCFrAdcTdgaZ9V4bztwxiN07-1ey4HAxg",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n\t80209\n\t]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/jcm/setStage/Rejected?candidateRejectionValue=2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"jcm",
+						"setStage",
+						"Rejected"
+					],
+					"query": [
+						{
+							"key": "candidateRejectionValue",
+							"value": "2"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetUserDetails",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjcsImNvbXBhbnkiOjIsInN1YiI6InNkZWRoaWFAZ21haWwuY29tIiwiaWF0IjoxNTgzNzMwNTY5LCJleHAiOjE1ODM4MTY5Njl9.MS4qgsxJCjrUnlzvsx7rnOY2VhLzuG8sFZKw2z-M2Vp6QfR6ZLndz1nf5T-pfzXXMZaXXJ0LfGDdEXBbIJUfzg",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/auth/getUserDetails/110",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"auth",
+						"getUserDetails",
+						"110"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Live Job AddressStringSet",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/noAuth/getLiveJobAddressStringSet/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"noAuth",
+						"getLiveJobAddressStringSet",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Candidate IV Confirmation Status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/noAuth/getCandidateConfirmationStatus/7f468089-c55e-4668-a060-abd8c826e663",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"noAuth",
+						"getCandidateConfirmationStatus",
+						"7f468089-c55e-4668-a060-abd8c826e663"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Edit Candidate",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjIsImNvbXBhbnkiOjEsInN1YiI6InN1bWl0QGxpdG11c2Jsb3guaW8iLCJpYXQiOjE1ODQ1MzEwNTQsImV4cCI6MTU4NDYxNzQ1NH0.dAyseyuGAxc-4Hg0qv8BkyQlK2ghND_Q4OtK8p742Wk8b8yyphzhvj_YxbuvWpxhv4ZvqfRcRHQYdXVqhOEpNw",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"id\": 80123,\n  \"candidateFirstName\": \"Abhipsa\",\n  \"candidateLastName\": \"Sahoo\",\n  \"mobile\": \"9916824322\",\n  \"email\": \"abhipsasahoo5@gmail.com\",\n  \"reasonForChange\": \"\",\n  \"candidate\": {\n    \"countryCode\": \"+91\",\n    \"candidateDetails\": {\n      \n    },\n    \"candidateEducationDetails\": [\n      {\n        \"degree\": \"B.Tech/B.E.\",\n        \"specialization\": null,\n        \"instituteName\": \"trident academy of creative technology\",\n        \"yearOfPassing\": null\n      }\n    ],\n    \"candidateCompanyDetails\": [\n      {\n        \"noticePeriod\": \"30 Days\",\n        \"salary\": 3.5,\n        \"companyName\": \"Atos Syntel\",\n        \"designation\": \"Technical Recruiter\"\n      }\n    ]\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/jcm/editCandidate",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"jcm",
+						"editCandidate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Set Company UniqueId",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfU3VwZXJBZG1pbiIsInVzZXJJZCI6MywiY29tcGFueSI6Miwic3ViIjoicHJhc2hhbnRAbGl0bXVzYmxveC5pbyIsImlhdCI6MTU4MzU1MDQ4NiwiZXhwIjoxNTgzNjM2ODg2fQ.eISyUtzb8uK4uujxeN03yegblRVf2CGm40JW1quNSwfIakFO5VoI2Hf4ItsB8Btz0g17LDfmmaRb2A5g0LsmYw",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://api.litmusblox.io/api/admin/setCompanyUniqueId",
+					"protocol": "https",
+					"host": [
+						"api",
+						"litmusblox",
+						"io"
+					],
+					"path": [
+						"api",
+						"admin",
+						"setCompanyUniqueId"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Invite Candidates",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjIsImNvbXBhbnkiOjEsInN1YiI6InN1bWl0QGxpdG11c2Jsb3guaW8iLCJpYXQiOjE1ODQ4ODg4NDksImV4cCI6MTU4NDk3NTI0OX0.CI8qfbsCEyoJbg-ggTMnb2dNWFgb4nypFzL6HYYiPegkwbMkokHpwE7zRfCw5IGZb3LDTs_CKfF0uNTAVis4-g",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[80215]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/jcm/inviteCandidates",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"jcm",
+						"inviteCandidates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Candidate IV Confirmation",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"interviewReferenceId\":\"69ac51c9-52d3-4a5d-b9be-20001569b738\",\n\t\"confirmationText\":\"Yes, I will attend the interview\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/noAuth/candidateConfirmation",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"noAuth",
+						"candidateConfirmation"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Cancel Interview",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"interviewType\":\"Single Interview\",\n\t\"interviewMode\":\"Telephonic\",\n\t\"interviewLocation\":{\"id\":34},\n\t\"interviewDate\":{{$timestamp}},\n\t\"sendJobDescription\":true,\n\t\"cancelled\":true,\n\t\"cancellationReason\":{\"id\":163},\n\t\"showNoShow\":true,\n\t\"noShowReason\":{\"id\":163},\n\t\"candidateConfirmation\":true\n\t\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/jcm/cancelInterview",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"jcm",
+						"cancelInterview"
+					],
+					"query": [
+						{
+							"key": "interviewId",
+							"value": "23",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Schedule Interview",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "7fdb252d-a6ea-40ca-b3c9-de5072e0d385",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfU3VwZXJBZG1pbiIsInVzZXJJZCI6NCwiY29tcGFueSI6MSwic3ViIjoiZGhpcmVzaEBsaXRtdXNibG94LmlvIiwiaWF0IjoxNTgyNTQ3MDY0LCJleHAiOjE1ODI2MzM0NjR9.6hHlQi5KNNjOgb7XNchl9MN4RJxpXtFrkK3hMsLvdD7bQpS0hrFXn3uDims1zmf8e_JOz8Ud_NtjXHC0ZW1XzQ",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"jobCandidateMappingList\": [\n    {\n      \"id\": 5471\n    }\n  ],\n  \"interviewType\": \"Single Interview\",\n  \"interviewMode\": \"Telephonic\",\n  \"interviewDate\": \"2020-02-26T11:00:00+05:30\",\n  \"sendJobDescription\": true,\n  \"interviewerDetails\": [\n    {\n      \"interviewer\": {\n        \"id\": 176\n      }\n    }\n  ],\n  \"interviewInstruction\": \"\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/jcm/scheduleInterview",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"jcm",
+						"scheduleInterview"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Company Update",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjIsImNvbXBhbnkiOjEsInN1YiI6InN1bWl0QGxpdG11c2Jsb3guaW8iLCJpYXQiOjE1ODEwNjU0NzYsImV4cCI6MTU4MTE1MTg3Nn0.Vwd-8MMNIJpA0kk7KNfss9su1nZL4Yyhw40FfgafKSyTAdDXtTx567lHOrLOalmVDhvAfN0qaiKQhlcbBOHfYA",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "company",
+							"value": "{\n  \"id\": \"78\",\n  \"newCompanyAddress\": [\n    {\n      \"address\": \"Sadashiv Peth, Sadashiv Peth, Pune, Maharashtra, India\",\n      \"latitude\": 18.5082486,\n      \"longitude\": 73.84405479999998,\n      \"addressTitle\": \"HO\",\n      \"addressType\": {\n        \"id\": \"104\",\n        \"value\": \"Interview Location\"\n      }\n    }\n  ],\n  \"deletedCompanyAddress\": [\n    \n  ],\n  \"updatedCompanyAddress\": [\n    \n  ]\n}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://api.litmusblox.net/api/company/update",
+					"protocol": "http",
+					"host": [
+						"api",
+						"litmusblox",
+						"net"
+					],
+					"path": [
+						"api",
+						"company",
+						"update"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetCompany By id",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfU3VwZXJBZG1pbiIsInVzZXJJZCI6NCwiY29tcGFueSI6MSwic3ViIjoiZGhpcmVzaEBsaXRtdXNibG94LmlvIiwiaWF0IjoxNTc5NzY4ODM0LCJleHAiOjE1Nzk4NTUyMzR9.H3DFlj7z_9xUBKifcOQX2krJ2OIlFXJRRa94j6Hy3JiLVUjPXWHRslHNEK44BY6Z9p6rE54Pi4t7XL2KDWCMgg",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/company/getCompany/83",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"company",
+						"getCompany",
+						"83"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Job Details By ReferenceId",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/noAuth/jobDetailsByReferenceId/426ad66a-2310-11ea-b790-a4fc7733515f",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"noAuth",
+						"jobDetailsByReferenceId",
+						"426ad66a-2310-11ea-b790-a4fc7733515f"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Cv parser text convert",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://cvparser.litmusblox.net/textconvert?file=http://app.litmusblox.net/CandidateCv/4073/6726.pdf",
+					"protocol": "http",
+					"host": [
+						"cvparser",
+						"litmusblox",
+						"net"
+					],
+					"path": [
+						"textconvert"
+					],
+					"query": [
+						{
+							"key": "file",
+							"value": "http://app.litmusblox.net/CandidateCv/4073/6726.pdf"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Career page addCandidate",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "candidateCv",
+							"type": "file",
+							"src": "/home/oem/Downloads/7923.doc"
+						},
+						{
+							"key": "candidate",
+							"value": "{\n  \"candidateName\": \"Vijay Jadhav\",\n  \"email\": \"pdfg3456@sumit.com\",\n  \"mobile\": \"7200981904\",\n  \"candidateOnlineProfiles\": [\n    {\n      \"profileType\": \"linkedin\",\n      \"url\": \"linkedin.com\"\n    }\n  ]\n}",
+							"type": "text"
+						},
+						{
+							"key": "employeeReferrer",
+							"value": "{\n\t\"firstName\":\"Pallavi\",\n\t\"lastName\":\"Ahire\",\n\t\"email\":\"pavi@gmail.com\",\n\t\"employeeId\":\"2345\",\n\t\"mobile\":\"8856835916\",\n\t\"location\":\"Nashik\",\n\t\"ReferrerRelation\":{\n\t\"id\":\"372\",\n\t\"type\":\"referrerRelation\",\n\t\"value\":\"We were students together\"\n\t},\n\t\"referrerContactDuration\":4\n}",
+							"type": "text"
+						},
+						{
+							"key": "otp",
+							"value": "1636",
+							"type": "text"
+						}
+					],
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/noAuth/addCandidate/EmployeeReferral?jobReferenceId=426ad6e4-2310-11ea-b790-a4fc7733515f",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"noAuth",
+						"addCandidate",
+						"EmployeeReferral"
+					],
+					"query": [
+						{
+							"key": "jobReferenceId",
+							"value": "426ad6e4-2310-11ea-b790-a4fc7733515f"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "uploadResume",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjcsImNvbXBhbnkiOjIsInN1YiI6InNkZWRoaWFAZ21haWwuY29tIiwiaWF0IjoxNTc4OTgxNDI0LCJleHAiOjE1NzkwNjc4MjR9.6DPhoQxWcX5zfdHp86yLdJJVYuJvgkjRoxtiWckkFf0HxEb4jK4_Y1_62JgmcYUlsOiLO21bRWYxMN46B7_xmQ",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "candidateCv",
+							"type": "file",
+							"src": "/home/oem/Downloads/75_260_AShwini.pdf"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/jcm/uploadResume/5468",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"jcm",
+						"uploadResume",
+						"5468"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get candidate History",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjIsImNvbXBhbnkiOjEsInN1YiI6InNoaXRhbEBoZXhhZ29uc2VhcmNoLmNvbSIsImlhdCI6MTU3NzA3NDMxMiwiZXhwIjoxNTc3MTYwNzEyfQ.Vxwt9H9KUb9GSjU7_yY7hkVo1bbTrmyyK602IajDdzt-nnudOWlFtj482ZAjCjbFHXECtS0nMtEp76YbXxPkZw",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/jcm/candidateHistory/5349",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"jcm",
+						"candidateHistory",
+						"5349"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get job History",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfQ2xpZW50QWRtaW4iLCJ1c2VySWQiOjU0LCJjb21wYW55IjoyMywic3ViIjoidmlrYXNtb2RpQG5hbW8uY29tIiwiaWF0IjoxNTcxNjc1MTMxLCJleHAiOjE1NzE3NjE1MzF9.4tiEJVmBMsgmfD-a0BQZCdEAE6Up9GFbpIhTfnX47FtOZTJ-EcgBiW67Cff6E4JNqgyu4iVOSKTfZKqFne3z6A",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/job/getHistory/3329",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"job",
+						"getHistory",
+						"3329"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
