@@ -11,7 +11,10 @@ import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.apache.poi.ss.usermodel.Row;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 
 /**
@@ -25,9 +28,11 @@ import java.text.SimpleDateFormat;
 public abstract class AbstractNaukriProcessor {
 
     private static SimpleDateFormat DATE_PARSER = new SimpleDateFormat("dd MMM yyyy");
+    private static List<String> dateFormatsList = IConstant.DATE_FORMATS_LIST;
 
     protected void convertNaukriRowToCandidate(Candidate candidate, NaukriFileRow naukriRow) throws Exception {
 
+        Date date = new Date();
         Util.handleCandidateName(candidate, naukriRow.getCandidateName());
 
         candidate.setEmail(naukriRow.getEmail());
@@ -39,9 +44,18 @@ public abstract class AbstractNaukriProcessor {
 
         CandidateDetails candidateDetails = new CandidateDetails();
         candidateDetails.setCurrentAddress(naukriRow.getPostalAddress());
-        if (!Util.isNull(naukriRow.getDOB()) && naukriRow.getDOB().trim().length() > 0)
-            candidateDetails.setDateOfBirth(DATE_PARSER.parse(naukriRow.getDOB().replaceAll("'","").replaceAll("\"","")));
-        //work experience - strip out Year(s) and Month(s) and generate a double value
+        if (!Util.isNull(naukriRow.getDOB()) && naukriRow.getDOB().trim().length() > 0) {
+            for (String dateFormat : dateFormatsList)
+            {
+                try
+                {
+                    date = new SimpleDateFormat(dateFormat).parse(naukriRow.getDOB().replaceAll("'", "").replaceAll("\"", ""));
+                }
+                catch (ParseException e) {}
+            }
+            candidateDetails.setDateOfBirth(date);
+        }
+            //work experience - strip out Year(s) and Month(s) and generate a double value
         String[] workArray = naukriRow.getWorkExperience().split("\\s+");
         candidateDetails.setTotalExperience(Double.valueOf(workArray[0] + "."+workArray[2]));
 

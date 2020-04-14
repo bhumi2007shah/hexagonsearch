@@ -389,4 +389,7 @@ public interface IConstant {
     Integer REST_READ_TIME_OUT = 10000;
     Integer REST_READ_TIME_OUT_FOR_CV_TEXT = 20000;
     Integer REST_CONNECTION_TIME_OUT = 2000;
+
+    //List of date formats for Naukri files
+    List<String> DATE_FORMATS_LIST = Arrays.asList("dd MMM yyyy","y-M-d");
 }
