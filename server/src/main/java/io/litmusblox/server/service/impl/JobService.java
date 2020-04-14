@@ -170,6 +170,8 @@ public class JobService implements IJobService {
         }
         Job oldJob = null;
 
+        Company company = companyRepository.findById(job.getCompanyId().getId()).orElse(null);
+
         if (null != job.getId()) {
             //get handle to existing job object
             oldJob = jobRepository.findById(job.getId()).orElse(null);
@@ -181,14 +183,16 @@ public class JobService implements IJobService {
             recruiter =  userRepository.findById(job.getRecruiter().getId()).orElse(null);
             if(null != recruiter)
                 job.setRecruiter(recruiter);
-        }
+        }else
+            throw new ValidationException("Recruiter "+IErrorMessages.NULL_MESSAGE, HttpStatus.UNPROCESSABLE_ENTITY);
 
         //set hiringManager
         if(null != job.getHiringManager() && null != job.getHiringManager().getId()){
             hiringManager =  userRepository.findById(job.getHiringManager().getId()).orElse(null);
             if(null != hiringManager)
                 job.setHiringManager(hiringManager);
-        }
+        }else if(null != company && null == company.getRecruitmentAgencyId())
+            throw new ValidationException("Hiring Manager "+IErrorMessages.NULL_MESSAGE, HttpStatus.UNPROCESSABLE_ENTITY);
 
         switch (IConstant.AddJobPages.valueOf(pageName)) {
             case overview:
