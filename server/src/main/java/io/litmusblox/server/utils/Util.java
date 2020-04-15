@@ -124,15 +124,20 @@ public class Util {
     }
 
     public static boolean isValidateEmail(String email) throws ValidationException {
-        if(Util.isNull(email) || email.trim().length() == 0)
-            throw new ValidationException(IErrorMessages.EMAIL_NULL_OR_BLANK + " - " + email, HttpStatus.BAD_REQUEST);
-        if(email.length() > IConstant.CANDIDATE_EMAIL_MAX_LENGTH)
-            throw new  ValidationException(IErrorMessages.EMAIL_TOO_LONG + " - " + email, HttpStatus.BAD_REQUEST);
-
+        if(Util.isNull(email) || email.trim().length() == 0) {
+            log.error("{} - {}",IErrorMessages.EMAIL_NULL_OR_BLANK, email);
+            return false;
+        }
+        if(email.length() > IConstant.CANDIDATE_EMAIL_MAX_LENGTH) {
+            log.error("{} - {}",IErrorMessages.EMAIL_TOO_LONG, email);
+            return false;
+        }
         //check domain name has at least one dot
         String domainName = email.substring(email.indexOf('@')+1);
-        if(domainName.indexOf('.') == -1)
-            throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + email, HttpStatus.BAD_REQUEST);
+        if(domainName.indexOf('.') == -1){
+            log.error("{} - {}",IErrorMessages.INVALID_EMAIL, email);
+            return false;
+        }
 
         String domainString = domainName.substring(domainName.indexOf('.')+1);
 
@@ -164,39 +169,54 @@ public class Util {
     public static boolean validateMobile(String mobile, String countryCode) throws ValidationException  {
         Map<String, Long> countryMap = getCountryMap();
 
-        if(Util.isNull(mobile) || mobile.trim().length() == 0)
-            throw new ValidationException(IErrorMessages.MOBILE_NULL_OR_BLANK + " - " + mobile, HttpStatus.BAD_REQUEST);
-
+        if(Util.isNull(mobile) || mobile.trim().length() == 0) {
+            log.error("{} - {}",IErrorMessages.MOBILE_NULL_OR_BLANK, mobile);
+            return false;
+        }
         if(!mobile.matches(IConstant.REGEX_FOR_MOBILE_VALIDATION))
             return false; //the caller should check for status, if it is false, due to regex failure, call again after cleaning up the mobile number
 
         if(countryCode.equals(IConstant.CountryCode.INDIA_CODE.getValue())) {
             Matcher m = INDIAN_MOBILE_PATTERN.matcher(mobile);
-            if(!(m.find() && m.group().equals(mobile))) //did not pass the Indian mobile number pattern
-                throw new ValidationException(IErrorMessages.INVALID_INDIAN_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+            if(!(m.find() && m.group().equals(mobile))) {//did not pass the Indian mobile number pattern
+                log.error("{} - {}", IErrorMessages.INVALID_INDIAN_MOBILE_NUMBER, mobile);
+                return false;
+            }
         }
 
         if(!countryCode.equals(IConstant.CountryCode.INDIA_CODE.getValue())){
-            if(countryCode.equals(IConstant.CountryCode.AUS_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.AUS_CODE.getValue()))
-                throw new ValidationException(IErrorMessages.INVALID_AUSTRALIA_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+            if(countryCode.equals(IConstant.CountryCode.AUS_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.AUS_CODE.getValue())){
+                log.error("{} - {}", IErrorMessages.INVALID_AUSTRALIA_MOBILE_NUMBER, mobile);
+                return false;
+            }
 
-            if(countryCode.equals(IConstant.CountryCode.CAN_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.CAN_CODE.getValue()))
-                throw new ValidationException(IErrorMessages.INVALID_CANADA_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+            if(countryCode.equals(IConstant.CountryCode.CAN_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.CAN_CODE.getValue())) {
+                log.error("{} - {}", IErrorMessages.INVALID_CANADA_MOBILE_NUMBER, mobile);
+                return false;
+            }
 
-            if(countryCode.equals(IConstant.CountryCode.UK_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.UK_CODE.getValue()))
-                throw new ValidationException(IErrorMessages.INVALID_UK_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+            if(countryCode.equals(IConstant.CountryCode.UK_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.UK_CODE.getValue())) {
+                log.error("{} - {}", IErrorMessages.INVALID_UK_MOBILE_NUMBER, mobile);
+                return false;
+            }
 
-            if(countryCode.equals(IConstant.CountryCode.US_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.US_CODE.getValue()))
-                throw new ValidationException(IErrorMessages.INVALID_US_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+            if(countryCode.equals(IConstant.CountryCode.US_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.US_CODE.getValue())) {
+                log.error("{} - {}", IErrorMessages.INVALID_US_MOBILE_NUMBER, mobile);
+                return false;
+            }
 
-            if(countryCode.equals(IConstant.CountryCode.SING_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.SING_CODE.getValue()))
-                throw new ValidationException(IErrorMessages.INVALID_SINGAPORE_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+            if(countryCode.equals(IConstant.CountryCode.SING_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.SING_CODE.getValue())) {
+                log.error("{} - {}", IErrorMessages.INVALID_SINGAPORE_MOBILE_NUMBER, mobile);
+                return false;
+            }
 
         }
 
         //check if the number is junk, like all the same digits
-        if(JUNK_MOBILE_PATTERN.matcher(mobile).matches())
-            throw new ValidationException(IErrorMessages.JUNK_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+        if(JUNK_MOBILE_PATTERN.matcher(mobile).matches()) {
+            log.error("{} - {}", IErrorMessages.JUNK_MOBILE_NUMBER, mobile);
+            return false;
+        }
         //mobile is valid
         return true;
     }

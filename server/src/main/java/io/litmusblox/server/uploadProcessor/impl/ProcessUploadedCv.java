@@ -82,6 +82,9 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
     @Resource
     UserRepository userRepository;
 
+    @Resource
+    JobRepository jobRepository;
+
     @Autowired
     IJobCandidateMappingService jobCandidateMappingService;
 
@@ -202,8 +205,11 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             Candidate candidateFromPython = null;
             UploadResponseBean uploadResponseBean = null;
             Long candidateId = null;
+            Job jobFromDb = null;
+            String validMobile = null;
             String errorMessage = null;
             try {
+                jobFromDb = jobRepository.getOne(jobId);
                 candidateFromPython = new ObjectMapper().readValue(candidate.getCvParsingDetails().getParsingResponsePython(), Candidate.class);
                 candidateFromPython.setCandidateSource(candidateSource);
                 if (Util.isNull(candidateFromPython.getEmail()) || !Util.isValidateEmail(candidateFromPython.getEmail()))
@@ -218,12 +224,17 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                 if (null == candidateFromPython.getLastName() || !Util.validateName(candidateFromPython.getLastName()))
                     candidateFromPython.setLastName(IConstant.NOT_LAST_NAME);
 
+                if(Util.isNotNull(candidateFromPython.getMobile())){
+                    validMobile = Util.indianMobileConvertor(candidateFromPython.getMobile(), jobFromDb.getCompanyId().getCountryId().getCountryCode());
+                    if(!Util.validateMobile(validMobile, jobFromDb.getCompanyId().getCountryId().getCountryCode()))
+                        candidateFromPython.setMobile(null);
+                }
 
                 if (null != candidateFromPython.getAlternateMobile() && candidateFromPython.getAlternateMobile().length() == 0)
                     candidateFromPython.setAlternateMobile(null);
 
-                 uploadResponseBean = jobCandidateMappingService.uploadIndividualCandidate(Arrays.asList(candidateFromPython), jobId, false, userRepository.findById(userId));
-                 if(uploadResponseBean.getCvStatus().equals(IConstant.UPLOAD_STATUS.Success)){
+                 uploadResponseBean = jobCandidateMappingService.uploadIndividualCandidate(Arrays.asList(candidateFromPython), jobId, ((null != candidateFromPython.getMobile())?false:true), userRepository.findById(userId));
+                 if(uploadResponseBean.getStatus().equals(IConstant.UPLOAD_STATUS.Success.name())){
                      candidateId = uploadResponseBean.getSuccessfulCandidates().get(0).getId();
                  }
             } catch (Exception e) {
