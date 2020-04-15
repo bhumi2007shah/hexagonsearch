@@ -1711,6 +1711,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             rChilliErrorResponseBean.setFileName(cvParsingDetails.getCvFileName().replaceAll("\\d+_\\d+_",""));
             rChilliErrorResponseBean.setProcessedOn(cvParsingDetails.getProcessedOn());
             rChilliErrorResponseBean.setStatus(cvParsingDetails.getProcessingStatus());
+            rChilliErrorResponseBean.setErrorMessage(cvParsingDetails.getErrorMessage());
             rChilliErrorResponseBeanList.add(rChilliErrorResponseBean);
         });
         return rChilliErrorResponseBeanList;
