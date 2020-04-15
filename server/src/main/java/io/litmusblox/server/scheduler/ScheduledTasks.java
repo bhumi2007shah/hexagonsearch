@@ -36,7 +36,7 @@ public class ScheduledTasks {
     @Autowired
     IJobCandidateMappingService jobCandidateMappingService;
 
-    @Scheduled(fixedRate = 30000, initialDelay = 5000)
+    @Scheduled(fixedRate = 300000, initialDelay = 5000)
     public void parseAndProcessCv() {
         log.info("started parse and process cv. Thread: {}", Thread.currentThread().getId());
         processUploadedCV.processCv();
@@ -71,7 +71,7 @@ public class ScheduledTasks {
         log.info("Completed invitin LDEB candidates. Thread {}", Thread.currentThread().getId());
     }
 
-    @Scheduled(fixedRate = 120000, initialDelay = 5000)
+    @Scheduled(fixedRate = 300000, initialDelay = 5000)
     public void convertCvFileToCvText() {
         log.info("started convert cv file to cv text. Thread: {}", Thread.currentThread().getId());
         processUploadedCV.cvToCvText();
