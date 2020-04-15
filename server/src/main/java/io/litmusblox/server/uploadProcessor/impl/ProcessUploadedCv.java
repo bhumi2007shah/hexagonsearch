@@ -155,7 +155,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     queryString.append("?file=");
                     queryString.append(environment.getProperty(IConstant.FILE_STORAGE_URL)+tempFolderName+"/"+ fileName);
                     try {
-                        pythonResponse.set(rest.consumeRestApi(null, queryString.toString(), HttpMethod.GET, null).getResponseBody());
+                        pythonResponse.set(rest.consumeRestApi(null, queryString.toString(), HttpMethod.GET, null,null, java.util.Optional.of(IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT)).getResponseBody());
                         log.info("Python parser response : {}",pythonResponse.get());
                         if(null == candidate.get() || null == candidate.get().getCvParsingDetails()){
                             candidate.set(new Candidate());
@@ -345,6 +345,8 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             log.info("Finished rest call- Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", (System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
             if (null != cvText && cvText.trim().length()>IConstant.CV_TEXT_API_RESPONSE_MIN_LENGTH && !cvText.isEmpty()) {
                 cvParsingDetailsFromDb.setParsingResponseText(cvText);
+                if(null == cvParsingDetailsFromDb.getProcessingTime())
+                    cvParsingDetailsFromDb.setProcessingTime(System.currentTimeMillis() - apiCallStartTime);
             }else{
                 breadCrumb.put("CvText", cvText);
                 SentryUtil.logWithStaticAPI(null, "Cv convert python response not good", breadCrumb);
