@@ -331,6 +331,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         log.info("Inside processCvForCvToText");
         String cvText = null;
         Candidate candidateFromPython = null;
+        long responseTime = 0L;
         Map<String, String> queryParameters = new HashMap<>();
         Map<String, String> breadCrumb = new HashMap<>();
         breadCrumb.put("cvParsingDetailsId", cvParsingDetailsFromDb.getId().toString());
@@ -341,11 +342,12 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             breadCrumb.put("FilePath", queryParameters.get("file"));
             long apiCallStartTime = System.currentTimeMillis();
             cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), Optional.of(IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT)).getResponseBody();
-            log.info("Finished rest call- Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", (System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
+            responseTime = System.currentTimeMillis() - apiCallStartTime;
+            log.info("Finished rest call- Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", responseTime, cvParsingDetailsFromDb.getId());
             if (null != cvText && cvText.trim().length()>IConstant.CV_TEXT_API_RESPONSE_MIN_LENGTH && !cvText.isEmpty()) {
                 cvParsingDetailsFromDb.setParsingResponseText(cvText);
                 if(null == cvParsingDetailsFromDb.getProcessingTime())
-                    cvParsingDetailsFromDb.setProcessingTime(System.currentTimeMillis() - apiCallStartTime);
+                    cvParsingDetailsFromDb.setProcessingTime(responseTime);
             }else{
                 breadCrumb.put("CvText", cvText);
                 SentryUtil.logWithStaticAPI(null, "Cv convert python response not good", breadCrumb);
