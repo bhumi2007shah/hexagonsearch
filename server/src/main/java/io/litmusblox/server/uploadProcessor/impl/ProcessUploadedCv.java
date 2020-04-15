@@ -344,6 +344,8 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             log.info("Finished rest call- Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", (System.currentTimeMillis() - apiCallStartTime), cvParsingDetailsFromDb.getId());
             if (null != cvText && cvText.trim().length()>IConstant.CV_TEXT_API_RESPONSE_MIN_LENGTH && !cvText.isEmpty()) {
                 cvParsingDetailsFromDb.setParsingResponseText(cvText);
+                if(null == cvParsingDetailsFromDb.getProcessingTime())
+                    cvParsingDetailsFromDb.setProcessingTime(System.currentTimeMillis() - apiCallStartTime);
             }else{
                 breadCrumb.put("CvText", cvText);
                 SentryUtil.logWithStaticAPI(null, "Cv convert python response not good", breadCrumb);
