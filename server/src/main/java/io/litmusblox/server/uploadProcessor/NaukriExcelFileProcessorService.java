@@ -148,9 +148,10 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
                     int index = 0;
                     boolean discardRow = true;
                     NaukriFileRow naukriRow = null;
-                    while (cellIterator.hasNext() && index < columnPositionMap.size()) {
+                    while (cellIterator.hasNext()) {
                         Cell cell = cellIterator.next();
-                        String cellValue = dataFormatter.formatCellValue(cell);
+                        index = cell.getColumnIndex();
+                        String cellValue = dataFormatter.formatCellValue(cell).toString();
                         String naukriColumn;
                         if (Util.isNotNull(cellValue) && discardRow) {
                             discardRow = false;
@@ -160,12 +161,12 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
                             if(columnPositionMap.get(mapKey)==index){
                                 naukriColumn = mapKey;
                                 naukriRow.getClass().getField(naukriColumn).set(naukriRow, cellValue.trim());
-                                log.info("Naukri Row filled ");
                             }
                         }
-                        index++;
-                        log.info(cellValue);
+//                        log.info(cellValue);
                     }
+                    log.info("Naukri Row filled ");
+                    log.info("Naukri row details: {}",naukriRow);
                     if (!discardRow) {
                         log.info("Candidate creation started ");
                         Candidate candidate = new Candidate();
