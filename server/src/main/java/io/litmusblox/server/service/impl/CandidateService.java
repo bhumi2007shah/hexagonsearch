@@ -97,7 +97,7 @@ public class CandidateService implements ICandidateService {
             if (null != candidateMobileHistory)
                 dupCandidateByMobile = candidateMobileHistory.getCandidate();
         }
-        if (alternateMobile.isPresent()) {
+        if (alternateMobile.isPresent() && !mobile.equals(alternateMobile.get())) {
             CandidateMobileHistory candidateMobileHistory = candidateMobileHistoryRepository.findByMobileAndCountryCode(alternateMobile.get(), countryCode);
             if (null != candidateMobileHistory) {
                 if (dupCandidateByMobile == null)
@@ -137,7 +137,7 @@ public class CandidateService implements ICandidateService {
                 //Candidate by email exists, add mobile history
                 candidateMobileHistoryRepository.save(new CandidateMobileHistory(dupCandidateByEmail, mobile, countryCode, new Date(), loggedInUser));
             }
-            if (!isAlternateMobilePresentInDb && alternateMobile.isPresent()) {
+            if (!isAlternateMobilePresentInDb && alternateMobile.isPresent() && !mobile.equals(alternateMobile.get())) {
                 //Candidate by email exists, add alternate mobile history
                 candidateMobileHistoryRepository.save(new CandidateMobileHistory(dupCandidateByEmail, alternateMobile.get(), countryCode, new Date(), loggedInUser));
             }
@@ -197,7 +197,7 @@ public class CandidateService implements ICandidateService {
         if(null != mobile)
             candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobile, countryCode, new Date(), loggedInUser));
 
-        if(alternateMobile.isPresent())
+        if(alternateMobile.isPresent() && !mobile.equals(alternateMobile.get()))
             candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, alternateMobile.get(), countryCode, new Date(), loggedInUser));
 
         return candidate;
