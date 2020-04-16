@@ -166,7 +166,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                             candidate.get().setCvParsingDetails(new CvParsingDetails());
                         }
                         candidate.get().getCvParsingDetails().setParsingResponsePython(pythonResponse.get());
-                        candidate.get().getCvParsingDetails().setProcessingTime((System.currentTimeMillis() - PythonStartTime));
+                        candidate.get().getCvParsingDetails().setProcessingTime(System.currentTimeMillis() - PythonStartTime);
                         log.info("Received response from Python parser in {}ms.", candidate.get().getCvParsingDetails().getProcessingTime());
                     } catch (Exception e) {
                         log.error("Error while parse resume by Python parser : {}", e.getMessage());
@@ -434,7 +434,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
 
         long apiCallStartTime = System.currentTimeMillis();
         String mlResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), mlCvRatingUrl, HttpMethod.POST, null).getResponseBody();
-        log.info("Response received from CV Rating Api: " + mlResponse);
+        log.info("Response received from CV Rating Api : {}, JcmId : {}", mlResponse, jcmId);
         long apiCallEndTime = System.currentTimeMillis();
 
         long startTime = System.currentTimeMillis();
