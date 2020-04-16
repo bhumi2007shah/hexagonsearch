@@ -4,7 +4,6 @@
 
 package io.litmusblox.server.repository;
 
-import io.litmusblox.server.model.Candidate;
 import io.litmusblox.server.model.CandidateMobileHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -32,5 +31,5 @@ public interface CandidateMobileHistoryRepository extends JpaRepository<Candidat
     Long findCandidateIdByMobileAndCountryCode(String mobile, String countryCode);
 
     @Transactional
-    void deleteByCandidateId(Candidate candidate);
+    void deleteByCandidateId(Long candidateId);
 }

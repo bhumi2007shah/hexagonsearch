@@ -208,7 +208,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             Long candidateId = null;
             String errorMessage = null;
             Map<String, String> breadCrumb = new HashMap<>();
-            if(HttpStatus.OK.equals(statusCode)){
+            if(HttpStatus.OK.value() == statusCode){
                 try {
                     Job jobFromDb = jobRepository.getOne(jobId);
                     breadCrumb.put("JobId", jobFromDb.getId().toString());

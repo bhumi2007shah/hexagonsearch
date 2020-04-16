@@ -1529,8 +1529,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         candidateProjectDetailsRepository.deleteByCandidateId(candidate.getId());
         candidateLanguageProficiencyRepository.deleteByCandidateId(candidate.getId());
         candidateWorkAuthorizationRepository.deleteByCandidateId(candidate.getId());
-        candidateEmailHistoryRepository.deleteByCandidateId(candidate);
-        candidateMobileHistoryRepository.deleteByCandidateId(candidate);
+        candidateEmailHistoryRepository.deleteByCandidateId(candidate.getId());
+        candidateMobileHistoryRepository.deleteByCandidateId(candidate.getId());
         candidateRepository.delete(candidate);
     }
 
