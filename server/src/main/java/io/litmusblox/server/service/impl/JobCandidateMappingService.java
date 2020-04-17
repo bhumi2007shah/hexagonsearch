@@ -1542,9 +1542,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     private Long getCandidateIdFromMobileHistory(String mobile, String countryCode){
-        log.info("Inside getCandidateIdFromMobileHistory for mobile : {}",mobile);
+        log.info("Inside getCandidateIdFromMobileHistory for mobile : {}, countryCode : {}",mobile, countryCode);
         //Fetch candidateId From Mobile History
-        Long candidateIdFromMobileHistory = candidateMobileHistoryRepository.findCandidateIdByMobileAndCountryCode(mobile, countryCode);
+        Long candidateIdFromMobileHistory = null;
+        if(null != mobile && null != countryCode)
+            candidateIdFromMobileHistory = candidateMobileHistoryRepository.findCandidateIdByMobileAndCountryCode(mobile, countryCode);
+
         return candidateIdFromMobileHistory;
     }
 
