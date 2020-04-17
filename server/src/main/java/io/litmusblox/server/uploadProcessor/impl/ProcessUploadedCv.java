@@ -187,7 +187,16 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     break;
             }
         });
-        addCandidate(candidate.get(), Long.parseLong(s[1]), filePath.toString(), Long.parseLong(s[0]), candidateSource, statusCode.get());
+        try{
+            addCandidate(candidate.get(), Long.parseLong(s[1]), filePath.toString(), Long.parseLong(s[0]), candidateSource, statusCode.get());
+        }catch (Exception exception){
+            File file = new File(String.valueOf(filePath));
+            try {
+                StoreFileUtil.storeFile(Util.createMultipartFile(file), Long.parseLong(s[1]), environment.getProperty(IConstant.REPO_LOCATION), IConstant.ERROR_FILES, null, userRepository.findById(Long.parseLong(s[0])).orElse(null));
+            } catch (Exception e) { e.printStackTrace(); }
+            file.delete();
+            log.error("Error in add candidate : {}",exception.getMessage());
+        }
         log.info("Completed processing " + filePath.toString());
     }
 
