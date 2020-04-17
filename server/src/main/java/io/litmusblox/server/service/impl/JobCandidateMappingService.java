@@ -825,10 +825,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 throw new WebException(IErrorMessages.INVALID_RECEIVER_NAME, HttpStatus.BAD_REQUEST);
 
             //validate recevier email
-            if (!Util.isValidateEmail(receiverEmailToUse)) {
+            if (!Util.isValidateEmail(receiverEmailToUse, null)) {
                 String cleanEmail = receiverEmailToUse.replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL,"");
                 log.error("Special characters found, cleaning Email \"" + receiverEmailToUse + "\" to " + cleanEmail);
-                if (!Util.isValidateEmail(cleanEmail)) {
+                if (!Util.isValidateEmail(cleanEmail, null)) {
                     throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + receiverEmailToUse, HttpStatus.BAD_REQUEST);
                 }
                 receiverEmailToUse=cleanEmail;
@@ -1266,7 +1266,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             jcm.setAlternateMobile(validateMobile(jcm.getAlternateMobile(), jcm.getCountryCode()));
 
         if(Util.isNotNull(jcm.getAlternateEmail()))
-            jcm.setAlternateEmail(Util.validateEmail(jcm.getAlternateEmail()));
+            jcm.setAlternateEmail(Util.validateEmail(jcm.getAlternateEmail(), null));
 
         CandidateEmailHistory candidateEmailHistory = null;
         CandidateMobileHistory candidateMobileHistory = null;
@@ -1302,10 +1302,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     private String validateMobile(String mobile, String countryCode){
         if(Util.isNotNull(mobile)) {
             mobile = Util.indianMobileConvertor(mobile, countryCode);
-            if (!Util.validateMobile(mobile, countryCode) && !IConstant.CountryCode.INDIA_CODE.getValue().equals(countryCode)) {
+            if (!Util.validateMobile(mobile, countryCode, null) && !IConstant.CountryCode.INDIA_CODE.getValue().equals(countryCode)) {
                 String cleanMobile = mobile.replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_MOBILE, "");
                 log.error("Special characters found, cleaning mobile number \"" + mobile + "\" to " + cleanMobile);
-                if (!Util.validateMobile(cleanMobile, countryCode))
+                if (!Util.validateMobile(cleanMobile, countryCode, null))
                     throw new ValidationException(IErrorMessages.MOBILE_INVALID_DATA + " - " + mobile, HttpStatus.BAD_REQUEST);
                 return cleanMobile;
             }
@@ -1627,7 +1627,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
     private void createUpdateEmail(JobCandidateMapping jobCandidateMapping, JobCandidateMapping jcmFromDb, User loggedInUser){
         log.info("Inside createUpdateEmail");
-        jobCandidateMapping.setEmail(Util.validateEmail(jobCandidateMapping.getEmail()));
+        jobCandidateMapping.setEmail(Util.validateEmail(jobCandidateMapping.getEmail(), null));
         CandidateEmailHistory candidateEmailHistory = candidateEmailHistoryRepository.findByEmail(jobCandidateMapping.getEmail());
         jobCandidateMapping.getCandidate().setId(jcmFromDb.getCandidate().getId());
         if (null == candidateEmailHistory) {

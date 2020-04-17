@@ -123,39 +123,42 @@ public class Util {
         return true;
     }
 
-    public static boolean isValidateEmail(String email) throws ValidationException {
+    public static boolean isValidateEmail(String email, Optional<Candidate> candidate) throws ValidationException {
         if(Util.isNull(email) || email.trim().length() == 0) {
-            log.error("{} - {}",IErrorMessages.EMAIL_NULL_OR_BLANK, email);
+            setErrorMessage(IErrorMessages.EMAIL_NULL_OR_BLANK+" - "+email, candidate.isPresent()?candidate.get():null);
             return false;
         }
         if(email.length() > IConstant.CANDIDATE_EMAIL_MAX_LENGTH) {
-            log.error("{} - {}",IErrorMessages.EMAIL_TOO_LONG, email);
+            setErrorMessage(IErrorMessages.EMAIL_TOO_LONG+" - "+email, candidate.isPresent()?candidate.get():null);
             return false;
         }
         //check domain name has at least one dot
         String domainName = email.substring(email.indexOf('@')+1);
         if(domainName.indexOf('.') == -1){
-            log.error("{} - {}",IErrorMessages.INVALID_EMAIL, email);
+            setErrorMessage(IErrorMessages.INVALID_EMAIL+" - "+email, candidate.isPresent()?candidate.get():null);
             return false;
         }
 
         String domainString = domainName.substring(domainName.indexOf('.')+1);
 
-        if(domainString.length()<2)
+        if(domainString.length()<2){
+            setErrorMessage(IErrorMessages.INVALID_EMAIL+" - "+email, candidate.isPresent()?candidate.get():null);
             return false;
+        }
 
         if(!email.matches(IConstant.REGEX_FOR_EMAIL_VALIDATION)) {
+            setErrorMessage(IErrorMessages.INVALID_EMAIL+" - "+email, candidate.isPresent()?candidate.get():null);
             return false;
         }
         //email address is valid
         return true;
     }
 
-    public static String validateEmail(String receiverEmailToUse){
-        if (!isValidateEmail(receiverEmailToUse)) {
+    public static String validateEmail(String receiverEmailToUse, Optional<Candidate> candidate){
+        if (!isValidateEmail(receiverEmailToUse, candidate)) {
             String cleanEmail = receiverEmailToUse.replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL,"");
             log.error("Special characters found, cleaning Email \"" + receiverEmailToUse + "\" to " + cleanEmail);
-            if (!isValidateEmail(cleanEmail)) {
+            if (!isValidateEmail(cleanEmail, candidate)) {
                 throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + receiverEmailToUse, HttpStatus.BAD_REQUEST);
             }
             receiverEmailToUse=cleanEmail;
@@ -166,11 +169,11 @@ public class Util {
         return receiverEmailToUse;
     }
 
-    public static boolean validateMobile(String mobile, String countryCode) throws ValidationException  {
+    public static boolean validateMobile(String mobile, String countryCode, Optional<Candidate> candidate) throws ValidationException  {
         Map<String, Long> countryMap = getCountryMap();
 
         if(Util.isNull(mobile) || mobile.trim().length() == 0) {
-            log.error("{} - {}",IErrorMessages.MOBILE_NULL_OR_BLANK, mobile);
+            setErrorMessage(IErrorMessages.MOBILE_NULL_OR_BLANK+" - "+mobile, candidate.isPresent()?candidate.get():null);
             return false;
         }
         if(!mobile.matches(IConstant.REGEX_FOR_MOBILE_VALIDATION))
@@ -179,34 +182,35 @@ public class Util {
         if(countryCode.equals(IConstant.CountryCode.INDIA_CODE.getValue())) {
             Matcher m = INDIAN_MOBILE_PATTERN.matcher(mobile);
             if(!(m.find() && m.group().equals(mobile))) {//did not pass the Indian mobile number pattern
-                log.error("{} - {}", IErrorMessages.INVALID_INDIAN_MOBILE_NUMBER, mobile);
+                setErrorMessage(IErrorMessages.INVALID_INDIAN_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
                 return false;
             }
         }
 
         if(!countryCode.equals(IConstant.CountryCode.INDIA_CODE.getValue())){
             if(countryCode.equals(IConstant.CountryCode.AUS_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.AUS_CODE.getValue())){
-                log.error("{} - {}", IErrorMessages.INVALID_AUSTRALIA_MOBILE_NUMBER, mobile);
+                setErrorMessage(IErrorMessages.INVALID_AUSTRALIA_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
                 return false;
             }
 
             if(countryCode.equals(IConstant.CountryCode.CAN_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.CAN_CODE.getValue())) {
-                log.error("{} - {}", IErrorMessages.INVALID_CANADA_MOBILE_NUMBER, mobile);
+                setErrorMessage(IErrorMessages.INVALID_CANADA_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
                 return false;
             }
 
             if(countryCode.equals(IConstant.CountryCode.UK_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.UK_CODE.getValue())) {
-                log.error("{} - {}", IErrorMessages.INVALID_UK_MOBILE_NUMBER, mobile);
+                setErrorMessage(IErrorMessages.INVALID_UK_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
+
                 return false;
             }
 
             if(countryCode.equals(IConstant.CountryCode.US_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.US_CODE.getValue())) {
-                log.error("{} - {}", IErrorMessages.INVALID_US_MOBILE_NUMBER, mobile);
+                setErrorMessage(IErrorMessages.INVALID_US_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
                 return false;
             }
 
             if(countryCode.equals(IConstant.CountryCode.SING_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.SING_CODE.getValue())) {
-                log.error("{} - {}", IErrorMessages.INVALID_SINGAPORE_MOBILE_NUMBER, mobile);
+                setErrorMessage(IErrorMessages.INVALID_SINGAPORE_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
                 return false;
             }
 
@@ -214,11 +218,18 @@ public class Util {
 
         //check if the number is junk, like all the same digits
         if(JUNK_MOBILE_PATTERN.matcher(mobile).matches()) {
-            log.error("{} - {}", IErrorMessages.JUNK_MOBILE_NUMBER, mobile);
+            setErrorMessage(IErrorMessages.JUNK_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
             return false;
         }
         //mobile is valid
         return true;
+    }
+
+    private static void setErrorMessage(String errorMessage, Candidate candidate){
+        if(errorMessage.length()>0)
+            log.error(errorMessage);
+        if(null != candidate)
+            candidate.setUploadErrorMessage(errorMessage);
     }
 
     public static String getFileExtension(String fileName) {

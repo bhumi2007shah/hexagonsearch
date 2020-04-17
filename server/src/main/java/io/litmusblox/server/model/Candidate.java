@@ -46,7 +46,6 @@ public class Candidate implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
     @Column(name = "FIRST_NAME")
     private String firstName;
 

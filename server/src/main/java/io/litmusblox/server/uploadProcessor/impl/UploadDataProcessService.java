@@ -110,7 +110,8 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             } catch(Exception e) {
                 //e.printStackTrace();
                 log.error("Error while processing candidate : " + candidate.getEmail() + " : " + e.getMessage(), HttpStatus.BAD_REQUEST);
-                candidate.setUploadErrorMessage(IErrorMessages.INTERNAL_SERVER_ERROR);
+                if(null == candidate.getUploadErrorMessage())
+                    candidate.setUploadErrorMessage(IErrorMessages.INTERNAL_SERVER_ERROR);
                 uploadResponseBean.getFailedCandidates().add(candidate);
                 failureCount++;
             }
@@ -137,16 +138,17 @@ public class UploadDataProcessService implements IUploadDataProcessService {
         if (Util.isNotNull(candidate.getFirstName())) {
             //validate candidate used in multiple places so create util method
              candidate.setFirstName(Util.validateCandidateName(candidate.getFirstName()));
-        }
+        }else
+            candidate.setUploadErrorMessage(IErrorMessages.NAME_NULL_OR_BLANK);
 
         if (Util.isNotNull(candidate.getLastName())) {
             candidate.setLastName(Util.validateCandidateName(candidate.getLastName()));
         }
 
-        if (!Util.isValidateEmail(candidate.getEmail())) {
+        if (!Util.isValidateEmail(candidate.getEmail(), Optional.of(candidate))) {
             String cleanEmail = candidate.getEmail().replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL,"");
             log.error("Special characters found, cleaning Email \"" + candidate.getEmail() + "\" to " + cleanEmail);
-            if (!Util.isValidateEmail(cleanEmail)) {
+            if (!Util.isValidateEmail(cleanEmail, Optional.of(candidate))) {
                 throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + candidate.getEmail(), HttpStatus.BAD_REQUEST);
             }
             candidate.setEmail(cleanEmail.toLowerCase());
@@ -156,10 +158,10 @@ public class UploadDataProcessService implements IUploadDataProcessService {
 
         if(Util.isNotNull(candidate.getMobile())) {
             candidate.setMobile(Util.indianMobileConvertor(candidate.getMobile(), (null != candidate.getCountryCode())?candidate.getCountryCode():job.getCompanyId().getCountryId().getCountryCode()));
-            if (!Util.validateMobile(candidate.getMobile(), (null != candidate.getCountryCode())?candidate.getCountryCode():job.getCompanyId().getCountryId().getCountryCode())) {
+            if (!Util.validateMobile(candidate.getMobile(), (null != candidate.getCountryCode())?candidate.getCountryCode():job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate))) {
                 String cleanMobile = candidate.getMobile().replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_MOBILE, "");
                 log.error("Special characters found, cleaning mobile number \"" + candidate.getMobile() + "\" to " + cleanMobile);
-                if (!Util.validateMobile(cleanMobile, candidate.getCountryCode()))
+                if (!Util.validateMobile(cleanMobile, candidate.getCountryCode(), Optional.of(candidate)))
                     throw new ValidationException(IErrorMessages.MOBILE_INVALID_DATA + " - " + candidate.getMobile(), HttpStatus.BAD_REQUEST);
                 candidate.setMobile(cleanMobile);
             }
