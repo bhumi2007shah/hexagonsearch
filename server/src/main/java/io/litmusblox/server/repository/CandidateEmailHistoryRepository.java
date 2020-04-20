@@ -4,7 +4,6 @@
 
 package io.litmusblox.server.repository;
 
-import io.litmusblox.server.model.Candidate;
 import io.litmusblox.server.model.CandidateEmailHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -32,5 +31,5 @@ public interface CandidateEmailHistoryRepository extends JpaRepository<Candidate
     Long findCandidateIdByEmail(String email);
 
     @Transactional
-    void deleteByCandidateId(Candidate candidate);
+    void deleteByCandidateId(Long candidateId);
 }

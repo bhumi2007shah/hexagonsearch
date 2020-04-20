@@ -365,10 +365,12 @@ public class LbUserDetailsService implements UserDetailsService {
         //validate lastName
         Util.validateName(user.getLastName());
         //validate email
-        Util.validateEmail(user.getEmail());
+        Util.validateEmail(user.getEmail(), null);
         //validate mobile
         Country country = countryRepository.findById(user.getCountryId().getId()).orElse(null);
-        Util.validateMobile(user.getMobile(), null != country?country.getCountryCode():null);
+        if(!Util.validateMobile(user.getMobile(), null != country?country.getCountryCode():null, null))
+            throw new ValidationException(IErrorMessages.MOBILE_INVALID_DATA + " - " + user.getMobile(), HttpStatus.BAD_REQUEST);
+
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
