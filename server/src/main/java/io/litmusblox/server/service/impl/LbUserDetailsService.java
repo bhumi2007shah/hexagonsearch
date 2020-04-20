@@ -202,6 +202,7 @@ public class LbUserDetailsService implements UserDetailsService {
         u.setFirstName(Util.toSentenceCase(user.getFirstName()));
         u.setLastName(Util.toSentenceCase(user.getLastName()));
         u.setEmail(user.getEmail().toLowerCase());
+        log.info("Create and update user for company : {}",companyObjToUse.getCompanyName());
         if(null == user.getId() && null == companyObjToUse)
             companyObjToUse=loggedInUser.getCompany();
 
@@ -325,6 +326,7 @@ public class LbUserDetailsService implements UserDetailsService {
         if(null == user.getId())
             companyService.saveCompanyHistory(companyObjToUse.getId(), "New user with email " + user.getEmail() + " created",loggedInUser);
 
+        log.info("Logged in user role : {}, Updated or new user role : ",loggedInUser.getRole(), u.getRole());
         return userRepository.save(u);
     }
 
