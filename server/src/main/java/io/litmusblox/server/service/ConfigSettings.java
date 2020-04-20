@@ -29,4 +29,6 @@ public class ConfigSettings {
     int maxCapabilities;
     int cvRatingTimeout;
     int otpExpiryMinutes;
+    int maxQuestions;
+    int maxQuestionsPerSkill;
 }
