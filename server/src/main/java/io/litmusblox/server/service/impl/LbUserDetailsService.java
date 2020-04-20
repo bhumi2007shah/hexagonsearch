@@ -202,7 +202,6 @@ public class LbUserDetailsService implements UserDetailsService {
         u.setFirstName(Util.toSentenceCase(user.getFirstName()));
         u.setLastName(Util.toSentenceCase(user.getLastName()));
         u.setEmail(user.getEmail().toLowerCase());
-        log.info("Create and update user for company : {}",companyObjToUse.getCompanyName());
         if(null == user.getId() && null == companyObjToUse)
             companyObjToUse=loggedInUser.getCompany();
 
@@ -259,6 +258,7 @@ public class LbUserDetailsService implements UserDetailsService {
         }
 
         u.setCompany(companyObjToUse);
+        log.info("Create and update user for company : {}",companyObjToUse.getCompanyName());
 
         if (null == user.getRole()) {
             //If user role is null then set default role is Recruiter
