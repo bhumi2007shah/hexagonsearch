@@ -148,6 +148,15 @@ public class JobCandidateMapping implements Serializable {
     @Column(name = "CANDIDATE_REJECTION_VALUE")
     private String candidateRejectionValue;
 
+    @Column(name = "EXPECTED_CTC")
+    private Long expectedCtc;
+
+    @Column(name = "PERCENTAGE_HIKE")
+    private Long percentageHike;
+
+    @Column(name = "COMMENTS")
+    private String comments;
+
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private CandidateTechResponseData techResponseData;

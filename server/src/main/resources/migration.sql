@@ -2352,3 +2352,9 @@ INSERT INTO CREATE_JOB_PAGE_SEQUENCE (PAGE_DISPLAY_NAME, PAGE_NAME, PAGE_DISPLAY
 ('Job Screening', 'jobScreening', 2, 'T','Lite'),
 ('Hr screening', 'hrScreening', 3, 'T','Lite'),
 ('Custom Questions', 'customQuestions', 4, 'T','Lite');
+
+--for ticket #486
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN EXPECTED_CTC INTEGER default 0,
+ADD COLUMN PERCENTAGE_HIKE INTEGER default 0,
+ADD COLUMN COMMENTS TEXT;

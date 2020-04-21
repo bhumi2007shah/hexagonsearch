@@ -1117,6 +1117,17 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 jcmFromDb.setReasonForChange(jobCandidateMapping.getReasonForChange());
             }
 
+            //Update candidate expected ctc
+            if(null != jobCandidateMapping.getExpectedCtc())
+                jcmFromDb.setExpectedCtc(jobCandidateMapping.getExpectedCtc());
+
+            //Update candidate percentage hike
+            if(null != jobCandidateMapping.getPercentageHike())
+                jcmFromDb.setPercentageHike(jobCandidateMapping.getPercentageHike());
+
+            //Update recruiter comments for candidate
+            if(Util.isNotNull(jobCandidateMapping.getComments()))
+                jcmFromDb.setComments(jobCandidateMapping.getComments());
 
             //Update candidate servingNoticePeriod
             jcmFromDb.setServingNoticePeriod(jobCandidateMapping.isServingNoticePeriod());
