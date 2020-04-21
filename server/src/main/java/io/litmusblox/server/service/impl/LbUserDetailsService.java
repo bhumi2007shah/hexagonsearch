@@ -172,7 +172,7 @@ public class LbUserDetailsService implements UserDetailsService {
             } else {
                 companyObjToUse = userCompany;
             }
-        }else if(null == user.getId() && null != user.getCompany() && null != user.getCompany().getRecruitmentAgencyId() && IConstant.CompanyType.AGENCY.equals(loggedInUser.getCompany().getCompanyType())){
+        }else if(null == user.getId() && null != user.getCompany() && null != user.getCompany().getRecruitmentAgencyId() && IConstant.CompanyType.AGENCY.getValue().equals(loggedInUser.getCompany().getCompanyType())){
             Company userCompany = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(user.getCompany().getCompanyName(), loggedInUser.getCompany().getId());
             if(null==userCompany){
                 //If Client company not found then do not create company throw exception
