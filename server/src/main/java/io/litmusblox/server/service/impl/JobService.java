@@ -33,6 +33,7 @@ import javax.annotation.Resource;
 import javax.naming.OperationNotSupportedException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
@@ -397,7 +398,6 @@ public class JobService implements IJobService {
         //If the job is not published, do not process the request
         Job job = jobRepository.getOne(jobId);
 
-
         if (null == job) {
             StringBuffer info = new StringBuffer("Invalid job id ").append(jobId);
             log.info(info.toString());
@@ -408,7 +408,7 @@ public class JobService implements IJobService {
         }
         else {
             User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if(!IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && !IConstant.UserRole.Names.RECRUITMENT_AGENCY.equals(loggedInUser.getRole()) && !job.getCompanyId().getId().equals(loggedInUser.getCompany().getId()))
+            if(!IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && !IConstant.CompanyType.AGENCY.getValue().equals(loggedInUser.getCompany().getCompanyType()) && !job.getCompanyId().getId().equals(loggedInUser.getCompany().getId()))
                 throw new WebException(IErrorMessages.JOB_COMPANY_MISMATCH, HttpStatus.UNAUTHORIZED);
 
             if(IConstant.JobStatus.DRAFT.getValue().equals(job.getStatus())) {
@@ -429,6 +429,15 @@ public class JobService implements IJobService {
             responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndRejectedIsTrue(job));
         else
             responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage))));
+
+        //set the cv location
+        responseBean.getJcmAllDetailsList().forEach(jcmAllDetails -> {
+            StringBuffer cvLocation = new StringBuffer("");
+            if(null != jcmAllDetails.getCv_file_type()) {
+                cvLocation.append(IConstant.CANDIDATE_CV).append(File.separator).append(jcmAllDetails.getJob_id()).append(File.separator).append(jcmAllDetails.getCandidate_id()).append(jcmAllDetails.getCv_file_type());
+                jcmAllDetails.setCvLocation(cvLocation.toString());
+            }
+        });
 
         Map<Long, JCMAllDetails> jcmAllDetailsMap = responseBean.getJcmAllDetailsList().stream().collect(Collectors.toMap(JCMAllDetails::getId, Function.identity()));
 
