@@ -258,6 +258,7 @@ public class LbUserDetailsService implements UserDetailsService {
         }
 
         u.setCompany(companyObjToUse);
+        log.info("Create and update user for company : {}",companyObjToUse.getCompanyName());
 
         if (null == user.getRole()) {
             //If user role is null then set default role is Recruiter
@@ -325,6 +326,7 @@ public class LbUserDetailsService implements UserDetailsService {
         if(null == user.getId())
             companyService.saveCompanyHistory(companyObjToUse.getId(), "New user with email " + user.getEmail() + " created",loggedInUser);
 
+        log.info("Logged in user role : {}, Updated or new user role : ",loggedInUser.getRole(), u.getRole());
         return userRepository.save(u);
     }
 

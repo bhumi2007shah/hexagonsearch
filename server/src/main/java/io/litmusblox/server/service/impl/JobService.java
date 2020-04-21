@@ -278,36 +278,31 @@ public class JobService implements IJobService {
 
         log.info("Received request to request to find all jobs for user for archived = " + archived);
         long startTime = System.currentTimeMillis();
-
+        List<Company> companyList = new ArrayList<>();
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         JobWorspaceResponseBean responseBean = new JobWorspaceResponseBean();
         String msg = loggedInUser.getEmail() + ", " + companyId + ": ";
+        if(IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && null == companyId)
+            throw new ValidationException("Missing Company id in request", HttpStatus.UNPROCESSABLE_ENTITY);
+        if(null == companyId)
+            companyId = loggedInUser.getCompany().getId();
 
-        List<Company> companyList = new ArrayList<>();
+        Company company = companyRepository.findById(companyId).orElse(null);
+        if(null == company)
+            throw new ValidationException("Company not found : " + companyId, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        if(IConstant.CompanyType.AGENCY.getValue().equals(company.getCompanyType()))
+            companyList = companyRepository.findByRecruitmentAgencyId(company.getId());
+        else
+            companyList.add(loggedInUser.getCompany());
+
         switch(loggedInUser.getRole()) {
             case IConstant.UserRole.Names.CLIENT_ADMIN:
                 log.info(msg + "Request from Client Admin, all jobs for the company will be returned");
-                companyList = new ArrayList<>();
-                companyList.add(loggedInUser.getCompany());
                 jobsForCompany(responseBean, archived, companyList, jobStatus);
                 break;
-            case IConstant.UserRole.Names.RECRUITMENT_AGENCY:
-                if (null == companyId)
-                    throw new ValidationException("Missing Company id in request", HttpStatus.UNPROCESSABLE_ENTITY);
-                Company company = companyRepository.findById(companyId).orElse(null);
-                if(null == company)
-                    throw new ValidationException("Recruitment agency not found for id : "+companyId, HttpStatus.UNPROCESSABLE_ENTITY);
-                List<Company> companies = companyRepository.findByRecruitmentAgencyId(company.getId());
-                jobsForCompany(responseBean, archived, companies, jobStatus);
-                break;
             case IConstant.UserRole.Names.SUPER_ADMIN:
-                if (null == companyId)
-                    throw new ValidationException("Missing Company id in request", HttpStatus.UNPROCESSABLE_ENTITY);
                 log.info(msg + "Request from Super Admin for jobs of Company");
-                Company companyObjToUse = companyRepository.findById(companyId).orElse(null);
-                companyList.add(companyObjToUse);
-                if (null == companyObjToUse)
-                    throw new ValidationException("Company not found : " + companyId, HttpStatus.UNPROCESSABLE_ENTITY);
                 jobsForCompany(responseBean, archived, companyList, jobStatus);
                 break;
             default:
