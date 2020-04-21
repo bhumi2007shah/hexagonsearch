@@ -127,6 +127,10 @@ public class CompanyService implements ICompanyService {
         company.setShortName(companyFromDb.getShortName());
         company.setCountryId(companyFromDb.getCountryId());
         company.setCompanyUniqueId(companyFromDb.getCompanyUniqueId());
+        company.setCompanyType(companyFromDb.getCompanyType());
+        company.setSubscription(companyFromDb.getSubscription());
+        company.setCreatedOn(companyFromDb.getCreatedOn());
+        company.setSubdomainCreated(companyFromDb.isSubdomainCreated());
 
         if(company.getNewCompanyBu()!=null || company.getDeletedCompanyBu()!=null) {
             updateBusinessUnit(company, loggedInUser);
