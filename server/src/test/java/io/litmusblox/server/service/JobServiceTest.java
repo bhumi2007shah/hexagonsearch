@@ -250,6 +250,7 @@ class JobServiceTest extends AbstractTest {
                     .createdOn(new Date())
                     .companyId(Company.builder().id(2L).build())
                     .education(educationArray)
+                    .role(RoleMasterData.builder().id(1L).build())
                     .experienceRange(MasterData.builder().id(125L).build())
                     .expertise(MasterData.builder().id(122L).build())
                     .jobIndustry(IndustryMasterData.builder().id(1L).build())

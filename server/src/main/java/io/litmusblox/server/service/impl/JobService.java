@@ -955,7 +955,7 @@ public class JobService implements IJobService {
 
         //Update Role
         if (null != masterDataBean.getRole().get(job.getRole().getId()))
-            oldJob.setJobIndustry(job.getJobIndustry());
+            oldJob.setRole(job.getRole());
 
         //Update Currency
         if (null == job.getCurrency()) {

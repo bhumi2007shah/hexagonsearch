@@ -98,7 +98,7 @@ create view exportDataView AS
 
 -- view to select all required fields for search query
 drop view if exists jobDetailsView;
-reate view jobDetailsView AS
+create view jobDetailsView AS
 select
 	job.id as jobId,
 	job.visible_to_career_page as visibleToCareerPage,

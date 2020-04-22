@@ -5,6 +5,7 @@
 package io.litmusblox.server.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -20,6 +21,7 @@ import javax.validation.constraints.NotNull;
 @Data
 @Entity
 @Table(name = "ROLE_MASTER_DATA")
+@Builder
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class RoleMasterData {
 
