@@ -240,6 +240,7 @@ class JobServiceTest extends AbstractTest {
         boolean testPass = true;
         try {
             int educationArray[] = {15};
+            int recruiterArray[] = {1};
             Job testJob = Job.builder()
                     .jobTitle("job title")
                     .jobDescription("job description")
@@ -254,7 +255,7 @@ class JobServiceTest extends AbstractTest {
                     .jobIndustry(IndustryMasterData.builder().id(1L).build())
                     .function(FunctionMasterData.builder().id(13L).build())
                     .jobReferenceId(UUID.randomUUID())
-                    .recruiter(User.builder().id(1L).build())
+                    .recruiter(recruiterArray)
                     .hiringManager(User.builder().id(1L).build())
                     .currency("INR")
                     .usersForCompany(new ArrayList<>())

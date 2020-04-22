@@ -343,7 +343,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             candidateList = processUploadedFile(fileName, uploadResponseBean, loggedInUser, fileFormat, environment.getProperty(IConstant.REPO_LOCATION), loggedInUser.getCountryCode());
 
             try {
-                processCandidateData(candidateList, uploadResponseBean, loggedInUser, jobId, candidatesProcessed, false);
+                processCandidateData(candidateList, uploadResponseBean, loggedInUser, jobId, candidatesProcessed, true);
             } catch (Exception ex) {
                 log.error("Error while processing file " + fileName + " :: " + ex.getMessage());
                 uploadResponseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
