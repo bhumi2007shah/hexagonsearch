@@ -2080,3 +2080,6 @@ INSERT INTO COUNTRY (COUNTRY_NAME, COUNTRY_CODE, MAX_MOBILE_LENGTH, COUNTRY_SHOR
 ('Denmark','+45', 8,'dk'),
 ('Philippines','+63', 10,'ph'),
 ('France','+33', 10,'fr');
+
+--Update RecruitmentAgency role to ClientAdmin
+update users set role = 'ClientAdmin' where email in ('sanket@hexagonselect.com', 'veerdedhia@gmail.com');
