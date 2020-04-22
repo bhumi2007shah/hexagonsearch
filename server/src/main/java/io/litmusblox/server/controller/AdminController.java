@@ -59,7 +59,7 @@ public class AdminController {
      * @throws Exception
      */
     @GetMapping(value = "/fetchUsers")
-    @PreAuthorize(("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.RECRUITMENT_AGENCY +"')"))
+    @PreAuthorize(("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "')"))
     @ResponseBody
     @ResponseStatus(value = HttpStatus.OK)
     List<UserWorkspaceBean> fetchUsers(@RequestParam Long companyId) throws Exception {

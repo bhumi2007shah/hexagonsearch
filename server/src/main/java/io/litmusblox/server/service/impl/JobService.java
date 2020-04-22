@@ -33,6 +33,7 @@ import javax.annotation.Resource;
 import javax.naming.OperationNotSupportedException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
@@ -171,6 +172,12 @@ public class JobService implements IJobService {
             //get handle to existing job object
             oldJob = jobRepository.findById(job.getId()).orElse(null);
            // oldJob = tempJobObj.isPresent() ? tempJobObj.get() : null;
+        } else  {//Is a new job
+            if(IConstant.CompanySubscription.LDEB.toString().equalsIgnoreCase(loggedInUser.getCompany().getSubscription())) {
+                //If LDEB client, set customized chatbot flag & resubmit hr flag = true
+                job.setCustomizedChatbot(true);
+                job.setResubmitHrChatbot(true);
+            }
         }
 
         //set recruiter
@@ -265,36 +272,31 @@ public class JobService implements IJobService {
 
         log.info("Received request to request to find all jobs for user for archived = " + archived);
         long startTime = System.currentTimeMillis();
-
+        List<Company> companyList = new ArrayList<>();
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         JobWorspaceResponseBean responseBean = new JobWorspaceResponseBean();
         String msg = loggedInUser.getEmail() + ", " + companyId + ": ";
+        if(IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && null == companyId)
+            throw new ValidationException("Missing Company id in request", HttpStatus.UNPROCESSABLE_ENTITY);
+        if(null == companyId)
+            companyId = loggedInUser.getCompany().getId();
 
-        List<Company> companyList = new ArrayList<>();
+        Company company = companyRepository.findById(companyId).orElse(null);
+        if(null == company)
+            throw new ValidationException("Company not found : " + companyId, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        if(IConstant.CompanyType.AGENCY.getValue().equals(company.getCompanyType()))
+            companyList = companyRepository.findByRecruitmentAgencyId(company.getId());
+        else
+            companyList.add(loggedInUser.getCompany());
+
         switch(loggedInUser.getRole()) {
             case IConstant.UserRole.Names.CLIENT_ADMIN:
                 log.info(msg + "Request from Client Admin, all jobs for the company will be returned");
-                companyList = new ArrayList<>();
-                companyList.add(loggedInUser.getCompany());
                 jobsForCompany(responseBean, archived, companyList, jobStatus);
                 break;
-            case IConstant.UserRole.Names.RECRUITMENT_AGENCY:
-                if (null == companyId)
-                    throw new ValidationException("Missing Company id in request", HttpStatus.UNPROCESSABLE_ENTITY);
-                Company company = companyRepository.findById(companyId).orElse(null);
-                if(null == company)
-                    throw new ValidationException("Recruitment agency not found for id : "+companyId, HttpStatus.UNPROCESSABLE_ENTITY);
-                List<Company> companies = companyRepository.findByRecruitmentAgencyId(company.getId());
-                jobsForCompany(responseBean, archived, companies, jobStatus);
-                break;
             case IConstant.UserRole.Names.SUPER_ADMIN:
-                if (null == companyId)
-                    throw new ValidationException("Missing Company id in request", HttpStatus.UNPROCESSABLE_ENTITY);
                 log.info(msg + "Request from Super Admin for jobs of Company");
-                Company companyObjToUse = companyRepository.findById(companyId).orElse(null);
-                companyList.add(companyObjToUse);
-                if (null == companyObjToUse)
-                    throw new ValidationException("Company not found : " + companyId, HttpStatus.UNPROCESSABLE_ENTITY);
                 jobsForCompany(responseBean, archived, companyList, jobStatus);
                 break;
             default:
@@ -389,7 +391,6 @@ public class JobService implements IJobService {
         //If the job is not published, do not process the request
         Job job = jobRepository.getOne(jobId);
 
-
         if (null == job) {
             StringBuffer info = new StringBuffer("Invalid job id ").append(jobId);
             log.info(info.toString());
@@ -400,7 +401,7 @@ public class JobService implements IJobService {
         }
         else {
             User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if(!IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && !IConstant.UserRole.Names.RECRUITMENT_AGENCY.equals(loggedInUser.getRole()) && !job.getCompanyId().getId().equals(loggedInUser.getCompany().getId()))
+            if(!IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && !IConstant.CompanyType.AGENCY.getValue().equals(loggedInUser.getCompany().getCompanyType()) && !job.getCompanyId().getId().equals(loggedInUser.getCompany().getId()))
                 throw new WebException(IErrorMessages.JOB_COMPANY_MISMATCH, HttpStatus.UNAUTHORIZED);
 
             if(IConstant.JobStatus.DRAFT.getValue().equals(job.getStatus())) {
@@ -421,6 +422,15 @@ public class JobService implements IJobService {
             responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndRejectedIsTrue(job));
         else
             responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage))));
+
+        //set the cv location
+        responseBean.getJcmAllDetailsList().forEach(jcmAllDetails -> {
+            StringBuffer cvLocation = new StringBuffer("");
+            if(null != jcmAllDetails.getCv_file_type()) {
+                cvLocation.append(IConstant.CANDIDATE_CV).append(File.separator).append(jcmAllDetails.getJob_id()).append(File.separator).append(jcmAllDetails.getCandidate_id()).append(jcmAllDetails.getCv_file_type());
+                jcmAllDetails.setCvLocation(cvLocation.toString());
+            }
+        });
 
         Map<Long, JCMAllDetails> jcmAllDetailsMap = responseBean.getJcmAllDetailsList().stream().collect(Collectors.toMap(JCMAllDetails::getId, Function.identity()));
 

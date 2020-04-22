@@ -72,7 +72,7 @@ public class CompanyDataController {
      */
     @PutMapping(value = "/update",consumes = {"multipart/form-data"})
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN +"') or hasRole('" + IConstant.UserRole.Names.RECRUITMENT_AGENCY +"')")
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN +"')")
     Company updateCompany(
             @RequestParam(value = "logo", required = false) MultipartFile logo,
             @RequestParam("company") String companyString
@@ -173,7 +173,7 @@ public class CompanyDataController {
      */
     @GetMapping("/getCompanyByAgency/{recruitmentAgencyId}")
     @ResponseBody
-    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.RECRUITMENT_AGENCY +"') or hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN +"')")
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN +"') or hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN +"')")
     @ResponseStatus(HttpStatus.OK)
     List<Company> getCompanyListByAgency(@PathVariable ("recruitmentAgencyId") Long recruitmentAgencyId){
         log.info("inside getCompanyListByAgency method");

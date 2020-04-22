@@ -172,7 +172,7 @@ public class LbUserDetailsService implements UserDetailsService {
             } else {
                 companyObjToUse = userCompany;
             }
-        }else if(null == user.getId() && null != user.getCompany() && null != user.getCompany().getRecruitmentAgencyId() && IConstant.UserRole.Names.RECRUITMENT_AGENCY.equals(loggedInUser.getRole())){
+        }else if(null == user.getId() && null != user.getCompany() && null != user.getCompany().getRecruitmentAgencyId() && IConstant.CompanyType.AGENCY.getValue().equals(loggedInUser.getCompany().getCompanyType())){
             Company userCompany = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(user.getCompany().getCompanyName(), loggedInUser.getCompany().getId());
             if(null==userCompany){
                 //If Client company not found then do not create company throw exception
@@ -258,6 +258,7 @@ public class LbUserDetailsService implements UserDetailsService {
         }
 
         u.setCompany(companyObjToUse);
+        log.info("Create and update user for companyId : {}, companyName : {}",companyObjToUse.getId(),companyObjToUse.getCompanyName());
 
         if (null == user.getRole()) {
             //If user role is null then set default role is Recruiter
@@ -325,6 +326,7 @@ public class LbUserDetailsService implements UserDetailsService {
         if(null == user.getId())
             companyService.saveCompanyHistory(companyObjToUse.getId(), "New user with email " + user.getEmail() + " created",loggedInUser);
 
+        log.info("Logged in userId : {} and userRole : {}, Updated or new user role : {}",loggedInUser.getId(),loggedInUser.getRole(), u.getRole());
         return userRepository.save(u);
     }
 
@@ -365,10 +367,12 @@ public class LbUserDetailsService implements UserDetailsService {
         //validate lastName
         Util.validateName(user.getLastName());
         //validate email
-        Util.validateEmail(user.getEmail());
+        Util.validateEmail(user.getEmail(), null);
         //validate mobile
         Country country = countryRepository.findById(user.getCountryId().getId()).orElse(null);
-        Util.validateMobile(user.getMobile(), null != country?country.getCountryCode():null);
+        if(!Util.validateMobile(user.getMobile(), null != country?country.getCountryCode():null, null))
+            throw new ValidationException(IErrorMessages.MOBILE_INVALID_DATA + " - " + user.getMobile(), HttpStatus.BAD_REQUEST);
+
     }
 
     @Transactional(propagation = Propagation.REQUIRED)

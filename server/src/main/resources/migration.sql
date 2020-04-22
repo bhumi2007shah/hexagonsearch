@@ -2040,7 +2040,7 @@ drop view if exists job_candidate_mapping_all_details;
 create view job_candidate_mapping_all_details
 as select
 job_candidate_mapping.id, job_candidate_mapping.job_id, job_candidate_mapping.candidate_id, job_candidate_mapping.email, job_candidate_mapping.mobile, job_candidate_mapping.country_code, job_candidate_mapping.stage, job_candidate_mapping.created_on, job_candidate_mapping.candidate_first_name, job_candidate_mapping.candidate_last_name, job_candidate_mapping.chatbot_status, job_candidate_mapping.score,job_candidate_mapping.rejected,
-cv_rating.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name, candidateCompany.designation, candidateCompany.notice_period, candidate_details.total_experience
+cv_rating.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name, candidateCompany.designation, candidateCompany.notice_period, candidate_details.total_experience, job_candidate_mapping.cv_file_type
 from users,job_candidate_mapping
 left join cv_rating on job_candidate_mapping.id = cv_rating.job_candidate_mapping_id
 left join candidate_details on candidate_details.candidate_id = job_candidate_mapping.candidate_id
@@ -2069,3 +2069,14 @@ INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 (70, '"introText"=>"As a part of org level role baselining, we seek your inputs on various aspects of your work experience regarding the role of",
 "thankYouText"=>"No further action is required from your side",
 "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false", "showUploadResumePage"=>"false"');
+
+--For ticket #504
+UPDATE CV_PARSING_API_DETAILS SET ACTIVE = 'f' WHERE COLUMN_TO_UPDATE = 'PARSING_RESPONSE_ML';
+
+--Savita Mam want new countries
+INSERT INTO COUNTRY (COUNTRY_NAME, COUNTRY_CODE, MAX_MOBILE_LENGTH, COUNTRY_SHORT_CODE) VALUES
+('Germany','+49', 11,'de'),
+('Malaysia','+60', 11,'my'),
+('Denmark','+45', 8,'dk'),
+('Philippines','+63', 10,'ph'),
+('France','+33', 10,'fr');
