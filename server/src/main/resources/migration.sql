@@ -2081,6 +2081,9 @@ INSERT INTO COUNTRY (COUNTRY_NAME, COUNTRY_CODE, MAX_MOBILE_LENGTH, COUNTRY_SHOR
 ('Philippines','+63', 10,'ph'),
 ('France','+33', 10,'fr');
 
+--Update RecruitmentAgency role to ClientAdmin
+update users set role = 'ClientAdmin' where email in ('sanket@hexagonselect.com', 'veerdedhia@gmail.com');
+
 --For ticket #478
 CREATE TABLE INDUSTRY_MASTER_DATA(
 ID serial PRIMARY KEY NOT NULL,

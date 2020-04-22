@@ -295,7 +295,7 @@ public class JobService implements IJobService {
         if(IConstant.CompanyType.AGENCY.getValue().equals(company.getCompanyType()))
             companyList = companyRepository.findByRecruitmentAgencyId(company.getId());
         else
-            companyList.add(loggedInUser.getCompany());
+            companyList.add(company);
 
         switch(loggedInUser.getRole()) {
             case IConstant.UserRole.Names.CLIENT_ADMIN:
