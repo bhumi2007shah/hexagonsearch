@@ -119,7 +119,7 @@ on job.job_location = company_address.id
 left join master_data exp
 on job.experience_range = exp.id
 left join master_data education
-on job.education = education.id
+on education.id = ANY(job.education)
 left join jobKeySkillAggregation
 on job.id = jobKeySkillAggregation.jobId
 where job.status = 'Live'
