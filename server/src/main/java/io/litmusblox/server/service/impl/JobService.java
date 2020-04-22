@@ -186,11 +186,7 @@ public class JobService implements IJobService {
         }
 
         //set recruiter
-        if(null != job.getRecruiter() && null != job.getRecruiter().getId()){
-            recruiter =  userRepository.findById(job.getRecruiter().getId()).orElse(null);
-            if(null != recruiter)
-                job.setRecruiter(recruiter);
-        }else
+        if(null == job.getRecruiter() && job.getRecruiter().length==0)
             throw new ValidationException("Recruiter "+IErrorMessages.NULL_MESSAGE, HttpStatus.UNPROCESSABLE_ENTITY);
 
         //set hiringManager
@@ -316,9 +312,9 @@ public class JobService implements IJobService {
     private void jobsForLoggedInUser(JobWorspaceResponseBean responseBean, boolean archived, User loggedInUser, String jobStatus) {
         long startTime = System.currentTimeMillis();
         if (archived)
-            responseBean.setListOfJobs(jobRepository.findByCreatedByAndDateArchivedIsNotNullOrderByCreatedOnDesc(loggedInUser));
+            responseBean.setListOfJobs(jobRepository.findByCreatedByAndDateArchivedIsNotNullOrderByCreatedOnDesc(loggedInUser, loggedInUser.getId()));
         else
-            responseBean.setListOfJobs(jobRepository.findByCreatedByAndStatusAndDateArchivedIsNullOrderByCreatedOnDesc(loggedInUser, jobStatus));
+            responseBean.setListOfJobs(jobRepository.findByCreatedByAndStatusAndDateArchivedIsNullOrderByCreatedOnDesc(loggedInUser,loggedInUser.getId(), jobStatus));
 
         List<Object[]> object = jobRepository.getJobCountPerStatusByCreatedBy(loggedInUser.getId());
             if(null != object.get(0)[0]){

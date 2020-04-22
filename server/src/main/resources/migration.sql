@@ -2365,3 +2365,7 @@ ALTER TABLE JOB_CANDIDATE_MAPPING
 ADD COLUMN EXPECTED_CTC INTEGER default 0,
 ADD COLUMN PERCENTAGE_HIKE INTEGER default 0,
 ADD COLUMN COMMENTS TEXT;
+
+-- For ticket #487
+alter table job drop constraint job_recruiter_fkey;
+alter table job alter recruiter type integer[] using array[recruiter];

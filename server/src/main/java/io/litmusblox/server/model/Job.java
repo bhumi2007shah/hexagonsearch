@@ -139,10 +139,9 @@ public class Job implements Serializable {
     @JoinColumn(name="HIRING_MANAGER")
     private User hiringManager;
 
-   // @NotNull(message = "Recruiter " + IErrorMessages.NULL_MESSAGE)
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="RECRUITER")
-    private User recruiter;
+    @Type(type = "int-array")
+    @Column(name = "RECRUITER", columnDefinition = "integer[]")
+    private int[] recruiter;
 
     @NotNull
     @Column(name = "CREATED_ON")
