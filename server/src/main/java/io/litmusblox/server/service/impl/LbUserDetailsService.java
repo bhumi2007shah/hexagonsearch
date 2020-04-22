@@ -139,7 +139,7 @@ public class LbUserDetailsService implements UserDetailsService {
      */
     @Transactional(propagation = Propagation.REQUIRED)
     public User createUpdateUser(User user) throws Exception {
-        log.info("Inside createUpdateUser");
+        log.info("Inside createUpdateUser for user email : {} and mobile : {}", user.getEmail(), user.getMobile());
         User userFromDb = null;
         User loggedInUser = getLoggedInUser();
 
@@ -326,6 +326,7 @@ public class LbUserDetailsService implements UserDetailsService {
         if(null == user.getId())
             companyService.saveCompanyHistory(companyObjToUse.getId(), "New user with email " + user.getEmail() + " created",loggedInUser);
 
+        log.info("Create or update user for email : {} and mobile : {}", u.getEmail(), u.getMobile());
         log.info("Logged in userId : {} and userRole : {}, Updated or new user role : {}",loggedInUser.getId(),loggedInUser.getRole(), u.getRole());
         return userRepository.save(u);
     }
