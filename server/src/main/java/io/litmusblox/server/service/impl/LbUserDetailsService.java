@@ -326,8 +326,7 @@ public class LbUserDetailsService implements UserDetailsService {
         if(null == user.getId())
             companyService.saveCompanyHistory(companyObjToUse.getId(), "New user with email " + user.getEmail() + " created",loggedInUser);
 
-        log.info("Create or update user for email : {} and mobile : {}", u.getEmail(), u.getMobile());
-        log.info("Logged in userId : {} and userRole : {}, Updated or new user role : {}",loggedInUser.getId(),loggedInUser.getRole(), u.getRole());
+        log.info("Logged in userId : {} and userRole : {}, Create or update user for email : {} and mobile : {}, role : {}",loggedInUser.getId(), loggedInUser.getRole(), u.getEmail(), u.getMobile(), u.getRole());
         return userRepository.save(u);
     }
 
