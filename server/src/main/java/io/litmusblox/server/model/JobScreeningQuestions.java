@@ -88,7 +88,7 @@ public class JobScreeningQuestions implements Serializable {
     //If customize question is add then parse this question
     public ScreeningQuestions getMasterScreeningQuestionId(){
         if(null != this.masterScreeningQuestionId)
-            if (this.customizeQuestionData.size() > 0 && null != this.masterScreeningQuestionId.getCustomizeQuestion()) {
+            if (null != this.customizeQuestionData && this.customizeQuestionData.size() > 0 && null != this.masterScreeningQuestionId.getCustomizeQuestion()) {
                 Util.parseCustomizeQuestion(this.customizeQuestionData, this.masterScreeningQuestionId);
             }
         return this.masterScreeningQuestionId;
