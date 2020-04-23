@@ -139,6 +139,13 @@ VALUES
  ( 'noticePeriod','90'),
  ( 'noticePeriod','Others');
 
+ INSERT INTO MASTER_DATA (TYPE, VALUE, VALUE_TO_USE) VALUES
+ ( 'questionType','Checkbox', 'Multiple Choice'),
+ ( 'questionType','Radio button', 'Single Choice'),
+ ( 'questionType','InputBox', 'Short answer'),
+ ( 'questionType','Location', 'Location'),
+ ( 'questionType','Slider', 'Slider'),
+ ( 'questionType','Calendar', 'Calendar');
 
 delete from configuration_settings;
 -- max limits for various parameters
@@ -1108,10 +1115,3 @@ INSERT INTO CREATE_JOB_PAGE_SEQUENCE (PAGE_DISPLAY_NAME, PAGE_NAME, PAGE_DISPLAY
 ('Hr screening', 'hrScreening', 3, 'T','Lite'),
 ('Custom Questions', 'customQuestions', 4, 'T','Lite');
 
-INSERT INTO MASTER_DATA (TYPE, VALUE, VALUE_TO_USE) VALUES
-( 'questionType','Checkbox', 'Multiple Choice'),
-( 'questionType','Radio button', 'Single Choice'),
-( 'questionType','InputBox', 'Short answer'),
-( 'questionType','Location', 'Location'),
-( 'questionType','Slider', 'Slider'),
-( 'questionType','Calendar', 'Calendar');
