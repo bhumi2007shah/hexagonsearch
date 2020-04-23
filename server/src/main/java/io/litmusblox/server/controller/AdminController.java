@@ -38,6 +38,9 @@ public class AdminController {
     @Autowired
     LbUserDetailsService userDetailsService;
 
+    @Autowired
+    IAdminService adminService;
+
     /**
      * REST Api to fetch a list of all companies
      *
@@ -93,4 +96,15 @@ public class AdminController {
         return companyService.setCompanyUniqueId();
     }
 
+    /**
+     * Controller method to call service that adds existing
+     * candidate and companies on search engine.
+     * @throws Exception
+     */
+    @PutMapping(value = "/addCompanyCandidate")
+    @PreAuthorize("hasRole('"+IConstant.UserRole.Names.SUPER_ADMIN +"')")
+    @ResponseStatus(value = HttpStatus.OK)
+    void addCompanyCandidate() throws Exception{
+        adminService.addCompanyCandidateOnScoringEngine();
+    }
 }

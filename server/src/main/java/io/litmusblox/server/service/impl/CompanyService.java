@@ -803,7 +803,7 @@ public class CompanyService implements ICompanyService {
      * private method to make a call to search engine add company api.
      * @param company
      */
-    private void addCompanyOnSearchEngine(Company company){
+    public void addCompanyOnSearchEngine(Company company){
         log.info("Calling SearchEngine API to add company {}", company.getCompanyName());
         //creating a map of parameters to be sent to search engine api.
         Map queryparams = new HashMap(2);
