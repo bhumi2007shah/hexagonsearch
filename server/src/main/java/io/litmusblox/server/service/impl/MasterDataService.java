@@ -369,6 +369,9 @@ public class MasterDataService implements IMasterDataService {
                 master.getStageStepMasterMap().putAll(MasterDataBean.getInstance().getStageStepMasterMap());
                 break;
             case ADD_JOB_PAGES:
+                log.info("AddJob pages for subscription : {}",loggedInUser.getCompany().getSubscription());
+                MasterDataBean.getInstance().setAddJobPages(new ArrayList<>());
+                MasterDataBean.getInstance().setJobPageNamesInOrder(new ArrayList<>());
                 createJobPageSequenceRepository.findByDisplayFlagIsTrueAndSubscriptionAvailabilityOrderByPageDisplayOrderAsc(loggedInUser.getCompany().getSubscription()).stream().forEach(page-> {
                     MasterDataBean.getInstance().getAddJobPages().add(page);
                     MasterDataBean.getInstance().getJobPageNamesInOrder().add(page.getPageName());
@@ -376,6 +379,7 @@ public class MasterDataService implements IMasterDataService {
                 master.getAddJobPages().addAll(MasterDataBean.getInstance().getAddJobPages());
                 break;
             case SCREENING_QUESTIONS_MASTER_DATA:
+                MasterDataBean.getInstance().setScreeningQuestions(new HashMap<>());
                 MasterDataBean.getInstance().getQuestionCategory().entrySet().forEach(category->{
                     MasterDataBean.getInstance().getScreeningQuestions().put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategory(loggedInUser.getCountryId(), category.getValue()));
                 });
