@@ -2369,3 +2369,11 @@ ADD COLUMN COMMENTS TEXT;
 -- For ticket #487
 alter table job drop constraint job_recruiter_fkey;
 alter table job alter recruiter type integer[] using array[recruiter];
+
+-- For ticket #478 Update question type value
+update master_data set value_to_use = 'Single Choice' where value = 'Radio button';
+update master_data set value_to_use = 'Multiple Choice' where value = 'Checkbox';
+update master_data set value_to_use = 'Short answer' where value = 'InputBox';
+update master_data set value_to_use = 'Calendar' where value = 'Calendar';
+update master_data set value_to_use = 'Slider' where value = 'Slider';
+update master_data set value_to_use = 'Location' where value = 'Location' and type = 'questionType';

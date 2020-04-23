@@ -120,13 +120,6 @@ VALUES
  ('education', 'Vocational-Training (Vocational Training)'),
  ('education', 'Other (Other)'),
 
- ( 'questionType','Checkbox'),
- ( 'questionType','Radio button'),
- ( 'questionType','InputBox'),
- ( 'questionType','Location'),
- ( 'questionType','Slider'),
- ( 'questionType','Calendar'),
-
  ( 'addressType','Job Location'),
  ( 'addressType','Interview Location'),
  ( 'addressType','Both'),
@@ -1114,3 +1107,11 @@ INSERT INTO CREATE_JOB_PAGE_SEQUENCE (PAGE_DISPLAY_NAME, PAGE_NAME, PAGE_DISPLAY
 ('Job Screening', 'jobScreening', 2, 'T','Lite'),
 ('Hr screening', 'hrScreening', 3, 'T','Lite'),
 ('Custom Questions', 'customQuestions', 4, 'T','Lite');
+
+INSERT INTO MASTER_DATA (TYPE, VALUE, VALUE_TO_USE) VALUES
+( 'questionType','Checkbox', 'Multiple Choice'),
+( 'questionType','Radio button', 'Single Choice'),
+( 'questionType','InputBox', 'Short answer'),
+( 'questionType','Location', 'Location'),
+( 'questionType','Slider', 'Slider'),
+( 'questionType','Calendar', 'Calendar');
