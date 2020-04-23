@@ -371,6 +371,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             log.info("Cv storage file path : {}", queryParameters.get("file"));
             breadCrumb.put("FilePath", queryParameters.get("file"));
             long apiCallStartTime = System.currentTimeMillis();
+            //Call to cv parser for convert cv to cvText
             cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), Optional.of(MasterDataBean.getInstance().getRestReadTimeoutForCvParser())).getResponseBody();
             responseTime = System.currentTimeMillis() - apiCallStartTime;
             log.info("Finished rest call- Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", responseTime, cvParsingDetailsFromDb.getId());
@@ -383,6 +384,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                 SentryUtil.logWithStaticAPI(null, "Cv convert python response not good", breadCrumb);
             }
 
+            //If existing user have mail with @notavailable.io and mobile is null then call edit candidate to update email and mobile
             if(cvParsingDetailsFromDb.getJobCandidateMappingId().getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL) || null == cvParsingDetailsFromDb.getJobCandidateMappingId().getMobile()){
                 String validMobile = null;
                 boolean isEditCandidate = false;
@@ -392,12 +394,18 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                 StringBuffer queryString = new StringBuffer(cvParsingApiDetails.getApiUrl());
                 queryString.append("?file=");
                 queryString.append(environment.getProperty(IConstant.CV_STORAGE_LOCATION)).append(jcmFromDb.getJob().getId()).append(File.separator).append(cvParsingDetailsFromDb.getCandidateId()).append(jcmFromDb.getCvFileType());
+
+                //Call Python parser to parse cv
                 candidateFromPython = pythonCvParser(queryString.toString());
+
+                //Check if existing candidate email not available then set python response email
                 if(cvParsingDetailsFromDb.getJobCandidateMappingId().getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL) && Util.isNotNull(candidateFromPython.getEmail()) && Util.isValidateEmail(candidateFromPython.getEmail(), Optional.of(candidateFromPython))){
                     log.info("candidate old email : {}, python response email : {}", jcmFromDb.getEmail(), candidateFromPython.getEmail());
                     cvParsingDetailsFromDb.getJobCandidateMappingId().setEmail(candidateFromPython.getEmail());
                     isEditCandidate = true;
                 }
+
+                //Check if existing candidate mobile is null then set python response mobile
                 if(Util.isNull(jcmFromDb.getMobile()) && Util.isNotNull(candidateFromPython.getMobile())){
                     validMobile = Util.indianMobileConvertor(candidateFromPython.getMobile(), cvParsingDetailsFromDb.getJobCandidateMappingId().getCountryCode());
                     if(Util.validateMobile(validMobile, cvParsingDetailsFromDb.getJobCandidateMappingId().getCountryCode(),Optional.of(candidateFromPython))){
@@ -406,6 +414,8 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                         isEditCandidate = true;
                     }
                 }
+
+                //If flag isEditCandidate is true then call update email and mobile
                 if(isEditCandidate)
                     jobCandidateMappingService.updateOrCreateEmailMobile(cvParsingDetailsFromDb.getJobCandidateMappingId(), jcmFromDb, jcmFromDb.getCreatedBy());
             }
