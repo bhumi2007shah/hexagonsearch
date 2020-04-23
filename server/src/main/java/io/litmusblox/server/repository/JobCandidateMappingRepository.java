@@ -69,7 +69,7 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Transactional
     @Query(value = "select j.id as jobId, j.job_title as jobTitle, (select step from stage_step_master where id = jcm.stage) as currentStatus,\n" +
             "jcm.created_on as sourcedOn, (select step from stage_step_master where id = jcm.stage) as lastStage, (select CONCAT(first_name,' ', last_name) from users where id=j.hiring_manager) as hiringManager, \n" +
-            "(select CONCAT(first_name, ' ', last_name) from users where id=j.recruiter) as recruiter\n" +
+            "(select CONCAT(first_name, ' ', last_name) from users where id= ANY(j.recruiter)) as recruiter\n" +
             "from job_candidate_mapping jcm\n" +
             "inner join job j on j.id = jcm.job_id\n" +
             "where jcm.candidate_id =:candidateId and j.company_id =:companyId order by jcm.created_on desc", nativeQuery = true)
