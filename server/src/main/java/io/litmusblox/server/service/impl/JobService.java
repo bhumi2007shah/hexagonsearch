@@ -211,7 +211,7 @@ public class JobService implements IJobService {
                 addJobCapabilities(job, oldJob, loggedInUser);
                 break;
             case jobDetail:
-                addJobDetail(job, oldJob, loggedInUser);
+                addJobDetail(job, oldJob, loggedInUser, false);
                 break;
             case hiringTeam:
                 addJobHiringTeam(job, oldJob, loggedInUser);
@@ -554,7 +554,7 @@ public class JobService implements IJobService {
         }
         //TODO: remove one JobRepository call
         //Add Job details
-        addJobDetail(job, oldJob, loggedInUser);
+        addJobDetail(job, oldJob, loggedInUser, isNewAddJobFlow);
 
         saveJobHistory(job.getId(), historyMsg + " job overview", loggedInUser);
 
@@ -930,7 +930,7 @@ public class JobService implements IJobService {
         job.getJobCapabilityList().addAll(oldJob.getJobCapabilityList());
     }
 
-    private void addJobDetail(Job job, Job oldJob, User loggedInUser) {//add job details
+    private void addJobDetail(Job job, Job oldJob, User loggedInUser, boolean isNewAddJobFlow) {//add job details
 
         MasterDataBean masterDataBean = MasterDataBean.getInstance();
 
@@ -938,11 +938,13 @@ public class JobService implements IJobService {
         oldJob.setNoOfPositions(job.getNoOfPositions());
 
         //Update JobIndustry
-        if (null == masterDataBean.getJobIndustry().get(job.getJobIndustry().getId())) {
-            //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
-            log.error("In Job, jobIndustry " + IErrorMessages.NULL_MESSAGE + job.getId());
-        }else{
-            oldJob.setJobIndustry(job.getJobIndustry());
+        if(isNewAddJobFlow){
+            if (null == masterDataBean.getJobIndustry().get(job.getJobIndustry().getId())) {
+                //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
+                log.error("In Job, jobIndustry " + IErrorMessages.NULL_MESSAGE + job.getId());
+            }else{
+                oldJob.setJobIndustry(job.getJobIndustry());
+            }
         }
 
         //Update Function
@@ -954,7 +956,7 @@ public class JobService implements IJobService {
         }
 
         //Update Role
-        if (null != masterDataBean.getRole().get(job.getRole().getId()))
+        if (isNewAddJobFlow && null != masterDataBean.getRole().get(job.getRole().getId()))
             oldJob.setRole(job.getRole());
 
         //Update Currency
