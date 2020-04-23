@@ -211,9 +211,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         try {
             if(ignoreMobile)
-                processCandidateData(candidates, uploadResponseBean, loggedInUser, jobId, candidateProcessed, ignoreMobile);
+                processCandidateData(candidates, uploadResponseBean, loggedInUser, jobId, candidateProcessed, ignoreMobile, job);
             else
-                processCandidateData(candidates, uploadResponseBean, loggedInUser, jobId, candidateProcessed, !IConstant.STR_INDIA.equalsIgnoreCase(loggedInUser.getCountryId().getCountryName()));
+                processCandidateData(candidates, uploadResponseBean, loggedInUser, jobId, candidateProcessed, !IConstant.STR_INDIA.equalsIgnoreCase(loggedInUser.getCountryId().getCountryName()), job);
         } catch (Exception ex) {
             log.error("Error while processing candidates uploaded :: " + ex.getMessage());
             uploadResponseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
@@ -221,7 +221,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         return uploadResponseBean;
     }
 
-    private void processCandidateData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, User loggedInUser, Long jobId, int candidateProcessed, boolean ignoreMobile) throws Exception{
+    private void processCandidateData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, User loggedInUser, Long jobId, int candidateProcessed, boolean ignoreMobile, Job job) throws Exception{
 
         if (null != candidateList && candidateList.size() > 0) {
             iUploadDataProcessService.processData(candidateList, uploadResponseBean, candidateProcessed,jobId, ignoreMobile, Optional.of(loggedInUser));
@@ -231,6 +231,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             try {
                 if(null!=candidate.getId())
                     saveCandidateSupportiveInfo(candidate, loggedInUser);
+                    candidateService.createCandidateOnSearchEngine(candidate, job);
             }catch (Exception ex){
                 log.error("Error while processing candidates supportive info :: " + ex.getMessage());
             }
@@ -338,12 +339,13 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         log.info("Thread - {} : Started processing uploadCandidatesFromFile in JobCandidateMappingService", Thread.currentThread().getName());
         UploadResponseBean uploadResponseBean = new UploadResponseBean();
         List<Candidate> candidateList = null;
+        Job job = jobRepository.getOne(jobId);
 
         try {
             candidateList = processUploadedFile(fileName, uploadResponseBean, loggedInUser, fileFormat, environment.getProperty(IConstant.REPO_LOCATION), loggedInUser.getCountryCode());
 
             try {
-                processCandidateData(candidateList, uploadResponseBean, loggedInUser, jobId, candidatesProcessed, false);
+                processCandidateData(candidateList, uploadResponseBean, loggedInUser, jobId, candidatesProcessed, false, job);
             } catch (Exception ex) {
                 log.error("Error while processing file " + fileName + " :: " + ex.getMessage());
                 uploadResponseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());

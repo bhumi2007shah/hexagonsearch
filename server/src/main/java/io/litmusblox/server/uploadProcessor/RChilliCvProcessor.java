@@ -12,6 +12,7 @@ import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
+import io.litmusblox.server.service.ICandidateService;
 import io.litmusblox.server.service.IJobCandidateMappingService;
 import io.litmusblox.server.service.MasterDataBean;
 import io.litmusblox.server.utils.RestClient;
@@ -84,6 +85,9 @@ public class RChilliCvProcessor {
 
     @Resource
     CvRatingRepository cvRatingRepository;
+
+    @Autowired
+    ICandidateService candidateService;
 
     @Transactional(readOnly = true)
     User getUser(long userId) {
@@ -307,6 +311,7 @@ public class RChilliCvProcessor {
 
         try {
             jobCandidateMappingService.saveCandidateSupportiveInfo(candidate, user);
+            candidateService.createCandidateOnSearchEngine(candidate, job);
         }catch (ValidationException ve){
             ve.printStackTrace();
             log.error("Error while saving candidate supportive information received from RChilliJson : " + ve.getMessage()+", CandidateEmail : "+candidate.getEmail()+", CandidateMobile : "+candidate.getMobile());

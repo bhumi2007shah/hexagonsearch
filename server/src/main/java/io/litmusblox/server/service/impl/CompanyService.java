@@ -812,7 +812,7 @@ public class CompanyService implements ICompanyService {
 
         try {
             //calling sscoring engine api to add company in neo4j db.
-            RestClient.getInstance().consumeRestApi(null, searchEngineBaseUrl + searchEngineAddCompanyUrlSuffix, HttpMethod.POST, null, Optional.of(queryparams), null).getResponseBody();
+            RestClient.getInstance().consumeRestApi(null, searchEngineBaseUrl + searchEngineAddCompanyUrlSuffix, HttpMethod.POST, null, Optional.of(queryparams), null);
         }
         catch (Exception e){
             log.error("Error while adding company on Search Engine: " + e.getMessage());

@@ -393,4 +393,6 @@ public interface IConstant {
     //List of date formats for Naukri files
     List<String> DATE_FORMATS_LIST = Arrays.asList("dd MMM yyyy","y-M-d");
 
+    String OTHERS = "Other (Other)";
+
 }
