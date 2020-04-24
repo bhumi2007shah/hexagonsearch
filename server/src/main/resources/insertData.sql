@@ -1113,5 +1113,5 @@ INSERT INTO CREATE_JOB_PAGE_SEQUENCE (PAGE_DISPLAY_NAME, PAGE_NAME, PAGE_DISPLAY
 ('Job Details', 'jobDetail', 1, 'T','Lite'),
 ('Job Screening', 'jobScreening', 2, 'T','Lite'),
 ('Hr screening', 'hrScreening', 3, 'T','Lite'),
-('Custom Questions', 'customQuestions', 4, 'T','Lite');
-
+('Custom Questions', 'customQuestions', 4, 'T','Lite'),
+('Publish', 'publish', 5, 'T','Lite');

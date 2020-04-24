@@ -929,7 +929,7 @@ public class JobService implements IJobService {
 
         //Update JobIndustry
         if(isNewAddJobFlow){
-            if (null == masterDataBean.getJobIndustry().get(job.getJobIndustry().getId())) {
+            if (null == job.getJobIndustry() || null == masterDataBean.getJobIndustry().get(job.getJobIndustry().getId())) {
                 //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
                 log.error("In Job, jobIndustry " + IErrorMessages.NULL_MESSAGE + job.getId());
             }else{
@@ -946,7 +946,7 @@ public class JobService implements IJobService {
         }
 
         //Update Role
-        if (isNewAddJobFlow && null != masterDataBean.getRole().get(job.getRole().getId()))
+        if (isNewAddJobFlow && null != job.getRole() && null != masterDataBean.getRole().get(job.getRole().getId()))
             oldJob.setRole(job.getRole());
 
         //Update Currency
