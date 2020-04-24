@@ -277,7 +277,7 @@ public class MasterDataService implements IMasterDataService {
 
         MasterDataResponse master = new MasterDataResponse();
         //populate data for each of the required items
-        fetchItemList.stream().forEach(item -> getMasterData(master, item));
+        fetchItemList.stream().forEach(item -> getMasterData(master, item, false));
 
         log.info("Completed request to fetch master data in " + (System.currentTimeMillis() - startTime) + "ms");
         return master;
@@ -300,7 +300,7 @@ public class MasterDataService implements IMasterDataService {
             if(!Arrays.asList(IConstant.fetchItemsType).contains(item))
                 throw new ValidationException("You can not access masterData for " +item+" Item", HttpStatus.UNAUTHORIZED);
 
-            getMasterData(master, item);
+            getMasterData(master, item, true);
         });
 
         log.info("Completed request to fetch master from no auth data in " + (System.currentTimeMillis() - startTime) + "ms");
@@ -360,8 +360,11 @@ public class MasterDataService implements IMasterDataService {
      * @param input the requested master data
      *
      */
-    private void getMasterData(MasterDataResponse master, String input) {
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    private void getMasterData(MasterDataResponse master, String input, boolean isNoAuthCall) {
+        User loggedInUser = null;
+
+        if(!isNoAuthCall)
+            loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         switch (input) {
             case COUNTRY_MASTER_DATA:
@@ -382,8 +385,9 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case SCREENING_QUESTIONS_MASTER_DATA:
                 MasterDataBean.getInstance().setScreeningQuestions(new HashMap<>());
+                User finalLoggedInUser = loggedInUser;
                 MasterDataBean.getInstance().getQuestionCategory().entrySet().forEach(category->{
-                    MasterDataBean.getInstance().getScreeningQuestions().put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategory(loggedInUser.getCountryId(), category.getValue()));
+                    MasterDataBean.getInstance().getScreeningQuestions().put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategory(finalLoggedInUser.getCountryId(), category.getValue()));
                 });
                 master.getScreeningQuestions().putAll(MasterDataBean.getInstance().getScreeningQuestions());
                 break;
