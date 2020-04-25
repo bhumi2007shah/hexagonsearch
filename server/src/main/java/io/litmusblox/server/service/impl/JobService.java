@@ -931,7 +931,7 @@ public class JobService implements IJobService {
         if(isNewAddJobFlow){
             if (null == job.getJobIndustry() || null == masterDataBean.getJobIndustry().get(job.getJobIndustry().getId())) {
                 //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
-                log.error("In Job, jobIndustry " + IErrorMessages.NULL_MESSAGE + job.getId());
+                log.error("In JobId : {}, jobIndustry {}",job.getId(),IErrorMessages.NULL_MESSAGE);
             }else{
                 oldJob.setJobIndustry(job.getJobIndustry());
             }
@@ -940,7 +940,7 @@ public class JobService implements IJobService {
         //Update Function
         if (null == masterDataBean.getFunction().get(job.getFunction().getId())) {
             //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
-            log.error("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId());
+            log.error("In JobId : {}, function {}",job.getId(),IErrorMessages.NULL_MESSAGE);
         }else{
             oldJob.setFunction(job.getFunction());
         }
@@ -950,12 +950,10 @@ public class JobService implements IJobService {
             oldJob.setRole(job.getRole());
 
         //Update Currency
-        if (null == job.getCurrency()) {
-            // throw new ValidationException("In Job, Currency " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
-            log.error("In Job, Currency " + IErrorMessages.NULL_MESSAGE + job.getId());
-        }else{
+        if (null == job.getCurrency())
+            log.error("In JobId : {}, Currency {}", job.getId(), IErrorMessages.NULL_MESSAGE);
+        else
             oldJob.setCurrency(job.getCurrency());
-        }
 
         List<CompanyAddress> companyAddressList = companyAddressRepository.findByCompanyId(loggedInUser.getCompany().getId());
         List<CompanyBu> companyBuList = companyBuRepository.findByCompanyId(loggedInUser.getCompany().getId());
@@ -970,7 +968,6 @@ public class JobService implements IJobService {
         if(null != job.getJobLocation() && null != job.getInterviewLocation()){
             if (companyAddressList.isEmpty() || null == companyAddressMap.get(job.getJobLocation().getId())
                     || null == companyAddressMap.get(job.getInterviewLocation().getId())) {
-                // throw new ValidationException("In Job, company address " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
                 log.error("In Job, company address " + IErrorMessages.NULL_MESSAGE + job.getId());
             }else{
                 oldJob.setInterviewLocation(companyAddressMap.get(job.getInterviewLocation().getId()));
@@ -988,12 +985,25 @@ public class JobService implements IJobService {
             }
         }
 
-        //Update ExperienceRange
-        if(null != job.getExperienceRange() && null != masterDataBean.getExperienceRange().get(job.getExperienceRange().getId())){
-            oldJob.setExperienceRange(job.getExperienceRange());
+        //Update experience range for new Add job flow
+        if(isNewAddJobFlow){
+            //Update min Experience
+            if(null != job.getMinExperience())
+                oldJob.setMinExperience(job.getMinExperience());
+            else
+                log.error("In Job : {}, Min experience range {}",job.getId(), IErrorMessages.NULL_MESSAGE);
+
+            //Update max Experience
+            if(null != job.getMaxExperience())
+                oldJob.setMaxExperience(job.getMaxExperience());
+            else
+                log.error("In Job : {}, Max experience range {}",job.getId(), IErrorMessages.NULL_MESSAGE);
         }else{
-            // throw new ValidationException("In Job, experience Range " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
-            log.error("In Job, ExperienceRange " + IErrorMessages.NULL_MESSAGE + job.getId());
+            //Update experience range for new Add job flow
+            if(null != job.getExperienceRange() && null != masterDataBean.getExperienceRange().get(job.getExperienceRange().getId()))
+                oldJob.setExperienceRange(job.getExperienceRange());
+            else
+                log.error("In Job, ExperienceRange " + IErrorMessages.NULL_MESSAGE + job.getId());
         }
 
         //Update Salary

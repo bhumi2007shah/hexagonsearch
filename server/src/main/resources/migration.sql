@@ -2357,3 +2357,17 @@ update master_data set value_to_use = 'Short answer' where value = 'InputBox';
 update master_data set value_to_use = 'Calendar' where value = 'Calendar';
 update master_data set value_to_use = 'Slider' where value = 'Slider';
 update master_data set value_to_use = 'Location' where value = 'Location' and type = 'questionType';
+
+--For ticket #478 ADD columns in job for min and max experience range
+ALTER TABLE JOB
+ADD COLUMN MIN_EXPERIENCE INTEGER default 0,
+ADD COLUMN MAX_EXPERIENCE INTEGER default 0;
+
+update job set
+min_experience = CAST(split_part((select value from master_data where id = EXPERIENCE_RANGE), ' ', 1) as INTEGER),
+max_experience = CAST(split_part((select value from master_data where id = EXPERIENCE_RANGE), ' ', 3) as INTEGER)
+where EXPERIENCE_RANGE != (select id from master_data where value = '20+ Years'));
+
+update job set
+min_experience = CAST(split_part((select value from master_data where id = EXPERIENCE_RANGE), '+', 1) as INTEGER)
+where EXPERIENCE_RANGE = (select id from master_data where value = '20+ Years'));

@@ -169,6 +169,14 @@ public class Job implements Serializable {
     @JoinColumn(name = "EXPERIENCE_RANGE")
     private MasterData experienceRange;
 
+    @NotNull(message = "Min experience " + IErrorMessages.NULL_MESSAGE)
+    @Column(name = "MIN_EXPERIENCE")
+    private Long minExperience;
+
+    @NotNull(message = "Max experience " + IErrorMessages.NULL_MESSAGE)
+    @Column(name = "MAX_EXPERIENCE")
+    private Long maxExperience;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "JOB_TYPE")
     private MasterData jobType = MasterDataBean.getInstance().getDefaultJobType();
