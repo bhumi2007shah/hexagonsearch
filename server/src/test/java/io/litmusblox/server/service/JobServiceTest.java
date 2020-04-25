@@ -261,6 +261,8 @@ class JobServiceTest extends AbstractTest {
                     .currency("INR")
                     .usersForCompany(new ArrayList<>())
                     .customizedChatbot(false)
+                    .minExperience(0L)
+                    .maxExperience(2L)
                     .build();
             jobService.addJob(testJob, IConstant.AddJobPages.overview.name());
             assertThat(testJob.getId()).isNotNull();
