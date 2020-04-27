@@ -16,11 +16,11 @@ public interface IAdminService {
      * Service method to call search engine to add companies and candidates
      * @throws Exception
      */
-    void addCompanyCandidateOnScoringEngine() throws Exception;
+    void addCompanyCandidateOnSearchEngine() throws Exception;
 
     /**
      * Service method to call search engine to add company and associated candidates
      * @throws Exception
      */
-    void addCompanyCandidateOnScoringEngine(Long companyId) throws Exception;
+    void addCompanyCandidateOnSearchEngine(Long companyId) throws Exception;
 }

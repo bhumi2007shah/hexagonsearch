@@ -106,10 +106,10 @@ public class AdminController {
     @ResponseStatus(value = HttpStatus.OK)
     void addCompanyCandidate(@RequestParam(name = "companyId", required = false) Long companyId) throws Exception{
         if(null != companyId){
-            adminService.addCompanyCandidateOnScoringEngine(companyId);
+            adminService.addCompanyCandidateOnSearchEngine(companyId);
         }
         else {
-            adminService.addCompanyCandidateOnScoringEngine();
+            adminService.addCompanyCandidateOnSearchEngine();
         }
     }
 }

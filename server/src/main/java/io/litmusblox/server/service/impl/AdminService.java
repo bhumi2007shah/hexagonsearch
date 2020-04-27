@@ -51,7 +51,7 @@ public class AdminService implements IAdminService {
      * service method to call search engine to add candidates and companies.
      * @throws Exception
      */
-    public void addCompanyCandidateOnScoringEngine() throws Exception {
+    public void addCompanyCandidateOnSearchEngine() throws Exception {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Received request to add companies and candidates ono search engine from user {}", loggedInUser.getEmail());
         long startTime = System.currentTimeMillis();
@@ -63,10 +63,8 @@ public class AdminService implements IAdminService {
                 // Calling methos to add company on search engine
                 companyService.addCompanyOnSearchEngine(company);
 
-
-
                 //Find all jobs for company
-                List<Job> allJobs = jobRepository.findAll();
+                List<Job> allJobs = jobRepository.findByCompanyIdIn(Collections.singletonList(company));
 
                 if(allJobs.size()>0) {
                     allJobs.stream().parallel().forEach(job -> {
@@ -87,7 +85,7 @@ public class AdminService implements IAdminService {
      * service method to call search engine to add company and associated candidates.
      * @throws Exception
      */
-    public void addCompanyCandidateOnScoringEngine(Long companyId) throws Exception {
+    public void addCompanyCandidateOnSearchEngine(Long companyId) throws Exception {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Received request to add company {}, and candidates on search engine from user {}", companyId, loggedInUser.getEmail());
         long startTime = System.currentTimeMillis();
