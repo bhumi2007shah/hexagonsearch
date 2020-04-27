@@ -374,6 +374,7 @@ public class CandidateService implements ICandidateService {
      */
     public void createCandidateOnSearchEngine(Candidate candidate , Job job) {
         log.info("inside create candidate on search engine.");
+        long startTime = System.currentTimeMillis();
         // creating candidateRequestBean to be sent to Search Engine
         CandidateRequestBean candidateRequestBean = new CandidateRequestBean();
         candidateRequestBean.setCandidateId(candidate.getId());
@@ -436,7 +437,7 @@ public class CandidateService implements ICandidateService {
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
 
-        log.info("Calling SearchEngine API to create candidate {}", candidate.getId());
+        log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), job.getId());
         try {
             RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, null, null, null);
         }
@@ -447,8 +448,8 @@ public class CandidateService implements ICandidateService {
             log.error("Failed to create candidate on search engine. " + e.getMessage());
         }
 
+        log.info("Added candidate on search engine in {}ms", System.currentTimeMillis()-startTime);
     }
-
     //Method to truncate the value in the field and send out a sentry message for the same
     //move this truncateField method to Util class because it is use in other place also like CandidateCompanyDetails model
 }
