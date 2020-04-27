@@ -13,8 +13,14 @@ package io.litmusblox.server.service;
  */
 public interface IAdminService {
     /**
-     * Service method to call search engine to add company
+     * Service method to call search engine to add companies and candidates
      * @throws Exception
      */
     void addCompanyCandidateOnScoringEngine() throws Exception;
+
+    /**
+     * Service method to call search engine to add company and associated candidates
+     * @throws Exception
+     */
+    void addCompanyCandidateOnScoringEngine(Long companyId) throws Exception;
 }

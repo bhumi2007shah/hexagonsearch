@@ -5,6 +5,8 @@
 package io.litmusblox.server.service.impl;
 
 import io.litmusblox.server.model.Company;
+import io.litmusblox.server.model.Job;
+import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.repository.CompanyRepository;
 import io.litmusblox.server.repository.JobCandidateMappingRepository;
@@ -16,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -45,7 +48,7 @@ public class AdminService implements IAdminService {
     JobCandidateMappingRepository jobCandidateMappingRepository;
 
     /**
-     * service method to call search engine to add candidate and company.
+     * service method to call search engine to add candidates and companies.
      * @throws Exception
      */
     public void addCompanyCandidateOnScoringEngine() throws Exception {
@@ -61,9 +64,8 @@ public class AdminService implements IAdminService {
                 companyService.addCompanyOnSearchEngine(company);
 
 
-               /*
-               //Commented code as it is taking a lot of time to create candidates on search engine.
-               //Find all jobs for company
+
+                //Find all jobs for company
                 List<Job> allJobs = jobRepository.findAll();
 
                 if(allJobs.size()>0) {
@@ -75,9 +77,51 @@ public class AdminService implements IAdminService {
                             });
                         }
                     });
-                }*/
+                }
             });
         }
         log.info("Finished adding companies on search engine in {}ms", System.currentTimeMillis()-startTime);
+    }
+
+    /**
+     * service method to call search engine to add company and associated candidates.
+     * @throws Exception
+     */
+    public void addCompanyCandidateOnScoringEngine(Long companyId) throws Exception {
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        log.info("Received request to add company {}, and candidates on search engine from user {}", companyId, loggedInUser.getEmail());
+        long startTime = System.currentTimeMillis();
+
+        //Fetch all companies.
+        Company company = companyRepository.getOne(companyId);
+
+        if(null != company){
+            if(company.getActive()) {
+                // Calling methos to add company on search engine
+                companyService.addCompanyOnSearchEngine(company);
+
+                //Find all jobs for company
+                List<Job> allJobs = jobRepository.findByCompanyIdIn(Collections.singletonList(company));
+
+                // search jcms for each job and make search engine call to add candidates
+                if (allJobs.size() > 0) {
+                    allJobs.forEach(job -> {
+                        List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.findAllByJobId(job.getId());
+                        if (null != jobCandidateMappings && jobCandidateMappings.size() > 0) {
+                            jobCandidateMappings.stream().parallel().forEach(jobCandidateMapping -> {
+                                candidateService.createCandidateOnSearchEngine(jobCandidateMapping.getCandidate(), job);
+                            });
+                        }
+                    });
+                }
+            }
+            else{
+                log.error("company {} is not active", companyId);
+            }
+        }
+        else{
+            log.error("company not found {}", companyId);
+        }
+        log.info("Finished adding company and candidates on search engine in {}ms", System.currentTimeMillis()-startTime);
     }
 }

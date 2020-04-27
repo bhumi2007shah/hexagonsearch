@@ -104,7 +104,12 @@ public class AdminController {
     @PutMapping(value = "/addCompanyCandidate")
     @PreAuthorize("hasRole('"+IConstant.UserRole.Names.SUPER_ADMIN +"')")
     @ResponseStatus(value = HttpStatus.OK)
-    void addCompanyCandidate() throws Exception{
-        adminService.addCompanyCandidateOnScoringEngine();
+    void addCompanyCandidate(@RequestParam(name = "companyId", required = false) Long companyId) throws Exception{
+        if(null != companyId){
+            adminService.addCompanyCandidateOnScoringEngine(companyId);
+        }
+        else {
+            adminService.addCompanyCandidateOnScoringEngine();
+        }
     }
 }
