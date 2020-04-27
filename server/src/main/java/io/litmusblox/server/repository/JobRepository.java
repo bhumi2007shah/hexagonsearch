@@ -66,7 +66,7 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     //find job count per status by createdBy
     @Transactional
     @Query(value = "SELECT sum((status LIKE 'Live')\\:\\:INT) AS liveJobCount, sum((status LIKE 'Draft')\\:\\:INT) As draftJobCount, sum((status LIKE 'Archived')\\:\\:INT) AS archivedJobCount " +
-            "FROM job where created_by =:createdBy", nativeQuery = true)
+            "FROM job where created_by =:createdBy and :createdBy = ANY(recruiter)", nativeQuery = true)
     List<Object[]> getJobCountPerStatusByCreatedBy(Long createdBy);
 
     //find job count per status by companyId
