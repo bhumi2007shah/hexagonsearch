@@ -120,7 +120,11 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     List<Object[]> getCandidateCountPerStage(Long jobId, String stage) throws Exception;
 
     @Transactional
-    @Query(nativeQuery = true, value = "select * from job_candidate_mapping where chatbot_status is null and job_id in (select id from job where auto_invite = 't') and stage=(select id from stage_step_master where stage='Sourcing')")
+    @Query(nativeQuery = true, value = "select jcm.*  \n" +
+            "from job_candidate_mapping jcm \n" +
+            "inner join jcm_communication_details jcd on jcd.jcm_id = jcm.id \n" +
+            "inner join job j on j.id = jcm.job_id\n" +
+            "where jcm.chatbot_status is null and j.auto_invite = 't' and jcm.stage=(select id from stage_step_master where stage='Sourcing') and jcd.autosource_acknowledgement_timestamp_email is null and jcd.autosource_acknowledgement_timestamp_sms is null")
     List<JobCandidateMapping> getNewAutoSourcedJcmList();
 
     @Transactional
