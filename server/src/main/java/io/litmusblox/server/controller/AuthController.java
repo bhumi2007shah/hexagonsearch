@@ -76,7 +76,7 @@ public class AuthController {
     }
 
     @PostMapping(value="/createUpdateUser")
-    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.RECRUITMENT_AGENCY + "')")
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "')")
     String createUpdateUser(@RequestBody User user) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
                 userDetailsService.createUpdateUser(user),

@@ -345,7 +345,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             candidateList = processUploadedFile(fileName, uploadResponseBean, loggedInUser, fileFormat, environment.getProperty(IConstant.REPO_LOCATION), loggedInUser.getCountryCode());
 
             try {
-                processCandidateData(candidateList, uploadResponseBean, loggedInUser, jobId, candidatesProcessed, false, job);
+                processCandidateData(candidateList, uploadResponseBean, loggedInUser, jobId, candidatesProcessed, true, job);
             } catch (Exception ex) {
                 log.error("Error while processing file " + fileName + " :: " + ex.getMessage());
                 uploadResponseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
@@ -613,6 +613,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @throws Exception
      */
     public void inviteAutoSourcedCandidate()throws Exception{
+        log.info("Inside inviteAutoSourcedCandidate");
         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getNewAutoSourcedJcmList();
         inviteAutoSourcedOrLDEBCandidates(jobCandidateMappings);
     }
@@ -623,6 +624,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @throws Exception
      */
     public void inviteLDEBCandidates() throws Exception{
+        log.info("Inside inviteLDEBCandidates");
         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getLDEBCandidates();
         inviteAutoSourcedOrLDEBCandidates(jobCandidateMappings);
     }
@@ -1119,6 +1121,17 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 jcmFromDb.setReasonForChange(jobCandidateMapping.getReasonForChange());
             }
 
+            //Update candidate expected ctc
+            if(null != jobCandidateMapping.getExpectedCtc())
+                jcmFromDb.setExpectedCtc(jobCandidateMapping.getExpectedCtc());
+
+            //Update candidate percentage hike
+            if(null != jobCandidateMapping.getPercentageHike())
+                jcmFromDb.setPercentageHike(jobCandidateMapping.getPercentageHike());
+
+            //Update recruiter comments for candidate
+            if(Util.isNotNull(jobCandidateMapping.getComments()))
+                jcmFromDb.setComments(jobCandidateMapping.getComments());
 
             //Update candidate servingNoticePeriod
             jcmFromDb.setServingNoticePeriod(jobCandidateMapping.isServingNoticePeriod());

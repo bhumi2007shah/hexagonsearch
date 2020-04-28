@@ -145,11 +145,17 @@ public class JobCandidateMapping implements Serializable {
     @Column(name = "CV_FILE_TYPE")
     private String cvFileType;
 
-    @Column(name = "AUTOSOURCED")
-    private boolean autoSourced;
-
     @Column(name = "CANDIDATE_REJECTION_VALUE")
     private String candidateRejectionValue;
+
+    @Column(name = "EXPECTED_CTC")
+    private Long expectedCtc;
+
+    @Column(name = "PERCENTAGE_HIKE")
+    private Long percentageHike;
+
+    @Column(name = "COMMENTS")
+    private String comments;
 
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
@@ -213,7 +219,6 @@ public class JobCandidateMapping implements Serializable {
         this.candidateFirstName = candidateFirstName;
         this.candidateLastName = candidateLastName;
         this.cvFileType = cvFileType;
-        this.autoSourced = autosourced;
     }
 
     public JobCandidateMapping(Long id) {

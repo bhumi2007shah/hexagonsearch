@@ -2035,27 +2035,6 @@ INSERT INTO REJECTION_REASON_MASTER_DATA (VALUE, LABEL, TYPE, STAGE) VALUES
 ALTER TABLE JOB_CANDIDATE_MAPPING
 ADD COLUMN CANDIDATE_REJECTION_VALUE VARCHAR(50);
 
--- For ticket #323
-drop view if exists job_candidate_mapping_all_details;
-create view job_candidate_mapping_all_details
-as select
-job_candidate_mapping.id, job_candidate_mapping.job_id, job_candidate_mapping.candidate_id, job_candidate_mapping.email, job_candidate_mapping.mobile, job_candidate_mapping.country_code, job_candidate_mapping.stage, job_candidate_mapping.created_on, job_candidate_mapping.candidate_first_name, job_candidate_mapping.candidate_last_name, job_candidate_mapping.chatbot_status, job_candidate_mapping.score,job_candidate_mapping.rejected,
-cv_rating.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name, candidateCompany.designation, candidateCompany.notice_period, candidate_details.total_experience
-from users,job_candidate_mapping
-left join cv_rating on job_candidate_mapping.id = cv_rating.job_candidate_mapping_id
-left join candidate_details on candidate_details.candidate_id = job_candidate_mapping.candidate_id
-left join
-	(select ccd.company_name, ccd.designation, ccd.candidate_id, master_data.value as notice_period
-	from candidate_company_details ccd
-	join (select min(id) as id, candidate_id from candidate_company_details group by candidate_id) singleRow
-	on ccd.candidate_id = singleRow.candidate_id and ccd.id = singleRow.id
-	left join master_data
-    on master_data.id = ccd.notice_period
-	) as candidateCompany
-on candidateCompany.candidate_id = job_candidate_mapping.candidate_id
-where users.id = job_candidate_mapping.created_by
-order by job_candidate_mapping.created_on desc, job_candidate_mapping.candidate_first_name asc, job_candidate_mapping.candidate_last_name asc;
-
 --For ticket https://github.com/hexagonsearch/litmusblox-scheduler/issues/49
 INSERT INTO SMS_TEMPLATES (TEMPLATE_NAME, TEMPLATE_CONTENT) VALUES
 ('InterviewDaySMSNoInPerson', 'You have a interview with [[${commBean.sendercompany}]] today at [[${commBean.interviewTime}]]. Good Luck!');
@@ -2073,6 +2052,324 @@ INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 --For ticket #504
 UPDATE CV_PARSING_API_DETAILS SET ACTIVE = 'f' WHERE COLUMN_TO_UPDATE = 'PARSING_RESPONSE_ML';
 
+--Savita Mam want new countries
 INSERT INTO COUNTRY (COUNTRY_NAME, COUNTRY_CODE, MAX_MOBILE_LENGTH, COUNTRY_SHORT_CODE) VALUES
 ('Germany','+49', 11,'de'),
+('Malaysia','+60', 11,'my'),
+('Denmark','+45', 8,'dk'),
+('Philippines','+63', 10,'ph'),
 ('France','+33', 10,'fr');
+
+--Update RecruitmentAgency role to ClientAdmin
+update users set role = 'ClientAdmin' where email in ('sanket@hexagonselect.com', 'veerdedhia@gmail.com');
+
+--For ticket #478
+CREATE TABLE INDUSTRY_MASTER_DATA(
+ID serial PRIMARY KEY NOT NULL,
+INDUSTRY VARCHAR (100) NOT NULL,
+CONSTRAINT UNIQUE_INDUSTRY_MASTER_DATA UNIQUE (INDUSTRY)
+);
+
+CREATE TABLE FUNCTION_MASTER_DATA(
+ID serial PRIMARY KEY NOT NULL,
+FUNCTION VARCHAR (100) NOT NULL,
+INDUSTRY INTEGER REFERENCES INDUSTRY_MASTER_DATA(ID) NOT NULL,
+CONSTRAINT UNIQUE_FUNCTION_MASTER_DATA UNIQUE (FUNCTION, INDUSTRY)
+);
+
+CREATE TABLE ROLE_MASTER_DATA(
+ID serial PRIMARY KEY NOT NULL,
+ROLE VARCHAR (100) NOT NULL,
+FUNCTION INTEGER REFERENCES FUNCTION_MASTER_DATA(ID) NOT NULL,
+CONSTRAINT UNIQUE_ROLE_MASTER_DATA UNIQUE (ROLE, FUNCTION)
+);
+
+INSERT INTO INDUSTRY_MASTER_DATA(INDUSTRY) VALUES
+('IT'),
+('Manufacturing - Products');
+
+INSERT INTO FUNCTION_MASTER_DATA(FUNCTION, INDUSTRY) VALUES
+('Testing', (select id from industry_master_data where industry = 'IT')),
+('Project/ Program Management', (select id from industry_master_data where industry = 'IT')),
+('SI / ERP / CRM Product Integration', (select id from industry_master_data where industry = 'IT')),
+('Architecture & Design', (select id from industry_master_data where industry = 'IT')),
+('UI / UX', (select id from industry_master_data where industry = 'IT')),
+('Digital / Social Media Marketing', (select id from industry_master_data where industry = 'IT')),
+('Pre-Sales & Proposals', (select id from industry_master_data where industry = 'IT')),
+('Application / Product Support', (select id from industry_master_data where industry = 'IT')),
+('Team / Module Lead', (select id from industry_master_data where industry = 'IT')),
+('Business Analysis / Requirement Analysis / BPM', (select id from industry_master_data where industry = 'IT')),
+('Product Management', (select id from industry_master_data where industry = 'IT')),
+('System Administration', (select id from industry_master_data where industry = 'IT')),
+('Global Service Desk / End User Computing', (select id from industry_master_data where industry = 'IT')),
+('Database Administration', (select id from industry_master_data where industry = 'IT')),
+('Network Management', (select id from industry_master_data where industry = 'IT')),
+('PMO, Contracts & Governance', (select id from industry_master_data where industry = 'IT')),
+('Business Development', (select id from industry_master_data where industry = 'IT')),
+('Customer Care', (select id from industry_master_data where industry = 'IT')),
+('HR', (select id from industry_master_data where industry = 'IT')),
+('Training / L&D', (select id from industry_master_data where industry = 'IT')),
+('Recruitment', (select id from industry_master_data where industry = 'IT')),
+('Media & Content', (select id from industry_master_data where industry = 'IT')),
+('Admin / Facility Management', (select id from industry_master_data where industry = 'IT')),
+('Accounts / Finance', (select id from industry_master_data where industry = 'IT')),
+('Vendor Contracts & Commercials', (select id from industry_master_data where industry = 'IT')),
+('Business Analytics & MIS', (select id from industry_master_data where industry = 'IT')),
+('Quality Systems / Business Excellence', (select id from industry_master_data where industry = 'IT')),
+('Health & Safety', (select id from industry_master_data where industry = 'IT')),
+('Corporate Social Responsibilities', (select id from industry_master_data where industry = 'IT')),
+('CFO, Legal & Secreterial', (select id from industry_master_data where industry = 'IT')),
+('Corporate Communication & Brand Management', (select id from industry_master_data where industry = 'IT')),
+('Corporate Governance', (select id from industry_master_data where industry = 'IT')),
+('Business Strategy Planning', (select id from industry_master_data where industry = 'IT')),
+('Product Development / R&D', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Manufacturing / Process / Industrial Engineering', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Plant Equipment & Machinery Engineering', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Tool Engineering', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Production', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Quality', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Plant Maintenance', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Production Planning & Control', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Vendor Development / Sourcing / Purchase / Procurement', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Stores, Warehouse & Inventory Control', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Coding / Programming', (select id from industry_master_data where industry = 'IT')),
+('Logistics', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Operator / Technician', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Health, Safety & Environment', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Sales - Direct', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Sales - Channel', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Marketing & Lead Generation', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Pre-Sales, Proposals & Tenders', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Customer Care', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('After Sales / Field Service', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('HR', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Training / L&D', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Recruitment', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Media & Content', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Admin / Facility Management', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Accounts / Finance', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('IT Infra management / ITES', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('IT Enterprise Systems (CIO)', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Business Analytics & MIS', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Quality Systems / Business Excellence', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Corporate Social Responsibilities', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Corporate Finance, Legal & Secreterial', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Corporate Communication & Brand Management', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Business Strategy Planning', (select id from industry_master_data where industry = 'Manufacturing - Products'));
+
+
+INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
+('Manual Tester', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Automation Tester', (select id from function_master_data where function = 'Testing'and industry = (select id from industry_master_data where industry = 'IT'))),
+('Project Manager - Testing', (select id from function_master_data where function = 'Testing'and industry = (select id from industry_master_data where industry = 'IT'))),
+('Test Architect', (select id from function_master_data where function = 'Testing'and industry = (select id from industry_master_data where industry = 'IT'))),
+('Testing Team Lead', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Project /Program  Manager - ADMS', (select id from function_master_data where function = 'Project/ Program Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Project / Program Manager - SI projects', (select id from function_master_data where function = 'Project/ Program Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Project / Program Manager - Product Development', (select id from function_master_data where function = 'Project/ Program Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Client Account & Delivery Manager', (select id from function_master_data where function = 'Project/ Program Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Program Management Office & Contracts', (select id from function_master_data where function = 'Project/ Program Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SCRUM Master', (select id from function_master_data where function = 'Project/ Program Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Functional Consultant - SI /ERP/CRM integration', (select id from function_master_data where function = 'SI / ERP / CRM Product Integration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Technical Consultant - SI /ERP/CRM integration', (select id from function_master_data where function = 'SI / ERP / CRM Product Integration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SI / ERP / CRM- Platform Build & Support', (select id from function_master_data where function = 'SI / ERP / CRM Product Integration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Enterprise Architect', (select id from function_master_data where function = 'Architecture & Design' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Technical Architect', (select id from function_master_data where function = 'Architecture & Design' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Infra Architect', (select id from function_master_data where function = 'Architecture & Design' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Product Architect', (select id from function_master_data where function = 'Architecture & Design' and industry = (select id from industry_master_data where industry = 'IT'))),
+('UI Designer', (select id from function_master_data where function = 'UI / UX' and industry = (select id from industry_master_data where industry = 'IT'))),
+('UI Programmer', (select id from function_master_data where function = 'UI / UX' and industry = (select id from industry_master_data where industry = 'IT'))),
+('UX Designer', (select id from function_master_data where function = 'UI / UX' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SEO & Analytics Specialist', (select id from function_master_data where function = 'Digital / Social Media Marketing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Social Media Marketing Expert', (select id from function_master_data where function = 'Digital / Social Media Marketing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Content Developer / Copywriter', (select id from function_master_data where function = 'Digital / Social Media Marketing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Campaign Manager', (select id from function_master_data where function = 'Digital / Social Media Marketing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('InBound Marketing', (select id from function_master_data where function = 'Digital / Social Media Marketing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Pre Sales - Manager / Coordinator', (select id from function_master_data where function = 'Pre-Sales & Proposals' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Pre Sales - Solution Architect', (select id from function_master_data where function = 'Pre-Sales & Proposals' and industry = (select id from industry_master_data where industry = 'IT'))),
+('L1 Support', (select id from function_master_data where function = 'Application / Product Support' and industry = (select id from industry_master_data where industry = 'IT'))),
+('L2 Support', (select id from function_master_data where function = 'Application / Product Support' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Application Development & Maintenance', (select id from function_master_data where function = 'Application / Product Support' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Service Manager', (select id from function_master_data where function = 'Application / Product Support' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Release & Deployment Manager', (select id from function_master_data where function = 'Application / Product Support' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Development Team Lead', (select id from function_master_data where function = 'Team / Module Lead' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Testing Team Lead', (select id from function_master_data where function = 'Team / Module Lead' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Team Lead - Application support', (select id from function_master_data where function = 'Team / Module Lead' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Business Analyst', (select id from function_master_data where function = 'Business Analysis / Requirement Analysis / BPM' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Business Consultant', (select id from function_master_data where function = 'Business Analysis / Requirement Analysis / BPM' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Requirements Manager', (select id from function_master_data where function = 'Business Analysis / Requirement Analysis / BPM' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Bus Process Consultant', (select id from function_master_data where function = 'Business Analysis / Requirement Analysis / BPM' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Product Manager / Owner', (select id from function_master_data where function = 'Product Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SCRUM Master', (select id from function_master_data where function = 'Product Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Product Module Lead', (select id from function_master_data where function = 'Product Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Product Release Manager', (select id from function_master_data where function = 'Product Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('System Admin - OS & Servers', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Storage Admin', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Backup Admin', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Cloud Infra Admin', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Mail Server Admin', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Middleware Admin', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Database Admin', (select id from function_master_data where function = 'Database Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Storage Admin', (select id from function_master_data where function = 'Database Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Backup Admin', (select id from function_master_data where function = 'Database Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Network Administrator', (select id from function_master_data where function = 'Network Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Firewall Internet Network Security Administrator', (select id from function_master_data where function = 'Network Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Contract Scoping & Initiation', (select id from function_master_data where function = 'PMO, Contracts & Governance' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Contract Management & Governance', (select id from function_master_data where function = 'PMO, Contracts & Governance' and industry = (select id from industry_master_data where industry = 'IT'))),
+('B2B Sales / Business Development', (select id from function_master_data where function = 'Business Development' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Account Manager', (select id from function_master_data where function = 'Business Development' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Marketing & Lead Generation', (select id from function_master_data where function = 'Business Development' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Customer Care Manager / Executive', (select id from function_master_data where function = 'Customer Care' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Global Service Desk / End User Computing', (select id from function_master_data where function = 'Global Service Desk / End User Computing' and industry = (select id from industry_master_data where industry = 'IT')));
+
+
+ALTER TABLE SCREENING_QUESTION
+ADD COLUMN QUESTION_CATEGORY INTEGER REFERENCES MASTER_DATA(ID),
+ADD COLUMN CUSTOMIZE_QUESTION VARCHAR (150),
+ADD COLUMN COUNTRY_ID INTEGER REFERENCES COUNTRY(ID);
+
+ALTER TABLE JOB_SCREENING_QUESTIONS ADD COLUMN CUSTOMIZE_QUESTION_DATA HSTORE;
+
+ALTER TABLE USER_SCREENING_QUESTION
+ALTER COLUMN QUESTION TYPE TEXT;
+
+ALTER TABLE JOB
+RENAME COLUMN FUNCTION TO OLD_FUNCTION;
+
+-- Add fields auto_invite and visible to career page field in job
+ALTER TABLE JOB
+ADD COLUMN AUTO_INVITE bool NOT NULL default 'f',
+ADD COLUMN VISIBLE_TO_CAREER_PAGE bool NOT NULL default 'f';
+
+-- Add jobIndistry, function and rolemappig in job
+ALTER TABLE JOB
+ADD COLUMN JOB_INDUSTRY INTEGER REFERENCES INDUSTRY_MASTER_DATA(ID),
+ADD COLUMN FUNCTION INTEGER REFERENCES FUNCTION_MASTER_DATA(ID),
+ADD COLUMN ROLE INTEGER REFERENCES ROLE_MASTER_DATA(ID);
+
+update job set auto_invite = 't' where id in (select distinct job_id from job_candidate_mapping where autosourced = 't');
+update jcm_communication_details set autosource_acknowledgement_timestamp_email = now(), autosource_acknowledgement_timestamp_sms = now()
+where jcm_id in (select id from job_candidate_mapping where job_id in (select id from job where auto_invite = 't')) and autosource_acknowledgement_timestamp_email is null and  autosource_acknowledgement_timestamp_sms is null;
+
+-- remove autosourced filed and move to job table as auto_invite
+ALTER TABLE JOB_CANDIDATE_MAPPING
+DROP COLUMN AUTOSOURCED;
+
+-- set existing function type to oldFunction
+UPDATE MASTER_DATA SET TYPE = 'oldFunction' WHERE TYPE = 'function';
+-- set existing role type to userRole
+UPDATE MASTER_DATA SET TYPE = 'userRole' WHERE TYPE = 'role';
+
+-- Convert education master_data fk from jb to Integer array
+alter table job drop constraint job_education_fkey;
+alter table job alter education type integer[] using array[education];
+
+-- Insert script for question category master data
+Insert into MASTER_DATA (TYPE, VALUE) values
+('questionCategory','Location'),
+('questionCategory','Shifts'),
+('questionCategory','Domain'),
+('questionCategory','Team Size (Direct)'),
+('questionCategory','Team Size (Indirect)'),
+('questionCategory','Notice Period'),
+('questionCategory','Contract'),
+('questionCategory','Salary'),
+('questionCategory','Reason for job change'),
+('questionCategory','Other Offers'),
+('questionCategory','Interview'),
+('questionCategory','Remote Working'),
+('questionCategory','Education'),
+('questionCategory','Travel'),
+('questionCategory','Required Docs'),
+('questionCategory','Languages'),
+('questionCategory','Start Date');
+
+-- Insert script for master screening questions
+INSERT INTO SCREENING_QUESTION (QUESTION, QUESTION_TYPE, OPTIONS, MULTILEVELOPTIONS, QUESTION_CATEGORY, COUNTRY_ID) VALUES
+('Are you available to work in Shifts?', (select id from master_data where value = 'Checkbox'), '{"No shifts, I want to work regular day timings (9:00 AM – 6:00 PM)","Morning / APAC shift (6:00 AM – 3:00 PM)","Evening / UK shift (12:00  PM – 9:00 PM)","Night / US shift (6:00 PM – 4:00 AM)","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Shifts'), (select id from country where country_name = 'India')),
+('What is your total team size including indirect reports?', (select id from master_data where value = 'Radio button'), '{<10,11-25,26-50,51-100,101-500,501-1000,1001-5000, 5000+}', null, (select id from master_data where type = 'questionCategory' and value = 'Team Size (Indirect)'), (select id from country where country_name = 'India')),
+('What is your expected annual salary requirement?', (select id from master_data where value = 'Slider'),null, null, (select id from master_data where type = 'questionCategory' and value = 'Salary'), (select id from country where country_name = 'India')),
+('Are you willing to work remotely?', (select id from master_data where value = 'Radio button'), '{"Yes","No"}', null, (select id from master_data where type = 'questionCategory' and value = 'Remote Working'), (select id from country where country_name = 'India')),
+('What is your highest level of education?', (select id from master_data where value = 'Radio button'), '{"Secondary (10th Grade)","Higher Secondary (12th Grade)","Diploma","Bachelor’s","Master’s","Doctorate"}', null, (select id from master_data where type = 'questionCategory' and value = 'Education'), (select id from country where country_name = 'India')),
+('This job may require outstation travel. How long are you willing to travel every month?', (select id from master_data where value = 'Radio button'), '{"I am not willing to travel","25% of the time","50% of the time","75% of the time","100% of the time"}', null, (select id from master_data where type = 'questionCategory' and value = 'Travel'), (select id from country where country_name = 'India')),
+('If required, which of the following documents can you provide?', (select id from master_data where value = 'Checkbox'), '{"Address Proof","PAN Card","Aadhar Card","Passport","Driver’s Licence","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Required Docs'), (select id from country where country_name = 'India')),
+('Which of these languages can you speak fluently?', (select id from master_data where value = 'Checkbox'), '{"English","Hindi","Bengali","Marathi","Telugu","Tamil","Gujarati","Urdu","Kannada","Oriya","Malayalam","Punjabi","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Languages'), (select id from country where country_name = 'India')),
+('What is the earliest start date that you can commit to?', (select id from master_data where value = 'Calendar'), null, null, (select id from master_data where type = 'questionCategory' and value = 'Start Date'), (select id from country where country_name = 'India'));
+
+-- Update old maseter screening questions
+UPDATE SCREENING_QUESTION SET QUESTION_TYPE = (select id from master_data where value = 'Radio button'),  QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Location'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'Which City are you currently based in?';
+UPDATE SCREENING_QUESTION SET QUESTION_TYPE = (select id from master_data where value = 'Checkbox'),  QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Location'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'For a great job opportunity, which cities are you willing to relocate?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Shifts'), COUNTRY_ID= (select id from country where country_name = 'India'), OPTIONS = '{"No shifts, I work regular day timings (9:00 AM – 6:00 PM)","UK shift (12:00  PM – 9:00 PM)","US shift (6:00 PM – 4:00 AM)","APAC shift (6:00 AM – 3:00 PM)","Other"}' where QUESTION = 'Does your current job require you to work in Shifts?';
+UPDATE SCREENING_QUESTION SET QUESTION_TYPE = (select id from master_data where value = 'Checkbox'), QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Domain'), COUNTRY_ID= (select id from country where country_name = 'India'), OPTIONS = '{"Banking","Financial Services","Insurance","Telecom","Retail","Healthcare","E-Commerce","Travel & Hospitality","Media & Entertainment","Gaming","Consulting","Other"}' where QUESTION = 'Do you have a strong experience in any of these Industry Domains?';
+UPDATE SCREENING_QUESTION SET QUESTION = 'Do you lead a team of direct reports?', QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Team Size (Direct)'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'Do you lead a team?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Notice Period'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'What is the Official Notice Period you are required to serve in your current company?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Notice Period'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'If the need arises, can you buyout your notice period?';
+UPDATE SCREENING_QUESTION SET QUESTION = 'Would you be willing to work on a Contract position?', QUESTION_TYPE = (select id from master_data where value = 'Radio button'),OPTIONS = '{"Yes, certainly","Yes, for the right opportunity","No, I will not work on contract"}', QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Contract'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'If an opportunity to work with a great company came along, would you be willing to work on Contract?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Salary'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'What is your Current Annual Salary?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Reason for job change'),OPTIONS = '{"Too much time spent in commuting to work","Too much travelling in the job","Have been in same company for too long","Company has shut down","Company is downsizing/got a layoff","Am a contract employee, want to shift to a permanent job","Want to work in a different domain", "Want to work in a different project", "Not getting paid my salary on time","Have not been promoted for a long time","Want to work with a larger company/brand","Want to work with a smaller company", "Want to work regular shifts","Have been on maternity break","Have been on Sabbatical","Other"}', COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'What is the main reason that you are looking for a job change?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Other Offers'), COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'Do you have other offers in hand?';
+UPDATE SCREENING_QUESTION SET QUESTION_CATEGORY=(select id from master_data where type = 'questionCategory' and value = 'Interview'), MULTILEVELOPTIONS = '{"No": [],"Yes": ["Do you roughly remember when you were interviewed?"]}', COUNTRY_ID= (select id from country where country_name = 'India') where QUESTION = 'Have you been interviewed by `$companyName` in the last 6 months?';
+
+--Update existing expertise maserData
+update master_data set value = 'Fresher' where value = 'Beginner' and type = 'expertise';
+update master_data set value = 'Mid', value_to_use = 3 where value = 'Competent' and type = 'expertise';
+update master_data set value = 'Senior', value_to_use = 4 where value = 'Expert' and type = 'expertise';
+
+--Insert new masterData for expertise
+Insert into MASTER_DATA (TYPE, VALUE, VALUE_TO_USE) values
+('expertise','Junior', 2),
+('expertise','Top Management', 5);
+
+CREATE TABLE TECH_SCREENING_QUESTION(
+ID serial PRIMARY KEY NOT NULL,
+TECH_QUESTION TEXT NOT NULL,
+QUESTION_TYPE INTEGER REFERENCES MASTER_DATA(ID) NOT NULL,
+OPTIONS VARCHAR(250)[],
+MULTI_LEVEL_OPTIONS VARCHAR(500),
+JOB_ID INTEGER REFERENCES JOB(ID) NOT NULL,
+QUESTION_CATEGORY VARCHAR(50)
+);
+
+ALTER TABLE JOB_SCREENING_QUESTIONS
+ADD COLUMN TECH_SCREENING_QUESTION_ID INTEGER REFERENCES TECH_SCREENING_QUESTION(ID);
+
+UPDATE CREATE_JOB_PAGE_SEQUENCE SET SUBSCRIPTION_AVAILABILITY = 'LDEB';
+
+INSERT INTO CREATE_JOB_PAGE_SEQUENCE (PAGE_DISPLAY_NAME, PAGE_NAME, PAGE_DISPLAY_ORDER, DISPLAY_FLAG,SUBSCRIPTION_AVAILABILITY) VALUES
+('Job Details', 'jobDetail', 1, 'T','Lite'),
+('Job Screening', 'jobScreening', 2, 'T','Lite'),
+('Hr screening', 'hrScreening', 3, 'T','Lite'),
+('Custom Questions', 'customQuestions', 4, 'T','Lite'),
+('Publish', 'publish', 5, 'T','Lite');
+
+--for ticket #486
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN EXPECTED_CTC INTEGER default 0,
+ADD COLUMN PERCENTAGE_HIKE INTEGER default 0,
+ADD COLUMN COMMENTS TEXT;
+
+-- For ticket #487
+alter table job drop constraint job_recruiter_fkey;
+alter table job alter recruiter type integer[] using array[recruiter];
+
+-- For ticket #478 Update question type value
+update master_data set value_to_use = 'Single Choice' where value = 'Radio button';
+update master_data set value_to_use = 'Multiple Choice' where value = 'Checkbox';
+update master_data set value_to_use = 'Short answer' where value = 'InputBox';
+update master_data set value_to_use = 'Calendar' where value = 'Calendar';
+update master_data set value_to_use = 'Slider' where value = 'Slider';
+update master_data set value_to_use = 'Location' where value = 'Location' and type = 'questionType';
+
+--For ticket #478 ADD columns in job for min and max experience range
+ALTER TABLE JOB
+ADD COLUMN MIN_EXPERIENCE INTEGER default 0,
+ADD COLUMN MAX_EXPERIENCE INTEGER default 0;
+
+update job set
+min_experience = CAST(split_part((select value from master_data where id = EXPERIENCE_RANGE), ' ', 1) as INTEGER),
+max_experience = CAST(split_part((select value from master_data where id = EXPERIENCE_RANGE), ' ', 3) as INTEGER)
+where EXPERIENCE_RANGE != (select id from master_data where value = '20+ Years');
+
+update job set
+min_experience = CAST(split_part((select value from master_data where id = EXPERIENCE_RANGE), '+', 1) as INTEGER)
+where EXPERIENCE_RANGE = (select id from master_data where value = '20+ Years');

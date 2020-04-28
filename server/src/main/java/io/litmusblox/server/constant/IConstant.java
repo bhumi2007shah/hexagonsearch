@@ -86,14 +86,12 @@ public interface IConstant {
         RECRUITER(Names.RECRUITER),
         SUPER_ADMIN(Names.SUPER_ADMIN),
         CLIENT_ADMIN(Names.CLIENT_ADMIN),
-        RECRUITMENT_AGENCY(Names.RECRUITMENT_AGENCY),
         BUSINESS_USER(Names.BUSINESS_USER);
 
         public class Names {
             public static final String RECRUITER = "Recruiter";
             public static final String SUPER_ADMIN = "SuperAdmin";
             public static final String CLIENT_ADMIN = "ClientAdmin";
-            public static final String RECRUITMENT_AGENCY = "RecruitmentAgency";
             public static final String BUSINESS_USER = "BusinessUser";
         }
 
@@ -109,7 +107,7 @@ public interface IConstant {
     }
 
     enum AddJobPages {
-        overview, screeningQuestions, keySkills, capabilities, jobDetail, hiringTeam, expertise, preview;
+        overview, screeningQuestions, keySkills, capabilities, jobDetail, hiringTeam, expertise, preview, jobScreening;
     }
 
     enum JobStatus {
@@ -385,7 +383,7 @@ public interface IConstant {
     String LB_SHORT_CODE = "LB";
     int LB_SHORT_CODE_LENGTH = 6;
 
-    //Temp value for rest call timeout
+    //value for rest call timeout
     Integer REST_READ_TIME_OUT = 10000;
     Integer REST_READ_TIME_OUT_FOR_CV_TEXT = 90000;
     Integer REST_CONNECTION_TIME_OUT = 1000;

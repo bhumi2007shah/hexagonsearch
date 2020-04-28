@@ -7,6 +7,7 @@ package io.litmusblox.server.model;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.vladmihalcea.hibernate.type.array.IntArrayType;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.service.MasterDataBean;
@@ -14,6 +15,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
+import org.hibernate.annotations.TypeDefs;
 import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
@@ -39,6 +43,7 @@ import java.util.*;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @NoArgsConstructor
 @AllArgsConstructor
+@TypeDefs({@TypeDef(name = "int-array",typeClass = IntArrayType.class)})
 public class Job implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
@@ -101,8 +106,8 @@ public class Job implements Serializable {
     private CompanyBu buId;
 
     @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "FUNCTION")
-    private MasterData function;
+    @JoinColumn(name = "OLD_FUNCTION")
+    private MasterData oldFunction;
 
     @Column(name = "CURRENCY")
     private String currency = "INR";
@@ -113,9 +118,9 @@ public class Job implements Serializable {
     @Column(name = "MAX_SALARY")
     private Long maxSalary;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "EDUCATION")
-    private MasterData education;
+    @Type(type = "int-array")
+    @Column(name = "EDUCATION", columnDefinition = "integer[]")
+    private int[] education;
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "JOB_LOCATION")
@@ -129,15 +134,14 @@ public class Job implements Serializable {
     @JoinColumn(name = "EXPERTISE")
     private MasterData expertise;
 
-    @NotNull(message = "Hiring Manager " + IErrorMessages.NULL_MESSAGE)
+    //@NotNull(message = "Hiring Manager " + IErrorMessages.NULL_MESSAGE)
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="HIRING_MANAGER")
     private User hiringManager;
 
-    @NotNull(message = "Recruiter " + IErrorMessages.NULL_MESSAGE)
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="RECRUITER")
-    private User recruiter;
+    @Type(type = "int-array")
+    @Column(name = "RECRUITER", columnDefinition = "integer[]")
+    private int[] recruiter;
 
     @NotNull
     @Column(name = "CREATED_ON")
@@ -164,6 +168,14 @@ public class Job implements Serializable {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "EXPERIENCE_RANGE")
     private MasterData experienceRange;
+
+    @NotNull(message = "Min experience " + IErrorMessages.NULL_MESSAGE)
+    @Column(name = "MIN_EXPERIENCE")
+    private Long minExperience;
+
+    @NotNull(message = "Max experience " + IErrorMessages.NULL_MESSAGE)
+    @Column(name = "MAX_EXPERIENCE")
+    private Long maxExperience;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "JOB_TYPE")
@@ -193,6 +205,24 @@ public class Job implements Serializable {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private List<JobCapabilities> jobCapabilityList=new ArrayList<>();
 
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "JOB_INDUSTRY")
+    private IndustryMasterData jobIndustry;
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "FUNCTION")
+    private FunctionMasterData function;
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "ROLE")
+    private RoleMasterData role;
+
+    @Column(name = "AUTO_INVITE")
+    private boolean autoInvite;
+
+    @Column(name = "VISIBLE_TO_CAREER_PAGE")
+    private boolean visibleToCareerPage;
+
     @Transient
     @JsonInclude
     private List<String> userEnteredKeySkill=new ArrayList<>();
@@ -210,7 +240,7 @@ public class Job implements Serializable {
     private Map<String,Integer> candidateCountByStage = new HashMap<>();
 
     @Transient
-    private List<String> roles;
+    private List<String> roles ;
 
     @Transient
     private List<String> selectedRole;
@@ -223,6 +253,9 @@ public class Job implements Serializable {
 
     @Transient
     private String jobShortCode;
+
+    @Transient
+    private List<String> selectedKeySkills;
 
     //Remove minExperience, maxExperience, experienceRange because add masterdata for experience
     //Also add jobdetail model in job

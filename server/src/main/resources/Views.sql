@@ -94,3 +94,57 @@ create view exportDataView AS
         )
     )as ivd on ivd.jcm_id = jcm.id
   order by jobId, email, jsq.jsqId;
+
+
+-- view to select all required fields for search query
+drop view if exists jobDetailsView;
+create view jobDetailsView AS
+select
+	job.id as jobId,
+	job.visible_to_career_page as visibleToCareerPage,
+	job.company_id as companyId,
+	job.job_title as jobTitle,
+	job.job_type as jobType,
+	job.created_on as jobCreatedOn,
+	job.date_published as jobPublishedOn,
+	company_address.address as jobLocation,
+	company_address.city as jobLocationCity,
+	company_address.state as jobLocationState,
+	company_address.country as jobLocationCountry,
+	exp.value as jobExperience,
+	education.value as education, jobKeySkillAggregation.keyskills as keyskills
+from job
+left join company_address
+on job.job_location = company_address.id
+left join master_data exp
+on job.experience_range = exp.id
+left join master_data education
+on education.id = ANY(job.education)
+left join jobKeySkillAggregation
+on job.id = jobKeySkillAggregation.jobId
+where job.status = 'Live'
+order by jobPublishedOn desc, jobId asc;
+
+-- For ticket #323
+drop view if exists job_candidate_mapping_all_details;
+create view job_candidate_mapping_all_details
+as select
+job_candidate_mapping.id, job_candidate_mapping.job_id, job_candidate_mapping.candidate_id, job_candidate_mapping.email, job_candidate_mapping.mobile, job_candidate_mapping.country_code, job_candidate_mapping.stage, job_candidate_mapping.created_on, job_candidate_mapping.candidate_first_name, job_candidate_mapping.candidate_last_name, job_candidate_mapping.chatbot_status, job_candidate_mapping.score,job_candidate_mapping.rejected,
+cv_rating.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name, candidateCompany.designation, candidateCompany.notice_period, candidate_details.total_experience,
+(CASE WHEN (job_candidate_mapping.cv_file_type!='') THEN (CONCAT('CandidateCv/',job_candidate_mapping.job_id, '/', job_candidate_mapping.candidate_id, job_candidate_mapping.cv_file_type))
+else null
+END) as cv_location
+from users,job_candidate_mapping
+left join cv_rating on job_candidate_mapping.id = cv_rating.job_candidate_mapping_id
+left join candidate_details on candidate_details.candidate_id = job_candidate_mapping.candidate_id
+left join
+	(select ccd.company_name, ccd.designation, ccd.candidate_id, master_data.value as notice_period
+	from candidate_company_details ccd
+	join (select min(id) as id, candidate_id from candidate_company_details group by candidate_id) singleRow
+	on ccd.candidate_id = singleRow.candidate_id and ccd.id = singleRow.id
+	left join master_data
+    on master_data.id = ccd.notice_period
+	) as candidateCompany
+on candidateCompany.candidate_id = job_candidate_mapping.candidate_id
+where users.id = job_candidate_mapping.created_by
+order by job_candidate_mapping.created_on desc, job_candidate_mapping.candidate_first_name asc, job_candidate_mapping.candidate_last_name asc;

@@ -20,6 +20,7 @@ import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -74,6 +75,15 @@ public class MasterDataService implements IMasterDataService {
     @Resource
     RejectionReasonMasterDataRepository rejectionReasonMasterDataRepository;
 
+    @Resource
+    IndustryMasterDataRepository industryMasterDataRepository;
+
+    @Resource
+    FunctionMasterDataRepository functionMasterDataRepository;
+
+    @Resource
+    RoleMasterDataRepository roleMasterDataRepository;
+
     @Autowired
     Environment environment;
 
@@ -88,11 +98,11 @@ public class MasterDataService implements IMasterDataService {
 
         MasterDataBean.getInstance().getCountryList().addAll(countryRepository.findAll());
 
+        //Page Data logic also move to getMasterData method because while load master data we don't have loggedIn user
         //add all pages that need to be displayed for the add job process
-        createJobPageSequenceRepository.findByDisplayFlagIsTrueOrderByPageDisplayOrderAsc().stream().forEach(page-> {
-            MasterDataBean.getInstance().getAddJobPages().add(page);
+        /*createJobPageSequenceRepository.findByDisplayFlagIsTrueAndSubscriptionAvailabilityOrderByPageDisplayOrderAsc(loggedInUser.getCompany().getSubscription()).stream().forEach(page-> {
             MasterDataBean.getInstance().getJobPageNamesInOrder().add(page.getPageName());
-        });
+        });*/
 
        stageStepMasterRepository.findAllByOrderByIdAsc().forEach(stageStepMaster -> {
             MasterDataBean.getInstance().getStage().add(stageStepMaster.getStage());
@@ -110,23 +120,24 @@ public class MasterDataService implements IMasterDataService {
         keySkillsList.stream().forEach(keySkill ->
                 MasterDataBean.getInstance().getKeySkills().put(keySkill.getId(), keySkill.getSkillName())
                 );
-
-        MasterDataBean.getInstance().getScreeningQuestions().addAll(screeningQuestionsRepository.findAll());
-
         //handle to the getter method of the map in the master data singleton instance class
         ConfigurablePropertyAccessor mapAccessor = PropertyAccessorFactory.forDirectFieldAccess(MasterDataBean.getInstance());
 
         //For every master data record from database, populate the corresponding map with key-value pairs
         masterDataFromDb.forEach(data -> {
 
-            if(data.getType().equalsIgnoreCase("role"))
-                MasterDataBean.getInstance().getRole().add(data.getValue());
+            if(data.getType().equalsIgnoreCase("userRole"))
+                MasterDataBean.getInstance().getUserRole().add(data.getValue());
             else if(data.getType().equalsIgnoreCase("reasonForChange"))
                 MasterDataBean.getInstance().getReasonForChange().add(data.getValue());
+            else if(data.getType().equalsIgnoreCase("questionCategory"))
+                MasterDataBean.getInstance().getQuestionCategory().put(data.getValue(), data);
             else if(data.getType().equalsIgnoreCase("callOutCome"))
                 MasterDataBean.getInstance().getCallOutCome().add(data.getValue());
             else if(data.getType().equalsIgnoreCase("interviewConfirmation"))
                 MasterDataBean.getInstance().getInterviewConfirmation().put(data.getValue(), data);
+            else if(data.getType().equalsIgnoreCase("questionType"))
+                MasterDataBean.getInstance().getQuestionType().put(data.getId(), data.getValueToUSe());
             else
                 ((Map)mapAccessor.getPropertyValue(data.getType())).put(data.getId(), data.getValue());
 
@@ -139,6 +150,12 @@ public class MasterDataService implements IMasterDataService {
             if(data.getValue().equalsIgnoreCase(IConstant.DEFAULT_JOB_TYPE))
                 MasterDataBean.getInstance().setDefaultJobType(data);
         });
+
+        //Add this logic in getMasterData method because while load master data we don't have loggedIn user
+        //set master screening questions depend on country id
+            /*MasterDataBean.getInstance().getQuestionCategory().entrySet().forEach(category->{
+                MasterDataBean.getInstance().getScreeningQuestions().put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategory(loggedInUser.getCountryId(), category.getValue()));
+            });*/
 
         //populate various configuration settings like max limits, send sms/email flag,etc
         List<ConfigurationSettings> configurationSettings = configurationSettingsRepository.findAll();
@@ -177,6 +194,34 @@ public class MasterDataService implements IMasterDataService {
                MasterDataBean.getInstance().getCandidateRejections().put(rejectionData.getId(), rejectionData);
             });
         }
+
+        //Load JobIndustry in master data
+        industryMasterDataRepository.findAll().forEach(industryMasterData -> {
+            MasterDataBean.getInstance().getJobIndustry().put(industryMasterData.getId(), industryMasterData);
+            MasterDataBean.getInstance().getJobIndustryMap().put(industryMasterData.getIndustry(), industryMasterData.getId());
+        });
+
+        //Load JobFunction in master data
+        functionMasterDataRepository.findAll().forEach(functionMasterData ->
+                MasterDataBean.getInstance().getFunction().put(functionMasterData.getId(), functionMasterData));
+
+        MasterDataBean.getInstance().getJobIndustry().entrySet().forEach(jobIndustry ->{
+            Map<String, Long> tempFunctionMap = new HashMap<>();
+            functionMasterDataRepository.findByIndustry(jobIndustry.getValue()).forEach(functionMasterData1 ->
+                tempFunctionMap.put(functionMasterData1.getFunction(), functionMasterData1.getId()));
+            MasterDataBean.getInstance().getFunctionMap().put(jobIndustry.getKey(), tempFunctionMap);
+        });
+
+        //Load JobRole in master data
+        roleMasterDataRepository.findAll().forEach(roleMasterData ->
+                MasterDataBean.getInstance().getRole().put(roleMasterData.getId(), roleMasterData));
+        MasterDataBean.getInstance().getFunction().entrySet().forEach(function ->{
+            Map<String, Long> tempRoleMap = new HashMap<>();
+            roleMasterDataRepository.findByFunction(function.getValue()).forEach(roleMasterData1 ->
+                tempRoleMap.put(roleMasterData1.getRole(), roleMasterData1.getId()));
+            MasterDataBean.getInstance().getRoleMap().put(function.getKey(), tempRoleMap);
+        });
+
     }
 
     private List<RejectionReasonMasterData> setRejectionReasonList(List<RejectionReasonMasterData> rejectionReasons, List<RejectionReasonMasterData> rejectionsPerStage, String stage){
@@ -232,7 +277,7 @@ public class MasterDataService implements IMasterDataService {
 
         MasterDataResponse master = new MasterDataResponse();
         //populate data for each of the required items
-        fetchItemList.stream().forEach(item -> getMasterData(master, item));
+        fetchItemList.stream().forEach(item -> getMasterData(master, item, false));
 
         log.info("Completed request to fetch master data in " + (System.currentTimeMillis() - startTime) + "ms");
         return master;
@@ -255,7 +300,7 @@ public class MasterDataService implements IMasterDataService {
             if(!Arrays.asList(IConstant.fetchItemsType).contains(item))
                 throw new ValidationException("You can not access masterData for " +item+" Item", HttpStatus.UNAUTHORIZED);
 
-            getMasterData(master, item);
+            getMasterData(master, item, true);
         });
 
         log.info("Completed request to fetch master from no auth data in " + (System.currentTimeMillis() - startTime) + "ms");
@@ -293,7 +338,7 @@ public class MasterDataService implements IMasterDataService {
     private static final String STAGE_STEP_MASTER_DATA = "stageStepMaster";
     private static final String ADD_JOB_PAGES = "addJobPages";
     private static final String CURRENCY_LIST = "currencyList";
-    private static final String ROLE = "role";
+    private static final String USER_ROLE = "userRole";
     private static final String REASON_FOR_CHANGE = "reasonForChange";
     private static final String DEFAULT_EXPORT_FORMAT = "defaultExportFormats";
     private static final String CALL_OUT_COME = "callOutCome";
@@ -305,6 +350,9 @@ public class MasterDataService implements IMasterDataService {
     private static final String INTERVIEW_CONFIRMATION = "interviewConfirmation";
     private static final String OTP_EXPIRY_MINUTES = "otpExpiryMinutes";
     private static final String CANDIDATE_REJECTION_REASONS = "candidateRejectionReasons";
+    private static final String JOB_INDUSTRY = "jobIndustry";
+    private static final String JOB_FUNCTION = "function";
+    private static final String JOB_ROLE = "role";
 
     /**
      * Method to fetch specific master data from cache
@@ -312,7 +360,11 @@ public class MasterDataService implements IMasterDataService {
      * @param input the requested master data
      *
      */
-    private void getMasterData(MasterDataResponse master, String input) {
+    private void getMasterData(MasterDataResponse master, String input, boolean isNoAuthCall) {
+        User loggedInUser = null;
+
+        if(!isNoAuthCall)
+            loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         switch (input) {
             case COUNTRY_MASTER_DATA:
@@ -322,10 +374,22 @@ public class MasterDataService implements IMasterDataService {
                 master.getStageStepMasterMap().putAll(MasterDataBean.getInstance().getStageStepMasterMap());
                 break;
             case ADD_JOB_PAGES:
+                log.info("AddJob pages for subscription : {}",loggedInUser.getCompany().getSubscription());
+                MasterDataBean.getInstance().setAddJobPages(new ArrayList<>());
+                MasterDataBean.getInstance().setJobPageNamesInOrder(new ArrayList<>());
+                createJobPageSequenceRepository.findByDisplayFlagIsTrueAndSubscriptionAvailabilityOrderByPageDisplayOrderAsc(loggedInUser.getCompany().getSubscription()).stream().forEach(page-> {
+                    MasterDataBean.getInstance().getAddJobPages().add(page);
+                    MasterDataBean.getInstance().getJobPageNamesInOrder().add(page.getPageName());
+                });
                 master.getAddJobPages().addAll(MasterDataBean.getInstance().getAddJobPages());
                 break;
             case SCREENING_QUESTIONS_MASTER_DATA:
-                master.getScreeningQuestions().addAll(MasterDataBean.getInstance().getScreeningQuestions());
+                MasterDataBean.getInstance().setScreeningQuestions(new HashMap<>());
+                User finalLoggedInUser = loggedInUser;
+                MasterDataBean.getInstance().getQuestionCategory().entrySet().forEach(category->{
+                    MasterDataBean.getInstance().getScreeningQuestions().put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategory(finalLoggedInUser.getCountryId(), category.getValue()));
+                });
+                master.getScreeningQuestions().putAll(MasterDataBean.getInstance().getScreeningQuestions());
                 break;
             case CONFIG_SETTINGS:
                 master.setConfigSettings(MasterDataBean.getInstance().getConfigSettings());
@@ -341,8 +405,8 @@ public class MasterDataService implements IMasterDataService {
             case CURRENCY_LIST:
                 master.setCurrencyList(MasterDataBean.getInstance().getCurrencyList());
                 break;
-            case ROLE:
-                master.getRole().addAll(MasterDataBean.getInstance().getRole());
+            case USER_ROLE:
+                master.getUserRole().addAll(MasterDataBean.getInstance().getUserRole());
                 break;
             case REASON_FOR_CHANGE:
                 master.getReasonForChange().addAll(MasterDataBean.getInstance().getReasonForChange());
@@ -377,6 +441,15 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case CANDIDATE_REJECTION_REASONS:
                 master.getCandidateRejectionReasonMap().putAll(MasterDataBean.getInstance().getCandidateRejectionReasonMap());
+                break;
+            case JOB_INDUSTRY:
+                master.getJobIndustry().putAll(MasterDataBean.getInstance().getJobIndustryMap());
+                break;
+            case JOB_FUNCTION:
+                master.getFunction().putAll(MasterDataBean.getInstance().getFunctionMap());
+                break;
+            case JOB_ROLE:
+                master.getRole().putAll(MasterDataBean.getInstance().getRoleMap());
                 break;
             default: //for all other properties, use reflection
 

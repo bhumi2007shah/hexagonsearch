@@ -120,13 +120,6 @@ VALUES
  ('education', 'Vocational-Training (Vocational Training)'),
  ('education', 'Other (Other)'),
 
- ( 'questionType','Checkbox'),
- ( 'questionType','Radio button'),
- ( 'questionType','InputBox'),
- ( 'questionType','Location'),
- ( 'questionType','Slider'),
- ( 'questionType','Calendar'),
-
  ( 'addressType','Job Location'),
  ( 'addressType','Interview Location'),
  ( 'addressType','Both'),
@@ -146,6 +139,13 @@ VALUES
  ( 'noticePeriod','90'),
  ( 'noticePeriod','Others');
 
+ INSERT INTO MASTER_DATA (TYPE, VALUE, VALUE_TO_USE) VALUES
+ ( 'questionType','Checkbox', 'Multiple Choice'),
+ ( 'questionType','Radio button', 'Single Choice'),
+ ( 'questionType','InputBox', 'Short answer'),
+ ( 'questionType','Location', 'Location'),
+ ( 'questionType','Slider', 'Slider'),
+ ( 'questionType','Calendar', 'Calendar');
 
 delete from configuration_settings;
 -- max limits for various parameters
@@ -686,9 +686,11 @@ VALUES
 
 INSERT INTO MASTER_DATA (TYPE, VALUE, VALUE_TO_USE, COMMENTS)
 VALUES
- ( 'expertise','Beginner', 1, 'Candidate has 1-2 years of relevant work experience and works on given tasks on day to day basis. Exposure to job complexities is limited and needs support/guidance for complex tasks.'),
- ( 'expertise','Competent', 2, 'Candidate can independently handle all tasks. Typically has 2 - 5 years of relevant work experience. Dependable on senior for assigned work. Can participate in training/grooming of juniors'),
- ( 'expertise','Expert', 3, 'Considered as a Master in the organization/industry. Candidate can handle highly complex scenarios and is the go-to person for others. Such candidates are rare to find and often come at a high cost. Select this option if you want to hire a expert.');
+ ( 'expertise','Fresher', 1, 'Candidate has 1-2 years of relevant work experience and works on given tasks on day to day basis. Exposure to job complexities is limited and needs support/guidance for complex tasks.'),
+ ( 'expertise','Junior', 2, null),
+ ( 'expertise','Mid', 3, 'Candidate can independently handle all tasks. Typically has 2 - 5 years of relevant work experience. Dependable on senior for assigned work. Can participate in training/grooming of juniors'),
+ ( 'expertise','Senior', 4, 'Considered as a Master in the organization/industry. Candidate can handle highly complex scenarios and is the go-to person for others. Such candidates are rare to find and often come at a high cost. Select this option if you want to hire a expert.'),
+ ( 'expertise','Top Management', 5, null);
 
 INSERT INTO MASTER_DATA (TYPE, VALUE)
 VALUES
@@ -701,12 +703,12 @@ VALUES
 ( 'experienceRange', '15 - 20 Years'),
 ( 'experienceRange', '20+ Years'),
 
-( 'function','Accounting / Tax / Company Secretary / Audit'),
-( 'function','Agent'),
-( 'function','Airline / Reservations / Ticketing / Travel'),
-( 'function','Analytics & Business Intelligence'),
-( 'function','Anchoring / TV / Films / Production'),
-( 'function','Architects / Interior Design / Naval Arch');
+( 'oldFunction','Accounting / Tax / Company Secretary / Audit'),
+( 'oldFunction','Agent'),
+( 'oldFunction','Airline / Reservations / Ticketing / Travel'),
+( 'oldFunction','Analytics & Business Intelligence'),
+( 'oldFunction','Anchoring / TV / Films / Production'),
+( 'oldFunction','Architects / Interior Design / Naval Arch');
 
 delete from weightage_cutoff_mapping;
 insert into weightage_cutoff_mapping (weightage, percentage, cutoff, star_rating)
@@ -745,11 +747,11 @@ VALUES ('Sourcing','Sourcing'),
 ('Hired','Hired');
 
 INSERT INTO public.master_data(type, value, value_to_use) VALUES
-('role', 'HR Recruiter', 'Recruiter'),
-('role', 'HR Head', 'ClientAdmin'),
-('role', 'Admin', 'ClientAdmin'),
-('role', 'Hiring Manager', 'BusinessUser'),
-('role', 'Interviewer', 'BusinessUser');
+('userRole', 'HR Recruiter', 'Recruiter'),
+('userRole', 'HR Head', 'ClientAdmin'),
+('userRole', 'Admin', 'ClientAdmin'),
+('userRole', 'Hiring Manager', 'BusinessUser'),
+('userRole', 'Interviewer', 'BusinessUser');
 
 --Ticket #258
 INSERT INTO export_format_master
@@ -927,3 +929,189 @@ INSERT INTO REJECTION_REASON_MASTER_DATA (VALUE, LABEL, TYPE, STAGE) VALUES
 ('Background Verification', 'Candidates Background Verification (BGV) report was negative',null, 7),
 ('Integrity', 'Candidate was asked to leave on grounds of integrity',null, 7),
 ('Voluntary exit', 'Candidate left on their own accord',null, 7);
+
+INSERT INTO INDUSTRY_MASTER_DATA(INDUSTRY) VALUES
+('IT'),
+('Manufacturing - Products');
+
+INSERT INTO FUNCTION_MASTER_DATA(FUNCTION, INDUSTRY) VALUES
+('Testing', (select id from industry_master_data where industry = 'IT')),
+('Project/ Program Management', (select id from industry_master_data where industry = 'IT')),
+('SI / ERP / CRM Product Integration', (select id from industry_master_data where industry = 'IT')),
+('Architecture & Design', (select id from industry_master_data where industry = 'IT')),
+('UI / UX', (select id from industry_master_data where industry = 'IT')),
+('Digital / Social Media Marketing', (select id from industry_master_data where industry = 'IT')),
+('Pre-Sales & Proposals', (select id from industry_master_data where industry = 'IT')),
+('Application / Product Support', (select id from industry_master_data where industry = 'IT')),
+('Team / Module Lead', (select id from industry_master_data where industry = 'IT')),
+('Business Analysis / Requirement Analysis / BPM', (select id from industry_master_data where industry = 'IT')),
+('Product Management', (select id from industry_master_data where industry = 'IT')),
+('System Administration', (select id from industry_master_data where industry = 'IT')),
+('Global Service Desk / End User Computing', (select id from industry_master_data where industry = 'IT')),
+('Database Administration', (select id from industry_master_data where industry = 'IT')),
+('Network Management', (select id from industry_master_data where industry = 'IT')),
+('PMO, Contracts & Governance', (select id from industry_master_data where industry = 'IT')),
+('Business Development', (select id from industry_master_data where industry = 'IT')),
+('Customer Care', (select id from industry_master_data where industry = 'IT')),
+('HR', (select id from industry_master_data where industry = 'IT')),
+('Training / L&D', (select id from industry_master_data where industry = 'IT')),
+('Recruitment', (select id from industry_master_data where industry = 'IT')),
+('Media & Content', (select id from industry_master_data where industry = 'IT')),
+('Admin / Facility Management', (select id from industry_master_data where industry = 'IT')),
+('Accounts / Finance', (select id from industry_master_data where industry = 'IT')),
+('Vendor Contracts & Commercials', (select id from industry_master_data where industry = 'IT')),
+('Business Analytics & MIS', (select id from industry_master_data where industry = 'IT')),
+('Quality Systems / Business Excellence', (select id from industry_master_data where industry = 'IT')),
+('Health & Safety', (select id from industry_master_data where industry = 'IT')),
+('Corporate Social Responsibilities', (select id from industry_master_data where industry = 'IT')),
+('CFO, Legal & Secreterial', (select id from industry_master_data where industry = 'IT')),
+('Corporate Communication & Brand Management', (select id from industry_master_data where industry = 'IT')),
+('Corporate Governance', (select id from industry_master_data where industry = 'IT')),
+('Business Strategy Planning', (select id from industry_master_data where industry = 'IT')),
+('Product Development / R&D', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Manufacturing / Process / Industrial Engineering', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Plant Equipment & Machinery Engineering', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Tool Engineering', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Production', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Quality', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Plant Maintenance', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Production Planning & Control', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Vendor Development / Sourcing / Purchase / Procurement', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Stores, Warehouse & Inventory Control', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Coding / Programming', (select id from industry_master_data where industry = 'IT')),
+('Logistics', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Operator / Technician', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Health, Safety & Environment', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Sales - Direct', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Sales - Channel', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Marketing & Lead Generation', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Pre-Sales, Proposals & Tenders', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Customer Care', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('After Sales / Field Service', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('HR', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Training / L&D', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Recruitment', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Media & Content', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Admin / Facility Management', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Accounts / Finance', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('IT Infra management / ITES', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('IT Enterprise Systems (CIO)', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Business Analytics & MIS', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Quality Systems / Business Excellence', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Corporate Social Responsibilities', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Corporate Finance, Legal & Secreterial', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Corporate Communication & Brand Management', (select id from industry_master_data where industry = 'Manufacturing - Products')),
+('Business Strategy Planning', (select id from industry_master_data where industry = 'Manufacturing - Products'));
+
+
+INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
+('Manual Tester', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Automation Tester', (select id from function_master_data where function = 'Testing'and industry = (select id from industry_master_data where industry = 'IT'))),
+('Project Manager - Testing', (select id from function_master_data where function = 'Testing'and industry = (select id from industry_master_data where industry = 'IT'))),
+('Test Architect', (select id from function_master_data where function = 'Testing'and industry = (select id from industry_master_data where industry = 'IT'))),
+('Testing Team Lead', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Project /Program  Manager - ADMS', (select id from function_master_data where function = 'Project/ Program Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Project / Program Manager - SI projects', (select id from function_master_data where function = 'Project/ Program Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Project / Program Manager - Product Development', (select id from function_master_data where function = 'Project/ Program Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Client Account & Delivery Manager', (select id from function_master_data where function = 'Project/ Program Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Program Management Office & Contracts', (select id from function_master_data where function = 'Project/ Program Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SCRUM Master', (select id from function_master_data where function = 'Project/ Program Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Functional Consultant - SI /ERP/CRM integration', (select id from function_master_data where function = 'SI / ERP / CRM Product Integration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Technical Consultant - SI /ERP/CRM integration', (select id from function_master_data where function = 'SI / ERP / CRM Product Integration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SI / ERP / CRM- Platform Build & Support', (select id from function_master_data where function = 'SI / ERP / CRM Product Integration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Enterprise Architect', (select id from function_master_data where function = 'Architecture & Design' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Technical Architect', (select id from function_master_data where function = 'Architecture & Design' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Infra Architect', (select id from function_master_data where function = 'Architecture & Design' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Product Architect', (select id from function_master_data where function = 'Architecture & Design' and industry = (select id from industry_master_data where industry = 'IT'))),
+('UI Designer', (select id from function_master_data where function = 'UI / UX' and industry = (select id from industry_master_data where industry = 'IT'))),
+('UI Programmer', (select id from function_master_data where function = 'UI / UX' and industry = (select id from industry_master_data where industry = 'IT'))),
+('UX Designer', (select id from function_master_data where function = 'UI / UX' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SEO & Analytics Specialist', (select id from function_master_data where function = 'Digital / Social Media Marketing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Social Media Marketing Expert', (select id from function_master_data where function = 'Digital / Social Media Marketing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Content Developer / Copywriter', (select id from function_master_data where function = 'Digital / Social Media Marketing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Campaign Manager', (select id from function_master_data where function = 'Digital / Social Media Marketing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('InBound Marketing', (select id from function_master_data where function = 'Digital / Social Media Marketing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Pre Sales - Manager / Coordinator', (select id from function_master_data where function = 'Pre-Sales & Proposals' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Pre Sales - Solution Architect', (select id from function_master_data where function = 'Pre-Sales & Proposals' and industry = (select id from industry_master_data where industry = 'IT'))),
+('L1 Support', (select id from function_master_data where function = 'Application / Product Support' and industry = (select id from industry_master_data where industry = 'IT'))),
+('L2 Support', (select id from function_master_data where function = 'Application / Product Support' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Application Development & Maintenance', (select id from function_master_data where function = 'Application / Product Support' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Service Manager', (select id from function_master_data where function = 'Application / Product Support' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Release & Deployment Manager', (select id from function_master_data where function = 'Application / Product Support' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Development Team Lead', (select id from function_master_data where function = 'Team / Module Lead' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Testing Team Lead', (select id from function_master_data where function = 'Team / Module Lead' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Team Lead - Application support', (select id from function_master_data where function = 'Team / Module Lead' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Business Analyst', (select id from function_master_data where function = 'Business Analysis / Requirement Analysis / BPM' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Business Consultant', (select id from function_master_data where function = 'Business Analysis / Requirement Analysis / BPM' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Requirements Manager', (select id from function_master_data where function = 'Business Analysis / Requirement Analysis / BPM' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Bus Process Consultant', (select id from function_master_data where function = 'Business Analysis / Requirement Analysis / BPM' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Product Manager / Owner', (select id from function_master_data where function = 'Product Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SCRUM Master', (select id from function_master_data where function = 'Product Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Product Module Lead', (select id from function_master_data where function = 'Product Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Product Release Manager', (select id from function_master_data where function = 'Product Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('System Admin - OS & Servers', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Storage Admin', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Backup Admin', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Cloud Infra Admin', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Mail Server Admin', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Middleware Admin', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Database Admin', (select id from function_master_data where function = 'Database Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Storage Admin', (select id from function_master_data where function = 'Database Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Backup Admin', (select id from function_master_data where function = 'Database Administration' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Network Administrator', (select id from function_master_data where function = 'Network Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Firewall Internet Network Security Administrator', (select id from function_master_data where function = 'Network Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Contract Scoping & Initiation', (select id from function_master_data where function = 'PMO, Contracts & Governance' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Contract Management & Governance', (select id from function_master_data where function = 'PMO, Contracts & Governance' and industry = (select id from industry_master_data where industry = 'IT'))),
+('B2B Sales / Business Development', (select id from function_master_data where function = 'Business Development' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Account Manager', (select id from function_master_data where function = 'Business Development' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Marketing & Lead Generation', (select id from function_master_data where function = 'Business Development' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Customer Care Manager / Executive', (select id from function_master_data where function = 'Customer Care' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Global Service Desk / End User Computing', (select id from function_master_data where function = 'Global Service Desk / End User Computing' and industry = (select id from industry_master_data where industry = 'IT')));
+
+Insert into MASTER_DATA (TYPE, VALUE) values
+('questionCategory','Location'),
+('questionCategory','Shifts'),
+('questionCategory','Domain'),
+('questionCategory','Team Size (Direct)'),
+('questionCategory','Team Size (Indirect)'),
+('questionCategory','Notice Period'),
+('questionCategory','Contract'),
+('questionCategory','Salary'),
+('questionCategory','Reason for job change'),
+('questionCategory','Other Offers'),
+('questionCategory','Interview'),
+('questionCategory','Remote Working'),
+('questionCategory','Education'),
+('questionCategory','Travel'),
+('questionCategory','Required Docs'),
+('questionCategory','Languages'),
+('questionCategory','Start Date');
+
+INSERT INTO SCREENING_QUESTION (QUESTION, QUESTION_TYPE, OPTIONS, MULTILEVELOPTIONS, QUESTION_CATEGORY, COUNTRY_ID) VALUES
+('Which City are you currently based in?', (select id from master_data where value = 'Radio button'), '{"Bangalore","Chennai","Delhi NCR","Hyderabad","Pune","Mumbai","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Location'), (select id from country where country_name = 'India')),
+('For a great job opportunity, which cities are you willing to relocate?', (select id from master_data where value = 'Checkbox'), null, ' {"No, I won’t relocate to another city": [],"Yes, I would relocate to": ["Bangalore","Chennai","Delhi NCR","Hyderabad","Pune","Mumbai","Other"]}', (select id from master_data where type = 'questionCategory' and value = 'Location'), (select id from country where country_name = 'India')),
+('Does your current job require you to work in Shifts?', (select id from master_data where value = 'Radio button'), '{"No shifts, I work regular day timings (9:00 AM – 6:00 PM)","UK shift (12:00  PM – 9:00 PM)","US shift (6:00 PM – 4:00 AM)","APAC shift (6:00 AM – 3:00 PM)","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Shifts'), (select id from country where country_name = 'India')),
+('Are you available to work in Shifts?', (select id from master_data where value = 'Checkbox'), '{"No shifts, I want to work regular day timings (9:00 AM – 6:00 PM)","Morning / APAC shift (6:00 AM – 3:00 PM)","Evening / UK shift (12:00  PM – 9:00 PM)","Night / US shift (6:00 PM – 4:00 AM)","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Shifts'), (select id from country where country_name = 'India')),
+('Do you have a strong experience in any of these Industry Domains', (select id from master_data where value = 'Checkbox'), '{"Banking","Financial Services","Insurance","Telecom","Retail","Healthcare","E-Commerce","Travel & Hospitality","Media & Entertainment","Gaming","Consulting","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Domain'), (select id from country where country_name = 'India')),
+('Do you lead a team of direct reports?', (select id from master_data where value = 'Radio button'), '{"I am an Individual Contributor","Small size team (1-3 people)","Medium size team (4-6 people)","Large size team (7-10 people)","Really large team (10+ people)"}', null, (select id from master_data where type = 'questionCategory' and value = 'Team Size (Direct)'), (select id from country where country_name = 'India')),
+('What is your total team size including indirect reports?', (select id from master_data where value = 'Radio button'), '{<10,11-25,26-50,51-100,101-500,501-1000,1001-5000, 5000+}', null, (select id from master_data where type = 'questionCategory' and value = 'Team Size (Indirect)'), (select id from country where country_name = 'India')),
+('What is the official Notice Period you are required to serve in your current company?', (select id from master_data where value = 'Radio button'), '{"I can join immediately","15 days","30 days","45 days","60 days","90 days"}', null, (select id from master_data where type = 'questionCategory' and value = 'Notice Period'), (select id from country where country_name = 'India')),
+('If the need arises, can you buyout the notice period?', (select id from master_data where value = 'Radio button'), '{"Yes","No"}', null, (select id from master_data where type = 'questionCategory' and value = 'Notice Period'), (select id from country where country_name = 'India')),
+('Would you be willing to work on a Contract position?', (select id from master_data where value = 'Radio button'), '{"Yes, certainly","Yes, for the right opportunity","No, I will not work on contract"}', null, (select id from master_data where type = 'questionCategory' and value = 'Contract'), (select id from country where country_name = 'India')),
+('What is your Current Annual Salary?', (select id from master_data where value = 'Slider'), null, null, (select id from master_data where type = 'questionCategory' and value = 'Salary'), (select id from country where country_name = 'India')),
+('What is your expected annual salary requirement?', (select id from master_data where value = 'Slider'),null, null, (select id from master_data where type = 'questionCategory' and value = 'Salary'), (select id from country where country_name = 'India')),
+('What are the main reasons that you are looking for a job change?', (select id from master_data where value = 'Checkbox'), '{"Too much time spent in commuting to work","Too much travelling in the job","Have been in same company for too long","Company has shut down","Company is downsizing/got a layoff","Am a contract employee, want to shift to a permanent job","Want to work in a different domain", "Want to work in a different project", "Not getting paid my salary on time","Have not been promoted for a long time","Want to work with a larger company/brand","Want to work with a smaller company", "Want to work regular shifts","Have been on maternity break","Have been on Sabbatical","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Reason for job change'), (select id from country where country_name = 'India')),
+('Do you have other offers in hand?', (select id from master_data where value = 'Radio button'), '{"No, I don’t have any other offers as of today","Yes, I have resigned and am serving my notice period"}', null, (select id from master_data where type = 'questionCategory' and value = 'Other Offers'), (select id from country where country_name = 'India')),
+('Are you willing to work remotely?', (select id from master_data where value = 'Radio button'), '{"Yes","No"}', null, (select id from master_data where type = 'questionCategory' and value = 'Remote Working'), (select id from country where country_name = 'India')),
+('What is your highest level of education?', (select id from master_data where value = 'Radio button'), '{"Secondary (10th Grade)","Higher Secondary (12th Grade)","Diploma","Bachelor’s","Master’s","Doctorate"}', null, (select id from master_data where type = 'questionCategory' and value = 'Education'), (select id from country where country_name = 'India')),
+('This job may require outstation travel. How long are you willing to travel every month?', (select id from master_data where value = 'Radio button'), '{"I am not willing to travel","25% of the time","50% of the time","75% of the time","100% of the time"}', null, (select id from master_data where type = 'questionCategory' and value = 'Travel'), (select id from country where country_name = 'India')),
+('If required, which of the following documents can you provide?', (select id from master_data where value = 'Checkbox'), '{"Address Proof","PAN Card","Aadhar Card","Passport","Driver’s Licence","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Required Docs'), (select id from country where country_name = 'India')),
+('Which of these languages can you speak fluently?', (select id from master_data where value = 'Checkbox'), '{"English","Hindi","Bengali","Marathi","Telugu","Tamil","Gujarati","Urdu","Kannada","Oriya","Malayalam","Punjabi","Other"}', null, (select id from master_data where type = 'questionCategory' and value = 'Languages'), (select id from country where country_name = 'India')),
+('What is the earliest start date that you can commit to?', (select id from master_data where value = 'Calendar'), null, null, (select id from master_data where type = 'questionCategory' and value = 'Start Date'), (select id from country where country_name = 'India'));
+
+INSERT INTO CREATE_JOB_PAGE_SEQUENCE (PAGE_DISPLAY_NAME, PAGE_NAME, PAGE_DISPLAY_ORDER, DISPLAY_FLAG,SUBSCRIPTION_AVAILABILITY) VALUES
+('Job Details', 'jobDetail', 1, 'T','Lite'),
+('Job Screening', 'jobScreening', 2, 'T','Lite'),
+('Hr screening', 'hrScreening', 3, 'T','Lite'),
+('Custom Questions', 'customQuestions', 4, 'T','Lite'),
+('Publish', 'publish', 5, 'T','Lite');

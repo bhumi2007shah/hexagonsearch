@@ -69,7 +69,7 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Transactional
     @Query(value = "select j.id as jobId, j.job_title as jobTitle, (select step from stage_step_master where id = jcm.stage) as currentStatus,\n" +
             "jcm.created_on as sourcedOn, (select step from stage_step_master where id = jcm.stage) as lastStage, (select CONCAT(first_name,' ', last_name) from users where id=j.hiring_manager) as hiringManager, \n" +
-            "(select CONCAT(first_name, ' ', last_name) from users where id=j.recruiter) as recruiter\n" +
+            "(select CONCAT(first_name, ' ', last_name) from users where id= ANY(j.recruiter)) as recruiter\n" +
             "from job_candidate_mapping jcm\n" +
             "inner join job j on j.id = jcm.job_id\n" +
             "where jcm.candidate_id =:candidateId and j.company_id =:companyId order by jcm.created_on desc", nativeQuery = true)
@@ -120,7 +120,11 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     List<Object[]> getCandidateCountPerStage(Long jobId, String stage) throws Exception;
 
     @Transactional
-    @Query(nativeQuery = true, value = "select * from job_candidate_mapping where chatbot_status is null and autosourced='t' and stage=(select id from stage_step_master where stage='Sourcing')")
+    @Query(nativeQuery = true, value = "select jcm.*  \n" +
+            "from job_candidate_mapping jcm \n" +
+            "inner join jcm_communication_details jcd on jcd.jcm_id = jcm.id \n" +
+            "inner join job j on j.id = jcm.job_id\n" +
+            "where jcm.chatbot_status is null and j.auto_invite = 't' and jcm.stage=(select id from stage_step_master where stage='Sourcing') and jcd.autosource_acknowledgement_timestamp_email is null and jcd.autosource_acknowledgement_timestamp_sms is null")
     List<JobCandidateMapping> getNewAutoSourcedJcmList();
 
     @Transactional
