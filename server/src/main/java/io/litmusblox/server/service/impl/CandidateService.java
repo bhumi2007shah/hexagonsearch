@@ -406,10 +406,8 @@ public class CandidateService implements ICandidateService {
         }
 
         // extracting value of experience range from job in which candidate is sourced
-        if(null != job.getExperienceRange()){
-            candidateRequestBean.setExperienceRange(
-                    job.getExperienceRange().getValue()
-            );
+        if(null != job.getMinExperience() && null != job.getMaxExperience()){
+            candidateRequestBean.setExperienceRange(job.getExperienceRange());
         }
 
         // Creating and setting list of qualification i.e: degree from CandidateEducationDetail present

@@ -1000,7 +1000,7 @@ public class JobService implements IJobService {
                 log.error("In Job : {}, Max experience range {}",job.getId(), IErrorMessages.NULL_MESSAGE);
         }else{
             //Update experience range for new Add job flow
-            if(null != job.getExperienceRange() && null != masterDataBean.getExperienceRange().get(job.getExperienceRange().getId()))
+            if(null != job.getMinExperience() && null != job.getMaxExperience())
                 oldJob.setExperienceRange(job.getExperienceRange());
             else
                 log.error("In Job, ExperienceRange " + IErrorMessages.NULL_MESSAGE + job.getId());

@@ -111,7 +111,7 @@ select
 	company_address.city as jobLocationCity,
 	company_address.state as jobLocationState,
 	company_address.country as jobLocationCountry,
-	exp.value as jobExperience,
+	CONCAT(job.min_experience, ' - ', job.max_experience, ' Years') as jobExperience,
 	education.value as education, jobKeySkillAggregation.keyskills as keyskills
 from job
 left join company_address
@@ -148,3 +148,7 @@ left join
 on candidateCompany.candidate_id = job_candidate_mapping.candidate_id
 where users.id = job_candidate_mapping.created_by
 order by job_candidate_mapping.created_on desc, job_candidate_mapping.candidate_first_name asc, job_candidate_mapping.candidate_last_name asc;
+
+--Delete experience range from master data
+alter table job drop column experience_range;
+delete from master_data where type= 'experienceRange';

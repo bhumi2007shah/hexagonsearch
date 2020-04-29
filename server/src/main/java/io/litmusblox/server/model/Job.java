@@ -165,10 +165,6 @@ public class Job implements Serializable {
     @JoinColumn(name = "NOTICE_PERIOD")
     private MasterData noticePeriod;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "EXPERIENCE_RANGE")
-    private MasterData experienceRange;
-
     @NotNull(message = "Min experience " + IErrorMessages.NULL_MESSAGE)
     @Column(name = "MIN_EXPERIENCE")
     private Long minExperience;
@@ -257,10 +253,17 @@ public class Job implements Serializable {
     @Transient
     private List<String> selectedKeySkills;
 
+    @Transient
+    private String experienceRange;
+
     //Remove minExperience, maxExperience, experienceRange because add masterdata for experience
     //Also add jobdetail model in job
 
     public String getJobShortCode() {
         return IConstant.LB_SHORT_CODE+String.format("%0"+(IConstant.LB_SHORT_CODE_LENGTH-String.valueOf(this.getId()).length())+"d%s", 0, this.getId());
+    }
+
+    public String getExperienceRange() {
+        return (this.getMinExperience()+" - "+this.getMaxExperience()+" Years");
     }
 }
