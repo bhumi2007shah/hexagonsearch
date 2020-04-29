@@ -2373,3 +2373,8 @@ where EXPERIENCE_RANGE != (select id from master_data where value = '20+ Years')
 update job set
 min_experience = CAST(split_part((select value from master_data where id = EXPERIENCE_RANGE), '+', 1) as INTEGER)
 where EXPERIENCE_RANGE = (select id from master_data where value = '20+ Years');
+
+
+-- for ticket #504
+alter table cv_parsing_details alter COLUMN cv_rating_api_response_time type integer;
+alter table cv_parsing_details alter COLUMN processing_time type integer;
