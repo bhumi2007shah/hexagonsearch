@@ -313,4 +313,18 @@ public class JobController {
         log.info("Completed processing request to update job visibility flag for careerPage for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
     }
 
+    /**
+     * API to get and add tech questions from search engine
+     *
+     * @param job object for which we generate tech question from search engine
+     */
+    @PostMapping(value = "/generateTechQuestions")
+    @ResponseStatus(HttpStatus.OK)
+    void generateTechScreeningQuestions(@RequestBody Job job) throws Exception {
+        log.info("Received request to generate tech questions for JobId : {}",job.getId());
+        long startTime = System.currentTimeMillis();
+        jobService.generateAndAddTechScreeningQuestions(job);
+        log.info("Completed processing request to generate tech questions for jobId: {} in {}ms", job.getId(), System.currentTimeMillis()-startTime);
+    }
+
 }

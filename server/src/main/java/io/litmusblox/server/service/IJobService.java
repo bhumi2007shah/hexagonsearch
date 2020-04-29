@@ -161,4 +161,11 @@ public interface IJobService {
      * @throws Exception
      */
     Job newAddJobFlow(Job job, String pageName) throws Exception;
+
+    /**
+     * API to get and add tech questions from search engine
+     *
+     * @param job object for which we generate tech question from search engine
+     */
+    Job generateAndAddTechScreeningQuestions(Job job);
 }

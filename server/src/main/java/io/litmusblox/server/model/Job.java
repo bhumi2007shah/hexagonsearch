@@ -254,6 +254,9 @@ public class Job implements Serializable {
     private List<String> selectedKeySkills;
 
     @Transient
+    private String userSelectedJobRole;
+
+    @Transient
     private String experienceRange;
 
     //Remove minExperience, maxExperience, experienceRange because add masterdata for experience
