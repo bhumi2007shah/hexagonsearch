@@ -2371,5 +2371,9 @@ max_experience = CAST(split_part((select value from master_data where id = EXPER
 where EXPERIENCE_RANGE != (select id from master_data where value = '20+ Years');
 
 update job set
-min_experience = CAST(split_part((select value from master_data where id = EXPERIENCE_RANGE), '+', 1) as INTEGER)
+min_experience = CAST(split_part((select value from master_data where id = EXPERIENCE_RANGE), '+', 1) as INTEGER), max_experience = 30
 where EXPERIENCE_RANGE = (select id from master_data where value = '20+ Years');
+
+--Delete experience range from master data
+alter table job drop column experience_range;
+delete from master_data where type= 'experienceRange';
