@@ -170,8 +170,6 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             //mobile number of candidate is null
             //check if ignore mobile flag is set
             if(ignoreMobile) {
-                if(null != candidate.getMobile())
-                    candidate.setMobile(candidate.getMobile().trim());
                 if(null != candidate.getMobile() && candidate.getMobile().length()==0)
                     candidate.setMobile(null);
 

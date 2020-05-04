@@ -2378,6 +2378,11 @@ where EXPERIENCE_RANGE = (select id from master_data where value = '20+ Years');
 alter table job drop column experience_range;
 delete from master_data where type= 'experienceRange';
 
+
+-- for ticket #504
+alter table cv_parsing_details alter COLUMN cv_rating_api_response_time type integer;
+alter table cv_parsing_details alter COLUMN processing_time type integer;
+
 -- Add default function and industry for existing jobs
 update job set function = (select id from function_master_data where function = 'Project/ Program Management');
 update job set job_industry = (select id from industry_master_data where industry = 'IT');
