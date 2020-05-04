@@ -2,7 +2,7 @@ CREATE OR REPLACE FUNCTION invite_autosource_candidate()
     RETURNS trigger AS
 $invite_autosource_candidate$
 BEGIN
-    IF (select jcm.autosourced from job_candidate_mapping jcm where jcm.id=NEW.jcm_id) THEN
+    IF (select j.auto_invite from job j where j.id in(select jcm.job_id from job_candidate_mapping jcm where jcm.id=NEW.jcm_id)) THEN
         UPDATE jcm_communication_details set chat_invite_flag = 't' where id = NEW.id;
         UPDATE job_candidate_mapping set stage=(select id from stage_step_master where stage='Screening'), chatbot_status='Invited' where id=NEW.jcm_id;
     END IF;
