@@ -389,7 +389,14 @@ public interface IConstant {
     Integer REST_CONNECTION_TIME_OUT = 1000;
 
     //List of date formats for Naukri files
-    List<String> DATE_FORMATS_LIST = Arrays.asList("dd MMM yyyy","y-M-d");
+    public static Map<String, String> DATE_FORMAT_REGEX_MAP =
+            Collections.unmodifiableMap(new HashMap<String, String>() {
+                                            {
+                                                put("[0-9]{2}[ ][A-Za-z]{3}[ ][0-9]{4}","dd MMM yyyy");
+                                                put("[0-9]{4}[/][0-9]{2}[/][0-9]{2}","y-M-d");
+                                                put("[0-9]{2}[/][0-9]{2}[/][0-9]{4}","dd MMM yyyy");
+                                            }
+                                        });
 
     String OTHERS = "Other (Other)";
 
