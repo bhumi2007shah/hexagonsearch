@@ -73,7 +73,8 @@ public abstract class AbstractNaukriProcessor {
                     }
                     catch (ParseException e) {
                         log.info("DOB format is invalid for the candidate {} with Mobile number {}", naukriRow.getCandidateName(),naukriRow.getMobile());
-                        throw new ValidationException(IErrorMessages.INVALID_DATE_OF_BIRTH_FORMAT + " - " + naukriRow.getDOB(), HttpStatus.BAD_REQUEST);
+                        log.info("The invalid DoB is: {}", naukriRow.getDOB());
+//                        throw new ValidationException(IErrorMessages.INVALID_DATE_OF_BIRTH_FORMAT + " - " + naukriRow.getDOB(), HttpStatus.BAD_REQUEST);
                     }
                 }
             }
