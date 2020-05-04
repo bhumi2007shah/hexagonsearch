@@ -35,7 +35,6 @@ public abstract class AbstractNaukriProcessor {
     private static SimpleDateFormat DATE_PARSER = new SimpleDateFormat("dd MMM yyyy");
     protected void convertNaukriRowToCandidate(Candidate candidate, NaukriFileRow naukriRow) throws Exception {
 
-        Date date = new Date();
         Util.handleCandidateName(candidate, naukriRow.getCandidateName());
 
         candidate.setEmail(naukriRow.getEmail());
@@ -50,32 +49,32 @@ public abstract class AbstractNaukriProcessor {
         CandidateDetails candidateDetails = new CandidateDetails();
         candidateDetails.setCurrentAddress(naukriRow.getPostalAddress());
         log.info("The Postal Address has been set {}", naukriRow.getPostalAddress());
-        String dobString = null;
+
+        //Logic for DoB formatting starts here
         if (!Util.isNull(naukriRow.getDOB()) && naukriRow.getDOB().trim().length() > 0) {
-            for(String dateFormatRegex: IConstant.DATE_FORMAT_REGEX_LIST){
+            String dobString = null;
+            Date candidateDOB = new Date();
+            for(String dateFormatRegex:IConstant.DATE_FORMAT_REGEX_MAP.keySet()){
                 Pattern pattern = Pattern.compile(dateFormatRegex);
                 Matcher matcher = pattern.matcher(naukriRow.getDOB());
                 if(matcher.find()){
                     dobString=matcher.group().trim();
-                }
-            }
-            for (String dateFormat : IConstant.DATE_FORMATS_LIST)
-            {
-                try
-                {
-                    log.info("The DOB fetched is {}", dobString);
-                    if(!dobString.equals((null))) {
-                        date = new SimpleDateFormat(dateFormat).parse(dobString.replaceAll("'", "").replaceAll("\"", ""));
-                        if (!date.equals(null)) {
-                            candidateDetails.setDateOfBirth(date);
-                            log.info("The DOB has been set {}", date);
-                            break;
+                    try
+                    {
+                        log.info("The DOB fetched is {}", dobString);
+                        if(!dobString.equals((null))) {
+                            candidateDOB = new SimpleDateFormat(IConstant.DATE_FORMAT_REGEX_MAP.get(dateFormatRegex)).parse(dobString.replaceAll("'", "").replaceAll("\"", ""));
+                            if (!candidateDOB.equals(null)) {
+                                candidateDetails.setDateOfBirth(candidateDOB);
+                                log.info("The DOB has been set as {}", candidateDOB);
+                                break;
+                            }
                         }
                     }
-                }
-                catch (ParseException e) {
-                    log.info("DOB format is invalid");
-                    throw new ValidationException(IErrorMessages.INVALID_DATE_OF_BIRTH_FORMAT + " - " + naukriRow.getDOB(), HttpStatus.BAD_REQUEST);
+                    catch (ParseException e) {
+                        log.info("DOB format is invalid for the candidate {} with Mobile number {}", naukriRow.getCandidateName(),naukriRow.getMobile());
+                        throw new ValidationException(IErrorMessages.INVALID_DATE_OF_BIRTH_FORMAT + " - " + naukriRow.getDOB(), HttpStatus.BAD_REQUEST);
+                    }
                 }
             }
         }
