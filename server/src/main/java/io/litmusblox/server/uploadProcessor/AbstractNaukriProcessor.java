@@ -51,6 +51,7 @@ public abstract class AbstractNaukriProcessor {
         log.info("The Postal Address has been set {}", naukriRow.getPostalAddress());
 
         //Logic for DoB formatting starts here
+        boolean dobFlag = false;
         if (!Util.isNull(naukriRow.getDOB()) && naukriRow.getDOB().trim().length() > 0) {
             String dobString = null;
             Date candidateDOB = new Date();
@@ -58,26 +59,25 @@ public abstract class AbstractNaukriProcessor {
                 Pattern pattern = Pattern.compile(dateFormatRegex);
                 Matcher matcher = pattern.matcher(naukriRow.getDOB());
                 if(matcher.find()){
+                    dobFlag=true;
                     dobString=matcher.group().trim();
                     try
                     {
-                        log.info("The DOB fetched is {}", dobString);
-                        if(!dobString.equals((null))) {
+                        log.info("The DOB found by regex is {} for DOB {}", dobString, naukriRow.getDOB());
                             candidateDOB = new SimpleDateFormat(IConstant.DATE_FORMAT_REGEX_MAP.get(dateFormatRegex)).parse(dobString.replaceAll("'", "").replaceAll("\"", ""));
-                            if (!candidateDOB.equals(null)) {
                                 candidateDetails.setDateOfBirth(candidateDOB);
-                                log.info("The DOB has been set as {}", candidateDOB);
+                                log.info("The DOB has been set as {} for DOB {}", candidateDOB, naukriRow.getDOB());
                                 break;
-                            }
-                        }
                     }
                     catch (ParseException e) {
-                        log.info("DOB format is invalid for the candidate {} with Mobile number {}", naukriRow.getCandidateName(),naukriRow.getMobile());
-                        log.info("The invalid DoB is: {}", naukriRow.getDOB());
+                        log.info("DOB {} is invalid for the candidate {} with Email {}", naukriRow.getDOB(), naukriRow.getCandidateName(),naukriRow.getEmail());
 //                        throw new ValidationException(IErrorMessages.INVALID_DATE_OF_BIRTH_FORMAT + " - " + naukriRow.getDOB(), HttpStatus.BAD_REQUEST);
                     }
                 }
             }
+        }
+        if(!dobFlag){
+            log.info("DOB could not be parsed for {} for Candidate {} with email address {}",naukriRow.getDOB(),naukriRow.getCandidateName(),naukriRow.getEmail());
         }
         //work experience - strip out Year(s) and Month(s) and generate a double value
 //        log.info("The Work Exp fetched is {}",naukriRow.getWorkExperience());
