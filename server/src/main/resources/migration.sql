@@ -2241,7 +2241,7 @@ ALTER TABLE JOB
 ADD COLUMN AUTO_INVITE bool NOT NULL default 'f',
 ADD COLUMN VISIBLE_TO_CAREER_PAGE bool NOT NULL default 'f';
 
--- Add jobIndistry, function and rolemappig in job
+-- Add jobIndustry, function and rolemappig in job
 ALTER TABLE JOB
 ADD COLUMN JOB_INDUSTRY INTEGER REFERENCES INDUSTRY_MASTER_DATA(ID),
 ADD COLUMN FUNCTION INTEGER REFERENCES FUNCTION_MASTER_DATA(ID),
@@ -2377,3 +2377,7 @@ where EXPERIENCE_RANGE = (select id from master_data where value = '20+ Years');
 --Delete experience range from master data
 alter table job drop column experience_range;
 delete from master_data where type= 'experienceRange';
+
+-- Add default function and industry for existing jobs
+update job set function = (select id from function_master_data where function = 'Project/ Program Management');
+update job set job_industry = (select id from industry_master_data where industry = 'IT');

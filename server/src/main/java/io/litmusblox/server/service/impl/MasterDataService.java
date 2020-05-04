@@ -136,8 +136,10 @@ public class MasterDataService implements IMasterDataService {
                 MasterDataBean.getInstance().getCallOutCome().add(data.getValue());
             else if(data.getType().equalsIgnoreCase("interviewConfirmation"))
                 MasterDataBean.getInstance().getInterviewConfirmation().put(data.getValue(), data);
-            else if(data.getType().equalsIgnoreCase("questionType"))
+            else if(data.getType().equalsIgnoreCase("questionType")){
                 MasterDataBean.getInstance().getQuestionType().put(data.getId(), data.getValueToUSe());
+                MasterDataBean.getInstance().getQuestionTypeMap().put(data.getValueToUSe(), data);
+            }
             else
                 ((Map)mapAccessor.getPropertyValue(data.getType())).put(data.getId(), data.getValue());
 

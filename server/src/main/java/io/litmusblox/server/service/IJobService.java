@@ -7,6 +7,7 @@ package io.litmusblox.server.service;
 import io.litmusblox.server.model.AsyncOperationsErrorRecords;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobHistory;
+import io.litmusblox.server.model.TechScreeningQuestion;
 import io.litmusblox.server.service.impl.SearchRequestBean;
 
 import java.util.List;
@@ -166,6 +167,7 @@ public interface IJobService {
      * API to get and add tech questions from search engine
      *
      * @param job object for which we generate tech question from search engine
+     * return list of TechScreeningQuestion.
      */
-    Job generateAndAddTechScreeningQuestions(Job job);
+    List<TechScreeningQuestion> generateAndAddTechScreeningQuestions(Job job);
 }

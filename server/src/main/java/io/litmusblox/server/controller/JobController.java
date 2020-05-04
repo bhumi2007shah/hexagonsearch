@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Job;
+import io.litmusblox.server.model.TechScreeningQuestion;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
 import io.litmusblox.server.utils.Util;
@@ -320,11 +321,12 @@ public class JobController {
      */
     @PostMapping(value = "/generateTechQuestions")
     @ResponseStatus(HttpStatus.OK)
-    void generateTechScreeningQuestions(@RequestBody Job job) throws Exception {
+    List<TechScreeningQuestion> generateTechScreeningQuestions(@RequestBody Job job) throws Exception {
         log.info("Received request to generate tech questions for JobId : {}",job.getId());
         long startTime = System.currentTimeMillis();
-        jobService.generateAndAddTechScreeningQuestions(job);
+        List<TechScreeningQuestion> techScreeningQuestions = jobService.generateAndAddTechScreeningQuestions(job);
         log.info("Completed processing request to generate tech questions for jobId: {} in {}ms", job.getId(), System.currentTimeMillis()-startTime);
+        return techScreeningQuestions;
     }
 
 }

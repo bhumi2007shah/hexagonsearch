@@ -84,7 +84,7 @@ public class MasterDataBean {
     private Integer restConnectionTimeout = IConstant.REST_CONNECTION_TIME_OUT;
     private Integer restReadTimeout = IConstant.REST_READ_TIME_OUT;
     private Integer restReadTimeoutForCvParser = IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT;
-
+    private Map<String, MasterData> questionTypeMap = new HashMap<>();
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;
 
