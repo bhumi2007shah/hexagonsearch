@@ -392,5 +392,6 @@ public interface IConstant {
 
     //List of date formats for Naukri files
     List<String> DATE_FORMATS_LIST = Arrays.asList("dd MMM yyyy","y-M-d");
+    List<String> DATE_FORMAT_REGEX_LIST = Arrays.asList("[0-9]{2}[/][0-9]{2}[/][0-9]{4}","[0-9]{4}[/][0-9]{2}[/][0-9]{2}", "[0-9]{2}[ ][A-Za-z]{3}[ ][0-9]{4}");
 
 }

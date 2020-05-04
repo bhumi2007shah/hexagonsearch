@@ -5,16 +5,21 @@
 package io.litmusblox.server.uploadProcessor;
 
 import io.litmusblox.server.constant.IConstant;
+import io.litmusblox.server.constant.IErrorMessages;
+import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.Candidate;
 import io.litmusblox.server.model.CandidateDetails;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.apache.poi.ss.usermodel.Row;
+import org.springframework.http.HttpStatus;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -34,32 +39,56 @@ public abstract class AbstractNaukriProcessor {
         Util.handleCandidateName(candidate, naukriRow.getCandidateName());
 
         candidate.setEmail(naukriRow.getEmail());
-
+        log.info("The Email has been set {}", naukriRow.getEmail());
         //clean mobile no in common place
         candidate.setMobile(naukriRow.getMobile());
+        log.info("The Mobile has been set {}", naukriRow.getMobile());
 
         candidate.setTelephone(naukriRow.getTelephone());
+        log.info("The Telephone has been set {}", naukriRow.getTelephone());
 
         CandidateDetails candidateDetails = new CandidateDetails();
         candidateDetails.setCurrentAddress(naukriRow.getPostalAddress());
+        log.info("The Postal Address has been set {}", naukriRow.getPostalAddress());
+        String dobString = null;
         if (!Util.isNull(naukriRow.getDOB()) && naukriRow.getDOB().trim().length() > 0) {
+            for(String dateFormatRegex: IConstant.DATE_FORMAT_REGEX_LIST){
+                Pattern pattern = Pattern.compile(dateFormatRegex);
+                Matcher matcher = pattern.matcher(naukriRow.getDOB());
+                if(matcher.find()){
+                    dobString=matcher.group().trim();
+                }
+            }
             for (String dateFormat : IConstant.DATE_FORMATS_LIST)
             {
                 try
                 {
-                    date = new SimpleDateFormat(dateFormat).parse(naukriRow.getDOB().replaceAll("'", "").replaceAll("\"", ""));
-                    if(!date.equals(null)){
-                        break;
+                    log.info("The DOB fetched is {}", dobString);
+                    if(!dobString.equals((null))) {
+                        date = new SimpleDateFormat(dateFormat).parse(dobString.replaceAll("'", "").replaceAll("\"", ""));
+                        if (!date.equals(null)) {
+                            candidateDetails.setDateOfBirth(date);
+                            log.info("The DOB has been set {}", date);
+                            break;
+                        }
                     }
                 }
-                catch (ParseException e) {}
+                catch (ParseException e) {
+                    log.info("DOB format is invalid");
+                    throw new ValidationException(IErrorMessages.INVALID_DATE_OF_BIRTH_FORMAT + " - " + naukriRow.getDOB(), HttpStatus.BAD_REQUEST);
+                }
             }
-            candidateDetails.setDateOfBirth(date);
         }
-            //work experience - strip out Year(s) and Month(s) and generate a double value
-        String[] workArray = naukriRow.getWorkExperience().split("\\s+");
-        candidateDetails.setTotalExperience(Double.valueOf(workArray[0] + "."+workArray[2]));
-
+        //work experience - strip out Year(s) and Month(s) and generate a double value
+//        log.info("The Work Exp fetched is {}",naukriRow.getWorkExperience());
+        if(!Util.isNull(naukriRow.getWorkExperience())) {
+//            To remove any letters like Y/M/Years/Months from the Work experience String
+            String workExperience = naukriRow.getWorkExperience().replaceAll("[a-zA-Z]{1,}","").trim();
+//            log.info("The replaced Work Exp is: {}",workExp);
+            String[] workArray = workExperience.split(" ");
+            log.info("The Years is {} and Months is {}", workArray[0],workArray[1]);
+            candidateDetails.setTotalExperience(Double.valueOf(workArray[0] + "." + workArray[1]));
+        }
         candidateDetails.setResumeHeadline(naukriRow.getResumeTitle());
         candidateDetails.setLocation(naukriRow.getCurrentLocation());
         candidateDetails.setPreferredLocations(naukriRow.getPreferredLocation());
