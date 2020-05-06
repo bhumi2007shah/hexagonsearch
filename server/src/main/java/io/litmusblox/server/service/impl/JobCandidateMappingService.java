@@ -468,7 +468,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             //#189: save the text format of CV if available
             if(responseBean.getSuccessfulCandidates().size() > 0) {
                 JobCandidateMapping jcm = jobCandidateMappingRepository.findByJobAndCandidate(getJob(jobId), responseBean.getSuccessfulCandidates().get(0));
-                cvParsingDetailsRepository.save(new CvParsingDetails(new Date(), candidate.getCandidateDetails().getTextCv(), responseBean.getSuccessfulCandidates().get(0).getId(),jcm));
+                cvParsingDetailsRepository.save(new CvParsingDetails(candidateCv.getOriginalFilename(), new Date(), candidate.getCandidateDetails().getTextCv(), responseBean.getSuccessfulCandidates().get(0).getId(),jcm));
             }
         }
         else {//null candidate object
@@ -1821,7 +1821,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             filePath = StoreFileUtil.storeFile(candidateCv, jcm.getJob().getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),jcm.getCandidate(),null);
             jcm.setCvFileType("."+extension);
             jobCandidateMappingRepository.save(jcm);
-            cvParsingDetailsRepository.save(new CvParsingDetails(new Date(), null, jcm.getCandidate().getId(),jcm));
+            cvParsingDetailsRepository.save(new CvParsingDetails(candidateCv.getOriginalFilename(), new Date(), null, jcm.getCandidate().getId(),jcm));
         }catch (Exception ex){
             log.error("{}, File name : {}, For jcmId : ", IErrorMessages.FAILED_TO_SAVE_FILE, candidateCv.getOriginalFilename(), jcm.getId(), ex.getMessage());
             throw new ValidationException(IErrorMessages.FAILED_TO_SAVE_FILE+" "+candidateCv.getOriginalFilename()+ex.getMessage(), HttpStatus.BAD_REQUEST);
@@ -1902,13 +1902,22 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
             //Store candidate cv to repository location
             try{
+                Long candidateId = null;
                 if(null!=candidateCv) {
-                    if (responseBean.getSuccessfulCandidates().size()>0)
-                        StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getSuccessfulCandidates().get(0),null);
-                    else
-                        StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getFailedCandidates().get(0), null);
+                    if (responseBean.getSuccessfulCandidates().size()>0) {
+                        StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(), responseBean.getSuccessfulCandidates().get(0), null);
+                        candidateId = responseBean.getSuccessfulCandidates().get(0).getId();
+                    }else {
+                        StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(), responseBean.getFailedCandidates().get(0), null);
+                        candidateId = responseBean.getFailedCandidates().get(0).getId();
+                    }
 
                     responseBean.setCvStatus(true);
+
+                    //Create cvParsingDetail entry to get cv rating for this resume
+                    if(null != candidateId)
+                        cvParsingDetailsRepository.save(new CvParsingDetails(candidateCv.getOriginalFilename(), new Date(), null, candidateId,jobCandidateMappingRepository.findByJobIdAndCandidateId(job.getId(), candidateId)));
+
                 }
             }catch(Exception e){
                 log.error("Resume upload failed :"+e.getMessage());
