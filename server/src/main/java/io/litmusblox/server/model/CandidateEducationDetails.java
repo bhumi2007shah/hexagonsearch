@@ -58,4 +58,7 @@ public class CandidateEducationDetails {
         this.specialization = specialization;
     }
 
+    public CandidateEducationDetails(String degree) {
+        this.degree=degree;
+    }
 }

@@ -8,7 +8,9 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.Candidate;
+import io.litmusblox.server.model.CandidateCompanyDetails;
 import io.litmusblox.server.model.CandidateDetails;
+import io.litmusblox.server.model.CandidateEducationDetails;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.apache.poi.ss.usermodel.Row;
@@ -16,6 +18,8 @@ import org.springframework.http.HttpStatus;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -95,14 +99,15 @@ public abstract class AbstractNaukriProcessor {
 
         //TODO:Create and set CandidateCompanyDetails and CandidateEducationDetails
 
-        /*CandidateCompanyDetails candidateCompanyDetails = new CandidateCompanyDetails();
+        CandidateCompanyDetails candidateCompanyDetails = new CandidateCompanyDetails();
         candidateCompanyDetails.setCompanyName(naukriRow.getCurrentEmployer());
         candidateCompanyDetails.setDesignation(naukriRow.getCurrentDesignation());
         candidateCompanyDetails.setSalary(naukriRow.getAnnualSalary());
 
         List<CandidateEducationDetails> candidateEducationDetailList = new ArrayList<>(0);
-        if (!Util.isNull(naukriRow.getUGCourse()))
+        if (!Util.isNull(naukriRow.getUGCourse())) {
             candidateEducationDetailList.add(new CandidateEducationDetails(naukriRow.getUGCourse()));
+        }
         if (!Util.isNull(naukriRow.getPGCourse()))
             candidateEducationDetailList.add(new CandidateEducationDetails(naukriRow.getPGCourse()));
         if (!Util.isNull(naukriRow.getPPGCourse()))
@@ -113,8 +118,9 @@ public abstract class AbstractNaukriProcessor {
         candidate.setCandidateDetails(candidateDetails);
         candidate.setCandidateCompanyDetails(Arrays.asList(candidateCompanyDetails));
         if(candidateEducationDetailList.size() > 0)
-            candidate.setCandidateEducationDetails(candidateEducationDetailList);*/
+            candidate.setCandidateEducationDetails(candidateEducationDetailList);
     }
+
 
     protected boolean checkForCells(Row row) {
         IConstant.NAUKRI_FILE_COLUMNS[] fileColumns = IConstant.NAUKRI_FILE_COLUMNS.values();
