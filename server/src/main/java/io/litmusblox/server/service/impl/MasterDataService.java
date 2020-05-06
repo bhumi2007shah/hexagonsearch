@@ -114,7 +114,7 @@ public class MasterDataService implements IMasterDataService {
             MasterDataBean.getInstance().getCurrencyList().add(currency.getCurrencyShortName());
         });
 
-        List<MasterData> masterDataFromDb = masterDataRepository.findAll();
+            List<MasterData> masterDataFromDb = masterDataRepository.findAll();
 
         List<SkillsMaster> keySkillsList = skillMasterRepository.findAll();
         keySkillsList.stream().forEach(keySkill ->
@@ -143,9 +143,6 @@ public class MasterDataService implements IMasterDataService {
 
             if(data.getType().equalsIgnoreCase("noticePeriod"))
                 MasterDataBean.getInstance().getNoticePeriodMapping().put(data.getValue(), data);
-
-            if(data.getType().equalsIgnoreCase("expertise"))
-                MasterDataBean.getInstance().getExpertise().put(data.getId(), data);
 
             if(data.getValue().equalsIgnoreCase(IConstant.DEFAULT_JOB_TYPE))
                 MasterDataBean.getInstance().setDefaultJobType(data);
@@ -210,6 +207,11 @@ public class MasterDataService implements IMasterDataService {
             functionMasterDataRepository.findByIndustry(jobIndustry.getValue()).forEach(functionMasterData1 ->
                 tempFunctionMap.put(functionMasterData1.getFunction(), functionMasterData1.getId()));
             MasterDataBean.getInstance().getFunctionMap().put(jobIndustry.getKey(), tempFunctionMap);
+        });
+
+        //Add expertise
+        masterDataRepository.findByTypeOrderByValueToUSe("expertise").stream().forEach(expertise ->{
+            MasterDataBean.getInstance().getExpertise().put(expertise.getId(), expertise);
         });
 
         //Load JobRole in master data
