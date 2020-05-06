@@ -80,7 +80,8 @@ public class CvParsingDetails {
     @Column(name = "PARSING_RESPONSE_PYTHON")
     private String parsingResponsePython;
 
-    public CvParsingDetails(Date processedOn, String parsingResponseText, Long candidateId, JobCandidateMapping jobCandidateMappingId) {
+    public CvParsingDetails(String cvFileName, Date processedOn, String parsingResponseText, Long candidateId, JobCandidateMapping jobCandidateMappingId) {
+        this.cvFileName = cvFileName;
         this.processedOn = processedOn;
         this.parsingResponseText = parsingResponseText;
         this.candidateId = candidateId;
