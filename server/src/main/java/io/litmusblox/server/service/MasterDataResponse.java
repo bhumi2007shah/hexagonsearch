@@ -25,7 +25,7 @@ public class MasterDataResponse {
     private List<String> stage = new ArrayList<>();
     private Map<Long,String> process = new HashMap<>();
     private Map<Long,String> oldFunction  = new HashMap<>();
-    private Map<Long, MasterData> expertise  = new LinkedHashMap<>();
+    private Map<Long, MasterData> expertise  = new HashMap<>();
     private Map<Long,String> education  = new HashMap<>();
     private Map<Long,String> industry = new HashMap<>();
     private Map<Long, String> keySkills = new HashMap<>();
