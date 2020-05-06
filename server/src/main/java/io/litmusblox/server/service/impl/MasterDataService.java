@@ -209,6 +209,7 @@ public class MasterDataService implements IMasterDataService {
             MasterDataBean.getInstance().getFunctionMap().put(jobIndustry.getKey(), tempFunctionMap);
         });
 
+        MasterDataBean.getInstance().setExpertise(new LinkedHashMap<>());
         //Add expertise
         masterDataRepository.findByTypeOrderByValueToUSe("expertise").stream().forEach(expertise ->{
             MasterDataBean.getInstance().getExpertise().put(expertise.getId(), expertise);
