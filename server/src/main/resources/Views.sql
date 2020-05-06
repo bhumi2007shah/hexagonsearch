@@ -38,7 +38,7 @@ create view exportDataView AS
   ivd.cancellationReason,
   jsq.jsqId as jsqId,
   jsq.ScreeningQn as screeningQuestion,
-  csqr.response as candidateResponse
+  replace (concat(csqr.response, ' ',csqr.comment), ',', ' |') as candidateResponse
   from job_candidate_mapping jcm
     left join cv_rating cvr ON cvr.job_candidate_mapping_id = jcm.id
     left join (
@@ -116,8 +116,6 @@ select
 from job
 left join company_address
 on job.job_location = company_address.id
-left join master_data exp
-on job.experience_range = exp.id
 left join master_data education
 on education.id = ANY(job.education)
 left join jobKeySkillAggregation

@@ -399,14 +399,14 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                 candidateFromPython = pythonCvParser(queryString.toString());
 
                 //Check if existing candidate email not available then set python response email
-                if(cvParsingDetailsFromDb.getJobCandidateMappingId().getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL) && Util.isNotNull(candidateFromPython.getEmail()) && Util.isValidateEmail(candidateFromPython.getEmail(), Optional.of(candidateFromPython))){
+                if(null != candidateFromPython && cvParsingDetailsFromDb.getJobCandidateMappingId().getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL) && Util.isNotNull(candidateFromPython.getEmail()) && Util.isValidateEmail(candidateFromPython.getEmail(), Optional.of(candidateFromPython))){
                     log.info("candidate old email : {}, python response email : {}", jcmFromDb.getEmail(), candidateFromPython.getEmail());
                     cvParsingDetailsFromDb.getJobCandidateMappingId().setEmail(candidateFromPython.getEmail());
                     isEditCandidate = true;
                 }
 
                 //Check if existing candidate mobile is null then set python response mobile
-                if(Util.isNull(jcmFromDb.getMobile()) && Util.isNotNull(candidateFromPython.getMobile())){
+                if(null != candidateFromPython && Util.isNull(jcmFromDb.getMobile()) && Util.isNotNull(candidateFromPython.getMobile())){
                     validMobile = Util.indianMobileConvertor(candidateFromPython.getMobile(), cvParsingDetailsFromDb.getJobCandidateMappingId().getCountryCode());
                     if(Util.validateMobile(validMobile, cvParsingDetailsFromDb.getJobCandidateMappingId().getCountryCode(),Optional.of(candidateFromPython))){
                         log.info("candidate old mobile : {}, python response mobile : {}, For JcmId : {}", jcmFromDb.getMobile(), candidateFromPython.getMobile(), jcmFromDb.getId());
@@ -434,8 +434,9 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         long PythonStartTime = System.currentTimeMillis();
         Candidate candidateFromPython = null;
         try {
-            String pythonResponse = RestClient.getInstance().consumeRestApi(null, queryString, HttpMethod.GET, null).getResponseBody();
-            candidateFromPython = new ObjectMapper().readValue(pythonResponse, Candidate.class);
+            RestClientResponseBean restClientResponseBean = RestClient.getInstance().consumeRestApi(null, queryString, HttpMethod.GET, null);
+            if(HttpStatus.OK.value() == restClientResponseBean.getStatusCode())
+                candidateFromPython = new ObjectMapper().readValue(restClientResponseBean.getResponseBody(), Candidate.class);
             log.info("Received response from Python parser in {}ms.",(System.currentTimeMillis() - PythonStartTime));
         }catch (Exception e){
             log.error("Error while parse resume by Python parser : {}",e.getMessage());

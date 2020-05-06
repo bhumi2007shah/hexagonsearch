@@ -7,6 +7,7 @@ package io.litmusblox.server.model;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vladmihalcea.hibernate.type.array.IntArrayType;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
@@ -251,7 +252,12 @@ public class Job implements Serializable {
     private String jobShortCode;
 
     @Transient
+    @JsonProperty
     private List<String> selectedKeySkills;
+
+    @Transient
+    @JsonProperty
+    private String userSelectedJobRole;
 
     @Transient
     private String experienceRange;

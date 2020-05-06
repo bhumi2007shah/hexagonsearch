@@ -28,7 +28,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.fasterxml.jackson.core.type.TypeReference;
 import javax.annotation.Resource;
 import javax.naming.OperationNotSupportedException;
 import javax.persistence.EntityManager;
@@ -129,6 +129,9 @@ public class JobService implements IJobService {
     @Resource
     RoleMasterDataRepository roleMasterDataRepository;
 
+    @Resource
+    TechScreeningQuestionRepository techScreeningQuestionRepository;
+
     @Autowired
     ICompanyService companyService;
 
@@ -149,6 +152,12 @@ public class JobService implements IJobService {
 
     @Value("${scoringEngineAddJobUrlSuffix}")
     private String scoringEngineAddJobUrlSuffix;
+
+    @Value("${searchEngineGenerateTechQuestionSuffix}")
+    String searchEngineGenerateTechQuestionSuffix;
+
+    @Value("${searchEngineBaseUrl}")
+    String searchEngineBaseUrl;
 
     @Transactional
     public Job addJob(Job job, String pageName) throws Exception {//add job with respective pageName
@@ -1531,9 +1540,75 @@ public class JobService implements IJobService {
                 throw new OperationNotSupportedException("Unknown page: " + pageName);
         }
         List<String> roles = new ArrayList<>();
+        oldJob.setFunction(MasterDataBean.getInstance().getFunction().get(oldJob.getFunction().getId()));
+        oldJob.setJobIndustry(MasterDataBean.getInstance().getJobIndustry().get(oldJob.getJobIndustry().getId()));
         roleMasterDataRepository.findByFunction(job.getFunction()).forEach(roleMasterData -> roles.add(roleMasterData.getRole()));
         job.setRoles(roles);
         log.info("Completed processing request to new add job flow in " + (System.currentTimeMillis() - startTime) + "ms");
         return job;
      }
+
+    /**
+     * API to get and add tech questions from search engine
+     *
+     * @param job object for which we generate tech question from search engine
+     */
+    @Transactional
+    public List<TechScreeningQuestion> generateAndAddTechScreeningQuestions(Job job) {
+        log.info("Inside generateAndAddTechScreeningQuestions for jobId : {}",job.getId());
+
+        //Delete all exiting tech screening questions
+        techScreeningQuestionRepository.deleteByJobId(job.getId());
+
+        //LoggedIn user
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        //find old job
+        Job oldJob = jobRepository.getOne(job.getId());
+
+        //Create request for generate tech question API from search engine
+        TechQueRequestBean techQueRequestBean = new TechQueRequestBean();
+        TechQueRequestBean.SelectedRole selectedRole = new TechQueRequestBean.SelectedRole();
+        TechQueRequestBean.Function function = new TechQueRequestBean.Function();
+        TechQueRequestBean.Industry industry = new TechQueRequestBean.Industry();
+        if(null != job.getUserSelectedJobRole())
+            selectedRole.setRoleName(job.getUserSelectedJobRole());
+        industry.setIndustryName(job.getJobIndustry().getIndustry());
+        function.setFunctionName(job.getFunction().getFunction());
+        techQueRequestBean.setSelectedRole(selectedRole);
+        techQueRequestBean.setFunction(function);
+        techQueRequestBean.setCompanyId(job.getCompanyId().getId());
+        techQueRequestBean.setIndustry(industry);
+        techQueRequestBean.setSkills(job.getSelectedKeySkills());
+        log.info("Tech Question Request : {}",techQueRequestBean);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        long startTime = System.currentTimeMillis();
+        String searchEngineResponse = null;
+        Map<String, List<SearchEngineQueResponseBean>> searchEngineResponseBean = new HashMap<>();
+        log.info("Calling SearchEngine API to generate tech questions for job: {}", job.getId());
+        try {
+            searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, null, null, null).getResponseBody();
+            searchEngineResponseBean = mapper.readValue(searchEngineResponse, new TypeReference<Map<String, List<SearchEngineQueResponseBean>>>(){});
+            log.info("Search engine rest call response : {}", searchEngineResponse);
+
+        }catch ( Exception e ) {
+            log.error("Failed to generate tech questions on search engine. " + e.getMessage());
+        }
+        log.info("Generate tech questions REST call completed in {}ms", System.currentTimeMillis()-startTime);
+
+        for (Map.Entry<String, List<SearchEngineQueResponseBean>> entry : searchEngineResponseBean.entrySet()) {
+            entry.getValue().forEach(object -> {
+                TechScreeningQuestion techScreeningQuestion = new TechScreeningQuestion(object.getQuestionText(),object.getOptions(), MasterDataBean.getInstance().getQuestionTypeMap().get(object.getQuestionType()), null, entry.getKey(), job.getId());
+                techScreeningQuestionRepository.save(techScreeningQuestion);
+            });
+        }
+        try {
+            log.info("Add Key Skills in job : {}",job.getId());
+            addJobKeySkills(job, oldJob, loggedInUser);
+        } catch (Exception exception) {
+            log.error("Failed to add key skills. " + exception.getMessage());
+        }
+        return techScreeningQuestionRepository.findByJobId(job.getId());
+    }
 }

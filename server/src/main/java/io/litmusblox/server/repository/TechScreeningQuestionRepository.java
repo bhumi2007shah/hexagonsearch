@@ -6,6 +6,9 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.TechScreeningQuestion;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * @author : Sumit
@@ -15,4 +18,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * Project Name : server
  */
 public interface TechScreeningQuestionRepository extends JpaRepository<TechScreeningQuestion, Long> {
+
+    @Transactional
+    void deleteByJobId(Long jobId);
+
+    @Transactional(readOnly = true)
+    List<TechScreeningQuestion> findByJobId(Long jobId);
 }
