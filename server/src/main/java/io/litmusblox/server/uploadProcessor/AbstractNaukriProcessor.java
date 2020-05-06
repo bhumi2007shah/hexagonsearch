@@ -83,7 +83,7 @@ public abstract class AbstractNaukriProcessor {
 //        log.info("The Work Exp fetched is {}",naukriRow.getWorkExperience());
         if(!Util.isNull(naukriRow.getWorkExperience())) {
 //            To remove any letters like Y/M/Years/Months from the Work experience String
-            String workExperience = naukriRow.getWorkExperience().replaceAll("[a-zA-Z]{1,}","").trim();
+            String workExperience = naukriRow.getWorkExperience().replaceAll("[^0-9]{1,}"," ").trim();
 //            log.info("The replaced Work Exp is: {}",workExp);
             String[] workArray = workExperience.split(" ");
             log.info("The Years is {} and Months is {}", workArray[0],workArray[1]);

@@ -116,8 +116,6 @@ select
 from job
 left join company_address
 on job.job_location = company_address.id
-left join master_data exp
-on job.experience_range = exp.id
 left join master_data education
 on education.id = ANY(job.education)
 left join jobKeySkillAggregation

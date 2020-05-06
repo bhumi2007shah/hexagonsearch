@@ -45,7 +45,7 @@ public class MasterDataBean {
     private List<String> stage = new ArrayList<>();
     private Map<Long, String> process = new HashMap<>();
     private Map<Long, String> oldFunction = new HashMap<>();
-    private Map<Long, MasterData> expertise = new HashMap<>();
+    private Map<Long, MasterData> expertise = new LinkedHashMap<>();
     private Map<Long, String> education = new HashMap<>();
     private Map<Long, String> industry = new HashMap<>();
     private Map<Long, String> noticePeriod = new HashMap<>();
@@ -84,7 +84,7 @@ public class MasterDataBean {
     private Integer restConnectionTimeout = IConstant.REST_CONNECTION_TIME_OUT;
     private Integer restReadTimeout = IConstant.REST_READ_TIME_OUT;
     private Integer restReadTimeoutForCvParser = IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT;
-
+    private Map<String, MasterData> questionTypeMap = new HashMap<>();
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;
 

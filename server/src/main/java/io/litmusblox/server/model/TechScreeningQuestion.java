@@ -4,7 +4,9 @@
 
 package io.litmusblox.server.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
@@ -21,6 +23,8 @@ import java.io.Serializable;
 @Data
 @Entity
 @Table(name = "TECH_SCREENING_QUESTION")
+@NoArgsConstructor
+@AllArgsConstructor
 public class TechScreeningQuestion implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
@@ -50,4 +54,13 @@ public class TechScreeningQuestion implements Serializable {
 
     @JoinColumn(name = "JOB_ID")
     private Long jobId;
+
+    public TechScreeningQuestion(String techQuestion, String[] options, @NotNull MasterData questionType, String multiLevelOptions, String questionCategory, Long jobId) {
+        this.techQuestion = techQuestion;
+        this.options = options;
+        this.questionType = questionType;
+        this.multiLevelOptions = multiLevelOptions;
+        this.questionCategory = questionCategory;
+        this.jobId = jobId;
+    }
 }

@@ -2239,9 +2239,9 @@ RENAME COLUMN FUNCTION TO OLD_FUNCTION;
 -- Add fields auto_invite and visible to career page field in job
 ALTER TABLE JOB
 ADD COLUMN AUTO_INVITE bool NOT NULL default 'f',
-ADD COLUMN VISIBLE_TO_CAREER_PAGE bool NOT NULL default 'f';
+ADD COLUMN VISIBLE_TO_CAREER_PAGE bool NOT NULL default 't';
 
--- Add jobIndistry, function and rolemappig in job
+-- Add jobIndustry, function and rolemappig in job
 ALTER TABLE JOB
 ADD COLUMN JOB_INDUSTRY INTEGER REFERENCES INDUSTRY_MASTER_DATA(ID),
 ADD COLUMN FUNCTION INTEGER REFERENCES FUNCTION_MASTER_DATA(ID),
@@ -2382,3 +2382,10 @@ delete from master_data where type= 'experienceRange';
 -- for ticket #504
 alter table cv_parsing_details alter COLUMN cv_rating_api_response_time type integer;
 alter table cv_parsing_details alter COLUMN processing_time type integer;
+
+-- Add default function and industry for existing jobs
+update job set function = (select id from function_master_data where function = 'Project/ Program Management');
+update job set job_industry = (select id from industry_master_data where industry = 'IT');
+
+--Update VISIBLE_TO_CAREER_PAGE flag to true for existing jobs
+update job set VISIBLE_TO_CAREER_PAGE = 't';
