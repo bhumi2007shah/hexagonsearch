@@ -1539,6 +1539,10 @@ public class JobService implements IJobService {
             default:
                 throw new OperationNotSupportedException("Unknown page: " + pageName);
         }
+
+        if(null != oldJob && null != oldJob.getJobHiringTeamList() && !IConstant.AddJobPages.hiringTeam.name().equals(pageName))
+            job.setJobHiringTeamList(oldJob.getJobHiringTeamList());
+
         List<String> roles = new ArrayList<>();
         oldJob.setFunction(MasterDataBean.getInstance().getFunction().get(oldJob.getFunction().getId()));
         oldJob.setJobIndustry(MasterDataBean.getInstance().getJobIndustry().get(oldJob.getJobIndustry().getId()));
