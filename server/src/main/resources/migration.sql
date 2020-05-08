@@ -2389,3 +2389,8 @@ update job set job_industry = (select id from industry_master_data where industr
 
 --Update VISIBLE_TO_CAREER_PAGE flag to true for existing jobs
 update job set VISIBLE_TO_CAREER_PAGE = 't';
+
+--For ticket #492
+ALTER TABLE CURRENCY
+ADD COLUMN MIN_SALARY INTEGER,
+ADD COLUMN MAX_SALARY INTEGER;

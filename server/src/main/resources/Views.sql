@@ -131,7 +131,8 @@ job_candidate_mapping.id, job_candidate_mapping.job_id, job_candidate_mapping.ca
 cv_rating.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name, candidateCompany.designation, candidateCompany.notice_period, candidate_details.total_experience,
 (CASE WHEN (job_candidate_mapping.cv_file_type!='') THEN (CONCAT('CandidateCv/',job_candidate_mapping.job_id, '/', job_candidate_mapping.candidate_id, job_candidate_mapping.cv_file_type))
 else null
-END) as cv_location
+END) as cv_location,
+job_candidate_mapping.cv_file_type as cv_file_type
 from users,job_candidate_mapping
 left join cv_rating on job_candidate_mapping.id = cv_rating.job_candidate_mapping_id
 left join candidate_details on candidate_details.candidate_id = job_candidate_mapping.candidate_id
