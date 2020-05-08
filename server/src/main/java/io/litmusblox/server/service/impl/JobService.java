@@ -1528,6 +1528,10 @@ public class JobService implements IJobService {
             oldJob = jobRepository.findById(job.getId()).orElse(null);
         }
 
+        //set hiringManager
+        if(null != job.getHiringManager() && null != job.getHiringManager().getId())
+            job.setHiringManager(userRepository.findById(job.getHiringManager().getId()).orElse(null));
+
         switch (IConstant.AddJobPages.valueOf(pageName)) {
             case jobDetail:
                 oldJob = addJobOverview(job, oldJob, loggedInUser, true);
@@ -1539,9 +1543,6 @@ public class JobService implements IJobService {
             default:
                 throw new OperationNotSupportedException("Unknown page: " + pageName);
         }
-
-        if(null != oldJob && null != oldJob.getJobHiringTeamList() && !IConstant.AddJobPages.hiringTeam.name().equals(pageName))
-            job.setJobHiringTeamList(oldJob.getJobHiringTeamList());
 
         List<String> roles = new ArrayList<>();
         oldJob.setFunction(MasterDataBean.getInstance().getFunction().get(oldJob.getFunction().getId()));
