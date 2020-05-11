@@ -725,10 +725,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         }
 
-        //list to store candidates for which email contains "@notavailable.io" or mobile is null
+        //list to store candidates for which email contains "@notavailable.io" or invalid email or mobile is null
         List<JobCandidateMapping> failedJcm = new ArrayList<>();
 
-        //List to store jcm ids for which email does not start with "@notavailable.io" or mobile is not null
+        //List to store jcm ids for which email does not start with "@notavailable.io" and valid email or mobile is not null
         List<Long> jcmListWithoutError = new ArrayList<>();
 
         //Invite candidate respose bean hoolds status, success count, failure count, failed candidates whose email or mobile is not valid.
@@ -744,16 +744,14 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             if (null == jobObjToUse)
                 jobObjToUse = jobCandidateMapping.getJob();
 
-            //check if email does not contain "@notavailable.io" or mobile is not null
-            if (jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)) {
-                jobCandidateMapping.setInviteErrorMessage("Invalid Email address: " + jobCandidateMapping.getEmail());
-                failedJcm.add(jobCandidateMapping);
-                continue;
-            } else if (Util.isNull(jobCandidateMapping.getMobile())) {
-                jobCandidateMapping.setInviteErrorMessage("Invalid Mobile number: " + jobCandidateMapping.getMobile());
+            //https://github.com/hexagonsearch/litmusblox-backend/issues/527
+            //Check if mobile or email valid then invite candidate if both are invalid then skip to invite candidate
+            if ((!Util.isValidateEmail(jobCandidateMapping.getEmail(), null) || jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)) && Util.isNull(jobCandidateMapping.getMobile())) {
+                jobCandidateMapping.setInviteErrorMessage("Invalid mobile and Email address: " + jobCandidateMapping.getEmail());
                 failedJcm.add(jobCandidateMapping);
                 continue;
             }
+
             jcmListWithoutError.add(jobCandidateMapping.getId());
         }
 
