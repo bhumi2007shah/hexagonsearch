@@ -111,7 +111,11 @@ public class MasterDataService implements IMasterDataService {
         });
 
         currencyRepository.findAll().stream().forEach(currency -> {
+            Map<String, String> salaryMap = new HashMap<>();
+            salaryMap.put("minSalary", currency.getMinSalary()+currency.getSalaryUnit());
+            salaryMap.put("maxSalary", currency.getMaxSalary()+currency.getSalaryUnit());
             MasterDataBean.getInstance().getCurrencyList().add(currency.getCurrencyShortName());
+            MasterDataBean.getInstance().getSalaryRange().put(currency.getCurrencyShortName(), salaryMap);
         });
 
             List<MasterData> masterDataFromDb = masterDataRepository.findAll();
@@ -358,6 +362,7 @@ public class MasterDataService implements IMasterDataService {
     private static final String JOB_INDUSTRY = "jobIndustry";
     private static final String JOB_FUNCTION = "function";
     private static final String JOB_ROLE = "role";
+    private static final String SALARY_RANGE = "salaryRange";
 
     /**
      * Method to fetch specific master data from cache
@@ -455,6 +460,9 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case JOB_ROLE:
                 master.getRole().putAll(MasterDataBean.getInstance().getRoleMap());
+                break;
+            case SALARY_RANGE:
+                master.getSalaryRange().putAll(MasterDataBean.getInstance().getSalaryRange());
                 break;
             default: //for all other properties, use reflection
 

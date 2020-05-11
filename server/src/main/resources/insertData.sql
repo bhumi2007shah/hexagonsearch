@@ -729,13 +729,13 @@ values
 (10,0,80,4),
 (10,0,100,5);
 
-INSERT INTO public.currency(currency_full_name, currency_short_name, country) VALUES
-('Australian Dollar', 'AUD', 'au'),
-('Canadian Dollar', 'CAD', 'ca'),
-('Indian Rupee', 'INR', 'in'),
-('Singapore Dollar', 'SGD', 'sg'),
-('Pound Sterling', 'GBP', 'gb'),
-('US Dollar', 'USD', 'us');
+INSERT INTO public.currency(currency_full_name, currency_short_name, country, min_salary, max_salary, salary_unit) VALUES
+('Australian Dollar', 'AUD', 'au', 30, 250, 'K'),
+('Canadian Dollar', 'CAD', 'ca', 30, 250, 'K'),
+('Indian Rupee', 'INR', 'in', 1, 100, 'L'),
+('Singapore Dollar', 'SGD', 'sg', 30, 250, 'K'),
+('Pound Sterling', 'GBP', 'gb', 30, 250, 'K'),
+('US Dollar', 'USD', 'us', 30, 250, 'K');
 
 Insert into STAGE_STEP_MASTER(STAGE, STEP)
 VALUES ('Sourcing','Sourcing'),
