@@ -112,8 +112,9 @@ public class MasterDataService implements IMasterDataService {
 
         currencyRepository.findAll().stream().forEach(currency -> {
             Map<String, String> salaryMap = new HashMap<>();
-            salaryMap.put("minSalary", currency.getMinSalary()+currency.getSalaryUnit());
-            salaryMap.put("maxSalary", currency.getMaxSalary()+currency.getSalaryUnit());
+            salaryMap.put("minSalary", currency.getMinSalary().toString());
+            salaryMap.put("maxSalary", currency.getMaxSalary().toString());
+            salaryMap.put("salaryUnit", currency.getSalaryUnit());
             MasterDataBean.getInstance().getCurrencyList().add(currency.getCurrencyShortName());
             MasterDataBean.getInstance().getSalaryRange().put(currency.getCurrencyShortName(), salaryMap);
         });
