@@ -59,7 +59,7 @@ public class CsvFileProcessorService implements IUploadFileProcessorService {
                 breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.LastName.getValue(), (null!=headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.LastName.getValue()))?headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.LastName.getValue()).toString():"");
                 breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.Email.getValue(), (null!=headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.Email.getValue()))?headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.Email.getValue()).toString():"");
                 breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.Mobile.getValue(), (null!=headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.Mobile.getValue()))?headers.get(IConstant.LITMUSBLOX_FILE_COLUMNS.Mobile.getValue()).toString():"");
-                throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY, breadCrumb);
+                throw new WebException(IConstant.UPLOAD_FORMATS_SUPPORTED.LitmusBlox.toString() + IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY, breadCrumb);
             }
 
             for (CSVRecord record : parser.getRecords()) {

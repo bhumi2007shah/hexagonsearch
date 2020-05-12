@@ -55,7 +55,7 @@ public class HTMLFileProcessorService extends AbstractNaukriProcessor implements
                             breadCrumb.put("File Name", fileName);
                             breadCrumb.put("File Type", IConstant.PROCESS_FILE_TYPE.HTMLFile.toString());
                             breadCrumb.put("trElement", trElement.toString());
-                            throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.INTERNAL_SERVER_ERROR.UNPROCESSABLE_ENTITY, breadCrumb);
+                            throw new WebException(IConstant.UPLOAD_FORMATS_SUPPORTED.Naukri.toString() + IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.INTERNAL_SERVER_ERROR.UNPROCESSABLE_ENTITY, breadCrumb);
                         }
                         break;
                     default:

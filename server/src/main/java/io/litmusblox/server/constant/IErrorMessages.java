@@ -37,7 +37,7 @@ public interface IErrorMessages {
     String UNSUPPORTED_FILE_SOURCE = "Unsupported file source : ";
     String UNSUPPORTED_FILE_TYPE = "Unsupported file type with extension";
     String INVALID_SETTINGS = "Invalid System Settings";
-    String MISSING_COLUMN_NAMES_FIRST_ROW = "First row in the file does not have correct column names";
+    String MISSING_COLUMN_NAMES_FIRST_ROW = " format file uploaded. First row in the file does not have correct column names.";
     String DUPLICATE_CANDIDATE = "Candidate already exists ";
     String INVALID_REQUEST_FROM_PLUGIN = "Invalid request object from plugin, missing Candidate info";
     String DUPLICATE_USER_EMAIL = "User with email already exists";

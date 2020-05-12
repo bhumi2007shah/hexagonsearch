@@ -61,10 +61,10 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
                             breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.Email.getValue(), row.getCell(2).getStringCellValue());
                             breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.Mobile.getValue(), row.getCell(3).getStringCellValue());
                             breadCrumb.put("File Type", IConstant.PROCESS_FILE_TYPE.ExcelFile.toString());
-                            throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY, breadCrumb);
+                            throw new WebException(IConstant.UPLOAD_FORMATS_SUPPORTED.LitmusBlox.toString() + IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY, breadCrumb);
                         }
                     } catch (Exception e) {
-                        throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY);
+                        throw new WebException(IConstant.UPLOAD_FORMATS_SUPPORTED.LitmusBlox.toString() + IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY);
                     }
                     firstRow = false;
                     continue;
@@ -101,7 +101,7 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
             throw we;
         }catch(IOException ioe) {
             log.error("Error while parsing file " + fileName + " :: " + ioe.getMessage());
-            throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new WebException(IConstant.UPLOAD_FORMATS_SUPPORTED.LitmusBlox.toString() + IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY);
             //responseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
         } /*catch (InvalidFormatException e) {
             logger.error("Error while parsing file " + fileName + " :: " + e.getMessage());

@@ -133,7 +133,7 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
                     }
 
                     else if(row.getPhysicalNumberOfCells()!=0 || columnPositionMap.isEmpty()){
-                        throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY);
+                        throw new WebException(IConstant.UPLOAD_FORMATS_SUPPORTED.Naukri.toString() + IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY);
                     }
 
                     log.info("Initialized Array and Map ");
