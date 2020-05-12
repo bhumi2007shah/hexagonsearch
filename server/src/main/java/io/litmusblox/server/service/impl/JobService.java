@@ -1563,6 +1563,7 @@ public class JobService implements IJobService {
         log.info("Inside generateAndAddTechScreeningQuestions for jobId : {}",job.getId());
 
         //Delete all exiting tech screening questions
+        jobScreeningQuestionsRepository.deleteByTechScreeningQuestionIdIsNotNullAndJobId(job.getId());
         techScreeningQuestionRepository.deleteByJobId(job.getId());
 
         //LoggedIn user
