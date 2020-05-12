@@ -19,7 +19,6 @@ import org.springframework.http.HttpStatus;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.*;
 
 /**
@@ -87,7 +86,7 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
 
                 if(headingRow) {
                     //Check the Header Column Names with the IConstant.NaukriFileHeader names and map them
-                    if(row.getPhysicalNumberOfCells()!=0){
+                    if(row.getPhysicalNumberOfCells() > 5){
                         String[] naukriFileHeadersArray = new String[row.getPhysicalNumberOfCells()];
                         Iterator<Cell> cellIterator = row.cellIterator();
                         while(cellIterator.hasNext()) {
@@ -131,11 +130,9 @@ public class NaukriExcelFileProcessorService extends AbstractNaukriProcessor imp
                         }
                         log.info("Number of matching headers present in Excel are: {} ",columnPositionMap.size());
                     }
-
-                    else if(row.getPhysicalNumberOfCells()!=0 || columnPositionMap.isEmpty()){
+                    else if(row.getPhysicalNumberOfCells() < 5 || columnPositionMap.isEmpty()){
                         throw new WebException(IConstant.UPLOAD_FORMATS_SUPPORTED.Naukri.toString() + IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY);
                     }
-
                     log.info("Initialized Array and Map ");
                     headingRow = false;
                     continue;
