@@ -142,7 +142,7 @@ public class Job implements Serializable {
 
     @Type(type = "int-array")
     @Column(name = "RECRUITER", columnDefinition = "integer[]")
-    private int[] recruiter;
+    private Integer[] recruiter;
 
     @NotNull
     @Column(name = "CREATED_ON")

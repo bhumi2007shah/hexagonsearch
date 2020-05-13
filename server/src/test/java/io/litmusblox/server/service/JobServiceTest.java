@@ -240,7 +240,7 @@ class JobServiceTest extends AbstractTest {
         boolean testPass = true;
         try {
             int educationArray[] = {15};
-            int recruiterArray[] = {1};
+            Integer recruiterArray[] = {1};
             Job testJob = Job.builder()
                     .jobTitle("job title")
                     .jobDescription("job description")

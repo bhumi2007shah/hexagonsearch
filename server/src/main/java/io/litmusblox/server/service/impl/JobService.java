@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,7 +29,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import com.fasterxml.jackson.core.type.TypeReference;
+
 import javax.annotation.Resource;
 import javax.naming.OperationNotSupportedException;
 import javax.persistence.EntityManager;
@@ -194,8 +195,8 @@ public class JobService implements IJobService {
         }
 
         //set recruiter
-        if(null == job.getRecruiter() && job.getRecruiter().length==0)
-            throw new ValidationException("Recruiter "+IErrorMessages.NULL_MESSAGE, HttpStatus.UNPROCESSABLE_ENTITY);
+        if(null == oldJob)
+            job = setRecruiterArray(job, loggedInUser);
 
         //set hiringManager
         if(null != job.getHiringManager() && null != job.getHiringManager().getId()){
@@ -1528,6 +1529,10 @@ public class JobService implements IJobService {
             oldJob = jobRepository.findById(job.getId()).orElse(null);
         }
 
+        //set recruiter
+        if(null == oldJob)
+            job = setRecruiterArray(job, loggedInUser);
+
         //set hiringManager
         if(null != job.getHiringManager() && null != job.getHiringManager().getId())
             job.setHiringManager(userRepository.findById(job.getHiringManager().getId()).orElse(null));
@@ -1551,6 +1556,24 @@ public class JobService implements IJobService {
         job.setRoles(roles);
         log.info("Completed processing request to new add job flow in " + (System.currentTimeMillis() - startTime) + "ms");
         return job;
+     }
+
+     private Job setRecruiterArray(Job job, User loggedInUser){
+         //set recruiter
+         ArrayList<Integer> recruiterArray = null;
+         if(null == job.getRecruiter() || job.getRecruiter().length==0){
+             recruiterArray = new ArrayList<Integer>();
+             recruiterArray.add(Math.toIntExact(loggedInUser.getId()));
+             job.setRecruiter(recruiterArray.toArray(new Integer[recruiterArray.size()]));
+         }
+         else{
+             recruiterArray = new ArrayList<>(Arrays.asList(job.getRecruiter()));
+             if(!recruiterArray.contains(loggedInUser.getId())){
+                 recruiterArray.add(Math.toIntExact(loggedInUser.getId()));
+                 job.setRecruiter(recruiterArray.toArray(new Integer[recruiterArray.size()]));
+             }
+         }
+         return job;
      }
 
     /**
