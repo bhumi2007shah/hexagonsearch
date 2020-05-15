@@ -1568,7 +1568,7 @@ public class JobService implements IJobService {
          }
          else{
              recruiterArray = new ArrayList<>(Arrays.asList(job.getRecruiter()));
-             if(!recruiterArray.contains(loggedInUser.getId())){
+             if(!recruiterArray.contains(Math.toIntExact(loggedInUser.getId()))){
                  recruiterArray.add(Math.toIntExact(loggedInUser.getId()));
                  job.setRecruiter(recruiterArray.toArray(new Integer[recruiterArray.size()]));
              }
