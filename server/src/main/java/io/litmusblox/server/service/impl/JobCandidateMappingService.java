@@ -746,8 +746,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
             //https://github.com/hexagonsearch/litmusblox-backend/issues/527
             //Check if mobile or email valid then invite candidate if both are invalid then skip to invite candidate
-            if ((!Util.isValidateEmail(jobCandidateMapping.getEmail(), null) || jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)) && Util.isNull(jobCandidateMapping.getMobile())) {
-                jobCandidateMapping.setInviteErrorMessage("Invalid mobile and Email address: " + jobCandidateMapping.getEmail());
+            if (((!Util.isValidateEmail(jobCandidateMapping.getEmail(), null) || jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)) && Util.isNull(jobCandidateMapping.getMobile())) || null != jobCandidateMapping.getChatbotStatus()) {
+                if (null != jobCandidateMapping.getChatbotStatus())
+                    jobCandidateMapping.setInviteErrorMessage("Candidate is already invited. Cannot be invited again.");
+                else
+                    jobCandidateMapping.setInviteErrorMessage("Invalid mobile and Email address: " + jobCandidateMapping.getEmail());
+
                 failedJcm.add(jobCandidateMapping);
                 continue;
             }
