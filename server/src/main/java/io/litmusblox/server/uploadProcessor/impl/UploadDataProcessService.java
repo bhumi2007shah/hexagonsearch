@@ -164,7 +164,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             if (!Util.validateMobile(candidate.getMobile(), (null != candidate.getCountryCode())?candidate.getCountryCode():job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate))) {
                 String cleanMobile = candidate.getMobile().replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_MOBILE, "");
                 log.error("Special characters found, cleaning mobile number \"" + candidate.getMobile() + "\" to " + cleanMobile);
-                if (!Util.validateMobile(cleanMobile, candidate.getCountryCode(), Optional.of(candidate)))
+                if (!Util.validateMobile(cleanMobile, (null != candidate.getCountryCode())?candidate.getCountryCode():job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate)))
                     throw new ValidationException(IErrorMessages.MOBILE_INVALID_DATA + " - " + candidate.getMobile(), HttpStatus.BAD_REQUEST);
                 candidate.setMobile(cleanMobile);
             }
