@@ -145,6 +145,9 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             candidate.setLastName(Util.validateCandidateName(candidate.getLastName()));
         }
 
+        if(Util.isNull(candidate.getEmail()))
+            candidate.setEmail("notavailable" + new Date().getTime() + IConstant.NOT_AVAILABLE_EMAIL);
+
         if (!Util.isValidateEmail(candidate.getEmail(), Optional.of(candidate))) {
             String cleanEmail = candidate.getEmail().replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL,"");
             log.error("Special characters found, cleaning Email \"" + candidate.getEmail() + "\" to " + cleanEmail);

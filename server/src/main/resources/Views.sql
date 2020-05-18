@@ -147,7 +147,3 @@ left join
 on candidateCompany.candidate_id = job_candidate_mapping.candidate_id
 where users.id = job_candidate_mapping.created_by
 order by job_candidate_mapping.created_on desc, job_candidate_mapping.candidate_first_name asc, job_candidate_mapping.candidate_last_name asc;
-
---Delete experience range from master data
-alter table job drop column experience_range;
-delete from master_data where type= 'experienceRange';
