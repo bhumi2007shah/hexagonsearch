@@ -231,7 +231,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             try {
                 if(null!=candidate.getId())
                     saveCandidateSupportiveInfo(candidate, loggedInUser);
-                    candidateService.createCandidateOnSearchEngine(candidate, job);
+                    //candidateService.createCandidateOnSearchEngine(candidate, job);
             }catch (Exception ex){
                 log.error("Error while processing candidates supportive info :: " + ex.getMessage());
             }
@@ -892,6 +892,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null == objFromDb)
             throw new ValidationException("No job candidate mapping found for id: " + jobCandidateMappingId, HttpStatus.UNPROCESSABLE_ENTITY);
 
+        log.info("sdfghjkjhgfdsasdfghjk");
         List<JobScreeningQuestions> screeningQuestions = jobScreeningQuestionsRepository.findByJobId(objFromDb.getJob().getId());
         Map<Long, JobScreeningQuestions> screeningQuestionsMap = new HashMap<>(screeningQuestions.size());
         screeningQuestions.forEach(screeningQuestion-> {
