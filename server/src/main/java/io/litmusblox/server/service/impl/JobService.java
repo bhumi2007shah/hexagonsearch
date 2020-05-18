@@ -737,7 +737,10 @@ public class JobService implements IJobService {
         AtomicBoolean masterQuestions = new AtomicBoolean(false);
         AtomicBoolean techQuestions = new AtomicBoolean(false);
         AtomicBoolean userQuestions = new AtomicBoolean(false);
-        if (isNewAddJobFlow && null != job.getJobScreeningQuestionsList() && job.getJobScreeningQuestionsList().size() > 0) {
+        masterQuestions.set(false);
+        techQuestions.set(false);
+        userQuestions.set(false);
+      /*  if (isNewAddJobFlow && null != job.getJobScreeningQuestionsList() && job.getJobScreeningQuestionsList().size() > 0) {
             job.getJobScreeningQuestionsList().forEach(jobScreeningQuestions -> {
                 if(null != jobScreeningQuestions.getMasterScreeningQuestionId())
                     masterQuestions.set(true);
@@ -746,17 +749,14 @@ public class JobService implements IJobService {
                 else if(null != jobScreeningQuestions.getUserScreeningQuestionId())
                     userQuestions.set(true);
             });
-        }
+        }*/
 
         if (null != oldJob.getJobScreeningQuestionsList() && oldJob.getJobScreeningQuestionsList().size() > 0) {
             historyMsg = "Updated";
             if(isNewAddJobFlow){
-                if(masterQuestions.get())
-                    jobScreeningQuestionsRepository.deleteByMasterScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
-                if(techQuestions.get())
-                    jobScreeningQuestionsRepository.deleteByTechScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
-                if(userQuestions.get())
-                    jobScreeningQuestionsRepository.deleteByUserScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
+                jobScreeningQuestionsRepository.deleteByMasterScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
+                jobScreeningQuestionsRepository.deleteByTechScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
+                jobScreeningQuestionsRepository.deleteByUserScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
             }else
                 jobScreeningQuestionsRepository.deleteAll(oldJob.getJobScreeningQuestionsList());//delete old job screening question list
 
@@ -783,7 +783,7 @@ public class JobService implements IJobService {
         saveJobHistory(job.getId(), historyMsg + " screening questions", loggedInUser);
 
         //populate key skills for the job
-       // job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
+        // job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
     }
 
     private void addJobKeySkills(Job job, Job oldJob, User loggedInUser) throws Exception { //update and add new key skill
@@ -1124,9 +1124,9 @@ public class JobService implements IJobService {
         });
         ScoringEngineJobBean jobRequestBean;
         if(null != expertise)
-             jobRequestBean = new ScoringEngineJobBean(jobId, Long.parseLong(expertise.getValueToUSe()), capabilityList);
+            jobRequestBean = new ScoringEngineJobBean(jobId, Long.parseLong(expertise.getValueToUSe()), capabilityList);
         else
-             jobRequestBean = new ScoringEngineJobBean(jobId, null, capabilityList);
+            jobRequestBean = new ScoringEngineJobBean(jobId, null, capabilityList);
 
         return (new ObjectMapper()).writeValueAsString(jobRequestBean);
     }
@@ -1316,7 +1316,7 @@ public class JobService implements IJobService {
 
         Company finalCompany = company;
         exportDataList.forEach(data-> {
-                LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
+            LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
             for (int i = 0; i < data.length; ++i) {
                 if(columnNames.get(i).equals("chatbotLink")){
                     candidateData.put(exportHeaderColumnMap.get(columnNames.get(i)), data[i]!=null? (environment.getProperty(IConstant.CHAT_LINK)+data[i].toString()):"");
@@ -1557,7 +1557,7 @@ public class JobService implements IJobService {
         job.setRoles(roles);
         log.info("Completed processing request to new add job flow in " + (System.currentTimeMillis() - startTime) + "ms");
         return job;
-     }
+    }
 
      private Job setRecruiterArray(Job job, User loggedInUser){
          //set recruiter
