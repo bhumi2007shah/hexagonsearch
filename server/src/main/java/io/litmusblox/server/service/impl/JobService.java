@@ -185,7 +185,7 @@ public class JobService implements IJobService {
         if (null != job.getId()) {
             //get handle to existing job object
             oldJob = jobRepository.findById(job.getId()).orElse(null);
-            // oldJob = tempJobObj.isPresent() ? tempJobObj.get() : null;
+           // oldJob = tempJobObj.isPresent() ? tempJobObj.get() : null;
         } else  {//Is a new job
             if(IConstant.CompanySubscription.LDEB.toString().equalsIgnoreCase(loggedInUser.getCompany().getSubscription())) {
                 //If LDEB client, set customized chatbot flag & resubmit hr flag = true
@@ -326,11 +326,11 @@ public class JobService implements IJobService {
             responseBean.setListOfJobs(jobRepository.findByCreatedByAndStatusAndDateArchivedIsNullOrderByCreatedOnDesc(loggedInUser,loggedInUser.getId(), jobStatus));
 
         List<Object[]> object = jobRepository.getJobCountPerStatusByCreatedBy(loggedInUser.getId());
-        if(null != object.get(0)[0]){
-            responseBean.setLiveJobs(Integer.parseInt(object.get(0)[0].toString()));
-            responseBean.setDraftJobs(Integer.parseInt(object.get(0)[1].toString()));
-            responseBean.setArchivedJobs(Integer.parseInt(object.get(0)[2].toString()));
-        }
+            if(null != object.get(0)[0]){
+                responseBean.setLiveJobs(Integer.parseInt(object.get(0)[0].toString()));
+                responseBean.setDraftJobs(Integer.parseInt(object.get(0)[1].toString()));
+                responseBean.setArchivedJobs(Integer.parseInt(object.get(0)[2].toString()));
+            }
         log.info("Got " + responseBean.getListOfJobs().size() + " jobs in " + (System.currentTimeMillis() - startTime) + "ms");
         getCandidateCountByStage(responseBean.getListOfJobs());
     }
@@ -646,7 +646,8 @@ public class JobService implements IJobService {
                     SentryUtil.logWithStaticAPI(null, IErrorMessages.ML_DATA_DUPLICATE_SKILLS + mlResponse, breadCrumb);
                 }
                 Set<Integer> uniqueCapabilityIds = new HashSet<>();
-                handleCapabilitiesFromMl(responseBean.getTowerGeneration().getSuggestedCapabilities(), jobId, true, uniqueCapabilityIds);
+                //For now both capabilities(Suggested and Additional) are set as not selected because we don't want tech chatbot for regular flow
+                handleCapabilitiesFromMl(responseBean.getTowerGeneration().getSuggestedCapabilities(), jobId, false, uniqueCapabilityIds);
                 handleCapabilitiesFromMl(responseBean.getTowerGeneration().getAdditionalCapabilities(), jobId, false, uniqueCapabilityIds);
             }else{
                 SentryUtil.logWithStaticAPI(null, "ml status is different than expected or suff_error", breadCrumb);
@@ -1558,23 +1559,23 @@ public class JobService implements IJobService {
         return job;
     }
 
-    private Job setRecruiterArray(Job job, User loggedInUser){
-        //set recruiter
-        ArrayList<Integer> recruiterArray = null;
-        if(null == job.getRecruiter() || job.getRecruiter().length==0){
-            recruiterArray = new ArrayList<Integer>();
-            recruiterArray.add(Math.toIntExact(loggedInUser.getId()));
-            job.setRecruiter(recruiterArray.toArray(new Integer[recruiterArray.size()]));
-        }
-        else{
-            recruiterArray = new ArrayList<>(Arrays.asList(job.getRecruiter()));
-            if(!recruiterArray.contains(loggedInUser.getId())){
-                recruiterArray.add(Math.toIntExact(loggedInUser.getId()));
-                job.setRecruiter(recruiterArray.toArray(new Integer[recruiterArray.size()]));
-            }
-        }
-        return job;
-    }
+     private Job setRecruiterArray(Job job, User loggedInUser){
+         //set recruiter
+         ArrayList<Integer> recruiterArray = null;
+         if(null == job.getRecruiter() || job.getRecruiter().length==0){
+             recruiterArray = new ArrayList<Integer>();
+             recruiterArray.add(Math.toIntExact(loggedInUser.getId()));
+             job.setRecruiter(recruiterArray.toArray(new Integer[recruiterArray.size()]));
+         }
+         else{
+             recruiterArray = new ArrayList<>(Arrays.asList(job.getRecruiter()));
+             if(!recruiterArray.contains(Math.toIntExact(loggedInUser.getId()))){
+                 recruiterArray.add(Math.toIntExact(loggedInUser.getId()));
+                 job.setRecruiter(recruiterArray.toArray(new Integer[recruiterArray.size()]));
+             }
+         }
+         return job;
+     }
 
     /**
      * API to get and add tech questions from search engine

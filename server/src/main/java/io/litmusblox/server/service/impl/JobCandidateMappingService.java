@@ -231,7 +231,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             try {
                 if(null!=candidate.getId())
                     saveCandidateSupportiveInfo(candidate, loggedInUser);
-                    candidateService.createCandidateOnSearchEngine(candidate, job);
+                    //candidateService.createCandidateOnSearchEngine(candidate, job);
             }catch (Exception ex){
                 log.error("Error while processing candidates supportive info :: " + ex.getMessage());
             }
@@ -746,8 +746,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
             //https://github.com/hexagonsearch/litmusblox-backend/issues/527
             //Check if mobile or email valid then invite candidate if both are invalid then skip to invite candidate
-            if ((!Util.isValidateEmail(jobCandidateMapping.getEmail(), null) || jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)) && Util.isNull(jobCandidateMapping.getMobile())) {
-                jobCandidateMapping.setInviteErrorMessage("Invalid mobile and Email address: " + jobCandidateMapping.getEmail());
+            if (((!Util.isValidateEmail(jobCandidateMapping.getEmail(), null) || jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)) && Util.isNull(jobCandidateMapping.getMobile())) || null != jobCandidateMapping.getChatbotStatus()) {
+                if (null != jobCandidateMapping.getChatbotStatus())
+                    jobCandidateMapping.setInviteErrorMessage("Candidate is already invited. Cannot be invited again.");
+                else
+                    jobCandidateMapping.setInviteErrorMessage("Invalid mobile and Email address: " + jobCandidateMapping.getEmail());
+
                 failedJcm.add(jobCandidateMapping);
                 continue;
             }
@@ -888,6 +892,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null == objFromDb)
             throw new ValidationException("No job candidate mapping found for id: " + jobCandidateMappingId, HttpStatus.UNPROCESSABLE_ENTITY);
 
+        log.info("sdfghjkjhgfdsasdfghjk");
         List<JobScreeningQuestions> screeningQuestions = jobScreeningQuestionsRepository.findByJobId(objFromDb.getJob().getId());
         Map<Long, JobScreeningQuestions> screeningQuestionsMap = new HashMap<>(screeningQuestions.size());
         screeningQuestions.forEach(screeningQuestion-> {
