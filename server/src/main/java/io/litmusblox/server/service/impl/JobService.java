@@ -646,7 +646,8 @@ public class JobService implements IJobService {
                     SentryUtil.logWithStaticAPI(null, IErrorMessages.ML_DATA_DUPLICATE_SKILLS + mlResponse, breadCrumb);
                 }
                 Set<Integer> uniqueCapabilityIds = new HashSet<>();
-                handleCapabilitiesFromMl(responseBean.getTowerGeneration().getSuggestedCapabilities(), jobId, true, uniqueCapabilityIds);
+                //For now both capabilities(Suggested and Additional) are set as not selected because we don't want tech chatbot for regular flow
+                handleCapabilitiesFromMl(responseBean.getTowerGeneration().getSuggestedCapabilities(), jobId, false, uniqueCapabilityIds);
                 handleCapabilitiesFromMl(responseBean.getTowerGeneration().getAdditionalCapabilities(), jobId, false, uniqueCapabilityIds);
             }else{
                 SentryUtil.logWithStaticAPI(null, "ml status is different than expected or suff_error", breadCrumb);
