@@ -2409,3 +2409,6 @@ update master_data  set value = 'Mid', value_to_use =3 where value = 'Senior';
 update master_data  set value = 'Senior', value_to_use =4 where value = 'Junior' and comments is null;
 ALTER TABLE MASTER_DATA ADD CONSTRAINT unique_master_data UNIQUE (type, value);
 update create_job_page_sequence set page_display_name = 'HR Screening' where page_name= 'hrScreening';
+
+-- For ticket #546
+update company set subscription = 'LDEB' where company_name = 'Tricentis';
