@@ -2412,3 +2412,4 @@ update create_job_page_sequence set page_display_name = 'HR Screening' where pag
 
 -- For ticket #546
 update company set subscription = 'LDEB' where company_name = 'Tricentis';
+update company set send_communication = false where id = 43;
