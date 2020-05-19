@@ -388,7 +388,7 @@ public class MasterDataService implements IMasterDataService {
                 log.info("AddJob pages for subscription : {}",loggedInUser.getCompany().getSubscription());
                 MasterDataBean.getInstance().setAddJobPages(new ArrayList<>());
                 MasterDataBean.getInstance().setJobPageNamesInOrder(new ArrayList<>());
-                createJobPageSequenceRepository.findByDisplayFlagIsTrueAndSubscriptionAvailabilityOrderByPageDisplayOrderAsc(loggedInUser.getCompany().getSubscription()).stream().forEach(page-> {
+                createJobPageSequenceRepository.findByDisplayFlagIsTrueAndSubscriptionAvailabilityOrderByPageDisplayOrderAsc(IConstant.CompanySubscription.Lite.name()).stream().forEach(page-> {
                     MasterDataBean.getInstance().getAddJobPages().add(page);
                     MasterDataBean.getInstance().getJobPageNamesInOrder().add(page.getPageName());
                 });

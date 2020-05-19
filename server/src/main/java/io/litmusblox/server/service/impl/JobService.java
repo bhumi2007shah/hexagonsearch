@@ -1528,6 +1528,12 @@ public class JobService implements IJobService {
         if (null != job.getId()) {
             //get handle to existing job object
             oldJob = jobRepository.findById(job.getId()).orElse(null);
+        }else{
+            if(IConstant.CompanySubscription.LDEB.toString().equalsIgnoreCase(loggedInUser.getCompany().getSubscription())) {
+                //If LDEB client, set customized chatbot flag & resubmit hr flag = true
+                job.setCustomizedChatbot(true);
+                job.setResubmitHrChatbot(true);
+            }
         }
 
         //set recruiter
