@@ -2399,4 +2399,12 @@ ADD COLUMN SALARY_UNIT VARCHAR(2);
 UPDATE CURRENCY set MIN_SALARY = 1, MAX_SALARY = 100, SALARY_UNIT = 'L' WHERE COUNTRY = 'in';
 UPDATE CURRENCY set MIN_SALARY = 30, MAX_SALARY = 250, SALARY_UNIT = 'K' WHERE COUNTRY != 'in';
 
+-- For ticket #547
+update company set subscription='LDEB', send_communication='f' where id=108;
+
+INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
+(108, '"introText"=>"As a part of org level role baselining, we seek your inputs on various aspects of your work experience regarding the role of",
+"thankYouText"=>"No further action is required from your side",
+"showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false", "showUploadResumePage"=>"false"');
+
 
