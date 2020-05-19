@@ -2401,3 +2401,11 @@ UPDATE CURRENCY set MIN_SALARY = 30, MAX_SALARY = 250, SALARY_UNIT = 'K' WHERE C
 
 --For ticket #493
 ALTER TABLE async_operations_error_records ALTER COLUMN error_message TYPE varchar(250);
+
+--For ticket #525
+ALTER TABLE MASTER_DATA DROP CONSTRAINT unique_master_data;
+update master_data  set value = 'Junior', value_to_use = 2 where value = 'Mid';
+update master_data  set value = 'Mid', value_to_use =3 where value = 'Senior';
+update master_data  set value = 'Senior', value_to_use =4 where value = 'Junior' and comments is null;
+ALTER TABLE MASTER_DATA ADD CONSTRAINT unique_master_data UNIQUE (type, value);
+update create_job_page_sequence set page_display_name = 'HR Screening' where page_name= 'hrScreening';
