@@ -74,4 +74,10 @@ public interface ICandidateService {
     void saveUpdateCandidateSkillDetails(List<CandidateSkillDetails> candidateSkillDetails, Candidate candidate) throws Exception;
 
     void saveUpdateCandidateCompanyDetails(List<CandidateCompanyDetails> candidateCompanyDetailsList, Candidate candidate) throws Exception;
+
+    /**
+     * Method  to call search engine to add candidate
+     * @param candidate
+     */
+    void createCandidateOnSearchEngine(Candidate candidate, Job job);
 }

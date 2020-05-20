@@ -67,12 +67,10 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     JobCandidateMapping findByChatbotUuid(UUID uuid) throws Exception;
 
     @Transactional
-    @Query(value = "select j.id as jobId, j.job_title as jobTitle, (select step from stage_step_master where id = jcm.stage) as currentStatus,\n" +
-            "jcm.created_on as sourcedOn, (select step from stage_step_master where id = jcm.stage) as lastStage, (select CONCAT(first_name,' ', last_name) from users where id=j.hiring_manager) as hiringManager, \n" +
-            "(select CONCAT(first_name, ' ', last_name) from users where id=j.recruiter) as recruiter\n" +
-            "from job_candidate_mapping jcm\n" +
-            "inner join job j on j.id = jcm.job_id\n" +
-            "where jcm.candidate_id =:candidateId and j.company_id =:companyId order by jcm.created_on desc", nativeQuery = true)
+    @Query(value = "select j.id as jobId, j.job_title as jobTitle, (select step from stage_step_master where id = jcm.stage) as currentStatus, jcm.created_on as sourcedOn, " +
+            "(select step from stage_step_master where id = jcm.stage) as lastStage, (select CONCAT(first_name,' ', last_name) from users where id=j.hiring_manager) as hiringManager, " +
+            "(select array_to_string(array(select CONCAT(first_name, ' ', last_name) from users where id in (select (UNNEST(j.recruiter)))),', ')) as recruiter from job_candidate_mapping jcm " +
+            "inner join job j on j.id = jcm.job_id where jcm.candidate_id =:candidateId and j.company_id =:companyId order by jcm.created_on desc;", nativeQuery = true)
     List<CandidateInteractionHistory> getCandidateInteractionHistoryByCandidateId(Long candidateId, Long companyId);
 
     @Transactional
@@ -120,7 +118,7 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     List<Object[]> getCandidateCountPerStage(Long jobId, String stage) throws Exception;
 
     @Transactional
-    @Query(nativeQuery = true, value = "select * from job_candidate_mapping where chatbot_status is null and autosourced='t' and stage=(select id from stage_step_master where stage='Sourcing')")
+    @Query(nativeQuery = true, value = "select * from job_candidate_mapping where chatbot_status is null and job_id in (select id from job where auto_invite = 't') and stage=(select id from stage_step_master where stage='Sourcing')")
     List<JobCandidateMapping> getNewAutoSourcedJcmList();
 
     @Transactional

@@ -96,6 +96,12 @@ public class CompanyService implements ICompanyService {
     @Value("${createSubdomainIp}")
     String createSubdomainIp;
 
+    @Value("${searchEngineBaseUrl}")
+    String searchEngineBaseUrl;
+
+    @Value("${searchEngineAddCompanyUrlSuffix}")
+    String searchEngineAddCompanyUrlSuffix;
+
     /**
      * Service method to create a new company
      * @param company the company object to save
@@ -108,6 +114,7 @@ public class CompanyService implements ICompanyService {
         company = generateAndSetCompanyUniqueId(company);
         companyRepository.save(company);
         saveCompanyHistory(company.getId(), loggedInUser.getDisplayName() + " created a new company " +company.getCompanyName(), loggedInUser);
+        addCompanyOnSearchEngine(company);
         return company;
     }
 
@@ -794,6 +801,29 @@ public class CompanyService implements ICompanyService {
             log.info("For recruitment agency Company unique id not generated");
 
         return company;
+    }
+
+    /**
+     * private method to make a call to search engine add company api.
+     * @param company
+     */
+    public void addCompanyOnSearchEngine(Company company){
+        log.info("Calling SearchEngine API to add company id:{}, name:{}", company.getId(), company.getCompanyName());
+        long startTime = System.currentTimeMillis();
+
+        //creating a map of parameters to be sent to search engine api.
+        Map queryparams = new HashMap(2);
+        queryparams.put("companyId", company.getId());
+        queryparams.put("companyName", company.getCompanyName());
+
+        try {
+            //calling sscoring engine api to add company in neo4j db.
+            RestClient.getInstance().consumeRestApi(null, searchEngineBaseUrl + searchEngineAddCompanyUrlSuffix, HttpMethod.POST, null, Optional.of(queryparams), null);
+        }
+        catch (Exception e){
+            log.error("Error while adding company on Search Engine: " + e.getMessage());
+        }
+        log.info("Completed adding company on search engine in {}ms", System.currentTimeMillis()-startTime);
     }
 
 }

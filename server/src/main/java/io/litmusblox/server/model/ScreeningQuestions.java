@@ -49,4 +49,15 @@ public class ScreeningQuestions implements Serializable {
 
     @Column(name = "MULTILEVELOPTIONS")
     private String multiLevelOptions;
+
+    @Column(name = "CUSTOMIZE_QUESTION")
+    private String customizeQuestion;
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "QUESTION_CATEGORY")
+    private MasterData questionCategory;
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "COUNTRY_ID")
+    private Country countryId;
 }

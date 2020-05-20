@@ -47,11 +47,8 @@ public class JCMAllDetails {
     String designation;
     String notice_period;
     Double total_experience;
+    String cv_location;
     String cv_file_type;
-
-    @Transient
-    @JsonProperty
-    String cvLocation;
 
     @Transient
     @JsonProperty

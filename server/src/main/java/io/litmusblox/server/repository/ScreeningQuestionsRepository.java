@@ -4,8 +4,12 @@
 
 package io.litmusblox.server.repository;
 
+import io.litmusblox.server.model.Country;
+import io.litmusblox.server.model.MasterData;
 import io.litmusblox.server.model.ScreeningQuestions;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
 
 /**
  * Repository class for Master screening questions
@@ -17,4 +21,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * Project Name : server
  */
 public interface ScreeningQuestionsRepository extends JpaRepository<ScreeningQuestions, Long> {
+    List<ScreeningQuestions> findByCountryIdAndQuestionCategory(Country country, MasterData questionCategory);
 }

@@ -211,9 +211,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         try {
             if(ignoreMobile)
-                processCandidateData(candidates, uploadResponseBean, loggedInUser, jobId, candidateProcessed, ignoreMobile);
+                processCandidateData(candidates, uploadResponseBean, loggedInUser, jobId, candidateProcessed, ignoreMobile, job);
             else
-                processCandidateData(candidates, uploadResponseBean, loggedInUser, jobId, candidateProcessed, !IConstant.STR_INDIA.equalsIgnoreCase(loggedInUser.getCountryId().getCountryName()));
+                processCandidateData(candidates, uploadResponseBean, loggedInUser, jobId, candidateProcessed, !IConstant.STR_INDIA.equalsIgnoreCase(loggedInUser.getCountryId().getCountryName()), job);
         } catch (Exception ex) {
             log.error("Error while processing candidates uploaded :: " + ex.getMessage());
             uploadResponseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
@@ -221,7 +221,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         return uploadResponseBean;
     }
 
-    private void processCandidateData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, User loggedInUser, Long jobId, int candidateProcessed, boolean ignoreMobile) throws Exception{
+    private void processCandidateData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, User loggedInUser, Long jobId, int candidateProcessed, boolean ignoreMobile, Job job) throws Exception{
 
         if (null != candidateList && candidateList.size() > 0) {
             iUploadDataProcessService.processData(candidateList, uploadResponseBean, candidateProcessed,jobId, ignoreMobile, Optional.of(loggedInUser));
@@ -231,6 +231,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             try {
                 if(null!=candidate.getId())
                     saveCandidateSupportiveInfo(candidate, loggedInUser);
+                    //candidateService.createCandidateOnSearchEngine(candidate, job);
             }catch (Exception ex){
                 log.error("Error while processing candidates supportive info :: " + ex.getMessage());
             }
@@ -338,12 +339,13 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         log.info("Thread - {} : Started processing uploadCandidatesFromFile in JobCandidateMappingService", Thread.currentThread().getName());
         UploadResponseBean uploadResponseBean = new UploadResponseBean();
         List<Candidate> candidateList = null;
+        Job job = jobRepository.getOne(jobId);
 
         try {
             candidateList = processUploadedFile(fileName, uploadResponseBean, loggedInUser, fileFormat, environment.getProperty(IConstant.REPO_LOCATION), loggedInUser.getCountryCode());
 
             try {
-                processCandidateData(candidateList, uploadResponseBean, loggedInUser, jobId, candidatesProcessed, false);
+                processCandidateData(candidateList, uploadResponseBean, loggedInUser, jobId, candidatesProcessed, true, job);
             } catch (Exception ex) {
                 log.error("Error while processing file " + fileName + " :: " + ex.getMessage());
                 uploadResponseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
@@ -466,7 +468,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             //#189: save the text format of CV if available
             if(responseBean.getSuccessfulCandidates().size() > 0) {
                 JobCandidateMapping jcm = jobCandidateMappingRepository.findByJobAndCandidate(getJob(jobId), responseBean.getSuccessfulCandidates().get(0));
-                cvParsingDetailsRepository.save(new CvParsingDetails(new Date(), candidate.getCandidateDetails().getTextCv(), responseBean.getSuccessfulCandidates().get(0).getId(),jcm));
+                cvParsingDetailsRepository.save(new CvParsingDetails(candidateCv.getOriginalFilename(), new Date(), candidate.getCandidateDetails().getTextCv(), responseBean.getSuccessfulCandidates().get(0).getId(),jcm));
             }
         }
         else {//null candidate object
@@ -611,6 +613,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @throws Exception
      */
     public void inviteAutoSourcedCandidate()throws Exception{
+        log.info("Inside inviteAutoSourcedCandidate");
         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getNewAutoSourcedJcmList();
         inviteAutoSourcedOrLDEBCandidates(jobCandidateMappings);
     }
@@ -621,6 +624,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @throws Exception
      */
     public void inviteLDEBCandidates() throws Exception{
+        log.info("Inside inviteLDEBCandidates");
         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getLDEBCandidates();
         inviteAutoSourcedOrLDEBCandidates(jobCandidateMappings);
     }
@@ -721,10 +725,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         }
 
-        //list to store candidates for which email contains "@notavailable.io" or mobile is null
+        //list to store candidates for which email contains "@notavailable.io" or invalid email or mobile is null
         List<JobCandidateMapping> failedJcm = new ArrayList<>();
 
-        //List to store jcm ids for which email does not start with "@notavailable.io" or mobile is not null
+        //List to store jcm ids for which email does not start with "@notavailable.io" and valid email or mobile is not null
         List<Long> jcmListWithoutError = new ArrayList<>();
 
         //Invite candidate respose bean hoolds status, success count, failure count, failed candidates whose email or mobile is not valid.
@@ -740,16 +744,18 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             if (null == jobObjToUse)
                 jobObjToUse = jobCandidateMapping.getJob();
 
-            //check if email does not contain "@notavailable.io" or mobile is not null
-            if (jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)) {
-                jobCandidateMapping.setInviteErrorMessage("Invalid Email address: " + jobCandidateMapping.getEmail());
-                failedJcm.add(jobCandidateMapping);
-                continue;
-            } else if (Util.isNull(jobCandidateMapping.getMobile())) {
-                jobCandidateMapping.setInviteErrorMessage("Invalid Mobile number: " + jobCandidateMapping.getMobile());
+            //https://github.com/hexagonsearch/litmusblox-backend/issues/527
+            //Check if mobile or email valid then invite candidate if both are invalid then skip to invite candidate
+            if (((!Util.isValidateEmail(jobCandidateMapping.getEmail(), null) || jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)) && Util.isNull(jobCandidateMapping.getMobile())) || null != jobCandidateMapping.getChatbotStatus()) {
+                if (null != jobCandidateMapping.getChatbotStatus())
+                    jobCandidateMapping.setInviteErrorMessage("Candidate is already invited. Cannot be invited again.");
+                else
+                    jobCandidateMapping.setInviteErrorMessage("Invalid mobile and Email address: " + jobCandidateMapping.getEmail());
+
                 failedJcm.add(jobCandidateMapping);
                 continue;
             }
+
             jcmListWithoutError.add(jobCandidateMapping.getId());
         }
 
@@ -886,6 +892,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null == objFromDb)
             throw new ValidationException("No job candidate mapping found for id: " + jobCandidateMappingId, HttpStatus.UNPROCESSABLE_ENTITY);
 
+        log.info("sdfghjkjhgfdsasdfghjk");
         List<JobScreeningQuestions> screeningQuestions = jobScreeningQuestionsRepository.findByJobId(objFromDb.getJob().getId());
         Map<Long, JobScreeningQuestions> screeningQuestionsMap = new HashMap<>(screeningQuestions.size());
         screeningQuestions.forEach(screeningQuestion-> {
@@ -1117,6 +1124,17 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 jcmFromDb.setReasonForChange(jobCandidateMapping.getReasonForChange());
             }
 
+            //Update candidate expected ctc
+            if(null != jobCandidateMapping.getExpectedCtc())
+                jcmFromDb.setExpectedCtc(jobCandidateMapping.getExpectedCtc());
+
+            //Update candidate percentage hike
+            if(null != jobCandidateMapping.getPercentageHike())
+                jcmFromDb.setPercentageHike(jobCandidateMapping.getPercentageHike());
+
+            //Update recruiter comments for candidate
+            if(Util.isNotNull(jobCandidateMapping.getComments()))
+                jcmFromDb.setComments(jobCandidateMapping.getComments());
 
             //Update candidate servingNoticePeriod
             jcmFromDb.setServingNoticePeriod(jobCandidateMapping.isServingNoticePeriod());
@@ -1806,7 +1824,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             filePath = StoreFileUtil.storeFile(candidateCv, jcm.getJob().getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),jcm.getCandidate(),null);
             jcm.setCvFileType("."+extension);
             jobCandidateMappingRepository.save(jcm);
-            cvParsingDetailsRepository.save(new CvParsingDetails(new Date(), null, jcm.getCandidate().getId(),jcm));
+            cvParsingDetailsRepository.save(new CvParsingDetails(candidateCv.getOriginalFilename(), new Date(), null, jcm.getCandidate().getId(),jcm));
         }catch (Exception ex){
             log.error("{}, File name : {}, For jcmId : ", IErrorMessages.FAILED_TO_SAVE_FILE, candidateCv.getOriginalFilename(), jcm.getId(), ex.getMessage());
             throw new ValidationException(IErrorMessages.FAILED_TO_SAVE_FILE+" "+candidateCv.getOriginalFilename()+ex.getMessage(), HttpStatus.BAD_REQUEST);
@@ -1887,13 +1905,22 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
             //Store candidate cv to repository location
             try{
+                Long candidateId = null;
                 if(null!=candidateCv) {
-                    if (responseBean.getSuccessfulCandidates().size()>0)
-                        StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getSuccessfulCandidates().get(0),null);
-                    else
-                        StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(),responseBean.getFailedCandidates().get(0), null);
+                    if (responseBean.getSuccessfulCandidates().size()>0) {
+                        StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(), responseBean.getSuccessfulCandidates().get(0), null);
+                        candidateId = responseBean.getSuccessfulCandidates().get(0).getId();
+                    }else {
+                        StoreFileUtil.storeFile(candidateCv, job.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.CandidateCv.toString(), responseBean.getFailedCandidates().get(0), null);
+                        candidateId = responseBean.getFailedCandidates().get(0).getId();
+                    }
 
                     responseBean.setCvStatus(true);
+
+                    //Create cvParsingDetail entry to get cv rating for this resume
+                    if(null != candidateId)
+                        cvParsingDetailsRepository.save(new CvParsingDetails(candidateCv.getOriginalFilename(), new Date(), null, candidateId,jobCandidateMappingRepository.findByJobIdAndCandidateId(job.getId(), candidateId)));
+
                 }
             }catch(Exception e){
                 log.error("Resume upload failed :"+e.getMessage());

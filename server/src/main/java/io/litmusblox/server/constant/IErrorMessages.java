@@ -37,7 +37,7 @@ public interface IErrorMessages {
     String UNSUPPORTED_FILE_SOURCE = "Unsupported file source : ";
     String UNSUPPORTED_FILE_TYPE = "Unsupported file type with extension";
     String INVALID_SETTINGS = "Invalid System Settings";
-    String MISSING_COLUMN_NAMES_FIRST_ROW = "First row in the file does not have correct column names";
+    String MISSING_COLUMN_NAMES_FIRST_ROW = " format file uploaded. First row in the file does not have correct column names.";
     String DUPLICATE_CANDIDATE = "Candidate already exists ";
     String INVALID_REQUEST_FROM_PLUGIN = "Invalid request object from plugin, missing Candidate info";
     String DUPLICATE_USER_EMAIL = "User with email already exists";
@@ -77,4 +77,5 @@ public interface IErrorMessages {
     String USER_DESIGNATION_NOT_VALID= "User designation not valid";
     String OTP_VERIFICATION_FAILED = "OTP verification failed";
     String INVALID_COMPANY_SHORT_NAME = "Company short name contain only alpha numeric value start with character";
+    String INVALID_DATE_OF_BIRTH_FORMAT = "The Date of Birth format is invalid or not handled";
 }

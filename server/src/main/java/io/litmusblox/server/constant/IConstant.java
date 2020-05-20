@@ -107,7 +107,7 @@ public interface IConstant {
     }
 
     enum AddJobPages {
-        overview, screeningQuestions, keySkills, capabilities, jobDetail, hiringTeam, expertise, preview;
+        overview, screeningQuestions, keySkills, capabilities, jobDetail, hiringTeam, expertise, preview, jobScreening;
     }
 
     enum JobStatus {
@@ -383,12 +383,21 @@ public interface IConstant {
     String LB_SHORT_CODE = "LB";
     int LB_SHORT_CODE_LENGTH = 6;
 
-    //Temp value for rest call timeout
+    //value for rest call timeout
     Integer REST_READ_TIME_OUT = 10000;
     Integer REST_READ_TIME_OUT_FOR_CV_TEXT = 90000;
     Integer REST_CONNECTION_TIME_OUT = 1000;
 
     //List of date formats for Naukri files
-    List<String> DATE_FORMATS_LIST = Arrays.asList("dd MMM yyyy","y-M-d");
+    public static Map<String, String> DATE_FORMAT_REGEX_MAP =
+            Collections.unmodifiableMap(new HashMap<String, String>() {
+                                            {
+                                                put("[0-9]{2}[ ][A-Za-z]{3}[ ][0-9]{4}","dd MMM yyyy");
+                                                put("[0-9]{4}[/][0-9]{2}[/][0-9]{2}","y-M-d");
+                                                put("[0-9]{2}[/][0-9]{2}[/][0-9]{4}","dd MMM yyyy");
+                                            }
+                                        });
+
+    String OTHERS = "Other (Other)";
 
 }

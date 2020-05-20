@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Job;
+import io.litmusblox.server.model.TechScreeningQuestion;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
 import io.litmusblox.server.utils.Util;
@@ -63,6 +64,35 @@ public class JobController {
                 put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
                 put("StageMaster",new ArrayList<>(0));
             }})
+        );
+    }
+
+    @PostMapping(value = "/newCreateJob/{pageName}")
+    String newAddJob(@RequestBody String jobStr, @PathVariable ("pageName") String pageName) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, true);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+        Job job = mapper.readValue(jobStr, Job.class);
+
+        return Util.stripExtraInfoFromResponseBean(
+                jobService.newAddJobFlow(job, pageName),
+                (new HashMap<String, List<String>>(){{
+                    put("User",Arrays.asList("displayName","id"));
+                    put("ScreeningQuestions", Arrays.asList("question","id"));
+                    put("JobStageStep", Arrays.asList("id", "stageStepId"));
+                }}),
+                (new HashMap<String, List<String>>(){{
+                    put("Job",Arrays.asList("createdOn","createdBy", "updatedOn", "updatedBy"));
+                    put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
+                    put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
+                    put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("JobCapabilities", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
+                    put("CompanyAddress", new ArrayList<>(0));
+                    put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
+                    put("StageMaster",new ArrayList<>(0));
+                }})
         );
     }
 
@@ -128,13 +158,13 @@ public class JobController {
     /**
      * Api to set the status of a job as published.
      *
-     * @param jobId id of the job which is to be published
+     * @param job to be published
      * @throws Exception
      */
-    @PutMapping(value = "/publishJob/{jobId}")
+    @PostMapping(value = "/publishJob")
     @ResponseStatus(HttpStatus.OK)
-    void publishJob(@PathVariable("jobId") Long jobId) throws Exception {
-        jobService.publishJob(jobId);
+    void publishJob(@RequestBody Job job) throws Exception {
+        jobService.publishJob(job);
     }
 
     /**
@@ -270,4 +300,33 @@ public class JobController {
         log.info("Completed processing request to fetch async invite errors for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
         return response;
     }
+
+    /**
+     * API to update visibility flag for career pages
+     * @param jobId jobId For which we update flag
+     */
+    @PutMapping(value = "/updateJobVisibilityFlag/{jobId}")
+    @ResponseStatus(HttpStatus.OK)
+    void updateJobVisibilityFlagForCareerPage(@PathVariable("jobId") Long jobId, @RequestParam("visibilityFlag") boolean visibilityFlag) throws Exception {
+        log.info("Received request to update job visibility flag for careerPage for JobId : "+jobId);
+        long startTime = System.currentTimeMillis();
+        jobService.updateJobVisibilityFlagOnCareerPage(jobId, visibilityFlag);
+        log.info("Completed processing request to update job visibility flag for careerPage for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
+    }
+
+    /**
+     * API to get and add tech questions from search engine
+     *
+     * @param job object for which we generate tech question from search engine
+     */
+    @PostMapping(value = "/generateTechQuestions")
+    @ResponseStatus(HttpStatus.OK)
+    List<TechScreeningQuestion> generateTechScreeningQuestions(@RequestBody Job job) throws Exception {
+        log.info("Received request to generate tech questions for JobId : {}",job.getId());
+        long startTime = System.currentTimeMillis();
+        List<TechScreeningQuestion> techScreeningQuestions = jobService.generateAndAddTechScreeningQuestions(job);
+        log.info("Completed processing request to generate tech questions for jobId: {} in {}ms", job.getId(), System.currentTimeMillis()-startTime);
+        return techScreeningQuestions;
+    }
+
 }

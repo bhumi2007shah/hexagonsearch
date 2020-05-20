@@ -4,25 +4,31 @@
 
 package io.litmusblox.server.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
+import io.litmusblox.server.service.CandidateRequestBean;
 import io.litmusblox.server.service.ICandidateService;
+import io.litmusblox.server.service.MasterDataBean;
+import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Service class for Candidate related operations
@@ -69,6 +75,12 @@ public class CandidateService implements ICandidateService {
 
     @Resource
     CandidateCompanyDetailsRepository candidateCompanyDetailsRepository;
+
+    @Value("${searchEngineBaseUrl}")
+    String searchEngineBaseUrl;
+
+    @Value("${searchEngineAddCandidateSuffix}")
+    String searchEngineAddCandidateSuffix;
 
     /**
      * Method to find a candidate using email or mobile number + country code
@@ -356,6 +368,86 @@ public class CandidateService implements ICandidateService {
             candidateCompanyDetailsRepository.save(obj);});
     }
 
+    /**
+     * Method to call search engine to add a candidate.
+     * @param candidate
+     */
+    public void createCandidateOnSearchEngine(Candidate candidate , Job job) {
+        log.info("inside create candidate on search engine.");
+        long startTime = System.currentTimeMillis();
+        // creating candidateRequestBean to be sent to Search Engine
+        CandidateRequestBean candidateRequestBean = new CandidateRequestBean();
+        candidateRequestBean.setCandidateId(candidate.getId());
+        candidateRequestBean.setCandidateName(candidate.getFirstName()+" "+candidate.getLastName());
+        candidateRequestBean.setCompanyId(job.getCompanyId().getId());
+
+        // Creating and settign list of skill names from CandidateSkillDetails.
+        if(null != candidate.getCandidateSkillDetails() && candidate.getCandidateSkillDetails().size()>0){
+            candidateRequestBean.setSkill(
+                    candidate.getCandidateSkillDetails()
+                            .stream().parallel()
+                            .map(CandidateSkillDetails::getSkill).collect(Collectors.toList())
+            );
+        }
+
+        // Creating and setting singleton list from CandidateDetails as it is a string.
+        if(null != candidate.getCandidateDetails() && null != candidate.getCandidateDetails().getLocation()){
+            candidateRequestBean.setLocation(
+                    Collections.singletonList(candidate.getCandidateDetails().getLocation())
+            );
+        }
+
+        // Creating and setting noticePeriod from CandidateDetails after parsing it to int as data type
+        // is String and search engine need an int value
+        if(null != candidate.getCandidateCompanyDetails() && candidate.getCandidateCompanyDetails().size()>0 &&  null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()){
+            candidateRequestBean.setNoticePeriod(
+                    Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriod())
+            );
+        }
+
+        // extracting value of experience range from job in which candidate is sourced
+        if(null != job.getMinExperience() && null != job.getMaxExperience()){
+            candidateRequestBean.setExperienceRange(job.getExperienceRange());
+        }
+
+        // Creating and setting list of qualification i.e: degree from CandidateEducationDetail present
+        // in master data as searchEngine need list of degrees of a candidate
+        if(null != candidate.getCandidateEducationDetails() && candidate.getCandidateEducationDetails().size()>0){
+            Set<String> qualificationSet = new HashSet<>(0);
+            List<String> educationMaster = new ArrayList<>();
+            educationMaster.addAll(MasterDataBean.getInstance().getEducation().values());
+
+            //Add all education which is in master data else add others to qualificationList
+            candidate.getCandidateEducationDetails()
+                    .stream().parallel()
+                    .map(CandidateEducationDetails::getDegree).parallel()
+                    .forEach(degree->{
+                        if(educationMaster.contains(degree)){
+                            qualificationSet.add(degree);
+                        }
+                        else{
+                            qualificationSet.add(IConstant.OTHERS);
+                        }
+                    });
+            candidateRequestBean.setQualification(new ArrayList<>(qualificationSet));
+        }
+
+        // ObjectMapper object to convert candidateRequestBean to String
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), job.getId());
+        try {
+            RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, null, null, null);
+        }
+        catch ( JsonProcessingException e ){
+            log.error("Failed while converting candidateRequestBean to String. " + e.getMessage());
+        }
+        catch ( Exception e ){
+            log.error("Failed to create candidate on search engine. " + e.getMessage());
+        }
+
+        log.info("Added candidate on search engine in {}ms", System.currentTimeMillis()-startTime);
+    }
     //Method to truncate the value in the field and send out a sentry message for the same
     //move this truncateField method to Util class because it is use in other place also like CandidateCompanyDetails model
 }

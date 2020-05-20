@@ -7,6 +7,7 @@ package io.litmusblox.server.service;
 import io.litmusblox.server.model.AsyncOperationsErrorRecords;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobHistory;
+import io.litmusblox.server.model.TechScreeningQuestion;
 import io.litmusblox.server.service.impl.SearchRequestBean;
 
 import java.util.List;
@@ -57,9 +58,9 @@ public interface IJobService {
     /**
      * Service method to publish a job
      *
-     * @param jobId id of the job to be published
+     * @param job to be published
      */
-    void publishJob(Long jobId) throws Exception;
+    void publishJob(Job job) throws Exception;
 
     /**
      * Service method to archive a job
@@ -148,4 +149,25 @@ public interface IJobService {
      * @return List of AsyncOperationsErrorRecords
      */
     List<AsyncOperationsErrorRecords> findAsyncErrors(Long jobId, String asyncOperation);
+
+    /**
+     * Service method to update visibility flag for career pages
+     * @param jobId jobId For which we update flag
+     */
+    void updateJobVisibilityFlagOnCareerPage(Long jobId, boolean visibilityFlag);
+
+    /**
+     * New Add job flow
+     * @return Response bean with jobId, and optionally list of skills from ML
+     * @throws Exception
+     */
+    Job newAddJobFlow(Job job, String pageName) throws Exception;
+
+    /**
+     * API to get and add tech questions from search engine
+     *
+     * @param job object for which we generate tech question from search engine
+     * return list of TechScreeningQuestion.
+     */
+    List<TechScreeningQuestion> generateAndAddTechScreeningQuestions(Job job);
 }

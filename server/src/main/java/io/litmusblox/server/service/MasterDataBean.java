@@ -2,6 +2,7 @@ package io.litmusblox.server.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.*;
 import lombok.Data;
 
@@ -43,16 +44,16 @@ public class MasterDataBean {
     private Map<Long, String> addressType = new HashMap<>();
     private List<String> stage = new ArrayList<>();
     private Map<Long, String> process = new HashMap<>();
-    private Map<Long, String> function = new HashMap<>();
-    private Map<Long, MasterData> expertise = new HashMap<>();
+    private Map<Long, String> oldFunction = new HashMap<>();
+    private Map<Long, MasterData> expertise = new LinkedHashMap<>();
     private Map<Long, String> education = new HashMap<>();
     private Map<Long, String> industry = new HashMap<>();
     private Map<Long, String> noticePeriod = new HashMap<>();
-    private List<ScreeningQuestions> screeningQuestions = new ArrayList<>();
+    private Map<String, List<ScreeningQuestions>> screeningQuestions = new HashMap<>();
     private List<CreateJobPageSequence> addJobPages = new ArrayList<>();
     private List<String> jobPageNamesInOrder = new ArrayList<>();
     private List<String> currencyList = new ArrayList<>();
-    private List<String> role = new ArrayList<>();
+    private List<String> userRole = new ArrayList<>();
     private List<String> reasonForChange = new ArrayList<>();
 
     private Map<String, MasterData> noticePeriodMapping = new HashMap<>();
@@ -73,7 +74,18 @@ public class MasterDataBean {
     private Map<String, MasterData> interviewConfirmation = new LinkedHashMap<>();
     private Map<String, List<RejectionReasonMasterData>> candidateRejectionReasonMap = new LinkedHashMap<>();
     private Map<Long, RejectionReasonMasterData> candidateRejections = new HashMap<>();
-
+    private Map<Long, IndustryMasterData> jobIndustry = new HashMap<>();
+    private Map<Long, FunctionMasterData> function = new HashMap<>();
+    private Map<Long, RoleMasterData> role = new HashMap<>();
+    private Map<String, Long> jobIndustryMap = new HashMap<>();
+    private Map<Long, Map<String, Long>> functionMap = new HashMap<>();
+    private Map<Long, Map<String, Long>> roleMap = new HashMap<>();
+    private Map<String, MasterData> questionCategory = new HashMap<>();
+    private Integer restConnectionTimeout = IConstant.REST_CONNECTION_TIME_OUT;
+    private Integer restReadTimeout = IConstant.REST_READ_TIME_OUT;
+    private Integer restReadTimeoutForCvParser = IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT;
+    private Map<String, MasterData> questionTypeMap = new HashMap<>();
+    private Map<String , Map<String, String>> salaryRange = new HashMap<>();
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;
 
