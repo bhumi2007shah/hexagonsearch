@@ -2426,7 +2426,7 @@ INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 ALTER TABLE CANDIDATE_DETAILS ADD CONSTRAINT unique_candidate_details UNIQUE (candidate_id);
 
 -- For ticket #550
-UPDATE CURRENCY set MIN_SALARY = 1, MAX_SALARY = 50, SALARY_UNIT = 'L' WHERE COUNTRY = 'in';
+UPDATE CURRENCY set MIN_SALARY = 0, MAX_SALARY = 50, SALARY_UNIT = 'L' WHERE COUNTRY = 'in';
 UPDATE CURRENCY set MIN_SALARY = 10, MAX_SALARY = 200, SALARY_UNIT = 'K' WHERE COUNTRY != 'in';
 update job set min_salary = 1 where min_salary between 51 and 100000;
 update job set max_salary = 50 where max_salary between 51 and 100000;
