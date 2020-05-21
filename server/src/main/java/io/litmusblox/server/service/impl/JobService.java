@@ -321,9 +321,9 @@ public class JobService implements IJobService {
     private void jobsForLoggedInUser(JobWorspaceResponseBean responseBean, boolean archived, User loggedInUser, String jobStatus) {
         long startTime = System.currentTimeMillis();
         if (archived)
-            responseBean.setListOfJobs(jobRepository.findByCreatedByAndDateArchivedIsNotNullOrderByCreatedOnDesc(loggedInUser, loggedInUser.getId()));
+            responseBean.setListOfJobs(jobRepository.findByCreatedByAndDateArchivedIsNotNullOrderByDatePublishedDesc(loggedInUser, loggedInUser.getId()));
         else
-            responseBean.setListOfJobs(jobRepository.findByCreatedByAndStatusAndDateArchivedIsNullOrderByCreatedOnDesc(loggedInUser,loggedInUser.getId(), jobStatus));
+            responseBean.setListOfJobs(jobRepository.findByCreatedByAndStatusAndDateArchivedIsNullOrderByDatePublishedDesc(loggedInUser,loggedInUser.getId(), jobStatus));
 
         List<Object[]> object = jobRepository.getJobCountPerStatusByCreatedBy(loggedInUser.getId());
             if(null != object.get(0)[0]){
@@ -339,9 +339,9 @@ public class JobService implements IJobService {
         long startTime = System.currentTimeMillis();
         companyList.stream().forEach(company -> {
             if (archived)
-                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByCreatedOnDesc(company));
+                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByDatePublishedDesc(company));
             else
-                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndStatusAndDateArchivedIsNullOrderByCreatedOnDesc(company, jobStatus));
+                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndStatusAndDateArchivedIsNullOrderByDatePublishedDesc(company, jobStatus));
 
             List<Object[]> object = jobRepository.getJobCountPerStatusByCompanyId(company.getId());
             if(null != object.get(0)[0]){
