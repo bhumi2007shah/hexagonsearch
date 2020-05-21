@@ -2422,3 +2422,5 @@ INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 "thankYouText"=>"No further action is required from your side",
 "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false", "showUploadResumePage"=>"false"');
 
+-- For ticket #549
+ALTER TABLE CANDIDATE_DETAILS ADD CONSTRAINT unique_candidate_details UNIQUE (candidate_id);
