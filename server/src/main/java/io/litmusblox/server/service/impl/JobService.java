@@ -1607,8 +1607,8 @@ public class JobService implements IJobService {
         TechQueRequestBean.SelectedRole selectedRole = new TechQueRequestBean.SelectedRole();
         TechQueRequestBean.Function function = new TechQueRequestBean.Function();
         TechQueRequestBean.Industry industry = new TechQueRequestBean.Industry();
-        if(null != job.getUserSelectedJobRole())
-            selectedRole.setRoleName(job.getUserSelectedJobRole());
+        if(null != job.getUserSelectedRole())
+            selectedRole.setRoleName(job.getUserSelectedRole());
         industry.setIndustryName(job.getJobIndustry().getIndustry());
         function.setFunctionName(job.getFunction().getFunction());
         techQueRequestBean.setSelectedRole(selectedRole);
