@@ -2433,3 +2433,7 @@ update job set max_salary = 50 where max_salary between 51 and 100000;
 update job set max_salary = (max_salary/100000) where max_salary >= 100000;
 update job set min_salary = (min_salary/100000) where min_salary >= 100000;
 update job set max_salary = 50 where max_salary > 50;
+
+-- https://github.com/hexagonsearch/litmusblox-search-engine/issues/24
+INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
+('SDFC ServiceMax Testing', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT')));
