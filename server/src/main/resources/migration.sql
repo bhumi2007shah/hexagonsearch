@@ -2422,3 +2422,18 @@ INSERT INTO CUSTOMIZED_CHATBOT_PAGE_CONTENT (COMPANY_ID, PAGE_INFO) VALUES
 "thankYouText"=>"No further action is required from your side",
 "showCompanyLogo"=>"false", "showFollowSection"=>"false", "showProceedButton"=>"true", "showConsentPage"=>"false", "showUploadResumePage"=>"false"');
 
+-- For ticket #549
+ALTER TABLE CANDIDATE_DETAILS ADD CONSTRAINT unique_candidate_details UNIQUE (candidate_id);
+
+-- For ticket #550
+UPDATE CURRENCY set MIN_SALARY = 0, MAX_SALARY = 50, SALARY_UNIT = 'L' WHERE COUNTRY = 'in';
+UPDATE CURRENCY set MIN_SALARY = 10, MAX_SALARY = 200, SALARY_UNIT = 'K' WHERE COUNTRY != 'in';
+update job set min_salary = 1 where min_salary between 51 and 100000;
+update job set max_salary = 50 where max_salary between 51 and 100000;
+update job set max_salary = (max_salary/100000) where max_salary >= 100000;
+update job set min_salary = (min_salary/100000) where min_salary >= 100000;
+update job set max_salary = 50 where max_salary > 50;
+
+-- https://github.com/hexagonsearch/litmusblox-search-engine/issues/24
+INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
+('SDFC ServiceMax Testing', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT')));

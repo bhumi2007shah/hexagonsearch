@@ -21,4 +21,6 @@ public interface CandidateDetailsRepository extends JpaRepository<CandidateDetai
     @Transactional
     void deleteByCandidateId(Candidate candidateId);
 
+    CandidateDetails findByCandidateId(Candidate candidate);
+
 }

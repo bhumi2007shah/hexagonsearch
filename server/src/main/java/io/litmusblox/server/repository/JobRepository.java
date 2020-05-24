@@ -30,13 +30,13 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     //find all jobs that are not archived
     @Transactional
     @Query(value = "select * from job where created_by =:createdBy and status =:jobStatus and date_archived is null and :userId = ANY(recruiter) order by created_on desc", nativeQuery = true)
-    List<Job> findByCreatedByAndStatusAndDateArchivedIsNullOrderByCreatedOnDesc(User createdBy, Long userId, String jobStatus);
+    List<Job> findByCreatedByAndStatusAndDateArchivedIsNullOrderByDatePublishedDesc(User createdBy, Long userId, String jobStatus);
 
 
     //find all archived jobs
     @Transactional
     @Query(value = "select * from job where created_by =:createdBy and date_archived is not null and :userId = ANY(recruiter) order by created_on desc", nativeQuery = true)
-    List<Job> findByCreatedByAndDateArchivedIsNotNullOrderByCreatedOnDesc(User createdBy, Long userId);
+    List<Job> findByCreatedByAndDateArchivedIsNotNullOrderByDatePublishedDesc(User createdBy, Long userId);
 
     //find all jobs for which ml data is not available
     @Transactional
@@ -46,11 +46,11 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     //find all archived jobs by company
     @Transactional
-    List<Job> findByCompanyIdAndDateArchivedIsNotNullOrderByCreatedOnDesc(Company company);
+    List<Job> findByCompanyIdAndDateArchivedIsNotNullOrderByDatePublishedDesc(Company company);
 
     //find all active jobs by company
     @Transactional
-    List<Job> findByCompanyIdAndStatusAndDateArchivedIsNullOrderByCreatedOnDesc(Company company, String jobStatus);
+    List<Job> findByCompanyIdAndStatusAndDateArchivedIsNullOrderByDatePublishedDesc(Company company, String jobStatus);
 
     //count of all job attached to a BU
     @Transactional

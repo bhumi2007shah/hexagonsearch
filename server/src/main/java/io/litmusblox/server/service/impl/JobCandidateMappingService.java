@@ -279,12 +279,18 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
 
             //process other information
+            //candidate details
+            CandidateDetails candidateDetailsFormDb = null;
             if(null != candidate.getCandidateDetails()) {
-                //candidate details
-                //if marital status is more than 10 characters, trim to 10. e.g. got a status as single/unmarried for one of the candidates!
-                if (!Util.isNull(candidate.getCandidateDetails().getMaritalStatus()) && candidate.getCandidateDetails().getMaritalStatus().length() > 10)
-                    candidate.getCandidateDetails().setMaritalStatus(candidate.getCandidateDetails().getMaritalStatus().substring(0, 10));
-                candidateService.saveUpdateCandidateDetails(candidate.getCandidateDetails(), candidateFromDb);
+                if(null != candidate.getId()) {
+                    candidateDetailsFormDb = candidateDetailsRepository.findByCandidateId(candidate);
+                    if(null == candidateDetailsFormDb) {
+                        //if marital status is more than 10 characters, trim to 10. e.g. got a status as single/unmarried for one of the candidates!
+                        if (!Util.isNull(candidate.getCandidateDetails().getMaritalStatus()) && candidate.getCandidateDetails().getMaritalStatus().length() > 10)
+                            candidate.getCandidateDetails().setMaritalStatus(candidate.getCandidateDetails().getMaritalStatus().substring(0, 10));
+                        candidateService.saveUpdateCandidateDetails(candidate.getCandidateDetails(), candidateFromDb);
+                    }
+                }
             }
 
             //candidate education details

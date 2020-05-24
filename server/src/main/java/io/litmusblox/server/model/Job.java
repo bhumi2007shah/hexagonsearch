@@ -255,9 +255,9 @@ public class Job implements Serializable {
     @JsonProperty
     private List<String> selectedKeySkills;
 
-    @Transient
     @JsonProperty
-    private String userSelectedJobRole;
+    @Transient
+    private String userSelectedRole;
 
     @Transient
     private String experienceRange;
