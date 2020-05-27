@@ -121,7 +121,7 @@ public class Company implements Serializable {
     private Date subdomainCreatedOn;
 
     @NotNull
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name="COUNTRY_ID")
     private Country countryId;
 
