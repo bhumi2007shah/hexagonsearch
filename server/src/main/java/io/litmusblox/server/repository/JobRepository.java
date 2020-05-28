@@ -82,6 +82,9 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     @Transactional(readOnly = true)
     List<Job> findByCompanyIdIn(List<Company> companyList);
 
+    @Transactional(readOnly = true)
+    List<Job> findByIdInOrderByDatePublishedDesc(List<Long> jobIds);
+
 
 
 }

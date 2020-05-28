@@ -898,9 +898,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         if(null == objFromDb)
             throw new ValidationException("No job candidate mapping found for id: " + jobCandidateMappingId, HttpStatus.UNPROCESSABLE_ENTITY);
 
-        log.info("sdfghjkjhgfdsasdfghjk");
         List<JobScreeningQuestions> screeningQuestions = jobScreeningQuestionsRepository.findByJobId(objFromDb.getJob().getId());
-        Map<Long, JobScreeningQuestions> screeningQuestionsMap = new HashMap<>(screeningQuestions.size());
+        Map<Long, JobScreeningQuestions> screeningQuestionsMap = new LinkedHashMap<>(screeningQuestions.size());
         screeningQuestions.forEach(screeningQuestion-> {
             screeningQuestionsMap.put(screeningQuestion.getId(), screeningQuestion);
         });
