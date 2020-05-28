@@ -42,7 +42,7 @@ public class CustomQueryExecutor {
         List<Long> resultSet  = jobIds.stream()
                 .mapToLong(Integer::longValue)
                 .boxed().collect(Collectors.toList());
-        List<Job> jobs = jobRepository.findAllById(resultSet);
+        List<Job> jobs = jobRepository.findByIdInOrderByDatePublishedDesc(resultSet);
         return jobs;
     }
 
