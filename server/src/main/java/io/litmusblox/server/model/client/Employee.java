@@ -5,8 +5,8 @@
 package io.litmusblox.server.model.client;
 
 import lombok.Data;
+import lombok.NonNull;
 
-import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
@@ -19,13 +19,13 @@ import java.util.List;
 @Data
 public class Employee {
 
-    @NotNull
+    @NonNull
     private String name;
 
-    @NotNull
+    @NonNull
     private String email;
 
-    @NotNull
+    @NonNull
     private String mobile;
 
     private String empCode;

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.client.Employee;
+import io.litmusblox.server.requestbean.ClientEmployeeRequestBean;
 import io.litmusblox.server.service.client.IClientService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author : sameer
@@ -29,10 +29,18 @@ import java.util.Map;
 @Log4j2
 public class ClientService implements IClientService {
 
-    public ResponseEntity createEmployees(Map<String, List<Employee>> employees) {
+    /**
+     *
+     * @param clientEmployeeRequestBean
+     * @return
+     */
+    public ResponseEntity createEmployees(ClientEmployeeRequestBean clientEmployeeRequestBean) {
         return new ResponseEntity("Employee records added.", HttpStatus.CREATED);
     }
 
+    /**
+     *
+     */
     public void pushEmployeesData(){
         ObjectMapper mapper = new ObjectMapper();
         try {

@@ -4,11 +4,8 @@
 
 package io.litmusblox.server.service.client;
 
-import io.litmusblox.server.model.client.Employee;
+import io.litmusblox.server.requestbean.ClientEmployeeRequestBean;
 import org.springframework.http.ResponseEntity;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author : sameer
@@ -23,7 +20,7 @@ public interface IClientService {
      * @param employees Map of list of employees as the current JSON requires.
      * @return ResponseEntity with response code and message
      */
-    ResponseEntity createEmployees(Map<String, List<Employee>> employees);
+    ResponseEntity createEmployees(ClientEmployeeRequestBean clientEmployeeRequestBean);
 
     /**
      * method to push employee data to client

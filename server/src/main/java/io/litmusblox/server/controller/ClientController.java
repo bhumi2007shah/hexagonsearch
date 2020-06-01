@@ -4,15 +4,14 @@
 
 package io.litmusblox.server.controller;
 
-import io.litmusblox.server.model.client.Employee;
+import io.litmusblox.server.requestbean.ClientEmployeeRequestBean;
 import io.litmusblox.server.service.client.IClientService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import javax.validation.Valid;
 
 /**
  * @author : sameer
@@ -31,12 +30,12 @@ public class ClientController {
 
     /**
      * controller method to create employees.
-     * @param employees Map of list of employees as the current JSON requires.
+     * @param clientEmployeeRequestBean contains list of employees as the current JSON requires.
      * @return ResponseEntity with response code and message
      */
     @PostMapping("/createEmployees")
-    ResponseEntity createEmployee(@RequestBody Map<String, List<Employee>> employees){
-        return clientService.createEmployees(employees);
+    ResponseEntity createEmployee(@Valid @RequestBody ClientEmployeeRequestBean clientEmployeeRequestBean){
+        return clientService.createEmployees(clientEmployeeRequestBean);
     }
 
     /**
