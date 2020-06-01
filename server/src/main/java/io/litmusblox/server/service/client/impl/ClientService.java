@@ -4,7 +4,6 @@
 
 package io.litmusblox.server.service.client.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
@@ -38,16 +37,8 @@ public class ClientService implements IClientService {
         ObjectMapper mapper = new ObjectMapper();
         try {
             List<Employee> employees = mapper.readValue(IConstant.employeesJSON, new TypeReference<List<Employee>>() {});
-            employees.forEach(this::pushEmployeeToClient);
+            log.info(new ObjectMapper().writeValueAsString(employees));
         } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void pushEmployeeToClient(Employee employee) {
-        try {
-            log.info(new ObjectMapper().writeValueAsString(employee));
-        } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
     }
