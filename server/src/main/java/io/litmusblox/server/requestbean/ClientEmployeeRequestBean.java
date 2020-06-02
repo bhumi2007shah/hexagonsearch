@@ -7,7 +7,7 @@ package io.litmusblox.server.requestbean;
 import io.litmusblox.server.model.client.Employee;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -19,6 +19,6 @@ import java.util.List;
  */
 @Data
 public class ClientEmployeeRequestBean {
-    @NotNull
+    @Valid
     private List<Employee> employees;
 }

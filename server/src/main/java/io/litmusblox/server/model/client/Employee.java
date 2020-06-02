@@ -4,9 +4,11 @@
 
 package io.litmusblox.server.model.client;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NonNull;
+import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
@@ -17,15 +19,17 @@ import java.util.List;
  * Project Name : server
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Employee {
 
-    @NonNull
+    @NotNull
     private String name;
 
-    @NonNull
+    @NotNull
     private String email;
 
-    @NonNull
+    @NotNull
     private String mobile;
 
     private String empCode;
