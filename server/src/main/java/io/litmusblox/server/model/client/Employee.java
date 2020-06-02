@@ -23,13 +23,13 @@ import java.util.List;
 @AllArgsConstructor
 public class Employee {
 
-    @NotNull
+    @NotNull(message = "Name is missing")
     private String name;
 
-    @NotNull
+    @NotNull(message = "Email is missing")
     private String email;
 
-    @NotNull
+    @NotNull(message = "Mobile is missing")
     private String mobile;
 
     private String empCode;
