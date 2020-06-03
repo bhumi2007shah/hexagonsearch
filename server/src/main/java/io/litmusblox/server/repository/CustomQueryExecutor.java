@@ -18,7 +18,9 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -130,6 +132,28 @@ public class CustomQueryExecutor {
             "jcm.id = interviewCount.job_candidate_mapping_id\n" +
             "where job_id = ";
 
+    //Rejected Analytics query
+    private static final String jobRejectedAnalyticsMainQuery = "select jcm.id as jcmId, \n" +
+            "count(jcm.id) as rejected_count, ssm.stage as current_stage,  jcm.candidate_rejection_value as rejected_reason \n" +
+            "from job_candidate_mapping jcm \n" +
+            "inner join job_candidate_mapping_all_details jcma \n" +
+            "on \n" +
+            "jcm.id=jcma.id \n" +
+            "inner join \n" +
+            "stage_step_master ssm \n" +
+            "on \n" +
+            "ssm.id = jcma.stage \n" +
+            "where \n" +
+            "jcm.candidate_rejection_value is not null \n" +
+            "and \n" +
+            "jcm.job_id = ";
+    private static final String jobRejectedAnalyticsStartDate = " and jcm.created_on >= '";
+    private static final String jobRejectedAnalyticsEndDate =" and jcm.created_on <= '";
+    private static final String jobRejectedAnalyticsGroupByQuery = " group by \n" +
+            "jcm.id, jcm.job_id, ssm.stage, jcm.candidate_rejection_value;";
+
+    private static final String rejectedAnalyticsMainQuery = "";
+
     @Transactional(readOnly = true)
     public List<AnalyticsResponseBean> analyticsByCompany(String startDate, String endDate, String companyIdList) throws Exception {
         StringBuffer queryString = new StringBuffer(analyticsMainQuery).append(companyIdList).append(") ");
@@ -148,7 +172,7 @@ public class CustomQueryExecutor {
         queryString.append(jobSourcesAnalyticsMainQuery);
         queryString.append(jobId);
         if(null!=startDate && null!=endDate){
-            queryString.append(jobAnalyticsStartDate).append(endDate).append("' ");
+            queryString.append(jobAnalyticsStartDate).append(startDate).append("' ");
             queryString.append(jobAnalyticsEndDate).append(endDate).append("' ");
         }
         queryString.append(groupByJobId);
@@ -162,7 +186,7 @@ public class CustomQueryExecutor {
         queryString.append(jobSkillStrengthAnalyticsMainQuery);
         queryString.append(jobId);
         if(null!=startDate && null!=endDate){
-            queryString.append(jobAnalyticsStartDate).append(endDate).append("' ");
+            queryString.append(jobAnalyticsStartDate).append(startDate).append("' ");
             queryString.append(jobAnalyticsEndDate).append(endDate).append("' ");
         }
         queryString.append(groupByJobId);
@@ -176,7 +200,7 @@ public class CustomQueryExecutor {
         queryString.append(jobScreeningStatusAnalyticsMainQuery);
         queryString.append(jobId);
         if(null!=startDate && null!=endDate){
-            queryString.append(jobAnalyticsStartDate).append(endDate).append("' ");
+            queryString.append(jobAnalyticsStartDate).append(startDate).append("' ");
             queryString.append(jobAnalyticsEndDate).append(endDate).append("' ");
         }
         queryString.append(groupByJobId);
@@ -190,7 +214,7 @@ public class CustomQueryExecutor {
         queryString.append(jobSubmittedAnalyticsMainQuery);
         queryString.append(jobId);
         if(null!=startDate && null!=endDate){
-            queryString.append(jobAnalyticsStartDate).append(endDate).append("' ");
+            queryString.append(jobAnalyticsStartDate).append(startDate).append("' ");
             queryString.append(jobAnalyticsEndDate).append(endDate).append("' ");
         }
         queryString.append(groupByJobId);
@@ -204,7 +228,7 @@ public class CustomQueryExecutor {
         queryString.append(jobInterviewAnalyticsMainQuery);
         queryString.append(jobId);
         if(null!=startDate && null!=endDate){
-            queryString.append(jobAnalyticsStartDate).append(endDate).append("' ");
+            queryString.append(jobAnalyticsStartDate).append(startDate).append("' ");
             queryString.append(jobAnalyticsEndDate).append(endDate).append("' ");
         }
         queryString.append(groupByJobId);
@@ -223,5 +247,27 @@ public class CustomQueryExecutor {
     public List<JCMAllDetails> findByJobAndStageInAndRejectedIsFalse(Job job, StageStepMaster stageStepMaster) {
         Query query = entityManager.createNativeQuery("Select * from job_candidate_mapping_all_details where job_id = " + job.getId() + " and stage = " + stageStepMaster.getId() + " and rejected is false;", JCMAllDetails.class);
         return query.getResultList();
+    }
+
+    public Map<String, Map<String, Integer>> rejectedAnalyticsByJob(Long jobId, Date startDate, Date endDate) {
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(jobRejectedAnalyticsMainQuery);
+        queryString.append(jobId);
+        if (null != startDate && null != endDate) {
+            queryString.append(jobRejectedAnalyticsStartDate).append(startDate).append("' ");
+            queryString.append(jobRejectedAnalyticsEndDate).append(endDate).append("' ");
+        }
+        queryString.append(jobRejectedAnalyticsGroupByQuery);
+        Query query = entityManager.createNativeQuery(queryString.toString(), RejectAnalyticsBean.class);
+        List<RejectAnalyticsBean> rejectAnalyticsBeans = query.getResultList();
+        Map<String, Map<String, Integer>> rejectAnalytics = new HashMap<>(0);
+        rejectAnalyticsBeans.stream().collect(Collectors.groupingBy(RejectAnalyticsBean::getCurrentStage)).forEach((stage, jcmList) -> {
+            Map<String, Integer> reasonCountMap = new HashMap<>(0);
+            jcmList.stream().collect(Collectors.groupingBy(RejectAnalyticsBean::getRejectedReason)).forEach((reason, jcms) -> {
+                reasonCountMap.put(reason, jcms.size());
+            });
+            rejectAnalytics.put(stage, reasonCountMap);
+        });
+        return rejectAnalytics;
     }
 }

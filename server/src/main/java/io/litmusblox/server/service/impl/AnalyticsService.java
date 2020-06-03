@@ -24,10 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -122,6 +119,9 @@ public class AnalyticsService implements IAnalyticsService {
 
         //set interview analytics i.e: not scheduled, scheduled, rescheduled, show, no show for job in jonAnalyticsResponseBean
         jobAnalyticsResponseBean.setInterview(getInterviewAnalytics(jobId, startDate, endDate));
+
+        //set rejected analytics
+        jobAnalyticsResponseBean.setReject(getRejectAnalytics(jobId, startDate, endDate));
 
         return jobAnalyticsResponseBean;
     }
@@ -219,6 +219,15 @@ public class AnalyticsService implements IAnalyticsService {
         }
         else{
             return customQueryExecutor.interviewAnalyticsByJob(jobId, null, null);
+        }
+    }
+
+    private Map<String, Map<String, Integer>> getRejectAnalytics(Long jobId, Optional<Date> startDate, Optional<Date> endDate){
+        if(startDate.isPresent() && endDate.isPresent()){
+            return customQueryExecutor.rejectedAnalyticsByJob(jobId, startDate.get(), endDate.get());
+        }
+        else{
+            return customQueryExecutor.rejectedAnalyticsByJob(jobId, null, null);
         }
     }
 }
