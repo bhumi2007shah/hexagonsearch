@@ -220,8 +220,9 @@ public class Job implements Serializable {
     @Column(name = "VISIBLE_TO_CAREER_PAGE")
     private boolean visibleToCareerPage;
 
-    @Column(name = "EXPECTED_ANSWER")
-    private String expectedAnswer;
+    @Type(type="hstore")
+    @Column(name = "EXPECTED_ANSWER", columnDefinition = "hstore")
+    private Map<Long, String> expectedAnswer;
 
     @Transient
     @JsonInclude

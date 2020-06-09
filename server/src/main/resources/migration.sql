@@ -2442,4 +2442,4 @@ INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
 ('VOLTE Engineer', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT')));
 
 -- #558 score candidate response
-alter table job add column expected_answer text;
+alter table job add column expected_answer hstore;
