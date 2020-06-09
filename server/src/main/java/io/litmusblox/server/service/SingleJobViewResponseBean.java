@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.service;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import java.util.Map;
  * Project Name : server
  */
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SingleJobViewResponseBean {
     List<JCMAllDetails> jcmAllDetailsList = new ArrayList<>();
     private Map<String,Integer> candidateCountByStage = new HashMap<>();

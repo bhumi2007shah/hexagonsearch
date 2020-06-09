@@ -243,6 +243,12 @@ public class CustomQueryExecutor {
         return query.getResultList();
     }
 
+    //single job view for specified status
+    public List<JCMAllDetails> findByJobAndStatus(Job job, String status){
+        Query query = entityManager.createNativeQuery("Select * from job_candidate_mapping_all_details where job_id = " + job.getId() + " and chatbot_status = 'Complete'", JCMAllDetails.class);
+        return query.getResultList();
+    }
+
     //single job view for rejected = false
     public List<JCMAllDetails> findByJobAndStageInAndRejectedIsFalse(Job job, StageStepMaster stageStepMaster) {
         Query query = entityManager.createNativeQuery("Select * from job_candidate_mapping_all_details where job_id = " + job.getId() + " and stage = " + stageStepMaster.getId() + " and rejected is false;", JCMAllDetails.class);

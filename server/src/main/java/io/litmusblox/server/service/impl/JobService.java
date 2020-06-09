@@ -185,7 +185,7 @@ public class JobService implements IJobService {
         if (null != job.getId()) {
             //get handle to existing job object
             oldJob = jobRepository.findById(job.getId()).orElse(null);
-           // oldJob = tempJobObj.isPresent() ? tempJobObj.get() : null;
+            // oldJob = tempJobObj.isPresent() ? tempJobObj.get() : null;
         } else  {//Is a new job
             if(IConstant.CompanySubscription.LDEB.toString().equalsIgnoreCase(loggedInUser.getCompany().getSubscription())) {
                 //If LDEB client, set customized chatbot flag & resubmit hr flag = true
@@ -326,11 +326,11 @@ public class JobService implements IJobService {
             responseBean.setListOfJobs(jobRepository.findByCreatedByAndStatusAndDateArchivedIsNullOrderByDatePublishedDesc(loggedInUser,loggedInUser.getId(), jobStatus));
 
         List<Object[]> object = jobRepository.getJobCountPerStatusByCreatedBy(loggedInUser.getId());
-            if(null != object.get(0)[0]){
-                responseBean.setLiveJobs(Integer.parseInt(object.get(0)[0].toString()));
-                responseBean.setDraftJobs(Integer.parseInt(object.get(0)[1].toString()));
-                responseBean.setArchivedJobs(Integer.parseInt(object.get(0)[2].toString()));
-            }
+        if(null != object.get(0)[0]){
+            responseBean.setLiveJobs(Integer.parseInt(object.get(0)[0].toString()));
+            responseBean.setDraftJobs(Integer.parseInt(object.get(0)[1].toString()));
+            responseBean.setArchivedJobs(Integer.parseInt(object.get(0)[2].toString()));
+        }
         log.info("Got " + responseBean.getListOfJobs().size() + " jobs in " + (System.currentTimeMillis() - startTime) + "ms");
         getCandidateCountByStage(responseBean.getListOfJobs());
     }
@@ -438,7 +438,7 @@ public class JobService implements IJobService {
         Map<Long, JCMAllDetails> jcmAllDetailsMap = responseBean.getJcmAllDetailsList().stream().collect(Collectors.toMap(JCMAllDetails::getId, Function.identity()));
 
         //List of JcmIds
-        List<Long> jcmListFromDb = jcmAllDetailsMap.keySet().stream().collect(Collectors.toList());
+        List<Long> jcmListFromDb = new ArrayList<>(jcmAllDetailsMap.keySet());
 
         //find all interview details for the jcms
         if (IConstant.Stage.Interview.getValue().equalsIgnoreCase(stage)) {
@@ -495,6 +495,95 @@ public class JobService implements IJobService {
         log.info("Found {} records.", responseBean.getJcmAllDetailsList().size());
         log.info("Completed processing request to find candidates for job {}  and stage: {} in {} ms.",jobId, stage, (System.currentTimeMillis() - viewStartTime));
 
+        return responseBean;
+    }
+
+    /**
+     *
+     * @param jobId the jobId for which data is to be retrieved
+     * @param status the status for which data is to be retrieved.
+     *
+     * @return response bean with all details
+     * @throws Exception
+     */
+    @Transactional
+    public SingleJobViewResponseBean getJobViewByIdAndStatus(Long jobId, String status) throws Exception{
+        Job job = jobRepository.getOne(jobId);
+
+        if (null == job) {
+            StringBuffer info = new StringBuffer("Invalid job id ").append(jobId);
+            log.info(info.toString());
+            Map<String, String> breadCrumb = new HashMap<>();
+            breadCrumb.put("Job Id ",jobId.toString());
+            breadCrumb.put("detail", info.toString());
+            throw new WebException("Invalid job id " + jobId,  HttpStatus.UNPROCESSABLE_ENTITY, breadCrumb);
+        }
+        else {
+            User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if(!IConstant.UserRole.Names.SUPER_ADMIN.equals(loggedInUser.getRole()) && !IConstant.CompanyType.AGENCY.getValue().equals(loggedInUser.getCompany().getCompanyType()) && !job.getCompanyId().getId().equals(loggedInUser.getCompany().getId()))
+                throw new WebException(IErrorMessages.JOB_COMPANY_MISMATCH, HttpStatus.UNAUTHORIZED);
+
+            if(IConstant.JobStatus.DRAFT.getValue().equals(job.getStatus())) {
+                StringBuffer info = new StringBuffer(IErrorMessages.JOB_NOT_LIVE).append(job.getStatus());
+                log.info(info.toString());
+                Map<String, String> breadCrumb = new HashMap<>();
+                breadCrumb.put("Job Id", job.getId().toString());
+                breadCrumb.put("detail", info.toString());
+                throw new WebException(IErrorMessages.JOB_NOT_LIVE, HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+        }
+
+        SingleJobViewResponseBean responseBean = new SingleJobViewResponseBean();
+
+        // Calling customQuery executor to get jcmAllDetailsList
+        responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndStatus(job, status));
+
+        Map<Long, JCMAllDetails> jcmAllDetailsMap = responseBean.getJcmAllDetailsList().stream().collect(Collectors.toMap(JCMAllDetails::getId, Function.identity()));
+
+        //List of JcmIds
+        List<Long> jcmListFromDb = new ArrayList<>(jcmAllDetailsMap.keySet());
+
+        //find all interview details for the jcms
+        List<InterviewDetails> interviewDetails = interviewDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
+        interviewDetails.stream().parallel().forEach(interviewDtls -> {
+            jcmAllDetailsMap.get(interviewDtls.getJobCandidateMappingId()).getInterviewDetails().add(interviewDtls);
+        });
+
+        //Find profile sharing details only in case of stage = submitted
+        List<JcmProfileSharingDetails> profileSharingForAllJcms = jcmProfileSharingDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
+
+        Map<Long, List<JcmProfileSharingDetails>> profileSharingGroupedByJcmId = profileSharingForAllJcms.stream().collect(Collectors.groupingBy(JcmProfileSharingDetails::getJobCandidateMappingId));
+
+        profileSharingGroupedByJcmId.keySet().stream().parallel().forEach(jcmId -> {
+            List<JcmProfileSharingDetails> jcmProfileSharingDetails = profileSharingGroupedByJcmId.get(jcmId);
+
+            if(null != jcmProfileSharingDetails && jcmProfileSharingDetails.size()>0) {
+                jcmAllDetailsMap.get(jcmId).setInterestedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() != null && jcmProfileSharingDetail.getHiringManagerInterest())
+                                .collect(Collectors.toList())
+                );
+
+                jcmAllDetailsMap.get(jcmId).setNotInterestedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() != null && !jcmProfileSharingDetail.getHiringManagerInterest())
+                                .collect(Collectors.toList())
+                );
+
+                jcmAllDetailsMap.get(jcmId).setNotRespondedHiringManagers(
+                        jcmProfileSharingDetails
+                                .stream()
+                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() == null)
+                                .collect(Collectors.toList())
+                );
+            }
+        });
+
+        log.info("Found {} records.", responseBean.getJcmAllDetailsList().size());
+        //set candidate count by stage to null as we don't need stage wise count here.
+        responseBean.setCandidateCountByStage(null);
         return responseBean;
     }
 
@@ -1565,23 +1654,23 @@ public class JobService implements IJobService {
         return job;
     }
 
-     private Job setRecruiterArray(Job job, User loggedInUser){
-         //set recruiter
-         ArrayList<Integer> recruiterArray = null;
-         if(null == job.getRecruiter() || job.getRecruiter().length==0){
-             recruiterArray = new ArrayList<Integer>();
-             recruiterArray.add(Math.toIntExact(loggedInUser.getId()));
-             job.setRecruiter(recruiterArray.toArray(new Integer[recruiterArray.size()]));
-         }
-         else{
-             recruiterArray = new ArrayList<>(Arrays.asList(job.getRecruiter()));
-             if(!recruiterArray.contains(Math.toIntExact(loggedInUser.getId()))){
-                 recruiterArray.add(Math.toIntExact(loggedInUser.getId()));
-                 job.setRecruiter(recruiterArray.toArray(new Integer[recruiterArray.size()]));
-             }
-         }
-         return job;
-     }
+    private Job setRecruiterArray(Job job, User loggedInUser){
+        //set recruiter
+        ArrayList<Integer> recruiterArray = null;
+        if(null == job.getRecruiter() || job.getRecruiter().length==0){
+            recruiterArray = new ArrayList<Integer>();
+            recruiterArray.add(Math.toIntExact(loggedInUser.getId()));
+            job.setRecruiter(recruiterArray.toArray(new Integer[recruiterArray.size()]));
+        }
+        else{
+            recruiterArray = new ArrayList<>(Arrays.asList(job.getRecruiter()));
+            if(!recruiterArray.contains(Math.toIntExact(loggedInUser.getId()))){
+                recruiterArray.add(Math.toIntExact(loggedInUser.getId()));
+                job.setRecruiter(recruiterArray.toArray(new Integer[recruiterArray.size()]));
+            }
+        }
+        return job;
+    }
 
     /**
      * API to get and add tech questions from search engine
@@ -1646,5 +1735,26 @@ public class JobService implements IJobService {
             log.error("Failed to add key skills. " + exception.getMessage());
         }
         return techScreeningQuestionRepository.findByJobId(job.getId());
+    }
+
+    /**
+     * Method to save expected answer for a job
+     * @param requestedJob which has expected answer and jobId
+     */
+    public void saveExpectedAnswer(Job requestedJob){
+        Job jobFromDb = jobRepository.getOne(requestedJob.getId());
+
+        if(null==jobFromDb){
+            throw new WebException("Job not available id="+requestedJob.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        else{
+            if(!IConstant.JobStatus.PUBLISHED.getValue().equals(jobFromDb.getStatus())){
+                throw new WebException("Job is not live id="+requestedJob.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+        }
+
+        jobFromDb.setExpectedAnswer(requestedJob.getExpectedAnswer());
+
+        jobRepository.save(jobFromDb);
     }
 }

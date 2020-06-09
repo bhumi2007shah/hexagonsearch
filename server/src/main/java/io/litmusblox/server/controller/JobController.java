@@ -10,12 +10,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.TechScreeningQuestion;
+import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -47,23 +49,23 @@ public class JobController {
         Job job = mapper.readValue(jobStr, Job.class);
 
         return Util.stripExtraInfoFromResponseBean(
-            jobService.addJob(job, pageName),
-            (new HashMap<String, List<String>>(){{
-                put("User",Arrays.asList("displayName","id"));
-                put("ScreeningQuestions", Arrays.asList("question","id"));
-                put("JobStageStep", Arrays.asList("id", "stageStepId"));
-            }}),
-            (new HashMap<String, List<String>>(){{
-                put("Job",Arrays.asList("createdOn","createdBy", "updatedOn", "updatedBy"));
-                put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
-                put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
-                put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
-                put("JobCapabilities", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
-                put("MasterData", new ArrayList<>(0));
-                put("CompanyAddress", new ArrayList<>(0));
-                put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
-                put("StageMaster",new ArrayList<>(0));
-            }})
+                jobService.addJob(job, pageName),
+                (new HashMap<String, List<String>>(){{
+                    put("User",Arrays.asList("displayName","id"));
+                    put("ScreeningQuestions", Arrays.asList("question","id"));
+                    put("JobStageStep", Arrays.asList("id", "stageStepId"));
+                }}),
+                (new HashMap<String, List<String>>(){{
+                    put("Job",Arrays.asList("createdOn","createdBy", "updatedOn", "updatedBy"));
+                    put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
+                    put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
+                    put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("JobCapabilities", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
+                    put("CompanyAddress", new ArrayList<>(0));
+                    put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
+                    put("StageMaster",new ArrayList<>(0));
+                }})
         );
     }
 
@@ -153,6 +155,48 @@ public class JobController {
                     put("CandidateCompanyDetails", Arrays.asList("candidateId"));
                 }})
         );
+    }
+
+    /**
+     * API to retrieve
+     * List of candidates for job for specified status
+     *
+     * @param jobId The job Id
+     * @param status The status
+     *
+     * @return response bean with all details as a json string
+     * @throws Exception
+     */
+    @GetMapping(value = "/jobViewByStatus/{jobId}/{status}")
+    @ResponseBody
+    @ResponseStatus(HttpStatus.OK)
+    String getJobViewByIdAndStatus(@PathVariable("jobId") Long jobId, @PathVariable("status") String status) throws Exception{
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        log.info("Received request for chatbot completed candidate list for jobId={} and status={}, by user:{}", jobId, status, loggedInUser.getId());
+        long startTime = System.currentTimeMillis();
+
+        String responseBean = Util.stripExtraInfoFromResponseBean( jobService.getJobViewByIdAndStatus(jobId, status),
+                (new HashMap<String, List<String>>(){{
+                    put("User",Arrays.asList("displayName"));
+                    put("CvRating", Arrays.asList("overallRating"));
+                    put("CandidateEducationDetails", Arrays.asList("degree"));
+                    put("JobStageStep", Arrays.asList("stageName"));
+                    put("CompanyAddress", Arrays.asList("address"));
+                }}),
+                (new HashMap<String, List<String>>(){{
+                    put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy"));
+                    put("Candidate", Arrays.asList("candidateProjectDetails","candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies",
+                            "candidateSkillDetails","createdOn","createdBy", "firstName", "lastName", "displayName"));
+                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData", "interviewDetails", "candidateReferralDetail", "candidateSourceHistories"));
+                    put("CandidateDetails", Arrays.asList("id","candidateId"));
+                    put("CandidateCompanyDetails", Arrays.asList("candidateId"));
+                }})
+        );
+
+        log.info("Time taken to complete the request in {}ms", System.currentTimeMillis()-startTime);
+
+        return responseBean;
+
     }
 
     /**
@@ -282,7 +326,7 @@ public class JobController {
                 new HashMap<String, List<String>>(){{
                     put("AsyncOperationsErrorRecords", Arrays.asList("id", "jobId", "jobCandidateMappingId", "asyncOperation", "createdBy"));
                 }}
-                );
+        );
         log.info("Completed processing request to fetch async invite errors for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
         return response;
     }
@@ -296,7 +340,7 @@ public class JobController {
                 new HashMap<String, List<String>>(){{
                     put("AsyncOperationsErrorRecords", Arrays.asList("id", "jobId", "jobCandidateMappingId", "asyncOperation", "createdBy"));
                 }}
-                );
+        );
         log.info("Completed processing request to fetch async invite errors for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
         return response;
     }
@@ -327,6 +371,22 @@ public class JobController {
         List<TechScreeningQuestion> techScreeningQuestions = jobService.generateAndAddTechScreeningQuestions(job);
         log.info("Completed processing request to generate tech questions for jobId: {} in {}ms", job.getId(), System.currentTimeMillis()-startTime);
         return techScreeningQuestions;
+    }
+
+    /**
+     * API endpoint to save expected answer for a job
+     *
+     * @param requestJob requested job which has expected answer and jobId
+     * @throws Exception
+     */
+    @PostMapping(value = "/saveExpectedAnswer")
+    @ResponseStatus(HttpStatus.OK)
+    void saveExpectedAnswer(@RequestBody Job requestJob) throws Exception{
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        log.info("Received request to save expected answer for job={} by user={}", requestJob.getId(), loggedInUser.getId());
+        long startTime = System.currentTimeMillis();
+        jobService.saveExpectedAnswer(requestJob);
+        log.info("Saved expected answer in {}ms", System.currentTimeMillis()-startTime);
     }
 
 }
