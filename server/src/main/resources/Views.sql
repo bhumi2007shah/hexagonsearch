@@ -1,13 +1,14 @@
 --updated view for export data
-drop view if exists exportDataView;
-create view exportDataView AS
+drop view if exists export_data_view;
+create view export_data_view AS
 select
-  jcm.job_id as jobId,
-  concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidateName,
-  jcm.chatbot_status as chatbotStatus,
-  jcm.chatbot_uuid::varchar(50) as chatbotLink,
-  jcm.chatbot_updated_on as chatbotFilledTimeStamp,
-  cvr.overall_rating as keySkillsStrength,
+	jcm.id as jcm_id,
+  jcm.job_id as job_id,
+  concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidate_name,
+  jcm.chatbot_status as chatbot_status,
+  jcm.chatbot_uuid::varchar(50) as chatbot_link,
+  jcm.chatbot_updated_on as chatbot_filled_timeStamp,
+  cvr.overall_rating as key_skills_strength,
   (
     case
     when
@@ -16,29 +17,26 @@ select
     else
     ssm.stage
     end
-  ) as currentStage,
-  currentCompany.company_name as currentCompany,
-  currentCompany.designation as currentDesignation,
+  ) as current_stage,
+  currentCompany.company_name as current_company,
+  currentCompany.designation as current_designation,
   jcm.email as email,
-  jcm.country_code as countryCode,
+  jcm.country_code as country_code,
   jcm.mobile as mobile,
-  cd.total_experience as totalExperience,
-  concat(users.first_name, ' ', users.last_name) as createdBy,
-  jcm.created_on as createdOn,
-  jcm.score as capabilityScore,
-(ivd.interviewDate + interval '5 hour 30 minute') as interviewDate,
-ivd.interviewType,
-ivd.interviewMode,
-ivd.interviewLocation,
-ivd.candidateConfirmation,
-ivd.candidateConfirmationTime,
-ivd.showNoShow,
-ivd.noShowReason,
+  cd.total_experience as total_experience,
+  concat(users.first_name, ' ', users.last_name) as created_by,
+  jcm.created_on as created_on,
+  jcm.score as capability_score,
+(ivd.interviewDate + interval '5 hour 30 minute') as interview_date,
+ivd.interviewType as interview_type,
+ivd.interviewMode as interview_mode,
+ivd.interviewLocation as interview_location,
+ivd.candidateConfirmation as candidate_confirmation,
+ivd.candidateConfirmationTime as candidate_confirmation_time,
+ivd.showNoShow as show_no_show,
+ivd.noShowReason as no_show_reason,
 ivd.cancelled,
-ivd.cancellationReason,
-jsq.jsqId as jsqId,
-jsq.ScreeningQn as screeningQuestion,
-concat(csqr.response, ' ',csqr.comment) as candidateResponse
+ivd.cancellationReason as cancellation_reason
 from job_candidate_mapping jcm
   left join cv_rating cvr ON cvr.job_candidate_mapping_id = jcm.id
   left join (
@@ -50,17 +48,6 @@ from job_candidate_mapping jcm
   left join candidate_details cd on cd.candidate_id = jcm.candidate_id
   inner join users ON users.id = jcm.created_by
   left join stage_step_master ssm on ssm.id=jcm.stage
-  left join (
-    select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
-    union
-    select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.user_screening_question_id=usq.id
-    union
-    select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
-    union
-    select jsq.id as jsqId, jsq.job_id as jsqJobId, tech_question as ScreeningQn from job_screening_questions jsq inner join tech_screening_question tsq ON tsq.id = jsq.tech_screening_question_id
-  ) as jsq on jsq.jsqJobId = jcm.job_id
-  left join
-  candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id
   left join (
     select ivd.job_candidate_mapping_id as jcm_id, ivd.interview_date as interviewDate, ivd.interview_type as interviewType,
            ivd.interview_mode as interviewMode, ca.address as interviewLocation,
@@ -95,8 +82,27 @@ from job_candidate_mapping jcm
       select max(id) from interview_details group by job_candidate_mapping_id
     )
   )as ivd on ivd.jcm_id = jcm.id
-  order by jobId, email, jsq.jsqId;
+  order by job_id, email;
 
+-- view for export data Q&A
+drop view if exists export_data_qa_view;
+create view export_data_qa_view AS
+  select jsq.jsqId as jsq_id, jcm.id as jcm_id,
+         jsq.ScreeningQn as screening_question,
+         concat(csqr.response, ' ',csqr.comment) as candidate_response
+  from job_candidate_mapping jcm
+    left join
+    (
+      select jsq.id as jsqId, job_id jsqJobId , question as ScreeningQn from job_screening_questions jsq inner join screening_question msq on jsq.master_screening_question_id = msq.id
+      union
+      select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join user_screening_question usq on jsq.user_screening_question_id=usq.id
+      union
+      select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
+      union
+      select jsq.id as jsqId, jsq.job_id as jsqJobId, tech_question as ScreeningQn from job_screening_questions jsq inner join tech_screening_question tsq ON tsq.id = jsq.tech_screening_question_id
+    ) as jsq on jsq.jsqJobId = jcm.job_id
+    left join
+    candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id;
 
 -- view to select all required fields for search query
 drop view if exists jobDetailsView;
