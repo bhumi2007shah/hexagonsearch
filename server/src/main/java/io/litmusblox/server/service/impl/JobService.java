@@ -1398,39 +1398,12 @@ public class JobService implements IJobService {
         log.info("Found export candidate data records {}", jcmExportResponseBeans.size());
 
         jcmExportResponseBeans.stream().parallel().forEach(jcmExportResponseBean -> {
+            jcmExportResponseBean.setChatbotLink(environment.getProperty(IConstant.CHAT_LINK)+jcmExportResponseBean.getChatbotLink());
             jcmExportResponseBean.setJcmExportQAResponseBeans(jcmExportQAResponseBeanRepository.findAllByJcmId(jcmExportResponseBean.getJcmId()));
         });
 
-        /*Company finalCompany = company;
-        exportDataList.forEach(data-> {
-            LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
-            for (int i = 0; i < data.length; ++i) {
-                if(columnNames.get(i).equals("chatbotLink")){
-                    candidateData.put(exportHeaderColumnMap.get(columnNames.get(i)), data[i]!=null? (environment.getProperty(IConstant.CHAT_LINK)+data[i].toString()):"");
-                } else {
-                    candidateData.put(exportHeaderColumnMap.get(columnNames.get(i)), data[i] != null ? data[i].toString() : "");
-                }
-            }
-            if (exportResponseBean.stream().filter(object -> {
-                return object.get("Email").toString().equalsIgnoreCase(candidateData.get("Email").toString());
-            }).collect(Collectors.toList()).size() == 0){
-                LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), jobId, finalCompany, em);
-                log.info("Found export data question and answer  records {}", questionAnswerMapForCandidate.size());
-                *//*questionAnswerMapForCandidate = questionAnswerMapForCandidate.entrySet().stream().sorted(comparingByKey())
-                        .collect(toMap(e->e.getKey(), e->e.getValue(), (e1, e2)-> e2, LinkedHashMap::new));*//*
-
-                if(questionAnswerMapForCandidate.size()!=0){
-                    questionAnswerMapForCandidate.forEach(candidateData::put);
-                }
-                if(!exportResponseBean.contains(candidateData)) {
-                    exportResponseBean.add(candidateData);
-                }
-            }
-        });*/
-
         List<String> exportColumnList = defaultExportColumns.stream().map(ExportFormatDetail::getColumnName).collect(Collectors.toList());
         exportColumnList.add("jcmExportQAResponseBeans");
-        log.info("column to be exported are {}", exportColumnList);
         String exportResponseBean = Util.stripExtraInfoFromResponseBean(jcmExportResponseBeans,
                 new HashMap<String, List<String>>(){{
                     put("JcmExportResponseBean", exportColumnList);
