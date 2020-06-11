@@ -12,13 +12,14 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
-import io.litmusblox.server.exportData.ExportData;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
+import io.litmusblox.server.responsebean.export.JcmExportResponseBean;
 import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.ml.RolePredictionBean;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.SentryUtil;
+import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -135,6 +136,12 @@ public class JobService implements IJobService {
 
     @Autowired
     ICompanyService companyService;
+
+    @Autowired
+    JcmExportResponseBeanRepository jcmExportResponseBeanRepository;
+
+    @Autowired
+    JcmExportQAResponseBeanRepository jcmExportQAResponseBeanRepository;
 
     @PersistenceContext
     EntityManager em;
@@ -1367,7 +1374,7 @@ public class JobService implements IJobService {
 
         //if default format is not available in db then throw exception
         if(null==exportFormatMaster){
-            throw new WebException("Default format is missing from database", HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new WebException("Format is missing from database for id="+(formatId!=null?formatId:1), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
         //get list of headers and column names frm  db for default format
@@ -1381,33 +1388,20 @@ public class JobService implements IJobService {
             defaultExportColumns.add(new ExportFormatDetail(IConstant.CHAT_LINK, IConstant.CHAT_LINK_HEADER));
         }
 
-        Map<String, String> exportHeaderColumnMap = new LinkedHashMap<>();
-
-
-        if(defaultExportColumns.size()>0) {
-            defaultExportColumns.forEach(exportColumn -> {
-                exportHeaderColumnMap.put(exportColumn.getColumnName(), exportColumn.getHeader());
-            });
-        }
-
-        List<String>columnNames = new ArrayList<String>(exportHeaderColumnMap.keySet());
-
-        String columnsToExport = String.join(", ", columnNames);
-
-        log.info("Found columns: {}", columnsToExport);
-
         //list of objects from db to create export data json
-        List<Object[]> exportDataList = ExportData.exportDataList(jobId, stage, columnsToExport, em);
+        List<JcmExportResponseBean> jcmExportResponseBeans =  jcmExportResponseBeanRepository.findAllByJobId(jobId);
 
-        if(exportDataList.size()==0){
+        if(jcmExportResponseBeans.size()==0){
             throw new WebException("No Export data available for jobId: "+jobId, HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
-        log.info("Found export data records {}", exportDataList.size());
+        log.info("Found export candidate data records {}", jcmExportResponseBeans.size());
 
-        List<LinkedHashMap<String, Object>> exportResponseBean = new ArrayList<>();
+        jcmExportResponseBeans.stream().parallel().forEach(jcmExportResponseBean -> {
+            jcmExportResponseBean.setJcmExportQAResponseBeans(jcmExportQAResponseBeanRepository.findAllByJcmId(jcmExportResponseBean.getJcmId()));
+        });
 
-        Company finalCompany = company;
+        /*Company finalCompany = company;
         exportDataList.forEach(data-> {
             LinkedHashMap<String, Object> candidateData = new LinkedHashMap<>();
             for (int i = 0; i < data.length; ++i) {
@@ -1422,8 +1416,8 @@ public class JobService implements IJobService {
             }).collect(Collectors.toList()).size() == 0){
                 LinkedHashMap<String, String>questionAnswerMapForCandidate = ExportData.getQuestionAnswerForCandidate(candidateData.get("Email").toString(), jobId, finalCompany, em);
                 log.info("Found export data question and answer  records {}", questionAnswerMapForCandidate.size());
-                /*questionAnswerMapForCandidate = questionAnswerMapForCandidate.entrySet().stream().sorted(comparingByKey())
-                        .collect(toMap(e->e.getKey(), e->e.getValue(), (e1, e2)-> e2, LinkedHashMap::new));*/
+                *//*questionAnswerMapForCandidate = questionAnswerMapForCandidate.entrySet().stream().sorted(comparingByKey())
+                        .collect(toMap(e->e.getKey(), e->e.getValue(), (e1, e2)-> e2, LinkedHashMap::new));*//*
 
                 if(questionAnswerMapForCandidate.size()!=0){
                     questionAnswerMapForCandidate.forEach(candidateData::put);
@@ -1432,10 +1426,20 @@ public class JobService implements IJobService {
                     exportResponseBean.add(candidateData);
                 }
             }
-        });
+        });*/
+
+        List<String> exportColumnList = defaultExportColumns.stream().map(ExportFormatDetail::getColumnName).collect(Collectors.toList());
+        exportColumnList.add("jcmExportQAResponseBeans");
+        log.info("column to be exported are {}", exportColumnList);
+        String exportResponseBean = Util.stripExtraInfoFromResponseBean(jcmExportResponseBeans,
+                new HashMap<String, List<String>>(){{
+                    put("JcmExportResponseBean", exportColumnList);
+                }},
+                null
+                );
 
         log.info("Completed processing export data in {}", System.currentTimeMillis() - startTime);
-        return new ObjectMapper().writeValueAsString(exportResponseBean);
+        return exportResponseBean;
     }
 
     /**
