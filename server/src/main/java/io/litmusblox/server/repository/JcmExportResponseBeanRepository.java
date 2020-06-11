@@ -6,6 +6,7 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.responsebean.export.JcmExportResponseBean;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
@@ -17,5 +18,6 @@ import java.util.List;
  * Project Name : server
  */
 public interface JcmExportResponseBeanRepository extends JpaRepository<JcmExportResponseBean, Long> {
-    List<JcmExportResponseBean> findAllByJobId(Long jobId);
+    @Query(nativeQuery = true, value = "select * from export_data_view where job_id=:jobId and current_stage=:stage")
+    List<JcmExportResponseBean> findAllByJobIdAndStage(Long jobId, String stage);
 }

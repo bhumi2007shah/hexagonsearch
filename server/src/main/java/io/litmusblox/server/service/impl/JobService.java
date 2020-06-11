@@ -1389,7 +1389,7 @@ public class JobService implements IJobService {
         }
 
         //list of objects from db to create export data json
-        List<JcmExportResponseBean> jcmExportResponseBeans =  jcmExportResponseBeanRepository.findAllByJobId(jobId);
+        List<JcmExportResponseBean> jcmExportResponseBeans =  jcmExportResponseBeanRepository.findAllByJobIdAndStage(jobId, stage);
 
         if(jcmExportResponseBeans.size()==0){
             throw new WebException("No Export data available for jobId: "+jobId, HttpStatus.UNPROCESSABLE_ENTITY);
@@ -1402,7 +1402,7 @@ public class JobService implements IJobService {
             jcmExportResponseBean.setJcmExportQAResponseBeans(jcmExportQAResponseBeanRepository.findAllByJcmId(jcmExportResponseBean.getJcmId()));
         });
 
-        List<String> exportColumnList = defaultExportColumns.stream().map(ExportFormatDetail::getColumnName).collect(Collectors.toList());
+        List<String> exportColumnList = defaultExportColumns.stream().map(ExportFormatDetail::getHeader).collect(Collectors.toList());
         exportColumnList.add("jcmExportQAResponseBeans");
         String exportResponseBean = Util.stripExtraInfoFromResponseBean(jcmExportResponseBeans,
                 new HashMap<String, List<String>>(){{
