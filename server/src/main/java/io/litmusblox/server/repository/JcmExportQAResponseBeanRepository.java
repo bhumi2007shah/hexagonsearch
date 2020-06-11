@@ -17,5 +17,5 @@ import java.util.List;
  * Project Name : server
  */
 public interface JcmExportQAResponseBeanRepository extends JpaRepository<JcmExportQAResponseBean, Long> {
-    List<JcmExportQAResponseBean> findAllByJcmId(Long jcmId);
+    List<JcmExportQAResponseBean> findAllByJcmIdOrderByJsqIdAsc(Long jcmId);
 }
