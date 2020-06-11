@@ -328,9 +328,9 @@ public class JobService implements IJobService {
     private void jobsForLoggedInUser(JobWorspaceResponseBean responseBean, boolean archived, User loggedInUser, String jobStatus) {
         long startTime = System.currentTimeMillis();
         if (archived)
-            responseBean.setListOfJobs(jobRepository.findByCreatedByAndDateArchivedIsNotNullOrderByDatePublishedDesc(loggedInUser, loggedInUser.getId()));
+            responseBean.setListOfJobs(jobRepository.findByCreatedByAndDateArchivedIsNotNullOrderByDatePublishedDesc(loggedInUser.getId()));
         else
-            responseBean.setListOfJobs(jobRepository.findByCreatedByAndStatusAndDateArchivedIsNullOrderByDatePublishedDesc(loggedInUser,loggedInUser.getId(), jobStatus));
+            responseBean.setListOfJobs(jobRepository.findByCreatedByAndStatusAndDateArchivedIsNullOrderByDatePublishedDesc(loggedInUser.getId(), jobStatus));
 
         List<Object[]> object = jobRepository.getJobCountPerStatusByCreatedBy(loggedInUser.getId());
         if(null != object.get(0)[0]){
