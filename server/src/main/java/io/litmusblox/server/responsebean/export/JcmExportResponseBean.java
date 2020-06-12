@@ -69,7 +69,7 @@ public class JcmExportResponseBean {
     private String chatbotLink;
 
     @JsonProperty("Chatbot Filled Timestamp")
-    @JsonFormat(pattern = IConstant.DATE_FORMAT)
+    @JsonFormat(pattern = IConstant.EXPORT_DATE_FORMAT)
     private Date chatbotFilledTimestamp;
 
     @JsonProperty("Key Skills Strength")
@@ -100,14 +100,14 @@ public class JcmExportResponseBean {
     private String createdBy;
 
     @JsonProperty("Created On")
-    @JsonFormat(pattern = IConstant.DATE_FORMAT)
+    @JsonFormat(pattern = IConstant.EXPORT_DATE_FORMAT)
     private Date createdOn;
 
     @JsonProperty("Capability Score")
     private Long capabilityScore;
 
     @JsonProperty("Interview Date")
-    @JsonFormat(pattern = IConstant.DATE_FORMAT)
+    @JsonFormat(pattern = IConstant.EXPORT_DATE_FORMAT)
     private Date interviewDate;
 
     @JsonProperty("Interview Type")
@@ -123,7 +123,7 @@ public class JcmExportResponseBean {
     private String candidateConfirmation;
 
     @JsonProperty("Candidate Confirmation Time")
-    @JsonFormat(pattern = IConstant.DATE_FORMAT)
+    @JsonFormat(pattern = IConstant.EXPORT_DATE_FORMAT)
     private Date candidateConfirmationTime;
 
     @JsonProperty("Show No Show")
@@ -133,7 +133,7 @@ public class JcmExportResponseBean {
     private String noShowReason;
 
     @JsonProperty("Cancelled")
-    @JsonFormat(pattern = IConstant.DATE_FORMAT)
+    @JsonFormat(pattern = IConstant.EXPORT_DATE_FORMAT)
     private Date cancelled;
 
     @JsonProperty("Cancellation Reason")

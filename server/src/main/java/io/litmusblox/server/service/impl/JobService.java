@@ -1397,9 +1397,15 @@ public class JobService implements IJobService {
 
         log.info("Found export candidate data records {}", jcmExportResponseBeans.size());
 
+        Company finalCompany = company;
         jcmExportResponseBeans.stream().parallel().forEach(jcmExportResponseBean -> {
             jcmExportResponseBean.setChatbotLink(environment.getProperty(IConstant.CHAT_LINK)+jcmExportResponseBean.getChatbotLink());
             jcmExportResponseBean.setJcmExportQAResponseBeans(jcmExportQAResponseBeanRepository.findAllByJcmIdOrderByJsqIdAsc(jcmExportResponseBean.getJcmId()));
+            jcmExportResponseBean.getJcmExportQAResponseBeans().stream().forEach(jcmExportQAResponseBean -> {
+               if(jcmExportQAResponseBean.getScreeningQuestion().contains(IConstant.COMPANY_NAME_VARIABLE)){
+                   jcmExportQAResponseBean.setScreeningQuestion(jcmExportQAResponseBean.getScreeningQuestion().replace(IConstant.COMPANY_NAME_VARIABLE, finalCompany.getCompanyName()));
+               }
+            });
         });
 
         List<String> exportColumnList = defaultExportColumns.stream().map(ExportFormatDetail::getHeader).collect(Collectors.toList());

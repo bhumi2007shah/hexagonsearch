@@ -312,6 +312,7 @@ public interface IConstant {
     String NOT_LAST_NAME = "Available";
 
     String DATE_FORMAT = "yyyy-MM-dd";
+    String EXPORT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     enum UserType {
         RECRUITING("Recruiting"), BUSINESS("Business");

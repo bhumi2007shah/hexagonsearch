@@ -473,9 +473,9 @@ public class Util {
        else
          ldt = LocalDateTime.now();
 
-        DateTimeFormatter formmat = DateTimeFormatter.ofPattern(IConstant.DATE_FORMAT, Locale.ENGLISH);
+        DateTimeFormatter formmat = DateTimeFormatter.ofPattern(IConstant.EXPORT_DATE_FORMAT, Locale.ENGLISH);
         String formatter = formmat.format(ldt);
-        return new SimpleDateFormat(IConstant.DATE_FORMAT).parse(formatter);
+        return new SimpleDateFormat(IConstant.EXPORT_DATE_FORMAT).parse(formatter);
     }
 
     public static MultipartFile createMultipartFile(File file) throws IOException {
