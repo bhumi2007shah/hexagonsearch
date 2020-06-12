@@ -1406,6 +1406,7 @@ public class JobService implements IJobService {
                    jcmExportQAResponseBean.setScreeningQuestion(jcmExportQAResponseBean.getScreeningQuestion().replace(IConstant.COMPANY_NAME_VARIABLE, finalCompany.getCompanyName()));
                }
             });
+
         });
 
         List<String> exportColumnList = defaultExportColumns.stream().map(ExportFormatDetail::getHeader).collect(Collectors.toList());
