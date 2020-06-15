@@ -29,14 +29,14 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     //find all jobs that are not archived
     @Transactional
-    @Query(value = "select * from job where created_by =:createdBy and status =:jobStatus and date_archived is null and :userId = ANY(recruiter) order by created_on desc", nativeQuery = true)
-    List<Job> findByCreatedByAndStatusAndDateArchivedIsNullOrderByDatePublishedDesc(User createdBy, Long userId, String jobStatus);
+    @Query(value = "select * from job where status =:jobStatus and date_archived is null and :userId = ANY(recruiter) order by created_on desc", nativeQuery = true)
+    List<Job> findByCreatedByAndStatusAndDateArchivedIsNullOrderByDatePublishedDesc(Long userId, String jobStatus);
 
 
     //find all archived jobs
     @Transactional
-    @Query(value = "select * from job where created_by =:createdBy and date_archived is not null and :userId = ANY(recruiter) order by created_on desc", nativeQuery = true)
-    List<Job> findByCreatedByAndDateArchivedIsNotNullOrderByDatePublishedDesc(User createdBy, Long userId);
+    @Query(value = "select * from job where date_archived is not null and :userId = ANY(recruiter) order by created_on desc", nativeQuery = true)
+    List<Job> findByCreatedByAndDateArchivedIsNotNullOrderByDatePublishedDesc(Long userId);
 
     //find all jobs for which ml data is not available
     @Transactional
@@ -66,7 +66,7 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     //find job count per status by createdBy
     @Transactional
     @Query(value = "SELECT sum((status LIKE 'Live')\\:\\:INT) AS liveJobCount, sum((status LIKE 'Draft')\\:\\:INT) As draftJobCount, sum((status LIKE 'Archived')\\:\\:INT) AS archivedJobCount " +
-            "FROM job where created_by =:createdBy and :createdBy = ANY(recruiter)", nativeQuery = true)
+            "FROM job where :createdBy = ANY(recruiter)", nativeQuery = true)
     List<Object[]> getJobCountPerStatusByCreatedBy(Long createdBy);
 
     //find job count per status by companyId

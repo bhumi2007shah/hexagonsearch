@@ -56,6 +56,17 @@ public interface IJobService {
     SingleJobViewResponseBean getJobViewById(Long jobId, String stage) throws Exception;
 
     /**
+     * For the specified job, returns list of candidate of job for specified status
+     *
+     * @param jobId the jobId for which data is to be retrieved
+     * @param status the status for which data is to be retrieved.
+     *
+     * @return
+     * @throws Exception
+     */
+    SingleJobViewResponseBean getJobViewByIdAndStatus(Long jobId, String status) throws Exception;
+
+    /**
      * Service method to publish a job
      *
      * @param job to be published
@@ -170,4 +181,10 @@ public interface IJobService {
      * return list of TechScreeningQuestion.
      */
     List<TechScreeningQuestion> generateAndAddTechScreeningQuestions(Job job);
+
+    /**
+     * method to save expected answer for a job
+     * @param requestedJob which has expected answer and jobId
+     */
+    void saveExpectedAnswer(Job requestedJob);
 }

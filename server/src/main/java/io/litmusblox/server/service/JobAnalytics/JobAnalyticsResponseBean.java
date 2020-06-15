@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.Map;
 
 /**
  * Class to hold analytics per job.
@@ -28,4 +29,5 @@ public class JobAnalyticsResponseBean {
     ScreeningStatusAnalyticsBean screeningStatus;
     SubmittedAnalyticsBean submitted;
     InterviewAnalyticsBean interview;
+    Map<String, Map<String, Integer>> reject;
 }

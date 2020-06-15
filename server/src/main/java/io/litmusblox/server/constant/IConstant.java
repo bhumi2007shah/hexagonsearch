@@ -312,6 +312,7 @@ public interface IConstant {
     String NOT_LAST_NAME = "Available";
 
     String DATE_FORMAT = "yyyy-MM-dd";
+    String EXPORT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     enum UserType {
         RECRUITING("Recruiting"), BUSINESS("Business");
@@ -399,5 +400,428 @@ public interface IConstant {
                                         });
 
     String OTHERS = "Other (Other)";
+
+    final String employeesJSON="[{\n" +
+            "  \"name\": \"Abinash\",\n" +
+            "  \"email\": \"abinash@xxxx.com\",\n" +
+            "  \"mobile\": \"xxxxxxxxxx\",\n" +
+            "  \"empCode\": \"123456\",\n" +
+            "  \"role\": \"Senior Developer\",\n" +
+            "  \"stream\": \"Connected Vehicles\",\n" +
+            "  \"group\": \"G5\",\n" +
+            "  \"details\": [\n" +
+            "    {\n" +
+            "      \"competency\": \"Embedded Programming\",\n" +
+            "      \"subCompetencyCount\": 4,\n" +
+            "      \"scoreSummary\": [\n" +
+            "        {\n" +
+            "          \"type\": \"L3\",\n" +
+            "          \"count\": 0\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"L2\",\n" +
+            "          \"count\": 1\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"L1\",\n" +
+            "          \"count\": 0\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"Missing\",\n" +
+            "          \"count\": 3\n" +
+            "        }\n" +
+            "      ],\n" +
+            "      \"subCompetencies\": [\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Data Structures\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"Missing\"\n" +
+            "          },\n" +
+            "          \"response\": \"Has no experience\",\n" +
+            "          \"requirement\": \"Maps\"\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Language Features\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L3\"\n" +
+            "          },\n" +
+            "          \"response\": \"Control flows\",\n" +
+            "          \"requirement\": \"Enumerated data types\"\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Use of Pointer\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L2\"\n" +
+            "          },\n" +
+            "          \"response\": \"Use of multi level indirection\",\n" +
+            "          \"requirement\": \"Use of multi level indirection\"\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Memory constraints\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L1\"\n" +
+            "          },\n" +
+            "          \"response\": \"Has partial knowledge\",\n" +
+            "          \"requirement\": \"Code the functionality in given memory constraints\"\n" +
+            "        }\n" +
+            "      ]\n" +
+            "    },\n" +
+            "    {\n" +
+            "      \"competency\": \"C++\",\n" +
+            "      \"subCompetencyCount\": 2,\n" +
+            "      \"scoreSummary\": [\n" +
+            "        {\n" +
+            "          \"type\": \"L3\",\n" +
+            "          \"count\": 1\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"L2\",\n" +
+            "          \"count\": 0\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"L1\",\n" +
+            "          \"count\": 0\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"Missing\",\n" +
+            "          \"count\": 1\n" +
+            "        }\n" +
+            "      ],\n" +
+            "      \"subCompetencies\": [\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Frameworks\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"Missing\"\n" +
+            "          },\n" +
+            "          \"responses\": [\n" +
+            "            \n" +
+            "          ],\n" +
+            "          \"requirements\": {\n" +
+            "            \"requiredCount\": 1,\n" +
+            "            \"list\": [\n" +
+            "              \"Kivi\",\n" +
+            "              \"QT\",\n" +
+            "              \"Blitz++\",\n" +
+            "              \"OWL\"\n" +
+            "            ]\n" +
+            "          }\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Versions\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L3\"\n" +
+            "          },\n" +
+            "          \"responses\": [\n" +
+            "            {\n" +
+            "              \"subCompetency\": \"C++14\",\n" +
+            "              \"score\": {\n" +
+            "                \"type\": \"L3\"\n" +
+            "              }\n" +
+            "            },\n" +
+            "            {\n" +
+            "              \"subCompetency\": \"C++17\",\n" +
+            "              \"score\": {\n" +
+            "                \"type\": \"L1\"\n" +
+            "              }\n" +
+            "            }\n" +
+            "          ],\n" +
+            "          \"requirements\": {\n" +
+            "            \"requiredCount\": 1,\n" +
+            "            \"list\": [\n" +
+            "              \"C++14\",\n" +
+            "              \"C++17\"\n" +
+            "            ]\n" +
+            "          }\n" +
+            "        }\n" +
+            "      ]\n" +
+            "    },\n" +
+            "    {\n" +
+            "      \"competency\": \"Agile\",\n" +
+            "      \"subCompetencyCount\": 8,\n" +
+            "      \"scoreSummary\": [\n" +
+            "        {\n" +
+            "          \"type\": \"L3\",\n" +
+            "          \"count\": 1\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"L2\",\n" +
+            "          \"count\": 1\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"L1\",\n" +
+            "          \"count\": 4\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"Missing\",\n" +
+            "          \"count\": 2\n" +
+            "        }\n" +
+            "      ],\n" +
+            "      \"subCompetencies\": [\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Role in Agile Development\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"Missing\"\n" +
+            "          },\n" +
+            "          \"response\": \"Participate as team member in Scrum and Standup meetings\",\n" +
+            "          \"requirement\": \"Participate in Backlog & Release Planning\"\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Nature of task assignment\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L3\"\n" +
+            "          },\n" +
+            "          \"response\": \"Assigned by the Product owner\",\n" +
+            "          \"requirement\": \"Cherry picked by team during Sprint execution\"\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Use of Agile Tools\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L3\"\n" +
+            "          },\n" +
+            "          \"responses\": [\n" +
+            "            {\n" +
+            "              \"subCompetency\": \"Jira\",\n" +
+            "              \"score\": {\n" +
+            "                \"type\": \"L3\"\n" +
+            "              }\n" +
+            "            },\n" +
+            "            {\n" +
+            "              \"subCompetency\": \"Agile Bench\",\n" +
+            "              \"score\": {\n" +
+            "                \"type\": \"L3\"\n" +
+            "              }\n" +
+            "            }\n" +
+            "          ],\n" +
+            "          \"requirements\": {\n" +
+            "            \"requiredCount\": 2,\n" +
+            "            \"list\": [\n" +
+            "              \"Jira\",\n" +
+            "              \"Agile Bench\"\n" +
+            "            ]\n" +
+            "          }\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"HMI Tools\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L1\"\n" +
+            "          },\n" +
+            "          \"response\": \"Kanzi\",\n" +
+            "          \"requirement\": \"(Any 2 of ) QT, QML, Altia, Kanzi, Populous\"\n" +
+            "        }\n" +
+            "      ]\n" +
+            "    }\n" +
+            "  ]\n" +
+            "},\n" +
+            "{\n" +
+            "  \"name\": \"Abinash\",\n" +
+            "  \"email\": \"abinash@xxxx.com\",\n" +
+            "  \"mobile\": \"xxxxxxxxxx\",\n" +
+            "  \"empCode\": \"123456\",\n" +
+            "  \"role\": \"Senior Developer\",\n" +
+            "  \"stream\": \"Connected Vehicles\",\n" +
+            "  \"group\": \"G5\",\n" +
+            "  \"details\": [\n" +
+            "    {\n" +
+            "      \"competency\": \"Embedded Programming\",\n" +
+            "      \"subCompetencyCount\": 4,\n" +
+            "      \"scoreSummary\": [\n" +
+            "        {\n" +
+            "          \"type\": \"L3\",\n" +
+            "          \"count\": 0\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"L2\",\n" +
+            "          \"count\": 1\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"L1\",\n" +
+            "          \"count\": 0\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"Missing\",\n" +
+            "          \"count\": 3\n" +
+            "        }\n" +
+            "      ],\n" +
+            "      \"subCompetencies\": [\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Data Structures\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"Missing\"\n" +
+            "          },\n" +
+            "          \"response\": \"Has no experience\",\n" +
+            "          \"requirement\": \"Maps\"\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Language Features\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L3\"\n" +
+            "          },\n" +
+            "          \"response\": \"Control flows\",\n" +
+            "          \"requirement\": \"Enumerated data types\"\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Use of Pointer\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L2\"\n" +
+            "          },\n" +
+            "          \"response\": \"Use of multi level indirection\",\n" +
+            "          \"requirement\": \"Use of multi level indirection\"\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Memory constraints\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L1\"\n" +
+            "          },\n" +
+            "          \"response\": \"Has partial knowledge\",\n" +
+            "          \"requirement\": \"Code the functionality in given memory constraints\"\n" +
+            "        }\n" +
+            "      ]\n" +
+            "    },\n" +
+            "    {\n" +
+            "      \"competency\": \"C++\",\n" +
+            "      \"subCompetencyCount\": 2,\n" +
+            "      \"scoreSummary\": [\n" +
+            "        {\n" +
+            "          \"type\": \"L3\",\n" +
+            "          \"count\": 1\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"L2\",\n" +
+            "          \"count\": 0\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"L1\",\n" +
+            "          \"count\": 0\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"Missing\",\n" +
+            "          \"count\": 1\n" +
+            "        }\n" +
+            "      ],\n" +
+            "      \"subCompetencies\": [\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Frameworks\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"Missing\"\n" +
+            "          },\n" +
+            "          \"responses\": [\n" +
+            "            \n" +
+            "          ],\n" +
+            "          \"requirements\": {\n" +
+            "            \"requiredCount\": 1,\n" +
+            "            \"list\": [\n" +
+            "              \"Kivi\",\n" +
+            "              \"QT\",\n" +
+            "              \"Blitz++\",\n" +
+            "              \"OWL\"\n" +
+            "            ]\n" +
+            "          }\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Versions\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L3\"\n" +
+            "          },\n" +
+            "          \"responses\": [\n" +
+            "            {\n" +
+            "              \"subCompetency\": \"C++14\",\n" +
+            "              \"score\": {\n" +
+            "                \"type\": \"L3\"\n" +
+            "              }\n" +
+            "            },\n" +
+            "            {\n" +
+            "              \"subCompetency\": \"C++17\",\n" +
+            "              \"score\": {\n" +
+            "                \"type\": \"L1\"\n" +
+            "              }\n" +
+            "            }\n" +
+            "          ],\n" +
+            "          \"requirements\": {\n" +
+            "            \"requiredCount\": 1,\n" +
+            "            \"list\": [\n" +
+            "              \"C++14\",\n" +
+            "              \"C++17\"\n" +
+            "            ]\n" +
+            "          }\n" +
+            "        }\n" +
+            "      ]\n" +
+            "    },\n" +
+            "    {\n" +
+            "      \"competency\": \"Agile\",\n" +
+            "      \"subCompetencyCount\": 8,\n" +
+            "      \"scoreSummary\": [\n" +
+            "        {\n" +
+            "          \"type\": \"L3\",\n" +
+            "          \"count\": 1\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"L2\",\n" +
+            "          \"count\": 1\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"L1\",\n" +
+            "          \"count\": 4\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"type\": \"Missing\",\n" +
+            "          \"count\": 2\n" +
+            "        }\n" +
+            "      ],\n" +
+            "      \"subCompetencies\": [\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Role in Agile Development\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"Missing\"\n" +
+            "          },\n" +
+            "          \"response\": \"Participate as team member in Scrum and Standup meetings\",\n" +
+            "          \"requirement\": \"Participate in Backlog & Release Planning\"\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Nature of task assignment\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L3\"\n" +
+            "          },\n" +
+            "          \"response\": \"Assigned by the Product owner\",\n" +
+            "          \"requirement\": \"Cherry picked by team during Sprint execution\"\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"Use of Agile Tools\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L3\"\n" +
+            "          },\n" +
+            "          \"responses\": [\n" +
+            "            {\n" +
+            "              \"subCompetency\": \"Jira\",\n" +
+            "              \"score\": {\n" +
+            "                \"type\": \"L3\"\n" +
+            "              }\n" +
+            "            },\n" +
+            "            {\n" +
+            "              \"subCompetency\": \"Agile Bench\",\n" +
+            "              \"score\": {\n" +
+            "                \"type\": \"L3\"\n" +
+            "              }\n" +
+            "            }\n" +
+            "          ],\n" +
+            "          \"requirements\": {\n" +
+            "            \"requiredCount\": 2,\n" +
+            "            \"list\": [\n" +
+            "              \"Jira\",\n" +
+            "              \"Agile Bench\"\n" +
+            "            ]\n" +
+            "          }\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"subCompetency\": \"HMI Tools\",\n" +
+            "          \"score\": {\n" +
+            "            \"type\": \"L1\"\n" +
+            "          },\n" +
+            "          \"response\": \"Kanzi\",\n" +
+            "          \"requirement\": \"(Any 2 of ) QT, QML, Altia, Kanzi, Populous\"\n" +
+            "        }\n" +
+            "      ]\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}]";
 
 }

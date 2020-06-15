@@ -2440,3 +2440,15 @@ INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
 
 INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
 ('VOLTE Engineer', (select id from function_master_data where function = 'System Administration' and industry = (select id from industry_master_data where industry = 'IT')));
+
+INSERT INTO INDUSTRY_MASTER_DATA(INDUSTRY) VALUES
+('Healthcare');
+
+INSERT INTO FUNCTION_MASTER_DATA(FUNCTION, INDUSTRY) VALUES
+('Insurance Process', (select id from industry_master_data where industry = 'Healthcare'));
+
+INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
+('Claim Adjudicator', (select id from function_master_data where function = 'Insurance Process' and industry = (select id from industry_master_data where industry = 'Healthcare')));
+
+-- #558 score candidate response
+alter table job add column expected_answer hstore;
