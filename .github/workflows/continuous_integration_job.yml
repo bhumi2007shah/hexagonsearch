@@ -8,7 +8,7 @@ on:
 jobs:
   BUILD_AND_DEPLOY_BACKEND_TEST:
     name: build and deploy backend test
-    runs-on: self-hosted
+    runs-on: [self-hosted, ubuntu]
 
     steps:
     - uses: actions/checkout@v2
