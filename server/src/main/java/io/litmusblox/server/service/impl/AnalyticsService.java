@@ -90,6 +90,8 @@ public class AnalyticsService implements IAnalyticsService {
     public JobAnalyticsResponseBean getJobAnalyticsData(Long jobId, Optional<Date> startDate, Optional<Date> endDate) throws Exception {
         // find a job from db using jobId
         Job job = jobRepository.getOne(jobId);
+        long startTime = System.currentTimeMillis();
+        User loggedinUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         // throw exception if job  not found in db
         if(null == job){
@@ -101,27 +103,34 @@ public class AnalyticsService implements IAnalyticsService {
 
         //set candidate sourced count for a job in jobAnalyticsResponseBean
         jobAnalyticsResponseBean.setCandidateSourced(getCountByJobId(jobId, startDate, endDate));
+        log.info("Completed fetching candidate sourced count in {}ms for job:{}, user:{}", System.currentTimeMillis()-startTime, jobId, loggedinUser.getEmail());
 
         //set job created on in jobAnalyticsResponseBean
         jobAnalyticsResponseBean.setJobCreatedOn(job.getCreatedOn());
 
         // set candidate sources analytics i.e linkedin, naukri, individual etc for a job in jobAnalyticsResponseBean
         jobAnalyticsResponseBean.setCandidateSources(getCandidateSourceAnalytics(jobId, startDate, endDate));
+        log.info("Completed fetching candidate sources analytics in {}ms for job:{}, user:{}", System.currentTimeMillis()-startTime, jobId, loggedinUser.getEmail());
 
         //set key skill strength analytics i.e: candidate count per score for a job in jobAnalyticsResponseBean
         jobAnalyticsResponseBean.setKeySkillsStrength(getKeySkillsStrengthAnalytics(jobId, startDate, endDate));
+        log.info("Completed fetching key skill strength analytics in {}ms for job:{}, user:{}", System.currentTimeMillis()-startTime, jobId, loggedinUser.getEmail());
 
         //set Screening status analytics i.e: chatbot status for a job in jobAnalyticsResponseBean
         jobAnalyticsResponseBean.setScreeningStatus(getScreeningStatusAnalytics(jobId, startDate, endDate));
+        log.info("Completed fetching screening status analytics in {}ms for job:{}, user:{}", System.currentTimeMillis()-startTime, jobId, loggedinUser.getEmail());
 
         //set submitted analytics i.e: profile shared status and hiring manager response for a job in jobAnalyticsResponseBean
         jobAnalyticsResponseBean.setSubmitted(getSubmittedAnalytics(jobId, startDate, endDate));
+        log.info("Completed fetching profile shared analytics in {}ms for job:{}, user:{}", System.currentTimeMillis()-startTime, jobId, loggedinUser.getEmail());
 
         //set interview analytics i.e: not scheduled, scheduled, rescheduled, show, no show for job in jonAnalyticsResponseBean
         jobAnalyticsResponseBean.setInterview(getInterviewAnalytics(jobId, startDate, endDate));
+        log.info("Completed fetching interview analytics in {}ms for job:{}, user:{}", System.currentTimeMillis()-startTime, jobId, loggedinUser.getEmail());
 
         //set rejected analytics
         jobAnalyticsResponseBean.setReject(getRejectAnalytics(jobId, startDate, endDate));
+        log.info("Completed fetching rejected analytics in {}ms for job:{}, user:{}", System.currentTimeMillis()-startTime, jobId, loggedinUser.getEmail());
 
         return jobAnalyticsResponseBean;
     }
