@@ -16,9 +16,6 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 12.0.1
-    - name: checkout to development and pull
-      run: git checkout development; git pull origin development;
-      shell: bash
     - name: stop backend service
       run: sudo service backend stop
       shell: bash
