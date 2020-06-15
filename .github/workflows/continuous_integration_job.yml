@@ -20,4 +20,4 @@ jobs:
       run: git checkout development; git pull origin development;
       shell: bash
     - name: Maven Package
-      run: mvn -B clean package
+      run: cd server; mvn -B clean package
