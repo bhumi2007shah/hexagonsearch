@@ -21,3 +21,6 @@ jobs:
       shell: bash
     - name: Maven Package
       run: cd server; mvn -B clean package
+    - name: Move jar file to serverApplication folder
+      run: mv  /home/runner/work/litmusblox-backend/litmusblox-backend/server/target/server-0.1.11-SNAPSHOT.jar /home/lbtest/serverApplication/
+    
