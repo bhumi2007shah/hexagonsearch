@@ -8,7 +8,7 @@ on:
 jobs:
   BUILD_AND_DEPLOY_BACKEND_TEST:
     name: build and deploy backend test
-    runs-on: ubuntu 18.04
+    runs-on: self-hosted
 
     steps:
     - uses: actions/checkout@v2
@@ -19,11 +19,5 @@ jobs:
     - name: checkout to development and pull
       run: git checkout development; git pull origin development;
       shell: bash
-    - name: stop backend service
-      run: sudo service backend stop
-      shell: bash
     - name: Maven Package
       run: mvn -B clean package
-    - name: restarting service
-      run: sudo service backend start
-      shell: bash
