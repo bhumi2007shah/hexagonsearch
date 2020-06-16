@@ -1682,10 +1682,10 @@ public class JobService implements IJobService {
         Job oldJob = jobRepository.getOne(job.getId());
 
         //Create request for generate tech question API from search engine
-        TechQueRequestBean techQueRequestBean = new TechQueRequestBean();
-        TechQueRequestBean.SelectedRole selectedRole = new TechQueRequestBean.SelectedRole();
-        TechQueRequestBean.Function function = new TechQueRequestBean.Function();
-        TechQueRequestBean.Industry industry = new TechQueRequestBean.Industry();
+        TechQuestionsRequestBean techQueRequestBean = new TechQuestionsRequestBean();
+        TechQuestionsRequestBean.SelectedRole selectedRole = new TechQuestionsRequestBean.SelectedRole();
+        TechQuestionsRequestBean.Function function = new TechQuestionsRequestBean.Function();
+        TechQuestionsRequestBean.Industry industry = new TechQuestionsRequestBean.Industry();
         if(null != job.getUserSelectedRole())
             selectedRole.setRoleName(job.getUserSelectedRole());
         industry.setIndustryName(job.getJobIndustry().getIndustry());
@@ -1700,11 +1700,11 @@ public class JobService implements IJobService {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         long startTime = System.currentTimeMillis();
         String searchEngineResponse = null;
-        Map<String, List<SearchEngineQueResponseBean>> searchEngineResponseBean = new HashMap<>();
+        Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineResponseBean = new HashMap<>();
         log.info("Calling SearchEngine API to generate tech questions for job: {}", job.getId());
         try {
             searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, null, null, null).getResponseBody();
-            searchEngineResponseBean = mapper.readValue(searchEngineResponse, new TypeReference<Map<String, List<SearchEngineQueResponseBean>>>(){});
+            searchEngineResponseBean = mapper.readValue(searchEngineResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
             log.info("Search engine rest call response : {}", searchEngineResponse);
 
         }catch ( Exception e ) {
@@ -1712,7 +1712,7 @@ public class JobService implements IJobService {
         }
         log.info("Generate tech questions REST call completed in {}ms", System.currentTimeMillis()-startTime);
 
-        for (Map.Entry<String, List<SearchEngineQueResponseBean>> entry : searchEngineResponseBean.entrySet()) {
+        for (Map.Entry<String, List<SearchEngineQuestionsResponseBean>> entry : searchEngineResponseBean.entrySet()) {
             entry.getValue().forEach(object -> {
                 TechScreeningQuestion techScreeningQuestion = new TechScreeningQuestion(object.getQuestionText(),object.getOptions(), MasterDataBean.getInstance().getQuestionTypeMap().get(object.getQuestionType()), null, entry.getKey(), job.getId());
                 techScreeningQuestionRepository.save(techScreeningQuestion);
