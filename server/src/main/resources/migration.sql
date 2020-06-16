@@ -2452,3 +2452,8 @@ INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
 
 -- #558 score candidate response
 alter table job add column expected_answer hstore;
+
+--for ticket #489
+INSERT INTO CONFIGURATION_SETTINGS(CONFIG_NAME, CONFIG_VALUE) VALUES
+('maxQuestions', 100),
+('maxQuestionsPerSkill', 100);
