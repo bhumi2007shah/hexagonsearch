@@ -346,9 +346,9 @@ public class JobService implements IJobService {
         long startTime = System.currentTimeMillis();
         companyList.stream().forEach(company -> {
             if (archived)
-                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByDatePublishedDesc(company));
+                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByDatePublishedDescCreatedOnDesc(company));
             else
-                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndStatusAndDateArchivedIsNullOrderByDatePublishedDesc(company, jobStatus));
+                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndStatusAndDateArchivedIsNullOrderByDatePublishedDescCreatedOnDesc(company, jobStatus));
 
             List<Object[]> object = jobRepository.getJobCountPerStatusByCompanyId(company.getId());
             if(null != object.get(0)[0]){
