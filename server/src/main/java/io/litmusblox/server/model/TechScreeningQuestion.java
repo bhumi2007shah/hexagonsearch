@@ -55,6 +55,15 @@ public class TechScreeningQuestion implements Serializable {
     @JoinColumn(name = "JOB_ID")
     private Long jobId;
 
+    @Column(name = "SCORING_TYPE")
+    private String scoringType;
+
+    @Column(name = "DEFAULT_ANS")
+    private String[] defaultAns;
+
+    @Column(name = "DEFAULT_ANS_COUNT")
+    private Long defaultAnsCount;
+
     public TechScreeningQuestion(String techQuestion, String[] options, @NotNull MasterData questionType, String multiLevelOptions, String questionCategory, Long jobId) {
         this.techQuestion = techQuestion;
         this.options = options;

@@ -2452,3 +2452,14 @@ INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
 
 -- #558 score candidate response
 alter table job add column expected_answer hstore;
+
+-- #564 default answers for hr
+alter table screening_question
+add column scoring_type varchar(5),
+add column default_ans varchar(100)[],
+add column default_ans_count integer;
+
+alter table tech_screening_question
+add column scoring_type varchar(5),
+add column default_ans varchar(100)[],
+add column default_ans_count integer;

@@ -57,6 +57,15 @@ public class ScreeningQuestions implements Serializable {
     @JoinColumn(name = "QUESTION_CATEGORY")
     private MasterData questionCategory;
 
+    @Column(name = "SCORING_TYPE")
+    private String scoringType;
+
+    @Column(name = "DEFAULT_ANS")
+    private String[] defaultAns;
+
+    @Column(name = "DEFAULT_ANS_COUNT")
+    private Long defaultAnsCount;
+
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "COUNTRY_ID")
     private Country countryId;
