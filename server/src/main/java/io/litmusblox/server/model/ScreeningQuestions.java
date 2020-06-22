@@ -60,11 +60,12 @@ public class ScreeningQuestions implements Serializable {
     @Column(name = "SCORING_TYPE")
     private String scoringType;
 
-    @Column(name = "DEFAULT_ANS")
-    private String[] defaultAns;
+    @Column(name = "DEFAULT_ANSWERS", columnDefinition = "varchar[]")
+    @Type(type = "com.vladmihalcea.hibernate.type.array.StringArrayType")
+    private String[] defaultAnswers;
 
-    @Column(name = "DEFAULT_ANS_COUNT")
-    private Long defaultAnsCount;
+    @Column(name = "ANSWER_SELECTION")
+    private String answerSelection;
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "COUNTRY_ID")

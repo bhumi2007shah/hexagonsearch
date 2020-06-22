@@ -58,16 +58,30 @@ public class TechScreeningQuestion implements Serializable {
     @Column(name = "SCORING_TYPE")
     private String scoringType;
 
-    @Column(name = "DEFAULT_ANS")
-    private String[] defaultAns;
+    @Column(name = "DEFAULT_ANSWERS", columnDefinition = "varchar[]")
+    @Type(type = "com.vladmihalcea.hibernate.type.array.StringArrayType")
+    private String[] defaultAnswers;
 
-    @Column(name = "DEFAULT_ANS_COUNT")
-    private Long defaultAnsCount;
+    @Column(name = "ANSWER_SELECTION")
+    private String answerSelection;
 
-    public TechScreeningQuestion(String techQuestion, String[] options, @NotNull MasterData questionType, String multiLevelOptions, String questionCategory, Long jobId) {
+    public TechScreeningQuestion(
+            String techQuestion,
+            String[] options,
+            @NotNull MasterData questionType,
+            String[] defaultAnswers,
+            String scoringType,
+            String answerSelection,
+            String multiLevelOptions,
+            String questionCategory,
+            Long jobId
+    ) {
         this.techQuestion = techQuestion;
         this.options = options;
         this.questionType = questionType;
+        this.scoringType = scoringType;
+        this.defaultAnswers = defaultAnswers;
+        this.answerSelection = answerSelection;
         this.multiLevelOptions = multiLevelOptions;
         this.questionCategory = questionCategory;
         this.jobId = jobId;

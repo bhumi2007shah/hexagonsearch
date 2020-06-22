@@ -1714,7 +1714,17 @@ public class JobService implements IJobService {
 
         for (Map.Entry<String, List<SearchEngineQueResponseBean>> entry : searchEngineResponseBean.entrySet()) {
             entry.getValue().forEach(object -> {
-                TechScreeningQuestion techScreeningQuestion = new TechScreeningQuestion(object.getQuestionText(),object.getOptions(), MasterDataBean.getInstance().getQuestionTypeMap().get(object.getQuestionType()), null, entry.getKey(), job.getId());
+                TechScreeningQuestion techScreeningQuestion = new TechScreeningQuestion(
+                        object.getQuestionText(),
+                        object.getOptions(),
+                        MasterDataBean.getInstance().getQuestionTypeMap().get(object.getQuestionType()),
+                        object.getDefaultAnswers().toArray(new String[object.getDefaultAnswers().size()]),
+                        object.getScoringType(),
+                        object.getAnswerSelection(),
+                        null,
+                        entry.getKey(),
+                        job.getId()
+                );
                 techScreeningQuestionRepository.save(techScreeningQuestion);
             });
         }
