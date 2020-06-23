@@ -194,6 +194,10 @@ public class JobCandidateMapping implements Serializable {
     private String cvLocation;
 
     @Transient
+    @JsonProperty
+    private String chatbotScore;
+
+    @Transient
     private String inviteErrorMessage;
 
     @OneToMany(cascade = {CascadeType.MERGE}, mappedBy = "jobCandidateMappingId")

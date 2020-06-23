@@ -2463,3 +2463,8 @@ alter table tech_screening_question
 add column scoring_type varchar(5),
 add column default_answers varchar(100)[],
 add column answer_selection varchar(5);
+
+--for ticket #489
+INSERT INTO CONFIGURATION_SETTINGS(CONFIG_NAME, CONFIG_VALUE) VALUES
+('maxQuestions', 100),
+('maxQuestionsPerSkill', 100);

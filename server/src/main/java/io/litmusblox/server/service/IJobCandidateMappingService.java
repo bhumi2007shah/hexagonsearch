@@ -305,4 +305,12 @@ public interface IJobCandidateMappingService {
      */
     Set<String> getLiveJobAddressStringSetByCompanyId(String companyShortName);
 
+    /**
+     *Rest Api to get tech question chatbot score
+     *
+     * @param jobId Job Id for which we get tech score
+     * @return List of jcm
+     */
+    List<JobCandidateMapping> getTechChatbotScore(Long jobId);
+
 }

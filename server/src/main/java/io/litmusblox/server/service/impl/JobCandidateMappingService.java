@@ -2204,4 +2204,63 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
     }
 
+    @Transactional
+    public List<JobCandidateMapping> getTechChatbotScore(Long jobId) {
+        List<JobScreeningQuestions> jobScreeningQuestions = jobScreeningQuestionsRepository.findByTechScreeningQuestionIdIsNotNullAndJobId(jobId);
+        List<JobCandidateMapping> jcmList = jobCandidateMappingRepository.findByJobIdAndChatbotStatus(jobId, IConstant.ChatbotStatus.COMPLETE.getValue());
+
+        jcmList.forEach(jcm -> {
+            jobScreeningQuestions.forEach(jobScreeningQuestion ->{
+                CandidateScreeningQuestionResponse candidateScreeningQuestionResponse =
+                        candidateScreeningQuestionResponseRepository.findByJobCandidateMappingIdAndJobScreeningQuestionId(jcm.getId(), jobScreeningQuestion.getTechScreeningQuestionId().getId());
+
+                if(null == candidateScreeningQuestionResponse)
+                    jcm.setChatbotScore(IConstant.ChatbotScoring.MISSING.getValue());
+                else{
+                     Integer defaultAnsCount = Integer.valueOf(jobScreeningQuestion.getTechScreeningQuestionId().getAnswerSelection().replaceAll(IConstant.REGEX_FOR_REMOVE_NON_INTEGER_VALUE, ""));
+
+                    //For flat questions
+                    if(IConstant.ScoringType.FLAT.getValue().equalsIgnoreCase(jobScreeningQuestion.getTechScreeningQuestionId().getScoringType())){
+
+                        List<String> defaultAns = Arrays.asList(jobScreeningQuestion.getTechScreeningQuestionId().getDefaultAnswers());
+                        List<String> candidateAnswers = Arrays.asList(candidateScreeningQuestionResponse.getResponse().split("%$"));
+                        Collections.sort(candidateAnswers);
+                        Collections.sort(defaultAns);
+
+                        //For flat questions
+                        if(candidateAnswers.size() < defaultAnsCount)
+                            jcm.setChatbotScore(IConstant.ChatbotScoring.WEAKER.getValue());
+                        else if(defaultAnsCount == candidateAnswers.size()){
+                            if(candidateAnswers.equals(defaultAns))
+                                jcm.setChatbotScore(IConstant.ChatbotScoring.ATPAR.getValue());
+                            else
+                                jcm.setChatbotScore(IConstant.ChatbotScoring.WEAKER.getValue());
+                        }else if(candidateAnswers.size() > defaultAnsCount){
+                            if(defaultAns.containsAll(candidateAnswers))
+                                jcm.setChatbotScore(IConstant.ChatbotScoring.STRONGER.getValue());
+                            else
+                                jcm.setChatbotScore(IConstant.ChatbotScoring.WEAKER.getValue());
+                        }
+                    }else if(IConstant.ScoringType.GRADED.getValue().equalsIgnoreCase(jobScreeningQuestion.getTechScreeningQuestionId().getScoringType())){
+
+                        //For Graded questions
+                        String candidateAns = candidateScreeningQuestionResponse.getResponse();
+                        List<String> defaultOptions = Arrays.asList(jobScreeningQuestion.getTechScreeningQuestionId().getOptions());
+                        String defaultAnswer = jobScreeningQuestion.getTechScreeningQuestionId().getDefaultAnswers()[0];
+                        Integer defaultAnsIndex = defaultOptions.indexOf(defaultAnswer);
+                        Integer candidateAnsIndex = defaultOptions.indexOf(candidateAns);
+
+                        if(defaultAnswer.equals(candidateAns))
+                            jcm.setChatbotScore(IConstant.ChatbotScoring.ATPAR.getValue());
+                        else if(candidateAnsIndex < defaultAnsIndex)
+                            jcm.setChatbotScore(IConstant.ChatbotScoring.WEAKER.getValue());
+                        else if(candidateAnsIndex > defaultAnsIndex)
+                            jcm.setChatbotScore(IConstant.ChatbotScoring.STRONGER.getValue());
+                    }
+                }
+            });
+        });
+        return jcmList;
+    }
+
 }

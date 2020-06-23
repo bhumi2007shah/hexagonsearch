@@ -26,4 +26,6 @@ public interface JobScreeningQuestionsRepository extends JpaRepository<JobScreen
     void deleteByUserScreeningQuestionIdIsNotNullAndJobId(Long jobId);
 
     void deleteByTechScreeningQuestionIdIsNotNullAndJobId(Long jobId);
+
+    List<JobScreeningQuestions> findByTechScreeningQuestionIdIsNotNullAndJobId(Long jobId);
 }
