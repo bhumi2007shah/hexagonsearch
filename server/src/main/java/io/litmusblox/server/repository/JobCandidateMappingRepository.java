@@ -134,5 +134,6 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     Long countByJobIdAndDate(Long jobId, Date startDate, Date endDate);
 
     @Transactional(readOnly = true)
-    List<JobCandidateMapping> findByJobIdAndChatbotStatus(Long jonId, String chatbotStatus);
+    @Query(value = "select id from job_candidate_mapping where chatbot_status =:chatbotStatus and job_id =:jobId", nativeQuery = true)
+    List<Long> findIdByJobIdAndChatbotStatus(Long jobId, String chatbotStatus);
 }

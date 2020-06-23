@@ -2205,17 +2205,22 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     }
 
     @Transactional
-    public List<JobCandidateMapping> getTechChatbotScore(Long jobId) {
+    public Map<Long, List<ScoringModel>> getTechChatbotScore(Long jobId) {
         List<JobScreeningQuestions> jobScreeningQuestions = jobScreeningQuestionsRepository.findByTechScreeningQuestionIdIsNotNullAndJobId(jobId);
-        List<JobCandidateMapping> jcmList = jobCandidateMappingRepository.findByJobIdAndChatbotStatus(jobId, IConstant.ChatbotStatus.COMPLETE.getValue());
+        List<Long> jcmIdList = jobCandidateMappingRepository.findIdByJobIdAndChatbotStatus(jobId, IConstant.ChatbotStatus.COMPLETE.getValue());
 
-        jcmList.forEach(jcm -> {
+        Map<Long, List<ScoringModel>> scoringMap = new HashMap<>();
+        jcmIdList.forEach(jcmId -> {
+            List<ScoringModel> scoringModelList = new ArrayList<>();
             jobScreeningQuestions.forEach(jobScreeningQuestion ->{
+                ScoringModel scoringModel = new ScoringModel();
+                scoringModel.setJcmId(jcmId);
+                scoringModel.setJobScreeningQuestionId(jobScreeningQuestion.getId());
                 CandidateScreeningQuestionResponse candidateScreeningQuestionResponse =
-                        candidateScreeningQuestionResponseRepository.findByJobCandidateMappingIdAndJobScreeningQuestionId(jcm.getId(), jobScreeningQuestion.getTechScreeningQuestionId().getId());
+                        candidateScreeningQuestionResponseRepository.findByJobCandidateMappingIdAndJobScreeningQuestionId(jcmId, jobScreeningQuestion.getTechScreeningQuestionId().getId());
 
                 if(null == candidateScreeningQuestionResponse)
-                    jcm.setChatbotScore(IConstant.ChatbotScoring.MISSING.getValue());
+                    scoringModel.setScore(IConstant.ChatbotScoring.MISSING.getValue());
                 else{
                      Integer defaultAnsCount = Integer.valueOf(jobScreeningQuestion.getTechScreeningQuestionId().getAnswerSelection().replaceAll(IConstant.REGEX_FOR_REMOVE_NON_INTEGER_VALUE, ""));
 
@@ -2229,17 +2234,17 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
                         //For flat questions
                         if(candidateAnswers.size() < defaultAnsCount)
-                            jcm.setChatbotScore(IConstant.ChatbotScoring.WEAKER.getValue());
+                            scoringModel.setScore(IConstant.ChatbotScoring.WEAKER.getValue());
                         else if(defaultAnsCount == candidateAnswers.size()){
                             if(candidateAnswers.equals(defaultAns))
-                                jcm.setChatbotScore(IConstant.ChatbotScoring.ATPAR.getValue());
+                                scoringModel.setScore(IConstant.ChatbotScoring.ATPAR.getValue());
                             else
-                                jcm.setChatbotScore(IConstant.ChatbotScoring.WEAKER.getValue());
+                                scoringModel.setScore(IConstant.ChatbotScoring.WEAKER.getValue());
                         }else if(candidateAnswers.size() > defaultAnsCount){
                             if(defaultAns.containsAll(candidateAnswers))
-                                jcm.setChatbotScore(IConstant.ChatbotScoring.STRONGER.getValue());
+                                scoringModel.setScore(IConstant.ChatbotScoring.STRONGER.getValue());
                             else
-                                jcm.setChatbotScore(IConstant.ChatbotScoring.WEAKER.getValue());
+                                scoringModel.setScore(IConstant.ChatbotScoring.WEAKER.getValue());
                         }
                     }else if(IConstant.ScoringType.GRADED.getValue().equalsIgnoreCase(jobScreeningQuestion.getTechScreeningQuestionId().getScoringType())){
 
@@ -2251,16 +2256,18 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                         Integer candidateAnsIndex = defaultOptions.indexOf(candidateAns);
 
                         if(defaultAnswer.equals(candidateAns))
-                            jcm.setChatbotScore(IConstant.ChatbotScoring.ATPAR.getValue());
+                            scoringModel.setScore(IConstant.ChatbotScoring.ATPAR.getValue());
                         else if(candidateAnsIndex < defaultAnsIndex)
-                            jcm.setChatbotScore(IConstant.ChatbotScoring.WEAKER.getValue());
+                            scoringModel.setScore(IConstant.ChatbotScoring.WEAKER.getValue());
                         else if(candidateAnsIndex > defaultAnsIndex)
-                            jcm.setChatbotScore(IConstant.ChatbotScoring.STRONGER.getValue());
+                            scoringModel.setScore(IConstant.ChatbotScoring.STRONGER.getValue());
                     }
                 }
+                scoringModelList.add(scoringModel);
             });
+            scoringMap.put(jcmId, scoringModelList);
         });
-        return jcmList;
+        return scoringMap;
     }
 
 }

@@ -384,19 +384,12 @@ public class JobCandidateMappingController {
      */
     @GetMapping(value = "/getTechChatbotScore/{jobId}")
     @ResponseStatus(value = HttpStatus.OK)
-    String getTechChatbotScore(@PathVariable Long jobId) throws Exception {
+    Map<Long, List<ScoringModel>> getTechChatbotScore(@PathVariable Long jobId) throws Exception {
         log.info("Received request to get score for tech chatbot");
         long startTime = System.currentTimeMillis();
-        String response = Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.getTechChatbotScore(jobId),
-                new HashMap<String, List<String>>() {{
-                    put("JobCandidateMapping", Arrays.asList("id","job","candidate","stage","email","mobile","displayName","chatbotStatus","chatbotScore"));
-                    put("Job", Arrays.asList("id"));
-                    put("Candidate", Arrays.asList("id"));
-                    put("Stage", Arrays.asList("stage"));
-                }},
-                null);
+        Map<Long, List<ScoringModel>> scoringMap = jobCandidateMappingService.getTechChatbotScore(jobId);
         log.info("get score for tech chatbot in {}ms", (System.currentTimeMillis()-startTime));
-        return response;
+        return scoringMap;
     }
 
 }

@@ -311,6 +311,6 @@ public interface IJobCandidateMappingService {
      * @param jobId Job Id for which we get tech score
      * @return List of jcm
      */
-    List<JobCandidateMapping> getTechChatbotScore(Long jobId);
+    Map<Long, List<ScoringModel>> getTechChatbotScore(Long jobId);
 
 }
