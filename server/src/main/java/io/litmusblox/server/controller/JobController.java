@@ -385,7 +385,8 @@ public class JobController {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Received request to save expected answer for job={} by user={}", requestJob.getId(), loggedInUser.getId());
         long startTime = System.currentTimeMillis();
-        jobService.saveExpectedAnswer(requestJob);
+        jobService.
+                saveExpectedAnswer(requestJob);
         log.info("Saved expected answer in {}ms", System.currentTimeMillis()-startTime);
     }
 

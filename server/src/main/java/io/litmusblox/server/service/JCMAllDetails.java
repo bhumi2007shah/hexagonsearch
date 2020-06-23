@@ -6,6 +6,7 @@ package io.litmusblox.server.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.litmusblox.server.model.CandidateScreeningQuestionResponse;
 import io.litmusblox.server.model.InterviewDetails;
 import io.litmusblox.server.model.JcmProfileSharingDetails;
 import lombok.Data;
@@ -35,6 +36,7 @@ public class JCMAllDetails {
     String mobile;
     String country_code;
     Long stage;
+    String stage_name;
     Date created_on;
     String candidate_first_name;
     String candidate_last_name;
@@ -65,6 +67,9 @@ public class JCMAllDetails {
     @Transient
     @JsonIgnore
     private List<InterviewDetails> interviewDetails = new ArrayList<>();
+
+    @Transient
+    List<CandidateScreeningQuestionResponse> candidateScreeningQuestionResponses;
 
     public InterviewDetails getCurrentInterviewDetail(){
         if(this.getInterviewDetails().size()>0)
