@@ -557,43 +557,6 @@ public class JobService implements IJobService {
         jcmListFromDb.stream().parallel().forEach(jcmId->{
             jcmAllDetailsMap.get(jcmId).setCandidateScreeningQuestionResponses(candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmId));
         });
-        //find all interview details for the jcms
-        List<InterviewDetails> interviewDetails = interviewDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
-        interviewDetails.stream().parallel().forEach(interviewDtls -> {
-            jcmAllDetailsMap.get(interviewDtls.getJobCandidateMappingId()).getInterviewDetails().add(interviewDtls);
-        });
-
-        //Find profile sharing details only in case of stage = submitted
-        List<JcmProfileSharingDetails> profileSharingForAllJcms = jcmProfileSharingDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
-
-        Map<Long, List<JcmProfileSharingDetails>> profileSharingGroupedByJcmId = profileSharingForAllJcms.stream().collect(Collectors.groupingBy(JcmProfileSharingDetails::getJobCandidateMappingId));
-
-        profileSharingGroupedByJcmId.keySet().stream().parallel().forEach(jcmId -> {
-            List<JcmProfileSharingDetails> jcmProfileSharingDetails = profileSharingGroupedByJcmId.get(jcmId);
-
-            if(null != jcmProfileSharingDetails && jcmProfileSharingDetails.size()>0) {
-                jcmAllDetailsMap.get(jcmId).setInterestedHiringManagers(
-                        jcmProfileSharingDetails
-                                .stream()
-                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() != null && jcmProfileSharingDetail.getHiringManagerInterest())
-                                .collect(Collectors.toList())
-                );
-
-                jcmAllDetailsMap.get(jcmId).setNotInterestedHiringManagers(
-                        jcmProfileSharingDetails
-                                .stream()
-                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() != null && !jcmProfileSharingDetail.getHiringManagerInterest())
-                                .collect(Collectors.toList())
-                );
-
-                jcmAllDetailsMap.get(jcmId).setNotRespondedHiringManagers(
-                        jcmProfileSharingDetails
-                                .stream()
-                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() == null)
-                                .collect(Collectors.toList())
-                );
-            }
-        });
 
         log.info("Found {} records.", responseBean.getJcmAllDetailsList().size());
         //set candidate count by stage to null as we don't need stage wise count here.
