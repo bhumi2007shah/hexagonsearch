@@ -143,6 +143,9 @@ public class JobService implements IJobService {
     @Autowired
     JcmExportQAResponseBeanRepository jcmExportQAResponseBeanRepository;
 
+    @Autowired
+    CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
+
     @PersistenceContext
     EntityManager em;
 
@@ -550,6 +553,10 @@ public class JobService implements IJobService {
         //List of JcmIds
         List<Long> jcmListFromDb = new ArrayList<>(jcmAllDetailsMap.keySet());
 
+        // add screening question responses to each jcm
+        jcmListFromDb.stream().parallel().forEach(jcmId->{
+            jcmAllDetailsMap.get(jcmId).setCandidateScreeningQuestionResponses(candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmId));
+        });
         //find all interview details for the jcms
         List<InterviewDetails> interviewDetails = interviewDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
         interviewDetails.stream().parallel().forEach(interviewDtls -> {
