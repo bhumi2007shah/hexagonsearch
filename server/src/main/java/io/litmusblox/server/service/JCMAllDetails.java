@@ -36,6 +36,7 @@ public class JCMAllDetails {
     String mobile;
     String country_code;
     Long stage;
+    String stage_name;
     Date created_on;
     String candidate_first_name;
     String candidate_last_name;

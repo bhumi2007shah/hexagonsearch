@@ -16,7 +16,7 @@ import java.util.List;
  * Project Name : server
  */
 @Data
-public class SearchEngineQueResponseBean {
+public class SearchEngineQuestionsResponseBean {
     private String questionText;
     private String questionType;
     private String[]  options;
