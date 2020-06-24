@@ -555,7 +555,7 @@ public class JobService implements IJobService {
 
         // add screening question responses to each jcm
         jcmListFromDb.stream().parallel().forEach(jcmId->{
-            jcmAllDetailsMap.get(jcmId).setCandidateScreeningQuestionResponses(candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmId));
+            jcmAllDetailsMap.get(jcmId).setScreeningQuestionResponses(candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmId));
         });
 
         log.info("Found {} records.", responseBean.getJcmAllDetailsList().size());
