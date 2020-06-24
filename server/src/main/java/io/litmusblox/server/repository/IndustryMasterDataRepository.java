@@ -17,4 +17,7 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface IndustryMasterDataRepository extends JpaRepository<IndustryMasterData, Long> {
+
+    IndustryMasterData findByIndustry(String industry);
+
 }
