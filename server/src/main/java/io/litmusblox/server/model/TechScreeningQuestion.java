@@ -65,6 +65,9 @@ public class TechScreeningQuestion implements Serializable {
     @Column(name = "ANSWER_SELECTION")
     private String answerSelection;
 
+    @Column(name = "QUESTION_TAG")
+    private String questionTag;
+
     public TechScreeningQuestion(
             String techQuestion,
             String[] options,
@@ -72,6 +75,7 @@ public class TechScreeningQuestion implements Serializable {
             String[] defaultAnswers,
             String scoringType,
             String answerSelection,
+            String questionTag,
             String multiLevelOptions,
             String questionCategory,
             Long jobId
@@ -82,6 +86,7 @@ public class TechScreeningQuestion implements Serializable {
         this.scoringType = scoringType;
         this.defaultAnswers = defaultAnswers;
         this.answerSelection = answerSelection;
+        this.questionTag = questionTag;
         this.multiLevelOptions = multiLevelOptions;
         this.questionCategory = questionCategory;
         this.jobId = jobId;

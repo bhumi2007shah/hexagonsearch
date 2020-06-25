@@ -1691,6 +1691,7 @@ public class JobService implements IJobService {
                         object.getDefaultAnswers().toArray(new String[object.getDefaultAnswers().size()]),
                         object.getScoringType(),
                         object.getAnswerSelection(),
+                        object.getQuestionTag(),
                         null,
                         entry.getKey(),
                         job.getId()

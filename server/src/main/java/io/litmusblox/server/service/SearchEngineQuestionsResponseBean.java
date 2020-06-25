@@ -23,4 +23,5 @@ public class SearchEngineQuestionsResponseBean {
     private List<String> defaultAnswers;
     private String scoringType;
     private String answerSelection;
+    private String questionTag;
 }

@@ -2461,9 +2461,12 @@ INSERT INTO CONFIGURATION_SETTINGS(CONFIG_NAME, CONFIG_VALUE) VALUES
 alter table screening_question
 add column scoring_type varchar(5),
 add column default_answers varchar(100)[],
-add column answer_selection varrchar(5);
+add column answer_selection varchar(5);
 
 alter table tech_screening_question
 add column scoring_type varchar(5),
 add column default_answers varchar(100)[],
-add column answer_selection varchar(5);
+add column answer_selection varchar(5),
+add column question_tag varchar (50);
+
+ALTER TABLE tech_screening_question ALTER COLUMN scoring_type TYPE varchar(7);
