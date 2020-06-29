@@ -67,10 +67,14 @@ public class NaukriHtmlParser implements HtmlParser {
     }
 
     private void populateCandidateCompanyDetails(Candidate candidate, Document doc) {
-        if(null != doc.getElementsContainingOwnText(candidate.getCandidateName()).first().parent().nextElementSibling().nextElementSibling().text()) {
-            String text = doc.getElementsContainingOwnText(candidate.getCandidateName()).first().parent().nextElementSibling().nextElementSibling().text();
-            if(text.contains("Not Mentioned")) {
+        if(null != doc.getElementsByAttributeValueContaining("src", "rating-icon.png").first().parent().parent().nextElementSibling().nextElementSibling().text()) {
+            String text = doc.getElementsByAttributeValueContaining("src", "rating-icon.png").first().parent().parent().nextElementSibling().nextElementSibling().text();
+            if( null !=text && !text.contains("Not Mentioned")) {
                 CandidateCompanyDetails companyDetails = CandidateCompanyDetails.builder().designation(text.substring(0, text.indexOf(" at "))).companyName(text.substring(text.indexOf(" at ") + 4)).build();
+                candidate.getCandidateCompanyDetails().add(companyDetails);
+            }
+            else{
+                CandidateCompanyDetails companyDetails = CandidateCompanyDetails.builder().designation(null).companyName("Not Mentioned").build();
                 candidate.getCandidateCompanyDetails().add(companyDetails);
             }
         }
@@ -152,7 +156,7 @@ public class NaukriHtmlParser implements HtmlParser {
 
         //set education
         String education = doc.getElementsContainingOwnText("Education").first().parent().getElementsContainingOwnText(" at ").text();
-        if (null != education) {
+        if (null != education && !education.isEmpty() && !education.isBlank()) {
             if(null == candidate.getCandidateEducationDetails())
                 candidate.setCandidateEducationDetails(new ArrayList<CandidateEducationDetails>());
             if(education.indexOf("at") == -1)
