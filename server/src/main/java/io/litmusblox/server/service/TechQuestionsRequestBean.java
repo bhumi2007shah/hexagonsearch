@@ -20,7 +20,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class TechQueRequestBean {
+public class TechQuestionsRequestBean {
     private Long companyId;
     private SelectedRole selectedRole;
     private Industry industry;

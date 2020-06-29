@@ -143,6 +143,9 @@ public class JobService implements IJobService {
     @Autowired
     JcmExportQAResponseBeanRepository jcmExportQAResponseBeanRepository;
 
+    @Autowired
+    CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
+
     @PersistenceContext
     EntityManager em;
 
@@ -346,9 +349,9 @@ public class JobService implements IJobService {
         long startTime = System.currentTimeMillis();
         companyList.stream().forEach(company -> {
             if (archived)
-                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByDatePublishedDesc(company));
+                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndDateArchivedIsNotNullOrderByDatePublishedDescCreatedOnDesc(company));
             else
-                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndStatusAndDateArchivedIsNullOrderByDatePublishedDesc(company, jobStatus));
+                responseBean.getListOfJobs().addAll(jobRepository.findByCompanyIdAndStatusAndDateArchivedIsNullOrderByDatePublishedDescCreatedOnDesc(company, jobStatus));
 
             List<Object[]> object = jobRepository.getJobCountPerStatusByCompanyId(company.getId());
             if(null != object.get(0)[0]){
@@ -550,42 +553,9 @@ public class JobService implements IJobService {
         //List of JcmIds
         List<Long> jcmListFromDb = new ArrayList<>(jcmAllDetailsMap.keySet());
 
-        //find all interview details for the jcms
-        List<InterviewDetails> interviewDetails = interviewDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
-        interviewDetails.stream().parallel().forEach(interviewDtls -> {
-            jcmAllDetailsMap.get(interviewDtls.getJobCandidateMappingId()).getInterviewDetails().add(interviewDtls);
-        });
-
-        //Find profile sharing details only in case of stage = submitted
-        List<JcmProfileSharingDetails> profileSharingForAllJcms = jcmProfileSharingDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
-
-        Map<Long, List<JcmProfileSharingDetails>> profileSharingGroupedByJcmId = profileSharingForAllJcms.stream().collect(Collectors.groupingBy(JcmProfileSharingDetails::getJobCandidateMappingId));
-
-        profileSharingGroupedByJcmId.keySet().stream().parallel().forEach(jcmId -> {
-            List<JcmProfileSharingDetails> jcmProfileSharingDetails = profileSharingGroupedByJcmId.get(jcmId);
-
-            if(null != jcmProfileSharingDetails && jcmProfileSharingDetails.size()>0) {
-                jcmAllDetailsMap.get(jcmId).setInterestedHiringManagers(
-                        jcmProfileSharingDetails
-                                .stream()
-                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() != null && jcmProfileSharingDetail.getHiringManagerInterest())
-                                .collect(Collectors.toList())
-                );
-
-                jcmAllDetailsMap.get(jcmId).setNotInterestedHiringManagers(
-                        jcmProfileSharingDetails
-                                .stream()
-                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() != null && !jcmProfileSharingDetail.getHiringManagerInterest())
-                                .collect(Collectors.toList())
-                );
-
-                jcmAllDetailsMap.get(jcmId).setNotRespondedHiringManagers(
-                        jcmProfileSharingDetails
-                                .stream()
-                                .filter(jcmProfileSharingDetail -> jcmProfileSharingDetail.getHiringManagerInterestDate() == null)
-                                .collect(Collectors.toList())
-                );
-            }
+        // add screening question responses to each jcm
+        jcmListFromDb.stream().parallel().forEach(jcmId->{
+            jcmAllDetailsMap.get(jcmId).setScreeningQuestionResponses(candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmId));
         });
 
         log.info("Found {} records.", responseBean.getJcmAllDetailsList().size());
@@ -1682,10 +1652,10 @@ public class JobService implements IJobService {
         Job oldJob = jobRepository.getOne(job.getId());
 
         //Create request for generate tech question API from search engine
-        TechQueRequestBean techQueRequestBean = new TechQueRequestBean();
-        TechQueRequestBean.SelectedRole selectedRole = new TechQueRequestBean.SelectedRole();
-        TechQueRequestBean.Function function = new TechQueRequestBean.Function();
-        TechQueRequestBean.Industry industry = new TechQueRequestBean.Industry();
+        TechQuestionsRequestBean techQueRequestBean = new TechQuestionsRequestBean();
+        TechQuestionsRequestBean.SelectedRole selectedRole = new TechQuestionsRequestBean.SelectedRole();
+        TechQuestionsRequestBean.Function function = new TechQuestionsRequestBean.Function();
+        TechQuestionsRequestBean.Industry industry = new TechQuestionsRequestBean.Industry();
         if(null != job.getUserSelectedRole())
             selectedRole.setRoleName(job.getUserSelectedRole());
         industry.setIndustryName(job.getJobIndustry().getIndustry());
@@ -1700,11 +1670,11 @@ public class JobService implements IJobService {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         long startTime = System.currentTimeMillis();
         String searchEngineResponse = null;
-        Map<String, List<SearchEngineQueResponseBean>> searchEngineResponseBean = new HashMap<>();
+        Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineResponseBean = new HashMap<>();
         log.info("Calling SearchEngine API to generate tech questions for job: {}", job.getId());
         try {
             searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, null, null, null).getResponseBody();
-            searchEngineResponseBean = mapper.readValue(searchEngineResponse, new TypeReference<Map<String, List<SearchEngineQueResponseBean>>>(){});
+            searchEngineResponseBean = mapper.readValue(searchEngineResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
             log.info("Search engine rest call response : {}", searchEngineResponse);
 
         }catch ( Exception e ) {
@@ -1712,9 +1682,20 @@ public class JobService implements IJobService {
         }
         log.info("Generate tech questions REST call completed in {}ms", System.currentTimeMillis()-startTime);
 
-        for (Map.Entry<String, List<SearchEngineQueResponseBean>> entry : searchEngineResponseBean.entrySet()) {
+        for (Map.Entry<String, List<SearchEngineQuestionsResponseBean>> entry : searchEngineResponseBean.entrySet()) {
             entry.getValue().forEach(object -> {
-                TechScreeningQuestion techScreeningQuestion = new TechScreeningQuestion(object.getQuestionText(),object.getOptions(), MasterDataBean.getInstance().getQuestionTypeMap().get(object.getQuestionType()), null, entry.getKey(), job.getId());
+                TechScreeningQuestion techScreeningQuestion = new TechScreeningQuestion(
+                        object.getQuestionText(),
+                        object.getOptions(),
+                        MasterDataBean.getInstance().getQuestionTypeMap().get(object.getQuestionType()),
+                        object.getDefaultAnswers().toArray(new String[object.getDefaultAnswers().size()]),
+                        object.getScoringType(),
+                        object.getAnswerSelection(),
+                        object.getQuestionTag(),
+                        null,
+                        entry.getKey(),
+                        job.getId()
+                );
                 techScreeningQuestionRepository.save(techScreeningQuestion);
             });
         }

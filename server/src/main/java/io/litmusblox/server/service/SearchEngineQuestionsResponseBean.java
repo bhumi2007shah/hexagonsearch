@@ -6,6 +6,8 @@ package io.litmusblox.server.service;
 
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * @author : oem
  * Date : 29/04/20
@@ -14,8 +16,12 @@ import lombok.Data;
  * Project Name : server
  */
 @Data
-public class SearchEngineQueResponseBean {
+public class SearchEngineQuestionsResponseBean {
     private String questionText;
     private String questionType;
     private String[]  options;
+    private List<String> defaultAnswers;
+    private String scoringType;
+    private String answerSelection;
+    private String questionTag;
 }
