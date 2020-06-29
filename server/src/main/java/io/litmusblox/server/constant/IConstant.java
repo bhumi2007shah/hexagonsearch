@@ -189,7 +189,7 @@ public interface IConstant {
                     put("CurrentDesignation",new ArrayList<String>(Arrays.asList("Curr. Company Designation","Current Designation")));
                     put("UGCourse",new ArrayList<String>(Arrays.asList("U.G. Course","Under Graduation degree")));
                     put("PGCourse",new ArrayList<String>(Arrays.asList("Post graduation degree","P. G. Course")));
-                    put("PPGCourse",new ArrayList<String>(Arrays.asList("Doctorate degree","P.P.G. Course")));
+                    put("PPGCourse",new ArrayList<String>(Arrays.asList("Doctorate degree","P.P.G. Course", "Post P. G. Course")));
                     put("LastActive",new ArrayList<String>(Arrays.asList("Time when Stage updated","Last Active Date")));
 
                 }

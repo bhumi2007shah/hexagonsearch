@@ -371,18 +371,24 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         List<Candidate> candidateList = null;
         switch (fileExtension) {
             case "csv":
-                candidateList = new CsvFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user);
+                switch (IConstant.UPLOAD_FORMATS_SUPPORTED.valueOf(fileSource)) {
+                    case LitmusBlox:
+                        candidateList = new CsvFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user, IConstant.UPLOAD_FORMATS_SUPPORTED.LitmusBlox.name());
+                        break;
+                    case Naukri:
+                        candidateList = new CsvFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user, IConstant.UPLOAD_FORMATS_SUPPORTED.Naukri.name());
+                        break;
+                }
                 break;
             case "xls":
             case "xlsx":
                 switch (IConstant.UPLOAD_FORMATS_SUPPORTED.valueOf(fileSource)) {
                     case LitmusBlox:
-                        candidateList = new ExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user);
+                        candidateList = new ExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user, IConstant.UPLOAD_FORMATS_SUPPORTED.LitmusBlox.name());
                         break;
                     case Naukri:
                         log.info("Reached the naukri parser");
-                        candidateList = new NaukriExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user);
-
+                        candidateList = new NaukriExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user, IConstant.UPLOAD_FORMATS_SUPPORTED.Naukri.name());
                         break;
                 }
                 break;
