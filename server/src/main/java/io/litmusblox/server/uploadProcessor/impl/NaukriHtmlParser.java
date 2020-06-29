@@ -39,7 +39,8 @@ public class NaukriHtmlParser implements HtmlParser {
 
         Document doc = Jsoup.parse(htmlData);
         populateCandidateName(candidateFromNaukriEmail, doc);
-        populateMobileAndEmail(candidateFromNaukriEmail, doc.select("a"));
+        populateEmail(candidateFromNaukriEmail, doc.select("a"));
+        populateMobile(candidateFromNaukriEmail, doc);
 
         try {
             candidateFromNaukriEmail.setCandidateCompanyDetails(new ArrayList<CandidateCompanyDetails>(1));
@@ -48,7 +49,7 @@ public class NaukriHtmlParser implements HtmlParser {
             log.info(Util.getStackTrace(e));
         }
         try {
-            populateCandidateCompanyDetails(candidateFromNaukriEmail, doc.getElementsContainingOwnText(" at ").text());
+            populateCandidateCompanyDetails(candidateFromNaukriEmail, doc);
         } catch (Exception e) {
             log.error("Error when populating candidate company details {}", e.getMessage());
             log.info(Util.getStackTrace(e));
@@ -65,27 +66,25 @@ public class NaukriHtmlParser implements HtmlParser {
         return candidateFromNaukriEmail;
     }
 
-    private void populateCandidateCompanyDetails(Candidate candidate, String text) {
-        if(text.length() > 0 && text.indexOf(" at ") != -1) {
-            CandidateCompanyDetails companyDetails = CandidateCompanyDetails.builder().designation(text.substring(0, text.indexOf(" at "))).companyName(text.substring(text.indexOf(" at ") + 4)).build();
-            candidate.getCandidateCompanyDetails().add(companyDetails);
+    private void populateCandidateCompanyDetails(Candidate candidate, Document doc) {
+        if(null != doc.getElementsContainingOwnText(candidate.getCandidateName()).first().parent().nextElementSibling().nextElementSibling().text()) {
+            String text = doc.getElementsContainingOwnText(candidate.getCandidateName()).first().parent().nextElementSibling().nextElementSibling().text();
+            if(text.contains("Not Mentioned")) {
+                CandidateCompanyDetails companyDetails = CandidateCompanyDetails.builder().designation(text.substring(0, text.indexOf(" at "))).companyName(text.substring(text.indexOf(" at ") + 4)).build();
+                candidate.getCandidateCompanyDetails().add(companyDetails);
+            }
         }
     }
 
     private void populateCandidateName(Candidate candidate, Document doc) {
-        candidate.setCandidateName(doc.getElementsContainingOwnText(" has applied to your job").first().ownText().substring(0,doc.getElementsContainingOwnText(" has applied to your job").first().ownText().indexOf("has applied to your job")));
+        candidate.setCandidateName(doc.getElementsByAttributeValueContaining("src", "rating-icon.png").first().parent().text());
     }
 
-    private void populateMobileAndEmail(Candidate candidate, Elements links) {
-        final String[] mobile = new String[1];
+    private void populateEmail(Candidate candidate, Elements links) {
         final String[] email = new String[1];
         links.stream().forEach(link-> {
             if (null != link.attributes() && link.attributes().asList().size() > 0) {
-                if (link.attributes().asList().get(0).getValue().indexOf("tel:") > -1 && candidate.getMobile() == null) {
-                    mobile[0] = link.attributes().asList().get(0).getValue().substring(link.attributes().asList().get(0).getValue().indexOf("tel:") + 4);
-                    candidate.setMobile(mobile[0]);
-                    log.info("found mobile: {}", mobile[0]);
-                } else if (link.attributes().asList().get(0).getValue().indexOf("mailto:") > -1) {
+                if (link.attributes().asList().get(0).getValue().indexOf("mailto:") > -1) {
                     if (!"support@naukri.com".equals(link.attributes().asList().get(0).getValue().substring(link.attributes().asList().get(0).getValue().indexOf("mailto:") + 7))) {
                         email[0] = link.attributes().asList().get(0).getValue().substring(link.attributes().asList().get(0).getValue().indexOf("mailto:") + 7);
                         candidate.setEmail(email[0]);
@@ -96,24 +95,47 @@ public class NaukriHtmlParser implements HtmlParser {
         });
     }
 
+    private void populateMobile(Candidate candidate, Document doc){
+        String mobile = "";
+        if(null != doc.getElementsByAttributeValueContaining("src", "call-1-icon1.png")){
+            mobile = doc.getElementsByAttributeValueContaining("src", "call-1-icon1.png").first().parent().text();
+            log.info("found mobile {}", mobile);
+            candidate.setMobile(mobile);
+        }
+    }
+
     private void populateCandidateDetails(Candidate candidate, Document doc) {
-        String experienceAndCtc = doc.getElementsMatchingOwnText("Total Experience").parents().tagName("tbody").get(1).text().replaceAll("Total Experience CTC ","").replaceAll("&", "");
+        String experience = doc.getElementsByAttributeValueContaining("src", "exp-icon1.png").first().parent().text();
 
-        if(experienceAndCtc.indexOf("Not Mentioned") == -1 && experienceAndCtc.indexOf("Fresher") == -1) {
+        if(experience.indexOf("Not Mentioned") == -1 && experience.indexOf("Fresher") == -1) {
             //set experience
-            String experience = experienceAndCtc.substring(0, experienceAndCtc.indexOf("Months"));
-            String years = experience.substring(0, experienceAndCtc.indexOf("Years")).trim();
-            String months = experience.substring(experienceAndCtc.indexOf("Years") + 5).trim();
-            candidate.setCandidateDetails(CandidateDetails.builder().totalExperience(Double.parseDouble(years + "." + months)).build());
+            String years = null;
+            String months = null;
+            if(experience.contains("&")) {
+                years = experience.substring(0, experience.indexOf("Years &")).trim();
+                months = experience.substring(experience.indexOf("Years &") + 7, experience.indexOf("Months")).trim();
+                candidate.setCandidateDetails(CandidateDetails.builder().totalExperience(Double.parseDouble(years + "." + months)).build());
+            }
+            else{
+                years = experience.substring(0, experience.indexOf("Year"));
+                candidate.setCandidateDetails(CandidateDetails.builder().totalExperience(Double.parseDouble(years)).build());
+            }
 
+        }
+
+        String ctc = doc.getElementsByAttributeValueContaining("src", "pckg-icon1.png").first().parent().text();
+        if(null!=ctc){
             //set ctc
             if (candidate.getCandidateCompanyDetails().size() == 0)
-                candidate.getCandidateCompanyDetails().add(CandidateCompanyDetails.builder().salary(experienceAndCtc.substring(experienceAndCtc.indexOf("Months") + 6).trim()).build());
+                candidate.getCandidateCompanyDetails().add(CandidateCompanyDetails.builder().salary(ctc.trim()).build());
             else
-                candidate.getCandidateCompanyDetails().get(0).setSalary(experienceAndCtc.substring(experienceAndCtc.indexOf("Months") + 6).trim());
+                candidate.getCandidateCompanyDetails().get(0).setSalary(ctc.trim());
         }
-        log.info("Set experience");
-        //set noticePeriod
+
+        log.info("Set experience and ctc");
+
+        //set noticePeriod, code commented as new html of naukri doesn't have notice period
+        /*
         String noticePeriod = doc.getElementsMatchingOwnText("Notice Period").last().parents().tagName("tbody").get(1).text().replaceAll("Notice Period","").trim();
         if (candidate.getCandidateCompanyDetails().size() == 0)
             candidate.getCandidateCompanyDetails().add(new CandidateCompanyDetails());
@@ -126,37 +148,32 @@ public class NaukriHtmlParser implements HtmlParser {
             candidate.getCandidateCompanyDetails().get(0).setNoticePeriod(String.valueOf(Integer.parseInt(noticePeriod.substring(0, noticePeriod.indexOf("Months")).trim()) * 30));
         else
             candidate.getCandidateCompanyDetails().get(0).setNoticePeriod(String.valueOf(Integer.parseInt(noticePeriod.substring(0, noticePeriod.indexOf("Days")).trim())));
+        */
 
         //set education
-        String education = doc.getElementsMatchingOwnText("UG").parents().tagName("tbody").get(1).text();
-        String pgEduction = education.substring(education.indexOf("PG") + 5);
-        if (null != pgEduction) {
+        String education = doc.getElementsContainingOwnText("Education").first().parent().getElementsContainingOwnText(" at ").text();
+        if (null != education) {
             if(null == candidate.getCandidateEducationDetails())
                 candidate.setCandidateEducationDetails(new ArrayList<CandidateEducationDetails>());
-            if (pgEduction.indexOf("from") != -1)
-                candidate.getCandidateEducationDetails().add(CandidateEducationDetails.builder().degree(pgEduction.substring(0, pgEduction.indexOf("from")).trim()).instituteName(pgEduction.substring(pgEduction.indexOf("from") + 4).trim()).build());
-        }
-        String ugEducation = education.substring(education.indexOf("UG") + 5, education.indexOf("PG"));
-        if (null != ugEducation) {
-            if(null == candidate.getCandidateEducationDetails())
-                candidate.setCandidateEducationDetails(new ArrayList<CandidateEducationDetails>());
-            if(ugEducation.indexOf("from") == -1)
-                candidate.getCandidateEducationDetails().add(CandidateEducationDetails.builder().degree(ugEducation).instituteName(ugEducation.substring(ugEducation.indexOf("from") + 4).trim()).build());
+            if(education.indexOf("at") == -1)
+                candidate.getCandidateEducationDetails().add(CandidateEducationDetails.builder().degree(education.substring(0, education.indexOf(" at"))).instituteName(null).build());
             else
-                candidate.getCandidateEducationDetails().add(CandidateEducationDetails.builder().degree(ugEducation.substring(0, ugEducation.indexOf("from")).trim()).instituteName(ugEducation.substring(ugEducation.indexOf("from") + 4).trim()).build());
+                candidate.getCandidateEducationDetails().add(CandidateEducationDetails.builder().degree(education.substring(0, education.indexOf("at")).trim()).instituteName(education.substring(education.indexOf("at") + 2).trim()).build());
         }
 
         //set location
-        String location = doc.getElementsMatchingOwnText("Location").first().parent().tagName("tr").nextElementSibling().nextElementSibling().text();
+        String location = doc.getElementsContainingOwnText("Location").next().next().text();
+                //doc.getElementsMatchingOwnText("Location").first().parent().tagName("tr").nextElementSibling().nextElementSibling().text();
                 //parents().tagName("tr").first().nextElementSibling().nextElementSibling().text();
 
         if(location.indexOf("(") !=-1) {
             if(null == candidate.getCandidateDetails())
-                candidate.setCandidateDetails(new CandidateDetails());                          candidate.getCandidateDetails().setLocation(location.substring(0, location.indexOf("(")).trim());
+                candidate.setCandidateDetails(new CandidateDetails());
+            candidate.getCandidateDetails().setLocation(location.substring(0, location.indexOf("(")).trim());
         }
 
         //set keyskill
-        String keyskills = doc.getElementsMatchingOwnText("Keyskills").parents().tagName("tr").first().nextElementSibling().nextElementSibling().text();
+        String keyskills = doc.getElementsMatchingOwnText("Keyskills").next().next().text();
         if (null != keyskills) {
             String[] allSkills = keyskills.split(",");
             List<CandidateSkillDetails> candidateSkillDetails = new ArrayList<>();
