@@ -474,7 +474,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             //#189: save the text format of CV if available
             if(responseBean.getSuccessfulCandidates().size() > 0) {
                 JobCandidateMapping jcm = jobCandidateMappingRepository.findByJobAndCandidate(getJob(jobId), responseBean.getSuccessfulCandidates().get(0));
-                cvParsingDetailsRepository.save(new CvParsingDetails(candidateCv.getOriginalFilename(), new Date(), candidate.getCandidateDetails().getTextCv(), responseBean.getSuccessfulCandidates().get(0).getId(),jcm));
+                cvParsingDetailsRepository.save(new CvParsingDetails(null!=candidateCv?candidateCv.getOriginalFilename():null, new Date(), candidate.getCandidateDetails().getTextCv(), responseBean.getSuccessfulCandidates().get(0).getId(),jcm));
             }
         }
         else {//null candidate object
