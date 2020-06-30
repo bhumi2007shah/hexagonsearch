@@ -535,9 +535,19 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void saveScreeningQuestionResponses(UUID uuid, Map<Long, List<String>> candidateResponse) throws Exception {
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
+        Map<String, String> breadCrumb = new HashMap<>();
+        breadCrumb.put("Chatbot uuid", uuid.toString());
+        breadCrumb.put("JcmId",objFromDb.getId().toString());
         JcmCommunicationDetails jcmCommunicationDetailsFromDb = jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId());
         if (null == objFromDb)
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        if(objFromDb.getJob().getJobScreeningQuestionsList().size() != candidateResponse.size()){
+            log.error("Job screening question count : {} and candidate screening question responses count : {} both are mismatch", objFromDb.getJob().getJobScreeningQuestionsList().size(), candidateResponse.size());
+            breadCrumb.put("Total job screening question's",String.valueOf(objFromDb.getJob().getJobScreeningQuestionsList().size()));
+            breadCrumb.put("Total candidate question responses",String.valueOf(candidateResponse.size()));
+            SentryUtil.logWithStaticAPI(null, "Job screening question count and candidate screening question responses count both are mismatched", breadCrumb);
+        }
 
         //delete existing response for chatbot for the jcm
         candidateScreeningQuestionResponseRepository.deleteByJobCandidateMappingId(objFromDb.getId());
