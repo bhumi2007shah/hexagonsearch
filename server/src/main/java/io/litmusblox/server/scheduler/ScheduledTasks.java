@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
  * Class Name : ScheduledTasks
  * Project Name : server
  */
-@Profile({"dev","testServer"})
+@Profile({"prod","testServer"})
 @Component
 @Log4j2
 public class ScheduledTasks {
@@ -40,7 +40,7 @@ public class ScheduledTasks {
     @Autowired
     IClientService clientService;
 
-    /*@Scheduled(fixedDelay = 300000, initialDelay = 5000)
+    @Scheduled(fixedDelay = 300000, initialDelay = 5000)
     public void parseAndProcessCv() {
         log.info("started parse and process cv. Thread: {}", Thread.currentThread().getId());
         processUploadedCV.processCv();
@@ -53,7 +53,7 @@ public class ScheduledTasks {
         processUploadedCV.rateCv();
         log.info("completed rate and process cv. Thread: {}", Thread.currentThread().getId());
     }
-*/
+
     @Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
     public void processEmailApplications() {
         log.info("started process email applications. Thread: {}", Thread.currentThread().getId());
@@ -61,7 +61,7 @@ public class ScheduledTasks {
         log.info("completed process email applications. Thread: {}", Thread.currentThread().getId());
     }
 
-    /*@Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
+    @Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
     public void inviteAutoSourcedCandidates() throws Exception {
         log.info("started inviting autosourced candidates. Thread: {}", Thread.currentThread().getId());
         jobCandidateMappingService.inviteAutoSourcedCandidate();
@@ -85,5 +85,5 @@ public class ScheduledTasks {
     @Scheduled(fixedDelay = 2*60*1000, initialDelay = 2000)
     public void pushClientEmployeeData(){
         clientService.pushEmployeesData();
-    }*/
+    }
 }
