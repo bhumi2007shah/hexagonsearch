@@ -22,4 +22,5 @@ import java.util.List;
 public interface FunctionMasterDataRepository extends JpaRepository<FunctionMasterData, Long> {
 
     List<FunctionMasterData> findByIndustry(IndustryMasterData industry);
+    FunctionMasterData findByFunctionAndIndustry(String function, IndustryMasterData industry);
 }

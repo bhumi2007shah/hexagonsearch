@@ -5,6 +5,7 @@
 package io.litmusblox.server.controller;
 
 import io.litmusblox.server.service.IMasterDataService;
+import io.litmusblox.server.service.impl.IndustryMasterDataRequestBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,5 +82,13 @@ public class MasterDataController {
         long startTime = System.currentTimeMillis();
         masterDataService.addMasterData(jsonData, masterDataType);
         log.info("Completed request to add master data type in " + (System.currentTimeMillis() - startTime) + "ms");
+    }
+    @PostMapping(value = "/addIndustryMasterData")
+    @ResponseStatus(value = HttpStatus.OK)
+    void addIndustryMasterData(@RequestBody List<IndustryMasterDataRequestBean> industryMasterDataRequestBeanList){
+        long startTime = System.currentTimeMillis();
+        log.info("inside addIndustryMasterData");
+        masterDataService.addIndustryMasterData(industryMasterDataRequestBeanList);
+        log.info("Industry added in {}ms", System.currentTimeMillis()-startTime);
     }
 }
