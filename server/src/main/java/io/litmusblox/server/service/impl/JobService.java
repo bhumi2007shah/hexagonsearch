@@ -700,7 +700,7 @@ public class JobService implements IJobService {
                 responseBean.getRolePrediction().getJtRoles().forEach(role -> {
                     roles.add(role.getRoleName());
                 });
-                job.setRoles(roles);
+                //job.setRoles(roles);
                 return;
             }else if((isNewAddJobFlow || IConstant.MlRolePredictionStatus.NO_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus()))
                     && !IConstant.MlRolePredictionStatus.SUFF_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus())){
@@ -845,6 +845,7 @@ public class JobService implements IJobService {
             oldJob.setHrQuestionAvailable(false);
         }
 
+        oldJob.setRole(job.getRole());
         jobRepository.save(oldJob);
         saveJobHistory(job.getId(), historyMsg + " screening questions", loggedInUser);
 
@@ -1605,10 +1606,10 @@ public class JobService implements IJobService {
                 throw new OperationNotSupportedException("Unknown page: " + pageName);
         }
 
-        List<String> roles = new ArrayList<>();
+        Map<Long, String> roles = new HashMap<>();
         oldJob.setFunction(MasterDataBean.getInstance().getFunction().get(oldJob.getFunction().getId()));
         oldJob.setJobIndustry(MasterDataBean.getInstance().getJobIndustry().get(oldJob.getJobIndustry().getId()));
-        roleMasterDataRepository.findByFunction(job.getFunction()).forEach(roleMasterData -> roles.add(roleMasterData.getRole()));
+        roleMasterDataRepository.findByFunction(job.getFunction()).forEach(roleMasterData -> roles.put(roleMasterData.getId(), roleMasterData.getRole()));
         job.setRoles(roles);
         log.info("Completed processing request to new add job flow in " + (System.currentTimeMillis() - startTime) + "ms");
         return job;
