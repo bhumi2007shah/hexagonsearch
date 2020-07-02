@@ -69,7 +69,7 @@ public class JCMAllDetails {
     private List<InterviewDetails> interviewDetails = new ArrayList<>();
 
     @Transient
-    List<CandidateScreeningQuestionResponse> candidateScreeningQuestionResponses;
+    List<CandidateScreeningQuestionResponse> screeningQuestionResponses;
 
     public InterviewDetails getCurrentInterviewDetail(){
         if(this.getInterviewDetails().size()>0)
