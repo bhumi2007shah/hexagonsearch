@@ -33,7 +33,7 @@ import java.util.Map;
 public class ExcelFileProcessorService implements IUploadFileProcessorService {
 
     @Override
-    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile,String repoLocation, User loggedInUser) {
+    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile,String repoLocation, User loggedInUser, String fileType) {
         log.info("Processing " + fileName);
         List<Candidate> candidateList = new ArrayList<>();
         try {

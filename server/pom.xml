@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>io.litmusblox</groupId>
 	<artifactId>server</artifactId>
-	<version>0.2.0-SNAPSHOT</version>
+	<version>0.2.1-SNAPSHOT</version>
 	<name>server</name>
 	<description>Backend implementation for LitmusBlox</description>
 
@@ -208,6 +208,13 @@
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>25.1-jre</version>
+		</dependency>
+
+		<!-- For -->
+		<dependency>
+			<groupId>com.opencsv</groupId>
+			<artifactId>opencsv</artifactId>
+			<version>3.8</version>
 		</dependency>
 	</dependencies>
 

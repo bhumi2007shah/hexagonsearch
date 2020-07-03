@@ -241,7 +241,7 @@ public class Job implements Serializable {
     private Map<String,Integer> candidateCountByStage = new HashMap<>();
 
     @Transient
-    private List<String> roles ;
+    private Map<Long,String> roles = new HashMap<>();
 
     @Transient
     private List<String> selectedRole;

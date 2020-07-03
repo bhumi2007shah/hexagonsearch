@@ -371,18 +371,24 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         List<Candidate> candidateList = null;
         switch (fileExtension) {
             case "csv":
-                candidateList = new CsvFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user);
+                switch (IConstant.UPLOAD_FORMATS_SUPPORTED.valueOf(fileSource)) {
+                    case LitmusBlox:
+                        candidateList = new CsvFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user, IConstant.UPLOAD_FORMATS_SUPPORTED.LitmusBlox.name());
+                        break;
+                    case Naukri:
+                        candidateList = new CsvFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user, IConstant.UPLOAD_FORMATS_SUPPORTED.Naukri.name());
+                        break;
+                }
                 break;
             case "xls":
             case "xlsx":
                 switch (IConstant.UPLOAD_FORMATS_SUPPORTED.valueOf(fileSource)) {
                     case LitmusBlox:
-                        candidateList = new ExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user);
+                        candidateList = new ExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user, IConstant.UPLOAD_FORMATS_SUPPORTED.LitmusBlox.name());
                         break;
                     case Naukri:
                         log.info("Reached the naukri parser");
-                        candidateList = new NaukriExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user);
-
+                        candidateList = new NaukriExcelFileProcessorService().process(fileName, responseBean, !IConstant.STR_INDIA.equalsIgnoreCase(user.getCountryId().getCountryName()), repoLocation, user, IConstant.UPLOAD_FORMATS_SUPPORTED.Naukri.name());
                         break;
                 }
                 break;
@@ -535,9 +541,19 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void saveScreeningQuestionResponses(UUID uuid, Map<Long, List<String>> candidateResponse) throws Exception {
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
+        Map<String, String> breadCrumb = new HashMap<>();
+        breadCrumb.put("Chatbot uuid", uuid.toString());
+        breadCrumb.put("JcmId",objFromDb.getId().toString());
         JcmCommunicationDetails jcmCommunicationDetailsFromDb = jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId());
         if (null == objFromDb)
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        if(objFromDb.getJob().getJobScreeningQuestionsList().size() != candidateResponse.size()){
+            log.error("Job screening question count : {} and candidate screening question responses count : {} both are mismatch", objFromDb.getJob().getJobScreeningQuestionsList().size(), candidateResponse.size());
+            breadCrumb.put("Total job screening question's",String.valueOf(objFromDb.getJob().getJobScreeningQuestionsList().size()));
+            breadCrumb.put("Total candidate question responses",String.valueOf(candidateResponse.size()));
+            SentryUtil.logWithStaticAPI(null, "Job screening question count and candidate screening question responses count both are mismatched", breadCrumb);
+        }
 
         //delete existing response for chatbot for the jcm
         candidateScreeningQuestionResponseRepository.deleteByJobCandidateMappingId(objFromDb.getId());
