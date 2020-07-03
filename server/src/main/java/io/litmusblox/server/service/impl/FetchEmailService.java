@@ -125,9 +125,19 @@ public class FetchEmailService {
                                         mailData.getCandidateFromMail().setCandidateDetails(new CandidateDetails());
                                     mailData.getCandidateFromMail().getCandidateDetails().setCvFileType("." + Util.getFileExtension(mailData.getFileName()));
                                 }
-                                UploadResponseBean response = jobCandidateMappingService.uploadCandidateFromPlugin(mailData.getCandidateFromMail(), mailData.getJobFromReference().getId(), null, Optional.of(mailData.getJobFromReference().getCreatedBy()));
-                                if (null != mailData.getFileName())
-                                    saveCandidateCv(mailData, response.getStatus(), mailData.getJobFromReference());
+                                if(
+                                        null != mailData.getCandidateFromMail().getCandidateName() &&
+                                                null != mailData.getCandidateFromMail().getEmail() &&
+                                                null != mailData.getCandidateFromMail().getMobile()
+
+                                ) {
+                                    UploadResponseBean response = jobCandidateMappingService.uploadCandidateFromPlugin(mailData.getCandidateFromMail(), mailData.getJobFromReference().getId(), null, Optional.of(mailData.getJobFromReference().getCreatedBy()));
+                                    if (null != mailData.getFileName())
+                                        saveCandidateCv(mailData, response.getStatus(), mailData.getJobFromReference());
+                                }else if(null != mailData.getFileName()) {
+                                    saveCandidateCv(mailData, IConstant.UPLOAD_STATUS.Failure.name(), mailData.getJobFromReference());
+                                }
+
                             }
                         }
                     }
@@ -163,7 +173,7 @@ public class FetchEmailService {
        log.info("Inside saveCandidateCv");
         StringBuffer fileLocation = new StringBuffer("");
 
-        if(null != mailData.getCandidateFromMail() || IConstant.UPLOAD_STATUS.Success.name().equals(candidateUploadStatus)){
+        if(IConstant.UPLOAD_STATUS.Success.name().equals(candidateUploadStatus)){
             fileLocation.append(environment.getProperty(IConstant.REPO_LOCATION)).append(IConstant.CANDIDATE_CV).append(File.separator).append(mailData.getJobFromReference().getId());
             createFileFolder(fileLocation);
             fileLocation.append(File.separator).append(mailData.getCandidateFromMail().getId()).append(".").append(Util.getFileExtension(mailData.getFileName()));
