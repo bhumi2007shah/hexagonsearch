@@ -128,6 +128,9 @@ public class Company implements Serializable {
     @Column(name = "COMPANY_UNIQUE_ID")
     private String companyUniqueId;
 
+    @Column(name = "send_communication")
+    private String sendCommunication;
+
     @Transient
     private Set<String> newCompanyBu;
 

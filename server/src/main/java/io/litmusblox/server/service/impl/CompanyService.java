@@ -605,6 +605,7 @@ public class CompanyService implements ICompanyService {
         company.setCreatedOn(new Date());
         company.setCreatedBy(loggedInUser.getId());
         company.setCountryId(recruitmentAgency.getCountryId());
+        company.setSendCommunication(recruitmentAgency.getSendCommunication());
         company = truncateField(company);
         Company newCompany = companyRepository.save(company);
         return newCompany;
