@@ -70,6 +70,7 @@ public interface IConstant {
     String CANDIDATE_CV = "CandidateCv";
     String MASS_MAIL = "MassMail";
     String JOB_POSTING = "JobPosting";
+    String GENERIC_EMAIL= "GenericEmail";
     String DRAG_AND_DROP = "DragAndDrop";
     String SENTRY_DSN = "sentryDSN";
     String UPLOAD_FILE_TYPE = "Upload file type";
@@ -79,7 +80,7 @@ public interface IConstant {
 
 
     enum UserStatus {
-        New, Active, Blocked, Inactive;
+        New, Active, Blocked, Inactive
     }
 
     enum UserRole {
@@ -141,7 +142,7 @@ public interface IConstant {
     }
 
     enum CandidateSource {
-        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriMassMail("NaukriMassMail"), NaukriJobPosting("NaukriJobPosting"), EmployeeReferral("EmployeeReferral"), CareerPage("CareerPage"), JobPosting("JobPosting");
+        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriMassMail("NaukriMassMail"), NaukriJobPosting("NaukriJobPosting"), EmployeeReferral("EmployeeReferral"), CareerPage("CareerPage"), JobPosting("JobPosting"), GenericEmail("GenericEmail");
         private String value;
 
         CandidateSource(String val) {
@@ -153,7 +154,7 @@ public interface IConstant {
         }
     }
 
-    List AUTOSOURCED_TYPE = Arrays.asList(CandidateSource.NaukriMassMail.getValue(), CandidateSource.NaukriJobPosting.getValue(),CandidateSource.CareerPage.getValue(), CandidateSource.EmployeeReferral.getValue());
+    List AUTOSOURCED_TYPE = Arrays.asList(CandidateSource.NaukriMassMail.getValue(), CandidateSource.NaukriJobPosting.getValue(),CandidateSource.CareerPage.getValue(), CandidateSource.EmployeeReferral.getValue(), CandidateSource.GenericEmail.getValue());
 
     enum LITMUSBLOX_FILE_COLUMNS {
         FirstName("First Name"), LastName("Last Name"), Email("Email"), Mobile("Mobile");

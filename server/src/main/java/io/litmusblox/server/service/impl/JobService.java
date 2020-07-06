@@ -14,6 +14,7 @@ import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
+import io.litmusblox.server.requestbean.ExpectedAnswerRequestBean;
 import io.litmusblox.server.responsebean.export.JcmExportResponseBean;
 import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.ml.RolePredictionBean;
@@ -1711,21 +1712,21 @@ public class JobService implements IJobService {
 
     /**
      * Method to save expected answer for a job
-     * @param requestedJob which has expected answer and jobId
+     * @param expectedAnswerRequestBean which has expected answer and jobId
      */
-    public void saveExpectedAnswer(Job requestedJob){
-        Job jobFromDb = jobRepository.getOne(requestedJob.getId());
+    public void saveExpectedAnswer(ExpectedAnswerRequestBean expectedAnswerRequestBean){
+        Job jobFromDb = jobRepository.getOne(expectedAnswerRequestBean.getId());
 
         if(null==jobFromDb){
-            throw new WebException("Job not available id="+requestedJob.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new WebException("Job not available id="+expectedAnswerRequestBean.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         else{
             if(!IConstant.JobStatus.PUBLISHED.getValue().equals(jobFromDb.getStatus())){
-                throw new WebException("Job is not live id="+requestedJob.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
+                throw new WebException("Job is not live id="+expectedAnswerRequestBean.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
             }
         }
-
-        jobFromDb.setExpectedAnswer(requestedJob.getExpectedAnswer());
+        Map<Object, Object> expectedAswerMap = new ObjectMapper().convertValue(expectedAnswerRequestBean, Map.class);
+        jobFromDb.setExpectedAnswer(expectedAswerMap);
 
         jobRepository.save(jobFromDb);
     }

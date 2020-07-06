@@ -183,6 +183,11 @@ public class FetchEmailService {
             createFileFolder(fileLocation);
             fileLocation.append(File.separator).append(job.getCreatedBy().getId()).append("_").append(job.getId()).append("_").append(mailData.getFileName());
         }
+        else if(IConstant.CandidateSource.GenericEmail.getValue().equals(mailData.getCandidateSource())){
+            fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.GENERIC_EMAIL);
+            createFileFolder(fileLocation);
+            fileLocation.append(File.separator).append(job.getCreatedBy().getId()).append("_").append(job.getId()).append("_").append(mailData.getFileName());
+        }
         else{
             fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.JOB_POSTING);
             createFileFolder(fileLocation);

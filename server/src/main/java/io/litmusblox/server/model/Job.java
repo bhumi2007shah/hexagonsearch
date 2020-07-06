@@ -222,7 +222,7 @@ public class Job implements Serializable {
 
     @Type(type="hstore")
     @Column(name = "EXPECTED_ANSWER", columnDefinition = "hstore")
-    private Map<Long, String> expectedAnswer;
+    private Map<Object, Object> expectedAnswer;
 
     @Transient
     @JsonInclude

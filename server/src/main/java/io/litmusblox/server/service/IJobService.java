@@ -8,6 +8,7 @@ import io.litmusblox.server.model.AsyncOperationsErrorRecords;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobHistory;
 import io.litmusblox.server.model.TechScreeningQuestion;
+import io.litmusblox.server.requestbean.ExpectedAnswerRequestBean;
 import io.litmusblox.server.service.impl.SearchRequestBean;
 
 import java.util.List;
@@ -184,7 +185,7 @@ public interface IJobService {
 
     /**
      * method to save expected answer for a job
-     * @param requestedJob which has expected answer and jobId
+     * @param expectedAnswerRequestBean which has expected answer and jobId
      */
-    void saveExpectedAnswer(Job requestedJob);
+    void saveExpectedAnswer(ExpectedAnswerRequestBean expectedAnswerRequestBean);
 }

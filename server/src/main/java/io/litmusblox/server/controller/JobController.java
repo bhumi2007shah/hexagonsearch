@@ -11,6 +11,7 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.TechScreeningQuestion;
 import io.litmusblox.server.model.User;
+import io.litmusblox.server.requestbean.ExpectedAnswerRequestBean;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
 import io.litmusblox.server.utils.Util;
@@ -376,17 +377,17 @@ public class JobController {
     /**
      * API endpoint to save expected answer for a job
      *
-     * @param requestJob requested job which has expected answer and jobId
+     * @param expectedAnswerRequestBean requested job which has expected answer and jobId
      * @throws Exception
      */
     @PostMapping(value = "/saveExpectedAnswer")
     @ResponseStatus(HttpStatus.OK)
-    void saveExpectedAnswer(@RequestBody Job requestJob) throws Exception{
+    void saveExpectedAnswer(@RequestBody ExpectedAnswerRequestBean expectedAnswerRequestBean) throws Exception{
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        log.info("Received request to save expected answer for job={} by user={}", requestJob.getId(), loggedInUser.getId());
+        log.info("Received request to save expected answer for job={} by user={}", expectedAnswerRequestBean.getId(), loggedInUser.getId());
         long startTime = System.currentTimeMillis();
         jobService.
-                saveExpectedAnswer(requestJob);
+                saveExpectedAnswer(expectedAnswerRequestBean);
         log.info("Saved expected answer in {}ms", System.currentTimeMillis()-startTime);
     }
 
