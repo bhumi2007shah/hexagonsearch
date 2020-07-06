@@ -129,7 +129,7 @@ public class Company implements Serializable {
     private String companyUniqueId;
 
     @Column(name = "send_communication")
-    private String sendCommunication;
+    private boolean sendCommunication = true;
 
     @Transient
     private Set<String> newCompanyBu;
