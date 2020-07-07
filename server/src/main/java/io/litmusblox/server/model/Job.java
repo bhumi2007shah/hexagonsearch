@@ -8,7 +8,9 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.vladmihalcea.hibernate.type.array.IntArrayType;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.service.MasterDataBean;
@@ -44,7 +46,7 @@ import java.util.*;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeDefs({@TypeDef(name = "int-array",typeClass = IntArrayType.class)})
+@TypeDefs({@TypeDef(name = "int-array",typeClass = IntArrayType.class), @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)})
 public class Job implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
@@ -220,9 +222,9 @@ public class Job implements Serializable {
     @Column(name = "VISIBLE_TO_CAREER_PAGE")
     private boolean visibleToCareerPage;
 
-    @Type(type="hstore")
-    @Column(name = "EXPECTED_ANSWER", columnDefinition = "hstore")
-    private Map<Object, Object> expectedAnswer;
+    @Type(type="jsonb")
+    @Column(name = "EXPECTED_ANSWER", columnDefinition = "jsonb")
+    private JsonNode expectedAnswer;
 
     @Transient
     @JsonInclude
@@ -265,6 +267,9 @@ public class Job implements Serializable {
 
     @Transient
     private String experienceRange;
+
+    @Transient
+    private Boolean hasCompletedCandidate;
 
     //Remove minExperience, maxExperience, experienceRange because add masterdata for experience
     //Also add jobdetail model in job

@@ -14,7 +14,6 @@ import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
-import io.litmusblox.server.requestbean.ExpectedAnswerRequestBean;
 import io.litmusblox.server.responsebean.export.JcmExportResponseBean;
 import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.ml.RolePredictionBean;
@@ -1274,6 +1273,7 @@ public class JobService implements IJobService {
         if (null == job) {
             throw new WebException("Job with id " + jobId + " does not exist", HttpStatus.UNPROCESSABLE_ENTITY);
         }
+        job.setHasCompletedCandidate(jobCandidateMappingRepository.countByJobIdAndStatus(job.getId(), IConstant.ChatbotStatus.COMPLETE.getValue())>0);
         return job;
     }
 
@@ -1712,21 +1712,20 @@ public class JobService implements IJobService {
 
     /**
      * Method to save expected answer for a job
-     * @param expectedAnswerRequestBean which has expected answer and jobId
+     * @param requestJob which has expected answer and jobId
      */
-    public void saveExpectedAnswer(ExpectedAnswerRequestBean expectedAnswerRequestBean){
-        Job jobFromDb = jobRepository.getOne(expectedAnswerRequestBean.getId());
+    public void saveExpectedAnswer(Job requestJob){
+        Job jobFromDb = jobRepository.getOne(requestJob.getId());
 
         if(null==jobFromDb){
-            throw new WebException("Job not available id="+expectedAnswerRequestBean.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new WebException("Job not available id="+requestJob.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         else{
             if(!IConstant.JobStatus.PUBLISHED.getValue().equals(jobFromDb.getStatus())){
-                throw new WebException("Job is not live id="+expectedAnswerRequestBean.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
+                throw new WebException("Job is not live id="+requestJob.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
             }
         }
-        Map<Object, Object> expectedAswerMap = new ObjectMapper().convertValue(expectedAnswerRequestBean, Map.class);
-        jobFromDb.setExpectedAnswer(expectedAswerMap);
+        jobFromDb.setExpectedAnswer(requestJob.getExpectedAnswer());
 
         jobRepository.save(jobFromDb);
     }

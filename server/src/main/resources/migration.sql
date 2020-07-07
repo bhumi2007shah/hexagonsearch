@@ -2475,3 +2475,6 @@ ALTER TABLE screening_question ALTER COLUMN scoring_type TYPE varchar(7);
 INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
 ('Data Specialist Azure', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
 ('Data Specialist ETL Spark', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT')));
+
+ALTER TABLE job DROP COLUMN expected_answer;
+ALTER TABLE job ADD COLUMN expected_answer json;
