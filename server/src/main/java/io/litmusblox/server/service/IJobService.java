@@ -184,7 +184,7 @@ public interface IJobService {
 
     /**
      * method to save expected answer for a job
-     * @param requestedJob which has expected answer and jobId
+     * @param requestJob which has expected answer and jobId
      */
-    void saveExpectedAnswer(Job requestedJob);
+    void saveExpectedAnswer(Job requestJob);
 }

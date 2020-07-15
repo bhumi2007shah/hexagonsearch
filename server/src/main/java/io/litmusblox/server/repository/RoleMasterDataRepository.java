@@ -22,4 +22,5 @@ import java.util.List;
 public interface RoleMasterDataRepository extends JpaRepository<RoleMasterData, Long> {
 
     List<RoleMasterData> findByFunction(FunctionMasterData function);
+    RoleMasterData findByRoleAndFunction(String role, FunctionMasterData function);
 }

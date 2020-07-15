@@ -40,4 +40,5 @@ public class CandidateSourceAnalyticsBean {
     Integer employeeReferral = 0;
     Integer careerPage = 0;
     Integer jobPosting = 0  ;
+    Integer genericEmail = 0;
 }

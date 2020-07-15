@@ -70,6 +70,7 @@ public interface IConstant {
     String CANDIDATE_CV = "CandidateCv";
     String MASS_MAIL = "MassMail";
     String JOB_POSTING = "JobPosting";
+    String GENERIC_EMAIL= "GenericEmail";
     String DRAG_AND_DROP = "DragAndDrop";
     String SENTRY_DSN = "sentryDSN";
     String UPLOAD_FILE_TYPE = "Upload file type";
@@ -79,7 +80,7 @@ public interface IConstant {
 
 
     enum UserStatus {
-        New, Active, Blocked, Inactive;
+        New, Active, Blocked, Inactive
     }
 
     enum UserRole {
@@ -141,7 +142,7 @@ public interface IConstant {
     }
 
     enum CandidateSource {
-        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriMassMail("NaukriMassMail"), NaukriJobPosting("NaukriJobPosting"), EmployeeReferral("EmployeeReferral"), CareerPage("CareerPage"), JobPosting("JobPosting");
+        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriMassMail("NaukriMassMail"), NaukriJobPosting("NaukriJobPosting"), EmployeeReferral("EmployeeReferral"), CareerPage("CareerPage"), JobPosting("JobPosting"), GenericEmail("GenericEmail");
         private String value;
 
         CandidateSource(String val) {
@@ -153,7 +154,7 @@ public interface IConstant {
         }
     }
 
-    List AUTOSOURCED_TYPE = Arrays.asList(CandidateSource.NaukriMassMail.getValue(), CandidateSource.NaukriJobPosting.getValue(),CandidateSource.CareerPage.getValue(), CandidateSource.EmployeeReferral.getValue());
+    List AUTOSOURCED_TYPE = Arrays.asList(CandidateSource.NaukriMassMail.getValue(), CandidateSource.NaukriJobPosting.getValue(),CandidateSource.CareerPage.getValue(), CandidateSource.EmployeeReferral.getValue(), CandidateSource.GenericEmail.getValue());
 
     enum LITMUSBLOX_FILE_COLUMNS {
         FirstName("First Name"), LastName("Last Name"), Email("Email"), Mobile("Mobile");
@@ -179,17 +180,17 @@ public interface IConstant {
                     put("DOB",new ArrayList<String>(Arrays.asList("Date of Birth")));
                     put("AnnualSalary",new ArrayList<String>(Arrays.asList("Annual Salary")));
 
-                    put("CandidateName",new ArrayList<String>(Arrays.asList("Name of the Candidate", "Name")));
-                    put("Mobile",new ArrayList<String>(Arrays.asList("Mobile No.", "Phone Number")));
+                    put("CandidateName",new ArrayList<String>(Arrays.asList("Name of the Candidate", "Name", "Candidate Name")));
+                    put("Mobile",new ArrayList<String>(Arrays.asList("Mobile No.", "Phone Number", "Contact No.")));
                     put("Email",new ArrayList<String>(Arrays.asList("Email","Email ID")));
-                    put("WorkExperience",new ArrayList<String>(Arrays.asList("Work Experience", "Total Experience")));
+                    put("WorkExperience",new ArrayList<String>(Arrays.asList("Work Experience", "Total Experience", "Work Exp")));
                     put("CurrentLocation",new ArrayList<String>(Arrays.asList("Current Location")));
                     put("PreferredLocation",new ArrayList<String>(Arrays.asList("Preferred Location","Preferred Locations")));
                     put("CurrentEmployer",new ArrayList<String>(Arrays.asList("Curr. Company name","Current Employer")));
-                    put("CurrentDesignation",new ArrayList<String>(Arrays.asList("Curr. Company Designation","Current Designation")));
+                    put("CurrentDesignation",new ArrayList<String>(Arrays.asList("Curr. Company Designation","Current Designation", "Designation")));
                     put("UGCourse",new ArrayList<String>(Arrays.asList("U.G. Course","Under Graduation degree")));
                     put("PGCourse",new ArrayList<String>(Arrays.asList("Post graduation degree","P. G. Course")));
-                    put("PPGCourse",new ArrayList<String>(Arrays.asList("Doctorate degree","P.P.G. Course")));
+                    put("PPGCourse",new ArrayList<String>(Arrays.asList("Doctorate degree","P.P.G. Course", "Post P. G. Course")));
                     put("LastActive",new ArrayList<String>(Arrays.asList("Time when Stage updated","Last Active Date")));
 
                 }
