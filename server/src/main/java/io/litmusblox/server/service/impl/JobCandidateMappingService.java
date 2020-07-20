@@ -231,7 +231,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             try {
                 if(null!=candidate.getId())
                     saveCandidateSupportiveInfo(candidate, loggedInUser);
-                    //candidateService.createCandidateOnSearchEngine(candidate, job);
+                    candidateService.createCandidateOnSearchEngine(candidate, job);
             }catch (Exception ex){
                 log.error("Error while processing candidates supportive info :: " + ex.getMessage());
             }
@@ -1262,6 +1262,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                     }
                 }
                 log.info("Edit candidate info successfully");
+
+                //calling search engine addUpdate api to update candidate data.
+                candidateService.createCandidateOnSearchEngine(jcmFromDb.getCandidate(), jcmFromDb.getJob());
             }
         }
     }

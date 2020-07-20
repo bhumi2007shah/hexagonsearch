@@ -83,7 +83,7 @@ public class CustomQueryExecutor {
             "sum((candidate_source like 'NaukriJobPosting')\\:\\:INT) as naukri_job_posting,\n" +
             "sum((candidate_source like 'EmployeeReferral')\\:\\:INT) as employee_referral,\n" +
             "sum((candidate_source like 'CareerPage')\\:\\:INT) as career_page,\n" +
-            "sum((candidate_source like 'JobPosting')\\:\\:INT) as job_posting\n" +
+            "sum((candidate_source like 'JobPosting')\\:\\:INT) as job_posting,\n" +
             "sum((candidate_source like 'GenericEmail')\\:\\:INT) as generic_email\n" +
             "from job_candidate_mapping where job_id = ";
 
