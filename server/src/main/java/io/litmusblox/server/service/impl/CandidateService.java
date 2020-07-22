@@ -374,7 +374,7 @@ public class CandidateService implements ICandidateService {
      * Method to call search engine to add a candidate.
      * @param candidate
      */
-    public void createCandidateOnSearchEngine(Candidate candidate , Job job) {
+    public void createCandidateOnSearchEngine(Candidate candidate , Job job, String authToken) {
         log.info("inside create candidate on search engine.");
         long startTime = System.currentTimeMillis();
         // creating candidateRequestBean to be sent to Search Engine
@@ -429,7 +429,7 @@ public class CandidateService implements ICandidateService {
 
         log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), job.getId());
         try {
-            RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, null, null, null);
+            RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null);
         }
         catch ( JsonProcessingException e ){
             log.error("Failed while converting candidateRequestBean to String. " + e.getMessage());

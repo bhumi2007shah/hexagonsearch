@@ -11,6 +11,7 @@ import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
+import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.*;
 import io.litmusblox.server.uploadProcessor.CsvFileProcessorService;
 import io.litmusblox.server.uploadProcessor.ExcelFileProcessorService;
@@ -231,7 +232,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             try {
                 if(null!=candidate.getId())
                     saveCandidateSupportiveInfo(candidate, loggedInUser);
-                    candidateService.createCandidateOnSearchEngine(candidate, job);
+                    candidateService.createCandidateOnSearchEngine(candidate, job, JwtTokenUtil.getAuthToken());
             }catch (Exception ex){
                 log.error("Error while processing candidates supportive info :: " + ex.getMessage());
             }
@@ -1264,7 +1265,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 log.info("Edit candidate info successfully");
 
                 //calling search engine addUpdate api to update candidate data.
-                candidateService.createCandidateOnSearchEngine(jcmFromDb.getCandidate(), jcmFromDb.getJob());
+                candidateService.createCandidateOnSearchEngine(jcmFromDb.getCandidate(), jcmFromDb.getJob(), JwtTokenUtil.getAuthToken());
             }
         }
     }
