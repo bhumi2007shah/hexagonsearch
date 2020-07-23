@@ -80,4 +80,6 @@ public interface ICandidateService {
      * @param candidate
      */
     void createCandidateOnSearchEngine(Candidate candidate, Job job, String authToken);
+
+    void createCandidatesOnSearchEngine(List<Candidate> candidates, Job job, String authToken);
 }

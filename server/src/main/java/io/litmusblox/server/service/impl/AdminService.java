@@ -4,10 +4,7 @@
 
 package io.litmusblox.server.service.impl;
 
-import io.litmusblox.server.model.Company;
-import io.litmusblox.server.model.Job;
-import io.litmusblox.server.model.JobCandidateMapping;
-import io.litmusblox.server.model.User;
+import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.CompanyRepository;
 import io.litmusblox.server.repository.JobCandidateMappingRepository;
 import io.litmusblox.server.repository.JobRepository;
@@ -21,6 +18,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author : sameer
@@ -71,10 +69,9 @@ public class AdminService implements IAdminService {
                 if(allJobs.size()>0) {
                     allJobs.stream().parallel().forEach(job -> {
                         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.findAllByJobId(job.getId());
-                        if(null != jobCandidateMappings && jobCandidateMappings.size()>0){
-                            jobCandidateMappings.stream().parallel().forEach(jobCandidateMapping -> {
-                                candidateService.createCandidateOnSearchEngine(jobCandidateMapping.getCandidate(), job, authToken);
-                            });
+                        if(null != jobCandidateMappings && jobCandidateMappings.size()>0) {
+                            List<Candidate> candidates = jobCandidateMappings.stream().map(JobCandidateMapping::getCandidate).collect(Collectors.toList());
+                            candidateService.createCandidatesOnSearchEngine(candidates, job, authToken);
                         }
                     });
                 }
@@ -109,9 +106,8 @@ public class AdminService implements IAdminService {
                     allJobs.forEach(job -> {
                         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.findAllByJobId(job.getId());
                         if (null != jobCandidateMappings && jobCandidateMappings.size() > 0) {
-                            jobCandidateMappings.stream().parallel().forEach(jobCandidateMapping -> {
-                                candidateService.createCandidateOnSearchEngine(jobCandidateMapping.getCandidate(), job, authToken);
-                            });
+                            List<Candidate> candidates = jobCandidateMappings.stream().map(JobCandidateMapping::getCandidate).collect(Collectors.toList());
+                            candidateService.createCandidatesOnSearchEngine(candidates, job, authToken);
                         }
                     });
                 }

@@ -6,6 +6,7 @@ package io.litmusblox.server.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
@@ -24,10 +25,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -83,6 +81,10 @@ public class CandidateService implements ICandidateService {
 
     @Value("${searchEngineAddCandidateSuffix}")
     String searchEngineAddCandidateSuffix;
+
+
+    @Value("${searchEngineAddCandidateBulkSuffix}")
+    String searchEngineAddCandidateBulkSuffix;
 
     /**
      * Method to find a candidate using email or mobile number + country code
@@ -377,6 +379,62 @@ public class CandidateService implements ICandidateService {
     public void createCandidateOnSearchEngine(Candidate candidate , Job job, String authToken) {
         log.info("inside create candidate on search engine.");
         long startTime = System.currentTimeMillis();
+
+        CandidateRequestBean candidateRequestBean = getCandidateRequestBean(candidate, job);
+
+        // ObjectMapper object to convert candidateRequestBean to String
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), job.getId());
+        try {
+            RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null);
+        }
+        catch ( JsonProcessingException e ){
+            log.error("Failed while converting candidateRequestBean to String. " + e.getMessage());
+        }
+        catch ( Exception e ){
+            log.error("Failed to create candidate on search engine. " + e.getMessage());
+        }
+
+        log.info("Added candidate on search engine in {}ms", System.currentTimeMillis()-startTime);
+    }
+    //Method to truncate the value in the field and send out a sentry message for the same
+    //move this truncateField method to Util class because it is use in other place also like CandidateCompanyDetails model
+
+    /**
+     * Method to call search engine to add a candidate.
+     * @param candidates
+     */
+    public void createCandidatesOnSearchEngine(List<Candidate> candidates , Job job, String authToken) {
+        log.info("inside create candidate on search engine.");
+        long startTime = System.currentTimeMillis();
+
+        List<CandidateRequestBean> candidateRequestBeans = new ArrayList<>(0);
+
+        candidates.forEach(candidate -> candidateRequestBeans.add(getCandidateRequestBean(candidate, job)));
+
+
+        // ObjectMapper object to convert candidateRequestBean to String
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        log.info("Calling SearchEngine API to create candidates of job: {}", job.getId());
+        try {
+            List<List<CandidateRequestBean>> requestList= Lists.partition(candidateRequestBeans, 100);
+            for (List<CandidateRequestBean> requestBeans : requestList) {
+                RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBeans), searchEngineBaseUrl + searchEngineAddCandidateBulkSuffix, HttpMethod.POST, authToken, null, null);
+            }
+        }
+        catch ( JsonProcessingException e ){
+            log.error("Failed while converting candidateRequestBean to String. " + e.getMessage());
+        }
+        catch ( Exception e ){
+            log.error("Failed to create candidate on search engine. " + e.getMessage());
+        }
+
+        log.info("Added candidate on search engine in {}ms", System.currentTimeMillis()-startTime);
+    }
+
+    private CandidateRequestBean getCandidateRequestBean(Candidate candidate, Job job){
         // creating candidateRequestBean to be sent to Search Engine
         CandidateRequestBean candidateRequestBean = new CandidateRequestBean();
         candidateRequestBean.setCandidateId(candidate.getId());
@@ -404,7 +462,7 @@ public class CandidateService implements ICandidateService {
         if(null != candidate.getCandidateCompanyDetails() && candidate.getCandidateCompanyDetails().size()>0 &&  (null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriod() || null!= candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb())){
             candidateRequestBean.setNoticePeriod(
                     null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()?
-                    Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()):
+                            Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()):
                             Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb().getValue().replaceAll("\\D+",""))
             );
         }
@@ -424,22 +482,6 @@ public class CandidateService implements ICandidateService {
             );
         }
 
-        // ObjectMapper object to convert candidateRequestBean to String
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), job.getId());
-        try {
-            RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null);
-        }
-        catch ( JsonProcessingException e ){
-            log.error("Failed while converting candidateRequestBean to String. " + e.getMessage());
-        }
-        catch ( Exception e ){
-            log.error("Failed to create candidate on search engine. " + e.getMessage());
-        }
-
-        log.info("Added candidate on search engine in {}ms", System.currentTimeMillis()-startTime);
+        return candidateRequestBean;
     }
-    //Method to truncate the value in the field and send out a sentry message for the same
-    //move this truncateField method to Util class because it is use in other place also like CandidateCompanyDetails model
 }
