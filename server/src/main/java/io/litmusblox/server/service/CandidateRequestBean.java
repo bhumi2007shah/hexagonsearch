@@ -25,6 +25,6 @@ public class CandidateRequestBean {
     private List<String> skill;
     private List<String> location;
     private int noticePeriod;
-    private String experienceRange;
+    private Double experience;
     private List<String> qualification;
 }

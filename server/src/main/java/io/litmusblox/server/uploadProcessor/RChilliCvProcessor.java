@@ -12,6 +12,7 @@ import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
+import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.ICandidateService;
 import io.litmusblox.server.service.IJobCandidateMappingService;
 import io.litmusblox.server.service.MasterDataBean;
@@ -311,7 +312,7 @@ public class RChilliCvProcessor {
 
         try {
             jobCandidateMappingService.saveCandidateSupportiveInfo(candidate, user);
-            candidateService.createCandidateOnSearchEngine(candidate, job);
+            candidateService.createCandidateOnSearchEngine(candidate, job, JwtTokenUtil.getAuthToken());
         }catch (ValidationException ve){
             ve.printStackTrace();
             log.error("Error while saving candidate supportive information received from RChilliJson : " + ve.getMessage()+", CandidateEmail : "+candidate.getEmail()+", CandidateMobile : "+candidate.getMobile());
