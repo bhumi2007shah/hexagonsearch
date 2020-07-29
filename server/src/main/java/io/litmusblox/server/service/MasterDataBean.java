@@ -49,7 +49,7 @@ public class MasterDataBean {
     private Map<Long, String> education = new HashMap<>();
     private Map<Long, String> industry = new HashMap<>();
     private Map<Long, String> noticePeriod = new HashMap<>();
-    private Map<String, List<ScreeningQuestions>> screeningQuestions = new HashMap<>();
+    private Map<String, List<ScreeningQuestions>> screeningQuestions = new LinkedHashMap<>();
     private List<CreateJobPageSequence> addJobPages = new ArrayList<>();
     private List<String> jobPageNamesInOrder = new ArrayList<>();
     private List<String> currencyList = new ArrayList<>();
@@ -80,7 +80,7 @@ public class MasterDataBean {
     private Map<String, Long> jobIndustryMap = new HashMap<>();
     private Map<Long, Map<String, Long>> functionMap = new HashMap<>();
     private Map<Long, Map<String, Long>> roleMap = new HashMap<>();
-    private Map<String, MasterData> questionCategory = new HashMap<>();
+    private Map<String, MasterData> questionCategory = new LinkedHashMap<>();
     private Integer restConnectionTimeout = IConstant.REST_CONNECTION_TIME_OUT;
     private Integer restReadTimeout = IConstant.REST_READ_TIME_OUT;
     private Integer restReadTimeoutForCvParser = IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT;
