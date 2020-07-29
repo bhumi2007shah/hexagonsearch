@@ -2471,3 +2471,7 @@ add column question_tag varchar (50);
 
 ALTER TABLE tech_screening_question ALTER COLUMN scoring_type TYPE varchar(7);
 ALTER TABLE screening_question ALTER COLUMN scoring_type TYPE varchar(7);
+
+
+-- #591 increase default answers length in tech screening questions
+alter table tech_screening_question alter column default_answers type varchar(250)[];
