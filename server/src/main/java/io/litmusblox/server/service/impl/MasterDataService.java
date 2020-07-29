@@ -397,7 +397,7 @@ public class MasterDataService implements IMasterDataService {
                 MasterDataBean.getInstance().setScreeningQuestions(new LinkedHashMap<>());
                 User finalLoggedInUser = loggedInUser;
                 MasterDataBean.getInstance().getQuestionCategory().entrySet().forEach(category->{
-                    MasterDataBean.getInstance().getScreeningQuestions().put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategory(finalLoggedInUser.getCountryId(), category.getValue()));
+                    MasterDataBean.getInstance().getScreeningQuestions().put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategoryOrderByIdAsc(finalLoggedInUser.getCountryId(), category.getValue()));
                 });
                 master.getScreeningQuestions().putAll(MasterDataBean.getInstance().getScreeningQuestions());
                 break;
