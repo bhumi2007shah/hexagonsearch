@@ -4,6 +4,8 @@
 
 package io.litmusblox.server.service;
 
+import io.litmusblox.server.service.impl.IndustryMasterDataRequestBean;
+
 import java.util.List;
 
 /**
@@ -56,4 +58,10 @@ public interface IMasterDataService {
      * @throws Exception
      */
     MasterDataResponse fetchForItemsForNoAuth(List<String> fetchItemList) throws Exception;
+
+    /**
+     * Method to add missing Industry Master data to backend database.
+     * API is called by SearchEngine.
+     */
+    void addIndustryMasterData(List<IndustryMasterDataRequestBean> industryMasterDataRequestBeanList);
 }

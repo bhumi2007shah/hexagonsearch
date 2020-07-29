@@ -32,10 +32,7 @@ public class NaukriHtmlParser implements HtmlParser {
     @Override
     public Candidate parseData(String htmlData, User createdBy) {
         log.info("Parsing html data from Naukri email");
-        Candidate candidateFromNaukriEmail = Candidate.builder().
-                candidateSource(IConstant.CandidateSource.NaukriJobPosting.getValue()).
-                createdOn(new Date()).
-                createdBy(createdBy).build();
+        Candidate candidateFromNaukriEmail = new Candidate();
 
         Document doc = Jsoup.parse(htmlData);
         populateCandidateName(candidateFromNaukriEmail, doc);
@@ -62,6 +59,10 @@ public class NaukriHtmlParser implements HtmlParser {
             log.info(Util.getStackTrace(e));
         }
         //before at is designation, after at is current company
+
+        candidateFromNaukriEmail.setCandidateSource(IConstant.CandidateSource.NaukriJobPosting.getValue());
+        candidateFromNaukriEmail.setCreatedOn(new Date());
+        candidateFromNaukriEmail.setCreatedBy(createdBy);
         log.info("Completed processing html");
         return candidateFromNaukriEmail;
     }

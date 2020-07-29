@@ -2472,6 +2472,65 @@ add column question_tag varchar (50);
 ALTER TABLE tech_screening_question ALTER COLUMN scoring_type TYPE varchar(7);
 ALTER TABLE screening_question ALTER COLUMN scoring_type TYPE varchar(7);
 
+INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
+('Data Specialist Azure', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Data Specialist ETL Spark', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT')));
+
+ALTER TABLE job DROP COLUMN expected_answer;
+ALTER TABLE job ADD COLUMN expected_answer json;
+
+ALTER TABLE master_data
+DROP CONSTRAINT unique_master_data;
+
+Insert into MASTER_DATA (TYPE, VALUE) values
+('questionCategory','Organization'),
+('questionCategory','Experience'),
+('questionCategory','Remote Working'),
+('questionCategory','Team Size (Direct)'),
+('questionCategory','Team Size (Indirect)'),
+('questionCategory','Notice Period'),
+('questionCategory','Required Docs'),
+('questionCategory','Shifts'),
+('questionCategory','Domain'),
+('questionCategory','Reason for job change'),
+('questionCategory','Location'),
+('questionCategory','Salary'),
+('questionCategory','Start Date'),
+('questionCategory','Other Offers'),
+('questionCategory','Interview'),
+('questionCategory','Languages'),
+('questionCategory','Travel'),
+('questionCategory','Contract'),
+('questionCategory','Education');
+
+
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Organization') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Organization');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Experience') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Experience');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Remote Working') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Remote Working');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Team Size (Direct)') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Team Size (Direct)');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Team Size (Indirect)') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Team Size (Indirect)');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Notice Period') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Notice Period');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Required Docs') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Required Docs');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Shifts') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Shifts');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Domain') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Domain');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Reason for job change') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Reason for job change');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Location') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Location');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Salary') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Salary');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Start Date') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Start Date');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Other Offers') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Other Offers');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Interview') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Interview');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Languages') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Languages');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Travel') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Travel');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Contract') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Contract');
+Update screening_question set question_category = (select MAX(id) from master_data where type = 'questionCategory' and value = 'Education') where question_category = (select MIN(id) from master_data where type = 'questionCategory' and value = 'Education');
+
+delete from master_data where id between 388 and 404;
+delete from master_data where id in (407, 408);
+
+ALTER TABLE master_data
+ADD CONSTRAINT unique_master_data UNIQUE (type, value);
+
+
 
 -- #591 increase default answers length in tech screening questions
 alter table tech_screening_question alter column default_answers type varchar(250)[];

@@ -116,6 +116,9 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                 } else if(IConstant.DRAG_AND_DROP.equals(file.getName())) {
                     candidateSource = IConstant.CandidateSource.DragDropCv.getValue();
                     tempFolderName = IConstant.DRAG_AND_DROP;
+                } else if(IConstant.GENERIC_EMAIL.equals(file.getName())){
+                    candidateSource = IConstant.CandidateSource.GenericEmail.getValue();
+                    tempFolderName = IConstant.GENERIC_EMAIL;
                 }
 
                 Stream<Path> filePathStream= Files.walk(Paths.get(file.getAbsolutePath()));

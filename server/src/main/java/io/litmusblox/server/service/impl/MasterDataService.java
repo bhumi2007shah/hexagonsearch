@@ -10,10 +10,8 @@ import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
-import io.litmusblox.server.service.ConfigSettings;
-import io.litmusblox.server.service.IMasterDataService;
-import io.litmusblox.server.service.MasterDataBean;
-import io.litmusblox.server.service.MasterDataResponse;
+import io.litmusblox.server.service.*;
+import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.ConfigurablePropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
@@ -27,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -395,10 +394,10 @@ public class MasterDataService implements IMasterDataService {
                 master.getAddJobPages().addAll(MasterDataBean.getInstance().getAddJobPages());
                 break;
             case SCREENING_QUESTIONS_MASTER_DATA:
-                MasterDataBean.getInstance().setScreeningQuestions(new HashMap<>());
+                MasterDataBean.getInstance().setScreeningQuestions(new LinkedHashMap<>());
                 User finalLoggedInUser = loggedInUser;
                 MasterDataBean.getInstance().getQuestionCategory().entrySet().forEach(category->{
-                    MasterDataBean.getInstance().getScreeningQuestions().put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategory(finalLoggedInUser.getCountryId(), category.getValue()));
+                    MasterDataBean.getInstance().getScreeningQuestions().put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategoryOrderByIdAsc(finalLoggedInUser.getCountryId(), category.getValue()));
                 });
                 master.getScreeningQuestions().putAll(MasterDataBean.getInstance().getScreeningQuestions());
                 break;
@@ -476,6 +475,53 @@ public class MasterDataService implements IMasterDataService {
                 ((Map)fieldAccessor.getPropertyValue(input)).putAll(
                         (Map) mapAccessor.getPropertyValue(input)
                 );
+        }
+    }
+
+    public void addIndustryMasterData(List<IndustryMasterDataRequestBean> industryMasterDataRequestBeanList){
+
+        for(IndustryMasterDataRequestBean industryMasterDataRequestBean:industryMasterDataRequestBeanList) {
+            IndustryMasterData industryMasterData = null;
+            String industry = industryMasterDataRequestBean.getIndustryName();
+            industryMasterData = industryMasterDataRepository.findByIndustry(industry);
+            if(null == industryMasterData){
+                industryMasterData = new IndustryMasterData();
+                industryMasterData.setIndustry(industry);
+                industryMasterData = industryMasterDataRepository.save(industryMasterData);
+            }
+            List<IndustryFunction> industryFunctionsList = industryMasterDataRequestBean.getFunctions();
+            if(!industryFunctionsList.isEmpty()){
+                for(IndustryFunction industryFunction:industryMasterDataRequestBean.getFunctions()){
+                    String function = industryFunction.getFunctionName();
+                    FunctionMasterData functionMasterData = null;
+                    functionMasterData = functionMasterDataRepository.findByFunctionAndIndustry(function, industryMasterData);
+                    if(null == functionMasterData){
+                        functionMasterData = new FunctionMasterData();
+                        functionMasterData.setFunction(function);
+                        functionMasterData.setIndustry(industryMasterData);
+                        functionMasterData = functionMasterDataRepository.save(functionMasterData);
+                    }
+                    List<IndustryRole> industryRolesList = industryFunction.getRoles();
+                    if(!industryRolesList.isEmpty()){
+                        for(IndustryRole industryRole:industryRolesList){
+                            String role = industryRole.getRoleName();
+                            RoleMasterData roleMasterData = null;
+                            roleMasterData = roleMasterDataRepository.findByRoleAndFunction(role, functionMasterData);
+                            if(null == roleMasterData){
+                                roleMasterData = new RoleMasterData();
+                                roleMasterData.setRole(role);
+                                roleMasterData.setFunction(functionMasterData);
+                                roleMasterDataRepository.save(roleMasterData);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        try {
+            reloadMasterData();
+        } catch (Exception e) {
+            Util.getStackTrace(e);
         }
     }
 }

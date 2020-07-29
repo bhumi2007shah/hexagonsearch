@@ -13,6 +13,7 @@ import io.litmusblox.server.model.*;
 import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
 import io.litmusblox.server.service.impl.SearchRequestBean;
+import io.litmusblox.server.service.impl.IndustryMasterDataRequestBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;

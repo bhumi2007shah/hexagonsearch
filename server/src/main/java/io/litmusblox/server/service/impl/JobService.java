@@ -700,7 +700,7 @@ public class JobService implements IJobService {
                 responseBean.getRolePrediction().getJtRoles().forEach(role -> {
                     roles.add(role.getRoleName());
                 });
-                job.setRoles(roles);
+                //job.setRoles(roles);
                 return;
             }else if((isNewAddJobFlow || IConstant.MlRolePredictionStatus.NO_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus()))
                     && !IConstant.MlRolePredictionStatus.SUFF_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus())){
@@ -845,6 +845,7 @@ public class JobService implements IJobService {
             oldJob.setHrQuestionAvailable(false);
         }
 
+        oldJob.setRole(job.getRole());
         jobRepository.save(oldJob);
         saveJobHistory(job.getId(), historyMsg + " screening questions", loggedInUser);
 
@@ -1272,6 +1273,7 @@ public class JobService implements IJobService {
         if (null == job) {
             throw new WebException("Job with id " + jobId + " does not exist", HttpStatus.UNPROCESSABLE_ENTITY);
         }
+        job.setHasCompletedCandidate(jobCandidateMappingRepository.countByJobIdAndStatus(job.getId(), IConstant.ChatbotStatus.COMPLETE.getValue())>0);
         return job;
     }
 
@@ -1605,10 +1607,10 @@ public class JobService implements IJobService {
                 throw new OperationNotSupportedException("Unknown page: " + pageName);
         }
 
-        List<String> roles = new ArrayList<>();
+        Map<Long, String> roles = new HashMap<>();
         oldJob.setFunction(MasterDataBean.getInstance().getFunction().get(oldJob.getFunction().getId()));
         oldJob.setJobIndustry(MasterDataBean.getInstance().getJobIndustry().get(oldJob.getJobIndustry().getId()));
-        roleMasterDataRepository.findByFunction(job.getFunction()).forEach(roleMasterData -> roles.add(roleMasterData.getRole()));
+        roleMasterDataRepository.findByFunction(job.getFunction()).forEach(roleMasterData -> roles.put(roleMasterData.getId(), roleMasterData.getRole()));
         job.setRoles(roles);
         log.info("Completed processing request to new add job flow in " + (System.currentTimeMillis() - startTime) + "ms");
         return job;
@@ -1656,8 +1658,8 @@ public class JobService implements IJobService {
         TechQuestionsRequestBean.SelectedRole selectedRole = new TechQuestionsRequestBean.SelectedRole();
         TechQuestionsRequestBean.Function function = new TechQuestionsRequestBean.Function();
         TechQuestionsRequestBean.Industry industry = new TechQuestionsRequestBean.Industry();
-        if(null != job.getUserSelectedRole())
-            selectedRole.setRoleName(job.getUserSelectedRole());
+        if(null != job.getRole())
+            selectedRole.setRoleName(job.getRole().getRole());
         industry.setIndustryName(job.getJobIndustry().getIndustry());
         function.setFunctionName(job.getFunction().getFunction());
         techQueRequestBean.setSelectedRole(selectedRole);
@@ -1710,21 +1712,20 @@ public class JobService implements IJobService {
 
     /**
      * Method to save expected answer for a job
-     * @param requestedJob which has expected answer and jobId
+     * @param requestJob which has expected answer and jobId
      */
-    public void saveExpectedAnswer(Job requestedJob){
-        Job jobFromDb = jobRepository.getOne(requestedJob.getId());
+    public void saveExpectedAnswer(Job requestJob){
+        Job jobFromDb = jobRepository.getOne(requestJob.getId());
 
         if(null==jobFromDb){
-            throw new WebException("Job not available id="+requestedJob.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new WebException("Job not available id="+requestJob.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         else{
             if(!IConstant.JobStatus.PUBLISHED.getValue().equals(jobFromDb.getStatus())){
-                throw new WebException("Job is not live id="+requestedJob.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
+                throw new WebException("Job is not live id="+requestJob.getId(), HttpStatus.UNPROCESSABLE_ENTITY);
             }
         }
-
-        jobFromDb.setExpectedAnswer(requestedJob.getExpectedAnswer());
+        jobFromDb.setExpectedAnswer(requestJob.getExpectedAnswer());
 
         jobRepository.save(jobFromDb);
     }

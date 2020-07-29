@@ -19,6 +19,6 @@ import java.util.List;
  */
 public interface IUploadFileProcessorService {
 
-    List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation, User loggedInUser);
+    List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation, User loggedInUser, String fileType);
 
 }
