@@ -21,5 +21,5 @@ import java.util.List;
  * Project Name : server
  */
 public interface ScreeningQuestionsRepository extends JpaRepository<ScreeningQuestions, Long> {
-    List<ScreeningQuestions> findByCountryIdAndQuestionCategory(Country country, MasterData questionCategory);
+    List<ScreeningQuestions> findByCountryIdAndQuestionCategoryOrderByIdAsc(Country country, MasterData questionCategory);
 }

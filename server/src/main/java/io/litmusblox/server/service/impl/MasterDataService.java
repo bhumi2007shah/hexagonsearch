@@ -394,10 +394,10 @@ public class MasterDataService implements IMasterDataService {
                 master.getAddJobPages().addAll(MasterDataBean.getInstance().getAddJobPages());
                 break;
             case SCREENING_QUESTIONS_MASTER_DATA:
-                MasterDataBean.getInstance().setScreeningQuestions(new HashMap<>());
+                MasterDataBean.getInstance().setScreeningQuestions(new LinkedHashMap<>());
                 User finalLoggedInUser = loggedInUser;
                 MasterDataBean.getInstance().getQuestionCategory().entrySet().forEach(category->{
-                    MasterDataBean.getInstance().getScreeningQuestions().put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategory(finalLoggedInUser.getCountryId(), category.getValue()));
+                    MasterDataBean.getInstance().getScreeningQuestions().put(category.getKey(), screeningQuestionsRepository.findByCountryIdAndQuestionCategoryOrderByIdAsc(finalLoggedInUser.getCountryId(), category.getValue()));
                 });
                 master.getScreeningQuestions().putAll(MasterDataBean.getInstance().getScreeningQuestions());
                 break;
