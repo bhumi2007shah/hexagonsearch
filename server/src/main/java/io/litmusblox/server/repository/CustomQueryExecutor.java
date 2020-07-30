@@ -198,7 +198,7 @@ public class CustomQueryExecutor {
     }
 
     @Transactional(readOnly = true)
-    public CandidateSourceAnalyticsBean sourcesAnalyticsByJob(Long jobId, Date startDate, Date endDate){
+    public CandidateSourceAnalyticsBean sourcesAnalyticsByJob(Long jobId, Date startDate, Date endDate) {
         StringBuffer queryString = new StringBuffer();
         queryString.append(jobSourcesAnalyticsMainQuery);
         queryString.append(jobId);
@@ -208,7 +208,14 @@ public class CustomQueryExecutor {
         }
         queryString.append(groupByJobId);
         Query query = entityManager.createNativeQuery(queryString.toString(), CandidateSourceAnalyticsBean.class);
-        return (CandidateSourceAnalyticsBean) query.getSingleResult();
+        try {
+            return (CandidateSourceAnalyticsBean) query.getSingleResult();
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            log.info("sourcesAnalyticsByJob returned null for job with id: {}",jobId);
+            return null;
+        }
     }
 
     @Transactional(readOnly = true)
