@@ -4,8 +4,10 @@
 
 package io.litmusblox.server.repository;
 
+import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.StageStepMaster;
+import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.AnalyticsResponseBean;
 import io.litmusblox.server.service.JCMAllDetails;
 import io.litmusblox.server.service.JobAnalytics.*;
@@ -17,10 +19,7 @@ import javax.annotation.Resource;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -153,7 +152,38 @@ public class CustomQueryExecutor {
     private static final String jobRejectedAnalyticsGroupByQuery = " group by \n" +
             "jcm.id, jcm.job_id, ssm.stage, jcm.candidate_rejection_value;";
 
-    private static final String rejectedAnalyticsMainQuery = "";
+    private static final String basicCandidateStagePerCountQuery = "SELECT \n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Sourcing' and rejected = 'f'))\\:\\:INT) AS sourcingCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Screening' and rejected = 'f'))\\:\\:INT) AS screeningCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Submitted' and rejected = 'f'))\\:\\:INT) AS submittedCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Interview' and rejected = 'f'))\\:\\:INT) AS interviewCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Make Offer' and rejected = 'f'))\\:\\:INT) AS makeOfferCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Offer' and rejected = 'f'))\\:\\:INT) AS offerCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Hired' and rejected = 'f'))\\:\\:INT) AS hiredCandidatesCount\n" +
+            "from job left join job_candidate_mapping on job_candidate_mapping.job_id = job.id";
+
+    private static final String stageCountClientAdminWhereClause = " where job.id in (select id from job where company_id =";
+    private static final String stageCountRecruiterWhereClause = " where job.id in (select id from job where created_by =";
+
+
+    private static final String basicJobAgingCountQuery = "SELECT sum(((DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)) >=0 AND (DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)<=15))\\:\\:INT) as jobAging0TO15Days,\n" +
+            "sum(((DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)) >=16 AND (DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)<=30))\\:\\:INT) as jobAging16TO30Days,\n" +
+            "sum(((DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)) >=31 AND (DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)<=60))\\:\\:INT) as jobAging31TO60Days,\n" +
+            "sum(((DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)) >=61 AND (DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)<=90))\\:\\:INT) as jobAging61TO90Days,\n" +
+            "sum(((DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)) > 90)\\:\\:INT) as jobAging90PlusDays from job";
+
+    private static final String jobAgingClientAdminWhereClause = " where date_published is not null and date_archived is null and job.id in (select id from job where company_id =";
+    private static final String jobAgingRecruiterWhereClause = " where date_published is not null and date_archived is null and job.id in (select id from job where created_by =";
+
+    private static final String basicJobCandidatePipelineQuery = "SELECT sum((jCount.candidateCount >=0 AND jCount.candidateCount<=3)\\:\\:INT) as candidateCount0TO3Days,\n" +
+            "sum((jCount.candidateCount >=4 AND jCount.candidateCount<=6)\\:\\:INT) as candidateCount4TO6Days,\n" +
+            "sum((jCount.candidateCount >=7 AND jCount.candidateCount<=10)\\:\\:INT) as candidateCount7TO10Days,\n" +
+            "sum((jCount.candidateCount > 10)\\:\\:INT) as candidateCount10PlusDays from (select job.id , count(jcm.id) as candidateCount from job left join job_candidate_mapping jcm on job.id = jcm.job_id";
+
+    private static final String jobPipelineClientAdminWhereClause = " where job.company_id=";
+    private static final String jobPipelineRecruiterWhereClause = " where job.created_by =";
+
+
 
     @Transactional(readOnly = true)
     public List<AnalyticsResponseBean> analyticsByCompany(String startDate, String endDate, String companyIdList) throws Exception {
@@ -276,5 +306,77 @@ public class CustomQueryExecutor {
             rejectAnalytics.put(stage, reasonCountMap);
         });
         return rejectAnalytics;
+    }
+
+    public int getOpenJobCount(User loggedInUser) {
+        if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
+            return jobRepository.countByStatusAndDateArchivedIsNullAndCompany(IConstant.JobStatus.PUBLISHED.getValue(), loggedInUser.getCompany().getId());
+        else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
+            return jobRepository.countByStatusAndDateArchivedIsNullAndCreatedBy(IConstant.JobStatus.PUBLISHED.getValue(), loggedInUser.getId());
+        else if(IConstant.UserRole.SUPER_ADMIN.toString().equals(loggedInUser.getRole()))
+            return jobRepository.countByStatusAndDateArchivedIsNull(IConstant.JobStatus.PUBLISHED.getValue());
+        return 0;
+    }
+
+    public Map<String, Integer> getCandidateCountByStage(User loggedInUser) {
+        Map<String, Integer> candidateCountByStageMap = new LinkedHashMap<>();
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(basicCandidateStagePerCountQuery);
+        if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
+            queryString.append(stageCountClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(")");
+        else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
+            queryString.append(stageCountRecruiterWhereClause).append(loggedInUser.getId()).append(")");
+
+        List<Object[]> resultSet = entityManager.createNativeQuery(queryString.toString()).getResultList();
+        for (Object[] objects : resultSet) {
+            candidateCountByStageMap.put("sourcingCandidateCount", Integer.parseInt(objects[0].toString()));
+            candidateCountByStageMap.put("screeningCandidateCount", Integer.parseInt(objects[1].toString()));
+            candidateCountByStageMap.put("submittedCandidateCount", Integer.parseInt(objects[2].toString()));
+            candidateCountByStageMap.put("interviewCandidateCount", Integer.parseInt(objects[3].toString()));
+            candidateCountByStageMap.put("makeOfferCandidateCount", Integer.parseInt(objects[4].toString()));
+            candidateCountByStageMap.put("OfferCandidateCount", Integer.parseInt(objects[5].toString()));
+            candidateCountByStageMap.put("hiredCandidateCount", Integer.parseInt(objects[6].toString()));
+        }
+        return candidateCountByStageMap;
+    }
+
+    public Map<String, Integer> getJobAgingCount(User loggedInUser) {
+        Map<String, Integer> jobAgingCountMap = new LinkedHashMap<>();
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(basicJobAgingCountQuery);
+        if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobAgingClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(")");
+        else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobAgingRecruiterWhereClause).append(loggedInUser.getId()).append(")");
+        List<Object[]> resultSet = entityManager.createNativeQuery(queryString.toString()).getResultList();
+        for(Object[] objects: resultSet){
+            jobAgingCountMap.put("jobAging0To15Days",Integer.parseInt(objects[0].toString()));
+            jobAgingCountMap.put("jobAging16To30Days",Integer.parseInt(objects[1].toString()));
+            jobAgingCountMap.put("jobAging31To60Days",Integer.parseInt(objects[2].toString()));
+            jobAgingCountMap.put("jobAging61To90Days",Integer.parseInt(objects[3].toString()));
+            jobAgingCountMap.put("jobAging90PlusDays",Integer.parseInt(objects[4].toString()));
+        }
+        return jobAgingCountMap;
+    }
+
+    public Map<String, Integer> getJobCandidatePipelineCount(User loggedInUser) {
+        Map<String, Integer> jobCandidatePipelineCountMap = new LinkedHashMap<>();
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(basicJobCandidatePipelineQuery);
+        if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(" group by job.id) as jCount");
+        else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId()).append(" group by job.id) as jCount");
+        else if(IConstant.UserRole.SUPER_ADMIN.toString().equals(loggedInUser.getRole()))
+            queryString.append(" group by job.id) as jCount");
+
+        List<Object[]> resultSet = entityManager.createNativeQuery(queryString.toString()).getResultList();
+        for(Object[] objects: resultSet){
+            jobCandidatePipelineCountMap.put("candidateCount0To3",Integer.parseInt(objects[0].toString()));
+            jobCandidatePipelineCountMap.put("candidateCount4To6",Integer.parseInt(objects[1].toString()));
+            jobCandidatePipelineCountMap.put("candidateCount7To10",Integer.parseInt(objects[2].toString()));
+            jobCandidatePipelineCountMap.put("candidateCount10Plus",Integer.parseInt(objects[3].toString()));
+        }
+        return jobCandidatePipelineCountMap;
     }
 }

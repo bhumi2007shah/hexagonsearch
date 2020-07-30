@@ -5,6 +5,7 @@
 package io.litmusblox.server.controller;
 
 import io.litmusblox.server.service.IAnalyticsService;
+import io.litmusblox.server.service.JobAnalytics.AnalyticsDataResponseBean;
 import io.litmusblox.server.service.JobAnalytics.JobAnalyticsResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
@@ -61,5 +62,19 @@ public class AnalyticsController {
                     put("InterviewAnalyticsBean", Arrays.asList("jobId"));
                 }}
         );
+    }
+
+    /**
+     * API to fetch analytics data related to job and candidates
+     *
+     * @return  AnalyticsDataResponseBean
+     */
+    @GetMapping(path = {"/fetchJobAnalytics"})
+    AnalyticsDataResponseBean getAnalyticsData(){
+        log.info("Received request to fetch analytics data related to job and candidate");
+        long startTime = System.currentTimeMillis();
+        AnalyticsDataResponseBean analyticsDataResponseBean = analyticsService.getAnalyticsData();
+        log.info("Completed to fetch analytics data related to job and candidate request in {}ms", System.currentTimeMillis()-startTime);
+        return analyticsDataResponseBean;
     }
 }

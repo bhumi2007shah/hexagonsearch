@@ -136,6 +136,30 @@ public class AnalyticsService implements IAnalyticsService {
     }
 
     /**
+     * Service method to get job and candidate related analytics
+     *
+     * @return AnalyticsResponseBean
+     */
+    @Override
+    public AnalyticsDataResponseBean getAnalyticsData() {
+        //Logged in  user
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(null == loggedInUser){
+            log.error("Logged in user is null");
+            throw new WebException("Logged in user should not be null", HttpStatus.BAD_REQUEST);
+        }
+        log.info("User : {} - {} fetch analytics data related to job and candidate", loggedInUser.getEmail(), loggedInUser.getMobile());
+
+        AnalyticsDataResponseBean analyticsDataResponseBean = new AnalyticsDataResponseBean();
+        analyticsDataResponseBean.setOpenJobs(customQueryExecutor.getOpenJobCount(loggedInUser));
+        analyticsDataResponseBean.setCandidateCountAnalyticsMap(customQueryExecutor.getCandidateCountByStage(loggedInUser));
+        analyticsDataResponseBean.setJobAgingAnalyticsMap(customQueryExecutor.getJobAgingCount(loggedInUser));
+        analyticsDataResponseBean.setJobCandidatePipelineAnalyticsMap(customQueryExecutor.getJobCandidatePipelineCount(loggedInUser));
+        return analyticsDataResponseBean;
+    }
+
+    /**
      * function to find sourced candidate count
      * @param jobId for which candidate count to be evaluated
      * @param startDate is date which should be less than or equal to jcm creation date
