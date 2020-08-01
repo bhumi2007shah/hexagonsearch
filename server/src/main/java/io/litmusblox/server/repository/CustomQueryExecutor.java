@@ -19,6 +19,7 @@ import javax.annotation.Resource;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -183,7 +184,29 @@ public class CustomQueryExecutor {
     private static final String jobPipelineClientAdminWhereClause = " where job.company_id=";
     private static final String jobPipelineRecruiterWhereClause = " where job.created_by =";
 
+    private static final String basicInterviewQuery = "select count(iv.id) from interview_details iv \n" +
+            "inner join job_candidate_mapping jcm on jcm.id = iv.job_candidate_mapping_id\n" +
+            "inner join job on job.id = jcm.job_id";
 
+    private static final String selectInterviewDateQuery = "select CAST(iv.interview_date as VARCHAR) from interview_details iv \n" +
+            "inner join job_candidate_mapping jcm on jcm.id = iv.job_candidate_mapping_id\n" +
+            "inner join job on job.id = jcm.job_id";
+
+    private static final String interviewStartDateClause = " interview_date >= ";
+    private static final String interviewEndDateClause = " interview_date < ";
+
+    private static final String selectInterviewDetailsQuery = "select iv.id, CONCAT(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidate_name, job.job_title as job_title, job.id as job_id, substring(CAST((cast (iv.interview_date\\:\\:timestamp as time)) as VARCHAR) from 1 for 5)  as interview_time,\n" +
+            "(CASE when (iv.candidate_confirmation_value is not null and md.value like 'Yes%') then 'Confirmed'\n" +
+            "when (iv.candidate_confirmation_value is not null and md.value like '%reschedule%') then 'Rescheduled'\n" +
+            "when (iv.candidate_confirmation_value is not null and md.value like 'No%') or  iv.cancelled = 't' then 'Cancelled'\n" +
+            "else 'Scheduled'\n" +
+            "END) as status\n" +
+            "from job_candidate_mapping jcm \n" +
+            "left join interview_details iv on iv.job_candidate_mapping_id = jcm.id\n" +
+            "left join job on job.id = jcm.job_id\n" +
+            "left join master_data md on md.id = iv.candidate_confirmation_value";
+
+    private static final String getIVDetailsWhereClause = " iv.interview_date =";
 
     @Transactional(readOnly = true)
     public List<AnalyticsResponseBean> analyticsByCompany(String startDate, String endDate, String companyIdList) throws Exception {
@@ -315,6 +338,7 @@ public class CustomQueryExecutor {
         return rejectAnalytics;
     }
 
+    @Transactional(readOnly = true)
     public int getOpenJobCount(User loggedInUser) {
         if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
             return jobRepository.countByStatusAndDateArchivedIsNullAndCompany(IConstant.JobStatus.PUBLISHED.getValue(), loggedInUser.getCompany().getId());
@@ -325,6 +349,7 @@ public class CustomQueryExecutor {
         return 0;
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Integer> getCandidateCountByStage(User loggedInUser) {
         Map<String, Integer> candidateCountByStageMap = new LinkedHashMap<>();
         StringBuffer queryString = new StringBuffer();
@@ -347,6 +372,7 @@ public class CustomQueryExecutor {
         return candidateCountByStageMap;
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Integer> getJobAgingCount(User loggedInUser) {
         Map<String, Integer> jobAgingCountMap = new LinkedHashMap<>();
         StringBuffer queryString = new StringBuffer();
@@ -366,6 +392,7 @@ public class CustomQueryExecutor {
         return jobAgingCountMap;
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Integer> getJobCandidatePipelineCount(User loggedInUser) {
         Map<String, Integer> jobCandidatePipelineCountMap = new LinkedHashMap<>();
         StringBuffer queryString = new StringBuffer();
@@ -385,5 +412,91 @@ public class CustomQueryExecutor {
             jobCandidatePipelineCountMap.put("candidateCount10Plus",Integer.parseInt(objects[3].toString()));
         }
         return jobCandidatePipelineCountMap;
+    }
+
+    @Transactional(readOnly = true)
+    public Integer getFutureInterviewCount(User loggedInUser, String startDate, String endDate) {
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(basicInterviewQuery);
+        if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(" and");
+         else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId()).append(" and");
+         else
+             queryString.append(" where ");
+
+        queryString.append(interviewStartDateClause).append("'").append(startDate).append("'");
+        if(null != endDate)
+            queryString.append(" and ").append(interviewEndDateClause).append("'").append(endDate).append("'");
+
+        return Integer.parseInt(entityManager.createNativeQuery(queryString.toString()).getResultList().get(0).toString());
+    }
+
+    @Transactional(readOnly = true)
+    public Integer get7DaysInterviewCount(User loggedInUser) {
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(basicInterviewQuery);
+        if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(" and");
+        else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId()).append(" and");
+        else
+            queryString.append(" where ");
+
+        queryString.append(interviewStartDateClause).append("CURRENT_DATE");
+        queryString.append(" and ").append(interviewEndDateClause).append("CURRENT_DATE+7");
+        return Integer.parseInt(entityManager.createNativeQuery(queryString.toString()).getResultList().get(0).toString());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Integer> get2MonthInterviewCount(User loggedInUser, String selectedMonthDate) {
+        Map<String, Integer> monthViseInterviewCountMap = new LinkedHashMap<>();
+        LocalDate startDate = LocalDate.parse(selectedMonthDate);
+        LocalDate endDate = startDate.plusMonths(1);
+        monthViseInterviewCountMap.put(startDate.getMonth().toString(),getFutureInterviewCount(loggedInUser, startDate.toString(), endDate.toString()));
+        monthViseInterviewCountMap.put(endDate.getMonth().toString(),getFutureInterviewCount(loggedInUser, endDate.toString(), endDate.plusMonths(1).toString()));
+        return monthViseInterviewCountMap;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Set<String>> getInterviewDateList(User loggedInUser, String selectedMonthDate) {
+        Map<String, Set<String>> interviewDateSetMap = new LinkedHashMap<>();
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(selectInterviewDateQuery);
+        if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(" and");
+        else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId()).append(" and");
+        else
+            queryString.append(" where ");
+
+        String query = queryString.toString();
+        StringBuffer queryString2 = new StringBuffer();
+        queryString2.append(query);
+        LocalDate startDate = LocalDate.parse(selectedMonthDate);
+        LocalDate endDate = startDate.plusMonths(1);
+        queryString.append(interviewStartDateClause).append("'").append(startDate).append("'");
+        queryString.append(" and ").append(interviewEndDateClause).append("'").append(endDate).append("'");
+        interviewDateSetMap.put(startDate.getMonth().toString(), (Set<String>) entityManager.createNativeQuery(queryString.toString()).getResultList().stream().collect(Collectors.toSet()));
+        queryString2.append(interviewStartDateClause).append("'").append(endDate).append("'");
+        queryString2.append(" and ").append(interviewEndDateClause).append("'").append(endDate.plusMonths(1)).append("'");
+        interviewDateSetMap.put(endDate.getMonth().toString(), (Set<String>) entityManager.createNativeQuery(queryString2.toString()).getResultList().stream().collect(Collectors.toSet()));
+        return interviewDateSetMap;
+    }
+
+    @Transactional(readOnly = true)
+    public List<InterviewDetailBean> getInterviewDetails(User loggedInUser, String selectedDate) {
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(selectInterviewDetailsQuery);
+        if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(" and");
+        else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId()).append(" and");
+        else
+            queryString.append(" where");
+
+        queryString.append(" interview_date= '").append(selectedDate).append("'");
+        Query query = entityManager.createNativeQuery(queryString.toString(), InterviewDetailBean.class);
+        return query.getResultList();
     }
 }

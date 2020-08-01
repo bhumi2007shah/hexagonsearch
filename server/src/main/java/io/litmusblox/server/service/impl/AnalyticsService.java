@@ -166,6 +166,52 @@ public class AnalyticsService implements IAnalyticsService {
     }
 
     /**
+     * Service to fetch interview analytics
+     *
+     * @param selectedMonthDate for which 2 months we want data
+     * @param startDate from which date we want data
+     * @param endDate up-to which date we want data, optional parameter
+     * @return InterviewAnalyticsResponseBean
+     */
+    @Override
+    public InterviewAnalyticsResponseBean getInterviewAnalyticsData(String selectedMonthDate, String startDate, String endDate) {
+        //Logged in  user
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(null == loggedInUser){
+            log.error("Logged in user is null");
+            throw new WebException("Logged in user should not be null", HttpStatus.BAD_REQUEST);
+        }
+        log.info("User : {} - {} fetch analytics data related to interview", loggedInUser.getEmail(), loggedInUser.getMobile());
+        InterviewAnalyticsResponseBean interviewAnalyticsResponseBean = new InterviewAnalyticsResponseBean();
+        interviewAnalyticsResponseBean.setTotalFutureInterviews(customQueryExecutor.getFutureInterviewCount(loggedInUser, startDate, endDate));
+        interviewAnalyticsResponseBean.setNext7DaysInterviews(customQueryExecutor.get7DaysInterviewCount(loggedInUser));
+        interviewAnalyticsResponseBean.setMonthInterviewMap(customQueryExecutor.get2MonthInterviewCount(loggedInUser, selectedMonthDate));
+        interviewAnalyticsResponseBean.setTwoMonthInterviewDatesMap(customQueryExecutor.getInterviewDateList(loggedInUser, selectedMonthDate));
+        return interviewAnalyticsResponseBean;
+    }
+
+    /**
+     * Service to fetch interview details
+     *
+     * @param selectedDate for selected interview date give details
+     * @return list of InterviewDetailBean
+     */
+    @Override
+    public List<InterviewDetailBean> getInterviewDetails(String selectedDate) {
+
+        //Logged in  user
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(null == loggedInUser){
+            log.error("Logged in user is null");
+            throw new WebException("Logged in user should not be null", HttpStatus.BAD_REQUEST);
+        }
+        log.info("User : {} - {} fetch interview details for date : {}", loggedInUser.getEmail(), loggedInUser.getMobile(), selectedDate);
+        return customQueryExecutor.getInterviewDetails(loggedInUser, selectedDate);
+    }
+
+    /**
      * function to find sourced candidate count
      * @param jobId for which candidate count to be evaluated
      * @param startDate is date which should be less than or equal to jcm creation date

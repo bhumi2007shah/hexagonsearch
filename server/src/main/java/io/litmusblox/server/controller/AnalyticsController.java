@@ -4,12 +4,16 @@
 
 package io.litmusblox.server.controller;
 
+import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.service.IAnalyticsService;
 import io.litmusblox.server.service.JobAnalytics.AnalyticsDataResponseBean;
+import io.litmusblox.server.service.JobAnalytics.InterviewAnalyticsResponseBean;
+import io.litmusblox.server.service.JobAnalytics.InterviewDetailBean;
 import io.litmusblox.server.service.JobAnalytics.JobAnalyticsResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -70,11 +74,46 @@ public class AnalyticsController {
      * @return  AnalyticsDataResponseBean
      */
     @GetMapping(path = {"/fetchJobAnalytics"})
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.RECRUITER + "')")
     AnalyticsDataResponseBean getAnalyticsData(){
         log.info("Received request to fetch analytics data related to job and candidate");
         long startTime = System.currentTimeMillis();
         AnalyticsDataResponseBean analyticsDataResponseBean = analyticsService.getAnalyticsData();
         log.info("Completed to fetch analytics data related to job and candidate request in {}ms", System.currentTimeMillis()-startTime);
         return analyticsDataResponseBean;
+    }
+
+    /**
+     * API to fetch interview analytics
+     *
+     * @param selectedMonthDate for which 2 months we want data
+     * @param startDate from which date we want data
+     * @param endDate up-to which date we want data, optional parameter
+     * @return InterviewAnalyticsResponseBean
+     */
+    @GetMapping(path = {"/fetchInterviewAnalytics"})
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.RECRUITER + "')")
+    InterviewAnalyticsResponseBean getInterviewAnalyticsData(@RequestParam String selectedMonthDate, @RequestParam String startDate, @RequestParam(required = false) String endDate){
+        log.info("Received request to fetch analytics data related candidate interview");
+        long startTime = System.currentTimeMillis();
+        InterviewAnalyticsResponseBean interviewAnalyticsResponseBean = analyticsService.getInterviewAnalyticsData(selectedMonthDate, startDate, endDate);
+        log.info("Completed to fetch analytics data related to candidate interview request in {}ms", System.currentTimeMillis()-startTime);
+        return interviewAnalyticsResponseBean;
+    }
+
+    /**
+     * API to fetch interview details
+     *
+     * @param selectedDate for selected interview date give details
+     * @return list of InterviewDetailBean
+     */
+    @GetMapping(path = {"/fetchInterviewDetails/{selectedDate}"})
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.RECRUITER + "')")
+    List<InterviewDetailBean> getInterviewDetails(@PathVariable String selectedDate){
+        log.info("Received request to fetch interview details");
+        long startTime = System.currentTimeMillis();
+        List<InterviewDetailBean> interviewDetailBeanList = analyticsService.getInterviewDetails(selectedDate);
+        log.info("Completed to fetch interview details request in {}ms", System.currentTimeMillis()-startTime);
+        return interviewDetailBeanList;
     }
 }
