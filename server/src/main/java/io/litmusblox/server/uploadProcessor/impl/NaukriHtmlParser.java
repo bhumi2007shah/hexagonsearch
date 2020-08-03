@@ -86,8 +86,8 @@ public class NaukriHtmlParser implements HtmlParser {
     }
 
     private void populateCandidateCompanyDetails(Candidate candidate, Document doc) {
-        if(null != doc.getElementsByAttributeValueContaining("src", "rating-icon.png").first().parent().parent().nextElementSibling().nextElementSibling().text()) {
-            String text = doc.getElementsByAttributeValueContaining("src", "rating-icon.png").first().parent().parent().nextElementSibling().nextElementSibling().text();
+        if(null != doc.getElementsByAttributeValueContaining("src", "star.png").first().parent().parent().nextElementSibling().nextElementSibling().text()) {
+            String text = doc.getElementsByAttributeValueContaining("src", "star.png").first().parent().parent().nextElementSibling().nextElementSibling().text();
             if( null !=text && !text.contains("Not Mentioned")) {
                 CandidateCompanyDetails companyDetails = CandidateCompanyDetails.builder().designation(text.substring(0, text.indexOf(" at "))).companyName(text.substring(text.indexOf(" at ") + 4)).build();
                 candidate.getCandidateCompanyDetails().add(companyDetails);
