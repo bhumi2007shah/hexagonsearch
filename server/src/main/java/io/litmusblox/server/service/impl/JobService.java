@@ -1274,6 +1274,9 @@ public class JobService implements IJobService {
             throw new WebException("Job with id " + jobId + " does not exist", HttpStatus.UNPROCESSABLE_ENTITY);
         }
         job.setHasCompletedCandidate(jobCandidateMappingRepository.countByJobIdAndStatus(job.getId(), IConstant.ChatbotStatus.COMPLETE.getValue())>0);
+        job.setRecruiterList(userRepository.findByIdIn(Arrays.asList(job.getRecruiter()).stream()
+                .mapToLong(Integer::longValue)
+                .boxed().collect(Collectors.toList())));
         return job;
     }
 

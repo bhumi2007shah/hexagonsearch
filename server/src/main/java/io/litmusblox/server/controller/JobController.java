@@ -247,7 +247,7 @@ public class JobController {
                 jobService.getJobDetails(jobId),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id","displayName"));
-                    put("CompanyAddress", Arrays.asList("address"));
+                    put("CompanyAddress", Arrays.asList("id", "address"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",new ArrayList<>(0));
