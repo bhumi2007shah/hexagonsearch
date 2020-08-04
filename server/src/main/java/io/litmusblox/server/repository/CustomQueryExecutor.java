@@ -425,9 +425,14 @@ public class CustomQueryExecutor {
          else
              queryString.append(" where ");
 
-        queryString.append(interviewStartDateClause).append("'").append(startDate).append("'");
+         if(null != startDate)
+             queryString.append(interviewStartDateClause).append("'").append(startDate).append("'");
+         else
+             queryString.append(interviewStartDateClause).append("CURRENT_DATE");
+
         if(null != endDate)
             queryString.append(" and ").append(interviewEndDateClause).append("'").append(endDate).append("'");
+
 
         return Integer.parseInt(entityManager.createNativeQuery(queryString.toString()).getResultList().get(0).toString());
     }
@@ -495,7 +500,7 @@ public class CustomQueryExecutor {
         else
             queryString.append(" where");
 
-        queryString.append(" interview_date= '").append(selectedDate).append("'");
+        queryString.append(" interview_date\\:\\:text LIKE '").append(selectedDate).append("%'");
         Query query = entityManager.createNativeQuery(queryString.toString(), InterviewDetailBean.class);
         return query.getResultList();
     }
