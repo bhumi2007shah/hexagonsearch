@@ -4,13 +4,11 @@
 
 package io.litmusblox.server.service.impl;
 
-import io.litmusblox.server.model.Company;
-import io.litmusblox.server.model.Job;
-import io.litmusblox.server.model.JobCandidateMapping;
-import io.litmusblox.server.model.User;
+import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.CompanyRepository;
 import io.litmusblox.server.repository.JobCandidateMappingRepository;
 import io.litmusblox.server.repository.JobRepository;
+import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.IAdminService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +18,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author : sameer
@@ -53,6 +52,7 @@ public class AdminService implements IAdminService {
      */
     public void addCompanyCandidateOnSearchEngine() throws Exception {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String authToken = JwtTokenUtil.getAuthToken();
         log.info("Received request to add companies and candidates ono search engine from user {}", loggedInUser.getEmail());
         long startTime = System.currentTimeMillis();
 
@@ -61,7 +61,7 @@ public class AdminService implements IAdminService {
         if(companyList.size()>0){
             companyList.parallelStream().forEach(company -> {
                 // Calling methos to add company on search engine
-                companyService.addCompanyOnSearchEngine(company);
+                companyService.addCompanyOnSearchEngine(company, authToken);
 
                 //Find all jobs for company
                 List<Job> allJobs = jobRepository.findByCompanyIdIn(Collections.singletonList(company));
@@ -69,10 +69,9 @@ public class AdminService implements IAdminService {
                 if(allJobs.size()>0) {
                     allJobs.stream().parallel().forEach(job -> {
                         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.findAllByJobId(job.getId());
-                        if(null != jobCandidateMappings && jobCandidateMappings.size()>0){
-                            jobCandidateMappings.stream().parallel().forEach(jobCandidateMapping -> {
-                                candidateService.createCandidateOnSearchEngine(jobCandidateMapping.getCandidate(), job);
-                            });
+                        if(null != jobCandidateMappings && jobCandidateMappings.size()>0) {
+                            List<Candidate> candidates = jobCandidateMappings.stream().map(JobCandidateMapping::getCandidate).collect(Collectors.toList());
+                            candidateService.createCandidatesOnSearchEngine(candidates, job, authToken);
                         }
                     });
                 }
@@ -87,6 +86,7 @@ public class AdminService implements IAdminService {
      */
     public void addCompanyCandidateOnSearchEngine(Long companyId) throws Exception {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String authToken = JwtTokenUtil.getAuthToken();
         log.info("Received request to add company {}, and candidates on search engine from user {}", companyId, loggedInUser.getEmail());
         long startTime = System.currentTimeMillis();
 
@@ -96,7 +96,7 @@ public class AdminService implements IAdminService {
         if(null != company){
             if(company.getActive()) {
                 // Calling methos to add company on search engine
-                companyService.addCompanyOnSearchEngine(company);
+                companyService.addCompanyOnSearchEngine(company, authToken);
 
                 //Find all jobs for company
                 List<Job> allJobs = jobRepository.findByCompanyIdIn(Collections.singletonList(company));
@@ -106,9 +106,8 @@ public class AdminService implements IAdminService {
                     allJobs.forEach(job -> {
                         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.findAllByJobId(job.getId());
                         if (null != jobCandidateMappings && jobCandidateMappings.size() > 0) {
-                            jobCandidateMappings.stream().parallel().forEach(jobCandidateMapping -> {
-                                candidateService.createCandidateOnSearchEngine(jobCandidateMapping.getCandidate(), job);
-                            });
+                            List<Candidate> candidates = jobCandidateMappings.stream().map(JobCandidateMapping::getCandidate).collect(Collectors.toList());
+                            candidateService.createCandidatesOnSearchEngine(candidates, job, authToken);
                         }
                     });
                 }

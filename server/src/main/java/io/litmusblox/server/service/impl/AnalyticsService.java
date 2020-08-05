@@ -108,8 +108,14 @@ public class AnalyticsService implements IAnalyticsService {
         //set job created on in jobAnalyticsResponseBean
         jobAnalyticsResponseBean.setJobCreatedOn(job.getCreatedOn());
 
+        if(null == getCandidateSourceAnalytics(jobId, startDate, endDate)){
+            log.error("No Candidates have been found for job with job id: {}",jobId);
+            throw new WebException("No candidates have been found for job with job id: "+jobId, HttpStatus.BAD_REQUEST);
+        }
+
         // set candidate sources analytics i.e linkedin, naukri, individual etc for a job in jobAnalyticsResponseBean
         jobAnalyticsResponseBean.setCandidateSources(getCandidateSourceAnalytics(jobId, startDate, endDate));
+
         log.info("Completed fetching candidate sources analytics in {}ms for job:{}, user:{}", System.currentTimeMillis()-startTime, jobId, loggedinUser.getEmail());
 
         //set key skill strength analytics i.e: candidate count per score for a job in jobAnalyticsResponseBean
@@ -133,6 +139,76 @@ public class AnalyticsService implements IAnalyticsService {
         log.info("Completed fetching rejected analytics in {}ms for job:{}, user:{}", System.currentTimeMillis()-startTime, jobId, loggedinUser.getEmail());
 
         return jobAnalyticsResponseBean;
+    }
+
+    /**
+     * Service method to get job and candidate related analytics
+     *
+     * @return AnalyticsResponseBean
+     */
+    @Override
+    public AnalyticsDataResponseBean getAnalyticsData() {
+        //Logged in  user
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(null == loggedInUser){
+            log.error("Logged in user is null");
+            throw new WebException("Logged in user should not be null", HttpStatus.BAD_REQUEST);
+        }
+        log.info("User : {} - {} fetch analytics data related to job and candidate", loggedInUser.getEmail(), loggedInUser.getMobile());
+
+        AnalyticsDataResponseBean analyticsDataResponseBean = new AnalyticsDataResponseBean();
+        analyticsDataResponseBean.setOpenJobs(customQueryExecutor.getOpenJobCount(loggedInUser));
+        analyticsDataResponseBean.setCandidateCountAnalyticsMap(customQueryExecutor.getCandidateCountByStage(loggedInUser));
+        analyticsDataResponseBean.setJobAgingAnalyticsMap(customQueryExecutor.getJobAgingCount(loggedInUser));
+        analyticsDataResponseBean.setJobCandidatePipelineAnalyticsMap(customQueryExecutor.getJobCandidatePipelineCount(loggedInUser));
+        return analyticsDataResponseBean;
+    }
+
+    /**
+     * Service to fetch interview analytics
+     *
+     * @param selectedMonthDate for which 2 months we want data
+     * @param startDate from which date we want data
+     * @param endDate up-to which date we want data, optional parameter
+     * @return InterviewAnalyticsResponseBean
+     */
+    @Override
+    public InterviewAnalyticsResponseBean getInterviewAnalyticsData(String selectedMonthDate, String startDate, String endDate) {
+        //Logged in  user
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(null == loggedInUser){
+            log.error("Logged in user is null");
+            throw new WebException("Logged in user should not be null", HttpStatus.BAD_REQUEST);
+        }
+        log.info("User : {} - {} fetch analytics data related to interview", loggedInUser.getEmail(), loggedInUser.getMobile());
+        InterviewAnalyticsResponseBean interviewAnalyticsResponseBean = new InterviewAnalyticsResponseBean();
+        interviewAnalyticsResponseBean.setTotalFutureInterviews(customQueryExecutor.getFutureInterviewCount(loggedInUser, startDate, endDate));
+        interviewAnalyticsResponseBean.setNext7DaysInterviews(customQueryExecutor.get7DaysInterviewCount(loggedInUser));
+        interviewAnalyticsResponseBean.setMonthInterviewMap(customQueryExecutor.get2MonthInterviewCount(loggedInUser, selectedMonthDate));
+        interviewAnalyticsResponseBean.setTwoMonthInterviewDatesMap(customQueryExecutor.getInterviewDateList(loggedInUser, selectedMonthDate));
+        return interviewAnalyticsResponseBean;
+    }
+
+    /**
+     * Service to fetch interview details
+     *
+     * @param selectedDate for selected interview date give details
+     * @return list of InterviewDetailBean
+     */
+    @Override
+    public List<InterviewDetailBean> getInterviewDetails(String selectedDate) {
+
+        //Logged in  user
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(null == loggedInUser){
+            log.error("Logged in user is null");
+            throw new WebException("Logged in user should not be null", HttpStatus.BAD_REQUEST);
+        }
+        log.info("User : {} - {} fetch interview details for date : {}", loggedInUser.getEmail(), loggedInUser.getMobile(), selectedDate);
+        return customQueryExecutor.getInterviewDetails(loggedInUser, selectedDate);
     }
 
     /**

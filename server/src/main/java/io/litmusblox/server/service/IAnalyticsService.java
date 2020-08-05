@@ -4,6 +4,9 @@
 
 package io.litmusblox.server.service;
 
+import io.litmusblox.server.service.JobAnalytics.AnalyticsDataResponseBean;
+import io.litmusblox.server.service.JobAnalytics.InterviewAnalyticsResponseBean;
+import io.litmusblox.server.service.JobAnalytics.InterviewDetailBean;
 import io.litmusblox.server.service.JobAnalytics.JobAnalyticsResponseBean;
 
 import java.util.Date;
@@ -40,4 +43,29 @@ public interface IAnalyticsService {
      * @throws Exception
      */
      JobAnalyticsResponseBean getJobAnalyticsData(Long jobId, Optional<Date> startDate, Optional<Date> endDate) throws Exception;
+
+    /**
+     * Service method to get job and candidate related analytics
+     *
+     * @return AnalyticsDataResponseBean
+     */
+    AnalyticsDataResponseBean getAnalyticsData();
+
+    /**
+     * Service to fetch interview analytics
+     *
+     * @param selectedMonthDate for which 2 months we want data
+     * @param startDate from which date we want data
+     * @param endDate up-to which date we want data, optional parameter
+     * @return InterviewAnalyticsResponseBean
+     */
+    InterviewAnalyticsResponseBean getInterviewAnalyticsData(String selectedMonthDate, String startDate, String endDate);
+
+    /**
+     * Service to fetch interview details
+     *
+     * @param selectedDate for selected interview date give details
+     * @return list of InterviewDetailBean
+     */
+    List<InterviewDetailBean> getInterviewDetails(String selectedDate);
 }

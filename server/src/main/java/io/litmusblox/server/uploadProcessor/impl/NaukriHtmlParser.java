@@ -35,9 +35,27 @@ public class NaukriHtmlParser implements HtmlParser {
         Candidate candidateFromNaukriEmail = new Candidate();
 
         Document doc = Jsoup.parse(htmlData);
-        populateCandidateName(candidateFromNaukriEmail, doc);
-        populateEmail(candidateFromNaukriEmail, doc.select("a"));
-        populateMobile(candidateFromNaukriEmail, doc);
+
+        try {
+            populateCandidateName(candidateFromNaukriEmail, doc);
+        }
+        catch (Exception e){
+            log.error("Error when populating candidate name ", e.getMessage());
+        }
+
+        try {
+            populateEmail(candidateFromNaukriEmail, doc.select("a"));
+        }
+        catch (Exception e){
+            log.error("Error when populating candidate email ", e.getMessage());
+        }
+
+        try {
+            populateMobile(candidateFromNaukriEmail, doc);
+        }
+        catch (Exception e){
+            log.error("Error when populating candidate mobile ", e.getMessage());
+        }
 
         try {
             candidateFromNaukriEmail.setCandidateCompanyDetails(new ArrayList<CandidateCompanyDetails>(1));
@@ -68,8 +86,8 @@ public class NaukriHtmlParser implements HtmlParser {
     }
 
     private void populateCandidateCompanyDetails(Candidate candidate, Document doc) {
-        if(null != doc.getElementsByAttributeValueContaining("src", "rating-icon.png").first().parent().parent().nextElementSibling().nextElementSibling().text()) {
-            String text = doc.getElementsByAttributeValueContaining("src", "rating-icon.png").first().parent().parent().nextElementSibling().nextElementSibling().text();
+        if(null != doc.getElementsByAttributeValueContaining("src", "star.png").first().parent().parent().nextElementSibling().nextElementSibling().text()) {
+            String text = doc.getElementsByAttributeValueContaining("src", "star.png").first().parent().parent().nextElementSibling().nextElementSibling().text();
             if( null !=text && !text.contains("Not Mentioned")) {
                 CandidateCompanyDetails companyDetails = CandidateCompanyDetails.builder().designation(text.substring(0, text.indexOf(" at "))).companyName(text.substring(text.indexOf(" at ") + 4)).build();
                 candidate.getCandidateCompanyDetails().add(companyDetails);
@@ -82,7 +100,7 @@ public class NaukriHtmlParser implements HtmlParser {
     }
 
     private void populateCandidateName(Candidate candidate, Document doc) {
-        candidate.setCandidateName(doc.getElementsByAttributeValueContaining("src", "rating-icon.png").first().parent().text());
+        candidate.setCandidateName(doc.getElementsByAttributeValueContaining("src", "star.png").first().parent().text());
     }
 
     private void populateEmail(Candidate candidate, Elements links) {

@@ -85,6 +85,14 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     @Transactional(readOnly = true)
     List<Job> findByIdInOrderByDatePublishedDesc(List<Long> jobIds);
 
+    //Count of all live jobs
+    @Transactional
+    int countByStatusAndDateArchivedIsNull(String status);
 
+    @Query(value = "select count(id) from job where status =:status and date_archived is null and company_id =:companyId", nativeQuery = true)
+    int countByStatusAndDateArchivedIsNullAndCompany(String status, Long companyId);
+
+    @Query(value = "select count(id) from job where status =:status and date_archived is null and created_by =:userId", nativeQuery = true)
+    int countByStatusAndDateArchivedIsNullAndCreatedBy(String status, Long userId);
 
 }
