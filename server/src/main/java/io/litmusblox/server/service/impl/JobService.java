@@ -324,6 +324,13 @@ public class JobService implements IJobService {
             default:
                 jobsForLoggedInUser(responseBean, archived, loggedInUser, jobStatus);
         }
+        responseBean.getListOfJobs().forEach( job-> {
+            if(!Arrays.asList(job.getRecruiter()).contains(null)) {
+                job.setRecruiterList(userRepository.findByIdIn(Arrays.asList(job.getRecruiter()).stream()
+                        .mapToLong(Integer::longValue)
+                        .boxed().collect(Collectors.toList())));
+            }
+        });
         log.info(msg + "Completed processing request to find all jobs for user in " + (System.currentTimeMillis() - startTime) + "ms");
         return responseBean;
     }
