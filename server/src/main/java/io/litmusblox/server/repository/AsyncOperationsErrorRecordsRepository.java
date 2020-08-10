@@ -5,7 +5,9 @@
 package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.AsyncOperationsErrorRecords;
+import io.litmusblox.server.model.JobCandidateMapping;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,4 +20,7 @@ import java.util.List;
  */
 public interface AsyncOperationsErrorRecordsRepository extends JpaRepository<AsyncOperationsErrorRecords, Long> {
     List<AsyncOperationsErrorRecords> findAllByJobIdAndAsyncOperation(Long jobId, String asyncOperation);
+
+    @Transactional
+    void deleteByJobCandidateMappingId(JobCandidateMapping jobCandidateMapping);
 }

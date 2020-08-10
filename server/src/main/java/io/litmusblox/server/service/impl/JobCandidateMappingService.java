@@ -164,6 +164,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Resource
     AsyncOperationsErrorRecordsRepository asyncOperationsErrorRecordsRepository;
 
+    @Resource
+    JcmCandidateSourceHistoryRepository jcmCandidateSourceHistoryRepository;
+
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
         return jobRepository.findById(jobId).get();
@@ -1607,10 +1610,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     private void deleteAndUpdateJcmRecord(JobCandidateMapping jcmFromDb, JobCandidateMapping jcmForExistingCandidate, User loggedInUser){
         log.info("Inside deleteAndUpdateJcmRecord, JcmId : {}",jcmFromDb.getId());
         jcmCommunicationDetailsRepository.deleteByJcmId(jcmFromDb.getId());
+        asyncOperationsErrorRecordsRepository.deleteByJobCandidateMappingId(jcmFromDb);
         cvParsingDetailsRepository.deleteByJobCandidateMappingId(jcmFromDb);
         cvRatingRepository.deleteByJobCandidateMappingId(jcmFromDb.getId());
         candidateScreeningQuestionResponseRepository.deleteByJobCandidateMappingId(jcmFromDb.getId());
         jcmHistoryRepository.deleteByJcmId(jcmFromDb);
+        jcmCandidateSourceHistoryRepository.deleteByJobCandidateMappingId(jcmFromDb.getId());
         jcmProfileSharingDetailsRepository.deleteByJobCandidateMappingId(jcmFromDb.getId());
         candidateTechResponseDataRepository.deleteByJobCandidateMappingId(jcmFromDb);
         jobCandidateMappingRepository.delete(jcmFromDb);
