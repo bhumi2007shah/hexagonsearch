@@ -15,6 +15,7 @@ import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.responsebean.export.JcmExportResponseBean;
+import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.ml.RolePredictionBean;
 import io.litmusblox.server.utils.RestClient;
@@ -1685,7 +1686,7 @@ public class JobService implements IJobService {
         Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineResponseBean = new HashMap<>();
         log.info("Calling SearchEngine API to generate tech questions for job: {}", job.getId());
         try {
-            searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, null, null, null).getResponseBody();
+            searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null).getResponseBody();
             searchEngineResponseBean = mapper.readValue(searchEngineResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
             log.info("Search engine rest call response : {}", searchEngineResponse);
 
