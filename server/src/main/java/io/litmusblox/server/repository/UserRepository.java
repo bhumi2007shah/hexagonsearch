@@ -26,4 +26,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     User findByUserUuid(UUID userUuid);
     int countByCompanyId(Long companyId);
     int countByCompanyBuId(Long companyBuId);
+    List<User> findByIdIn(List<Long> userId);
 }
