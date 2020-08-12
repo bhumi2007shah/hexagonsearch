@@ -87,16 +87,14 @@ public class AnalyticsController {
      * API to fetch interview analytics
      *
      * @param selectedMonthDate for which 2 months we want data
-     * @param startDate from which date we want data
-     * @param endDate up-to which date we want data, optional parameter
      * @return InterviewAnalyticsResponseBean
      */
     @GetMapping(path = {"/fetchInterviewAnalytics"})
     @PreAuthorize("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.RECRUITER + "')")
-    InterviewAnalyticsResponseBean getInterviewAnalyticsData(@RequestParam String selectedMonthDate, @RequestParam String startDate, @RequestParam(required = false) String endDate){
+    InterviewAnalyticsResponseBean getInterviewAnalyticsData(@RequestParam String selectedMonthDate){
         log.info("Received request to fetch analytics data related candidate interview");
         long startTime = System.currentTimeMillis();
-        InterviewAnalyticsResponseBean interviewAnalyticsResponseBean = analyticsService.getInterviewAnalyticsData(selectedMonthDate, startDate, endDate);
+        InterviewAnalyticsResponseBean interviewAnalyticsResponseBean = analyticsService.getInterviewAnalyticsData(selectedMonthDate);
         log.info("Completed to fetch analytics data related to candidate interview request in {}ms", System.currentTimeMillis()-startTime);
         return interviewAnalyticsResponseBean;
     }
