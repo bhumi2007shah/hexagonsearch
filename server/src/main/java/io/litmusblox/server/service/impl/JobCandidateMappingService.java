@@ -522,6 +522,11 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             objFromDb.setChatbotStatus(IConstant.ChatbotStatus.NOT_INSTERESTED.getValue());
         }
         objFromDb.setCandidateInterestDate(new Date());
+        //set stage = Screening where stage = Source
+        Map<String, Long> stageIdMap = MasterDataBean.getInstance().getStageStepMasterMap();
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        jobCandidateMappingRepository.updateStageStepId(Arrays.asList(objFromDb.getId()), stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), loggedInUser.getId(), new Date());
+
         //commented below code to not set flags to true.
         /*if(!objFromDb.getJob().getHrQuestionAvailable()){
             jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(objFromDb.getId());
@@ -799,12 +804,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             }
         }
 
-        if(null == jobObjToUse && jcmListWithoutError.size() > 0) {
-            log.error("Job stage steps not found. Cannot move candidate from Source to Screen");
-        } else if(jcmListWithoutError.size()>0) {
+        if(jcmListWithoutError.size()>0) {
             //set stage = Screening where stage = Source
-            Map<String, Long> stageIdMap = MasterDataBean.getInstance().getStageStepMasterMap();
-            jobCandidateMappingRepository.updateStageStepId(jcmListWithoutError, stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), loggedInUser.getId(), new Date());
             updateJcmHistory(jcmListWithoutError, loggedInUser);
         }
         return inviteCandidateResponseBean;
