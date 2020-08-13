@@ -55,11 +55,9 @@ public interface IAnalyticsService {
      * Service to fetch interview analytics
      *
      * @param selectedMonthDate for which 2 months we want data
-     * @param startDate from which date we want data
-     * @param endDate up-to which date we want data, optional parameter
      * @return InterviewAnalyticsResponseBean
      */
-    InterviewAnalyticsResponseBean getInterviewAnalyticsData(String selectedMonthDate, String startDate, String endDate);
+    InterviewAnalyticsResponseBean getInterviewAnalyticsData(String selectedMonthDate);
 
     /**
      * Service to fetch interview details
