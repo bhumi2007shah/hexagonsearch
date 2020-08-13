@@ -6,6 +6,7 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.JcmCandidateSourceHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Repository interface for JcmCandidateSourceHistory class
@@ -18,4 +19,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface JcmCandidateSourceHistoryRepository extends JpaRepository<JcmCandidateSourceHistory, Long> {
 
+    @Transactional
+    void deleteByJobCandidateMappingId(Long jcmId);
 }
