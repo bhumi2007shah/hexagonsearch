@@ -557,8 +557,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
 
         //delete existing response for chatbot for the jcm
+        long startTime = System.currentTimeMillis();
         candidateScreeningQuestionResponseRepository.deleteByJobCandidateMappingId(objFromDb.getId());
 
+        ArrayList<String> responsesInArrayList = new ArrayList<String>();
         candidateResponse.forEach((key,value) -> {
             String[] valuesToSave = new String[value.size()];
             for(int i=0;i<value.size();i++) {
@@ -573,9 +575,16 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 }
             }
             candidateScreeningQuestionResponseRepository.save(new CandidateScreeningQuestionResponse(objFromDb.getId(),key, valuesToSave[0], (valuesToSave.length > 1)?valuesToSave[1]:null));
+            responsesInArrayList.add(String.join(",", valuesToSave));
         });
+        log.info("Completed looping through map in {}ms", (System.currentTimeMillis()-startTime));
 
         //updating hr_chat_complete_flag
+        startTime = System.currentTimeMillis();
+        String [] responses = responsesInArrayList.toArray(new String[responsesInArrayList.size()]);
+        objFromDb.setCandidateChatbotResponse(responses);
+        log.info("Completed adding response to db in {}ms",(System.currentTimeMillis()-startTime));
+
         jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(objFromDb.getId());
 
         //update chatbot updated date
