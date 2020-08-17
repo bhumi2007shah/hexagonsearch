@@ -8,19 +8,21 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.Candidate;
+import io.litmusblox.server.model.CandidateEmailHistory;
+import io.litmusblox.server.model.CandidateMobileHistory;
 import io.litmusblox.server.model.User;
+import io.litmusblox.server.repository.CandidateEmailHistoryRepository;
+import io.litmusblox.server.repository.CandidateMobileHistoryRepository;
 import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.http.HttpStatus;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author : Sumit
@@ -29,8 +31,16 @@ import java.util.Map;
  * Class Name : ExcelFileProcessorService
  * Project Name : server
  */
+
+
 @Log4j2
 public class ExcelFileProcessorService implements IUploadFileProcessorService {
+
+    @Resource
+    CandidateEmailHistoryRepository candidateEmailHistoryRepository;
+
+    @Resource
+    CandidateMobileHistoryRepository candidateMobileHistoryRepository;
 
     @Override
     public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile,String repoLocation, User loggedInUser, String fileType) {
@@ -85,10 +95,32 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
                                 candidate.setLastName(Util.toSentenceCase(cellValue.trim()));
                                 break;
                             case 2:
-                                candidate.setEmail(cellValue.trim());
+                                if(cellValue.contains(",")) {
+                                    candidate.setEmail(cellValue.split(",")[0].trim());
+                                    for(int i=0; i<cellValue.split(",").length; i++) {
+                                        if (null == candidateEmailHistoryRepository.findByEmail(cellValue.split(",")[i].trim()))
+                                            candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate.getCandidateDetails().getCandidateId(), cellValue.split(",")[i].trim(), new Date(), loggedInUser));
+                                    }
+                                }
+                                else{
+                                    candidate.setEmail(cellValue.trim());
+                                    if (null == candidateEmailHistoryRepository.findByEmail(cellValue.trim()))
+                                        candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate.getCandidateDetails().getCandidateId(), cellValue.trim(), new Date(), loggedInUser));
+                                }
                                 break;
                             case 3:
-                                candidate.setMobile(cellValue.trim());
+                                if(cellValue.contains(",")) {
+                                    candidate.setMobile(cellValue.split(",")[0].trim());
+                                    for(int i=0; i<cellValue.split(",").length; i++) {
+                                        if (null == candidateMobileHistoryRepository.findByMobileAndCountryCode(cellValue.split(",")[i].trim(), candidate.getCountryCode()))
+                                            candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate.getCandidateDetails().getCandidateId(), cellValue.split(",")[i].trim(), candidate.getCountryCode(), new Date(), loggedInUser));
+                                    }
+                                }
+                                else{
+                                    candidate.setMobile(cellValue.trim());
+                                    if (null == candidateMobileHistoryRepository.findByMobileAndCountryCode(cellValue.trim(), candidate.getCountryCode()))
+                                        candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate.getCandidateDetails().getCandidateId(), cellValue.trim(), candidate.getCountryCode(), new Date(), loggedInUser));
+                                }
                         }
                     }
                     if (!discardRow)
@@ -113,3 +145,6 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
         return candidateList;
     }
 }
+
+
+
