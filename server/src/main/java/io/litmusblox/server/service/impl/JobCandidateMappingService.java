@@ -524,8 +524,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         objFromDb.setCandidateInterestDate(new Date());
         //set stage = Screening where stage = Source
         Map<String, Long> stageIdMap = MasterDataBean.getInstance().getStageStepMasterMap();
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        jobCandidateMappingRepository.updateStageStepId(Arrays.asList(objFromDb.getId()), stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), loggedInUser.getId(), new Date());
+        jobCandidateMappingRepository.updateStageStepId(Arrays.asList(objFromDb.getId()), stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), objFromDb.getCreatedBy().getId(), new Date());
 
         //commented below code to not set flags to true.
         /*if(!objFromDb.getJob().getHrQuestionAvailable()){
