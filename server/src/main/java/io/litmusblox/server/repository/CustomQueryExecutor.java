@@ -179,7 +179,7 @@ public class CustomQueryExecutor {
     private static final String basicJobCandidatePipelineQuery = "SELECT sum((jCount.candidateCount >=0 AND jCount.candidateCount<=3)\\:\\:INT) as candidateCount0TO3Days,\n" +
             "sum((jCount.candidateCount >=4 AND jCount.candidateCount<=6)\\:\\:INT) as candidateCount4TO6Days,\n" +
             "sum((jCount.candidateCount >=7 AND jCount.candidateCount<=10)\\:\\:INT) as candidateCount7TO10Days,\n" +
-            "sum((jCount.candidateCount > 10)\\:\\:INT) as candidateCount10PlusDays from (select job.id , count(jcm.id) as candidateCount from job left join job_candidate_mapping jcm on job.id = jcm.job_id where job.date_archived is null";
+            "sum((jCount.candidateCount > 10)\\:\\:INT) as candidateCount10PlusDays from (select job.id , count(jcm.id) as candidateCount from job left join job_candidate_mapping jcm on job.id = jcm.job_id where job.date_archived is null and job.date_published is not null";
 
     private static final String jobPipelineClientAdminWhereClause = "  and job.company_id=";
     private static final String jobPipelineRecruiterWhereClause = " and job.created_by =";
