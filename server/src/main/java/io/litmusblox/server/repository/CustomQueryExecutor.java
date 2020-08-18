@@ -364,13 +364,13 @@ public class CustomQueryExecutor {
 
         List<Object[]> resultSet = entityManager.createNativeQuery(queryString.toString()).getResultList();
         for (Object[] objects : resultSet) {
-            candidateCountByStageMap.put("sourcingCandidateCount", Integer.parseInt(objects[0].toString()));
-            candidateCountByStageMap.put("screeningCandidateCount", Integer.parseInt(objects[1].toString()));
-            candidateCountByStageMap.put("submittedCandidateCount", Integer.parseInt(objects[2].toString()));
-            candidateCountByStageMap.put("interviewCandidateCount", Integer.parseInt(objects[3].toString()));
-            candidateCountByStageMap.put("makeOfferCandidateCount", Integer.parseInt(objects[4].toString()));
-            candidateCountByStageMap.put("OfferCandidateCount", Integer.parseInt(objects[5].toString()));
-            candidateCountByStageMap.put("hiredCandidateCount", Integer.parseInt(objects[6].toString()));
+            candidateCountByStageMap.put("sourcingCandidateCount", (null == objects[0])?0:Integer.parseInt(objects[0].toString()));
+            candidateCountByStageMap.put("screeningCandidateCount", (null == objects[1])?0:Integer.parseInt(objects[1].toString()));
+            candidateCountByStageMap.put("submittedCandidateCount", (null == objects[2])?0:Integer.parseInt(objects[2].toString()));
+            candidateCountByStageMap.put("interviewCandidateCount", (null == objects[3])?0:Integer.parseInt(objects[3].toString()));
+            candidateCountByStageMap.put("makeOfferCandidateCount", (null == objects[4])?0:Integer.parseInt(objects[4].toString()));
+            candidateCountByStageMap.put("OfferCandidateCount", (null == objects[5])?0:Integer.parseInt(objects[5].toString()));
+            candidateCountByStageMap.put("hiredCandidateCount", (null == objects[6])?0:Integer.parseInt(objects[6].toString()));
         }
         return candidateCountByStageMap;
     }
@@ -386,11 +386,11 @@ public class CustomQueryExecutor {
             queryString.append(jobAgingRecruiterWhereClause).append(loggedInUser.getId()).append(")");
         List<Object[]> resultSet = entityManager.createNativeQuery(queryString.toString()).getResultList();
         for(Object[] objects: resultSet){
-            jobAgingCountMap.put("jobAging0To15Days",Integer.parseInt(objects[0].toString()));
-            jobAgingCountMap.put("jobAging16To30Days",Integer.parseInt(objects[1].toString()));
-            jobAgingCountMap.put("jobAging31To60Days",Integer.parseInt(objects[2].toString()));
-            jobAgingCountMap.put("jobAging61To90Days",Integer.parseInt(objects[3].toString()));
-            jobAgingCountMap.put("jobAging90PlusDays",Integer.parseInt(objects[4].toString()));
+            jobAgingCountMap.put("jobAging0To15Days",(null == objects[0])?0:Integer.parseInt(objects[0].toString()));
+            jobAgingCountMap.put("jobAging16To30Days",(null == objects[1])?0:Integer.parseInt(objects[1].toString()));
+            jobAgingCountMap.put("jobAging31To60Days",(null == objects[2])?0:Integer.parseInt(objects[2].toString()));
+            jobAgingCountMap.put("jobAging61To90Days",(null == objects[3])?0:Integer.parseInt(objects[3].toString()));
+            jobAgingCountMap.put("jobAging90PlusDays",(null == objects[4])?0:Integer.parseInt(objects[4].toString()));
         }
         return jobAgingCountMap;
     }
@@ -418,11 +418,11 @@ public class CustomQueryExecutor {
         List<Object[]> resultSet = entityManager.createNativeQuery(queryString.toString()).getResultList();
 
         for(Object[] objects: resultSet){
-            jobCandidatePipelineCountMap.put("candidateCount0To3",Integer.parseInt(objects[0].toString()) + (totalJobCount - (Integer.parseInt(objects[0].toString())
-            + Integer.parseInt(objects[1].toString()) + Integer.parseInt(objects[2].toString()) + Integer.parseInt(objects[3].toString()))));
-            jobCandidatePipelineCountMap.put("candidateCount4To6",Integer.parseInt(objects[1].toString()));
-            jobCandidatePipelineCountMap.put("candidateCount7To10",Integer.parseInt(objects[2].toString()));
-            jobCandidatePipelineCountMap.put("candidateCount10Plus",Integer.parseInt(objects[3].toString()));
+            jobCandidatePipelineCountMap.put("candidateCount0To3", (null == objects[0])?0:(Integer.parseInt(objects[0].toString()) + (totalJobCount - (Integer.parseInt(objects[0].toString())
+            + Integer.parseInt(objects[1].toString()) + Integer.parseInt(objects[2].toString()) + Integer.parseInt(objects[3].toString())))));
+            jobCandidatePipelineCountMap.put("candidateCount4To6",(null == objects[1])?0:Integer.parseInt(objects[1].toString()));
+            jobCandidatePipelineCountMap.put("candidateCount7To10",(null == objects[2])?0:Integer.parseInt(objects[2].toString()));
+            jobCandidatePipelineCountMap.put("candidateCount10Plus",(null == objects[3])?0:Integer.parseInt(objects[3].toString()));
         }
         return jobCandidatePipelineCountMap;
     }
