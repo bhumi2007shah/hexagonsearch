@@ -28,7 +28,7 @@ public interface ICandidateService {
      * @return
      * @throws Exception
      */
-    Candidate findByMobileOrEmail(String email, String mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception;
+    Candidate findByMobileOrEmail(String [] email, String [] mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception;
 
     /**
      * Method to find a candidate using profile type and uniqueId from that profile
@@ -49,7 +49,7 @@ public interface ICandidateService {
      * @param loggedInUser
      * @return
      */
-    Candidate createCandidate(String firstName, String lastName, String email, String mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception;
+    Candidate createCandidate(String firstName, String lastName, String [] email, String [] mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception;
 
     /**
      * Method to update candidate details

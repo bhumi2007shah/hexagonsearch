@@ -96,70 +96,55 @@ public class CandidateService implements ICandidateService {
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public Candidate findByMobileOrEmail(String email, String mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
+    public Candidate findByMobileOrEmail(String [] email, String [] mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
         log.info("Inside findByMobileOrEmail method");
         //check if candidate exists for email
+        List<String> emailList = Arrays.asList(email);
+        List<String> mobileList = Arrays.asList(mobile);
         Candidate dupCandidateByEmail = null;
-        CandidateEmailHistory candidateEmailHistory = candidateEmailHistoryRepository.findByEmail(email);
-        if (null != candidateEmailHistory)
-            dupCandidateByEmail = candidateEmailHistory.getCandidate();
+        List<CandidateEmailHistory> candidateEmailHistory = candidateEmailHistoryRepository.findByEmailIn(emailList);
+//        if (null != candidateEmailHistory && !candidateEmailHistory.isEmpty())
+//            dupCandidateByEmail = candidateEmailHistory.getCandidate();
+
+        alternateMobile.ifPresent(mobileList::add);
 
         //check if candidate exists for mobile
-        Candidate dupCandidateByMobile = null;
-        Candidate dupCandidateByAlternateMobile = null;
-        boolean isAlternateMobilePresentInDb = false;
-        if (Util.isNotNull(mobile)) {
-            CandidateMobileHistory candidateMobileHistory = candidateMobileHistoryRepository.findByMobileAndCountryCode(mobile, countryCode);
-            if (null != candidateMobileHistory)
-                dupCandidateByMobile = candidateMobileHistory.getCandidate();
-        }
-        if (null != mobile && alternateMobile.isPresent() && !mobile.equals(alternateMobile.get())) {
-            CandidateMobileHistory candidateMobileHistory = candidateMobileHistoryRepository.findByMobileAndCountryCode(alternateMobile.get(), countryCode);
-            if (null != candidateMobileHistory) {
-                if (dupCandidateByMobile == null)
-                    dupCandidateByAlternateMobile = candidateMobileHistory.getCandidate();
-                isAlternateMobilePresentInDb = true;
-            }
-        }
 
-        if (null != dupCandidateByEmail) {
-            //found different candidate ids for the email and mobile number combination
-            if (null != dupCandidateByMobile && !dupCandidateByEmail.getId().equals(dupCandidateByMobile.getId()))
-                throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY + mobile + " " + email, HttpStatus.BAD_REQUEST);
-            else if(null != dupCandidateByAlternateMobile && !dupCandidateByEmail.getId().equals(dupCandidateByAlternateMobile.getId()))
-                throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY + (alternateMobile.isPresent()?alternateMobile.get():null) + " " + email, HttpStatus.BAD_REQUEST);
+        List<CandidateMobileHistory> candidateMobileHistory = new ArrayList<CandidateMobileHistory>();
+        if (null != mobileList && !mobileList.isEmpty())
+            candidateMobileHistory = candidateMobileHistoryRepository.findByCountryCodeAndMobileIn(countryCode, mobileList);
 
-        }
+        log.info("Candidate Email History Size: {}", candidateEmailHistory.size());
+        log.info("Candidate Mobile History Size: {}", candidateMobileHistory.size());
 
-        if (null == dupCandidateByEmail) {
-            if (null != dupCandidateByMobile) {
-                if(!isEmailExist(email, dupCandidateByMobile)){
-                    //Candidate by mobile exists, add email history
-                    candidateEmailHistoryRepository.save(new CandidateEmailHistory(dupCandidateByMobile, email, new Date(), loggedInUser));
-                }
-                return dupCandidateByMobile;
-            } else if (null != dupCandidateByAlternateMobile) {
-                if(!isEmailExist(email, dupCandidateByAlternateMobile)) {
-                    //Candidate by Alternate mobile exists, add email history
-                    candidateEmailHistoryRepository.save(new CandidateEmailHistory(dupCandidateByAlternateMobile, email, new Date(), loggedInUser));
-                }
-                return dupCandidateByAlternateMobile;
-            }
+        if(candidateEmailHistory.size()==0 && candidateMobileHistory.size()==0)
+            return null;
 
-        }
-        if (null != dupCandidateByEmail) {
+        Long dupCandidateId = candidateEmailHistory.get(0).getCandidate().getId();
+        log.info(dupCandidateId);
+        candidateEmailHistory.forEach( (candidate) -> {
+            log.info(candidate.getCandidate().getId());
+            if (!dupCandidateId.equals(candidate.getCandidate().getId()))
+                throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY, HttpStatus.BAD_REQUEST);
+        });
+        candidateMobileHistory.forEach( (candidate) -> {
+            log.info(candidate.getCandidate().getId());
+            if (!dupCandidateId.equals(candidate.getCandidate().getId()))
+                throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY, HttpStatus.BAD_REQUEST);
+        });
 
-            if (null == dupCandidateByMobile && Util.isNotNull(mobile)) {
-                //Candidate by email exists, add mobile history
-                candidateMobileHistoryRepository.save(new CandidateMobileHistory(dupCandidateByEmail, mobile, countryCode, new Date(), loggedInUser));
-            }
-            if (null != mobile && !isAlternateMobilePresentInDb && alternateMobile.isPresent() && !mobile.equals(alternateMobile.get())) {
-                //Candidate by email exists, add alternate mobile history
-                candidateMobileHistoryRepository.save(new CandidateMobileHistory(dupCandidateByEmail, alternateMobile.get(), countryCode, new Date(), loggedInUser));
-            }
-            return dupCandidateByEmail;
-        }
-        return dupCandidateByEmail;
+        Candidate candidate = candidateEmailHistory.get(0).getCandidate();
+        emailList.forEach( (emailToAdd) -> {
+            if(candidateEmailHistoryRepository.findByEmail(emailToAdd) == null)
+                candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, emailToAdd, new Date(), loggedInUser));
+        });
+        mobileList.forEach( (mobileToAdd) -> {
+            if(candidateMobileHistoryRepository.findByMobileAndCountryCode(mobileToAdd, countryCode) == null)
+                candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobileToAdd, countryCode, new Date(), loggedInUser));
+        });
+
+        return candidate;
+
     }
 
     private boolean isEmailExist(String email, Candidate candidate){
@@ -205,14 +190,21 @@ public class CandidateService implements ICandidateService {
      * @return
      */
     @Override
-    public Candidate createCandidate(String firstName, String lastName, String email, String mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
+    public Candidate createCandidate(String firstName, String lastName, String [] email, String [] mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
 
         log.info("Inside createCandidate method - create candidate, emailHistory, mobileHistory");
-        Candidate candidate = candidateRepository.save(new Candidate(firstName, lastName, email, mobile, countryCode, new Date(), loggedInUser));
-        candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, email, new Date(), loggedInUser));
-        if(null != mobile)
-            candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobile, countryCode, new Date(), loggedInUser));
+//        ArrayList<CandidateEmailHistory> candidateEmailHistoryList;
+//        ArrayList email
+        Candidate candidate = candidateRepository.save(new Candidate(firstName, lastName, email[0], mobile[0], countryCode, new Date(), loggedInUser));
+        for(int i=0; i< email.length; i++) {
+                candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, email[i], new Date(), loggedInUser));
+        }
 
+        if(null != mobile) {
+            for(int i=0; i< mobile.length; i++) {
+                candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobile[i], countryCode, new Date(), loggedInUser));
+            }
+        }
         if(null != mobile && alternateMobile.isPresent() && !mobile.equals(alternateMobile.get()))
             candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, alternateMobile.get(), countryCode, new Date(), loggedInUser));
 
