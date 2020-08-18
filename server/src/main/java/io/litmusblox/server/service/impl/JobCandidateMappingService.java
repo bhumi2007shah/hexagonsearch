@@ -254,7 +254,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         log.info("Inside saveCandidateSupportiveInfo Method");
 
         //find candidateId
-        Candidate candidateFromDb=candidateService.findByMobileOrEmail(candidate.getEmail(), candidate.getMobile(), (null==candidate.getCountryCode())?loggedInUser.getCountryId().getCountryCode():candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
+        Candidate candidateFromDb=candidateService.findByMobileOrEmail(candidate.getEmail().split(","), candidate.getMobile().split(","), (null==candidate.getCountryCode())?loggedInUser.getCountryId().getCountryCode():candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
 
         Long candidateId = null;
         if (null != candidateFromDb)
@@ -273,7 +273,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                         if (telephone.length() > 15)
                             telephone = telephone.substring(0, 15);
 
-                        log.info("JobCandidateMappingService.java 276 Mobile value = {}", telephone);
                         if (null == candidateMobileHistoryRepository.findByMobileAndCountryCode(telephone, candidate.getCountryCode()));
                             candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidateFromDb, telephone, (null == candidateFromDb.getCountryCode()) ? loggedInUser.getCountryId().getCountryCode() : candidateFromDb.getCountryCode(), new Date(), loggedInUser));
                     }
@@ -1340,13 +1339,11 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             if(!candidateEmailHistory.getCandidate().getId().equals(candidateMobileHistory.getCandidate().getId()))
                 throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY + " - " + jcm.getAlternateMobile() + " "+jcm.getAlternateEmail()+", While add/update alternate email and mobile", HttpStatus.BAD_REQUEST);
         }else if(null == candidateEmailHistory && null == candidateMobileHistory){
-            log.info("jcmService.java 1243 Mobile value = {}", jcm.getAlternateMobile());
             if(Util.isNotNull(jcm.getAlternateMobile()))
                 candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jcm.getAlternateMobile(), jcm.getCountryCode(), new Date(), loggedInUser));
             if(Util.isNotNull(jcm.getAlternateEmail()))
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(jcmFromDb.getCandidate(), jcm.getAlternateEmail(), new Date(), loggedInUser));
         }else{
-            log.info("jcmService.java 1349 Alternate Mobile value = {}", jcm.getAlternateMobile());
             if(null != candidateEmailHistory && null == candidateMobileHistory && Util.isNotNull(jcm.getAlternateMobile())){
                 candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jcm.getAlternateMobile(), jcm.getCountryCode(), new Date(), loggedInUser));
             }else if(null != candidateMobileHistory && null == candidateEmailHistory && Util.isNotNull(jcm.getAlternateEmail())){
@@ -1670,7 +1667,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             CandidateMobileHistory candidateMobileHistory = candidateMobileHistoryRepository.findByMobileAndCountryCode(jobCandidateMapping.getMobile(), jobCandidateMapping.getCountryCode());
             if (null == candidateMobileHistory) {
                 log.info("Create new mobile history for mobile : {}, for candidateId : {}", jobCandidateMapping.getMobile(), jcmFromDb.getCandidate().getId());
-                log.info("jcmService.java 1673 Mobile value = {}", jobCandidateMapping.getMobile());
                 candidateMobileHistoryRepository.save(new CandidateMobileHistory(jcmFromDb.getCandidate(), jobCandidateMapping.getMobile(), jobCandidateMapping.getCountryCode(), new Date(), loggedInUser));
                 jcmFromDb.setMobile(jobCandidateMapping.getMobile());
                 jcmFromDb.setCountryCode(jobCandidateMapping.getCountryCode());

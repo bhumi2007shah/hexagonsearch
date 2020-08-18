@@ -32,4 +32,7 @@ public interface CandidateEmailHistoryRepository extends JpaRepository<Candidate
 
     @Transactional
     void deleteByCandidateId(Long candidateId);
+
+    @Transactional
+    List<CandidateEmailHistory> findByEmailIn(List<String> emailList);
 }

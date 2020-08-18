@@ -149,7 +149,6 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             candidate.setEmail("notavailable" + new Date().getTime() + IConstant.NOT_AVAILABLE_EMAIL);
 
         String [] emailList = candidate.getEmail().split(",");
-        String combinedEmailList = "";
         for(int i=0; i< emailList.length; i++) {
             if (!Util.isValidateEmail(emailList[i], Optional.of(candidate))) {
                 emailList[i] = emailList[i].replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL, "");
@@ -158,16 +157,15 @@ public class UploadDataProcessService implements IUploadDataProcessService {
                     throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + candidate.getEmail(), HttpStatus.BAD_REQUEST);
                 }
             }
-            combinedEmailList += emailList[i].toLowerCase() + ",";
         }
         candidate.setEmail(emailList[0]);
 
         StringBuffer msg = new  StringBuffer(candidate.getFirstName()).append(" ").append(candidate.getLastName()).append(" (").append(candidate.getEmail());
 
-        String combinedMobileList = "";
-        if(Util.isNotNull(candidate.getMobile())) {
-            String [] mobileList = candidate.getMobile().split(",");
 
+        String [] mobileList = null;
+        if(Util.isNotNull(candidate.getMobile())) {
+            mobileList = candidate.getMobile().split(",");
             for (int i=0; i< mobileList.length; i++) {
                 mobileList[i] = (Util.indianMobileConvertor(mobileList[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode()));
                 if (!Util.validateMobile(mobileList[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate))) {
@@ -176,7 +174,6 @@ public class UploadDataProcessService implements IUploadDataProcessService {
                     if (!Util.validateMobile(mobileList[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate)))
                         throw new ValidationException(IErrorMessages.MOBILE_INVALID_DATA + " - " + mobileList[i], HttpStatus.BAD_REQUEST);
                 }
-                combinedMobileList += mobileList[i] + ",";
             }
             candidate.setMobile(mobileList[0]);
             msg.append(",").append(candidate.getMobile()).append(") ");
@@ -199,7 +196,8 @@ public class UploadDataProcessService implements IUploadDataProcessService {
         log.info(msg);
 
         //create a candidate if no history found for email and mobile
-        Candidate existingCandidate = candidateService.findByMobileOrEmail(candidate.getEmail(),candidate.getMobile(),(Util.isNull(candidate.getCountryCode())?job.getCompanyId().getCountryId().getCountryCode():candidate.getCountryCode()), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
+        Candidate existingCandidate = candidateService.findByMobileOrEmail(emailList,mobileList,(Util.isNull(candidate.getCountryCode())?job.getCompanyId().getCountryId().getCountryCode():candidate.getCountryCode()), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
+        log.info("Prashant Check" + existingCandidate);
         if(null == existingCandidate && candidate.getCandidateSource().equalsIgnoreCase(IConstant.CandidateSource.LinkedIn.getValue())){
             existingCandidate = candidateService.findByProfileTypeAndUniqueId(candidate.getCandidateOnlineProfiles());
         }
@@ -209,14 +207,14 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             candidate.setCreatedBy(loggedInUser);
             if(Util.isNull(candidate.getCountryCode()))
                 candidate.setCountryCode(job.getCompanyId().getCountryId().getCountryCode());
-            candidateObjToUse = candidateService.createCandidate(candidate.getFirstName(), candidate.getLastName(), combinedEmailList, combinedMobileList, candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
+            candidateObjToUse = candidateService.createCandidate(candidate.getFirstName(), candidate.getLastName(), emailList, mobileList, candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
             candidate.setId(candidateObjToUse.getId());
         }
         else {
             log.info("Found existing candidate: " + existingCandidate.getId());
             candidate.setId(existingCandidate.getId());
             if(Util.isNotNull(existingCandidate.getEmail()))
-                candidate.setEmail(candidate.getEmail());
+                candidate.setEmail(existingCandidate.getEmail());
         }
 
         log.info(msg);
