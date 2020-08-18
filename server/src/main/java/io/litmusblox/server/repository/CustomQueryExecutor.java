@@ -418,8 +418,8 @@ public class CustomQueryExecutor {
         List<Object[]> resultSet = entityManager.createNativeQuery(queryString.toString()).getResultList();
 
         for(Object[] objects: resultSet){
-            jobCandidatePipelineCountMap.put("candidateCount0To3",Integer.parseInt(objects[0].toString()) + (totalJobCount - (Integer.parseInt(objects[0].toString()))
-            + Integer.parseInt(objects[1].toString()) + Integer.parseInt(objects[2].toString()) + Integer.parseInt(objects[3].toString())));
+            jobCandidatePipelineCountMap.put("candidateCount0To3",Integer.parseInt(objects[0].toString()) + (totalJobCount - (Integer.parseInt(objects[0].toString())
+            + Integer.parseInt(objects[1].toString()) + Integer.parseInt(objects[2].toString()) + Integer.parseInt(objects[3].toString()))));
             jobCandidatePipelineCountMap.put("candidateCount4To6",Integer.parseInt(objects[1].toString()));
             jobCandidatePipelineCountMap.put("candidateCount7To10",Integer.parseInt(objects[2].toString()));
             jobCandidatePipelineCountMap.put("candidateCount10Plus",Integer.parseInt(objects[3].toString()));
