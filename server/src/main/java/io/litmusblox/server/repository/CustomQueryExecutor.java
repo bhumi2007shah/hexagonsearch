@@ -179,7 +179,8 @@ public class CustomQueryExecutor {
     private static final String basicJobCandidatePipelineQuery = "SELECT sum((jCount.candidateCount >=0 AND jCount.candidateCount<=3)\\:\\:INT) as candidateCount0TO3Days,\n" +
             "sum((jCount.candidateCount >=4 AND jCount.candidateCount<=6)\\:\\:INT) as candidateCount4TO6Days,\n" +
             "sum((jCount.candidateCount >=7 AND jCount.candidateCount<=10)\\:\\:INT) as candidateCount7TO10Days,\n" +
-            "sum((jCount.candidateCount > 10)\\:\\:INT) as candidateCount10PlusDays from (select job.id , count(jcm.id) as candidateCount from job left join job_candidate_mapping jcm on job.id = jcm.job_id where job.date_archived is null and job.date_published is not null";
+            "sum((jCount.candidateCount > 10)\\:\\:INT) as candidateCount10PlusDays from (select job.id , count(jcm.id) as candidateCount from job left join job_candidate_mapping jcm on job.id = jcm.job_id where job.date_archived is null and job.date_published is not null \n"+
+            "and jcm.stage in (3, 4) and jcm.rejected = 'f'";
 
     private static final String jobPipelineClientAdminWhereClause = "  and job.company_id=";
     private static final String jobPipelineRecruiterWhereClause = " and job.created_by =";
@@ -207,6 +208,8 @@ public class CustomQueryExecutor {
             "left join master_data md on md.id = iv.candidate_confirmation_value where job.date_archived is null";
 
     private static final String getIVDetailsWhereClause = " iv.interview_date =";
+
+    private static final String totalLiveJobCountSelectQuery = "select count(id) from job where date_published is not null and date_archived is null";
 
     @Transactional(readOnly = true)
     public List<AnalyticsResponseBean> analyticsByCompany(String startDate, String endDate, String companyIdList) throws Exception {
@@ -396,16 +399,27 @@ public class CustomQueryExecutor {
     public Map<String, Integer> getJobCandidatePipelineCount(User loggedInUser) {
         Map<String, Integer> jobCandidatePipelineCountMap = new LinkedHashMap<>();
         StringBuffer queryString = new StringBuffer();
+        StringBuffer totalJobQueryString = new StringBuffer();
+        totalJobQueryString.append(totalLiveJobCountSelectQuery);
         queryString.append(basicJobCandidatePipelineQuery);
-        if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
+        if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole())){
             queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId());
-        else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
+            totalJobQueryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId());
+        }
+        else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole())){
             queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId());
+        totalJobQueryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId());
+        }
+
+        int totalJobCount = Integer.parseInt(entityManager.createNativeQuery(totalJobQueryString.toString()).getResultList().get(0).toString());
+
 
         queryString.append(" group by job.id) as jCount");
         List<Object[]> resultSet = entityManager.createNativeQuery(queryString.toString()).getResultList();
+
         for(Object[] objects: resultSet){
-            jobCandidatePipelineCountMap.put("candidateCount0To3",Integer.parseInt(objects[0].toString()));
+            jobCandidatePipelineCountMap.put("candidateCount0To3",Integer.parseInt(objects[0].toString()) + (totalJobCount - (Integer.parseInt(objects[0].toString()))
+            + Integer.parseInt(objects[1].toString()) + Integer.parseInt(objects[2].toString()) + Integer.parseInt(objects[3].toString())));
             jobCandidatePipelineCountMap.put("candidateCount4To6",Integer.parseInt(objects[1].toString()));
             jobCandidatePipelineCountMap.put("candidateCount7To10",Integer.parseInt(objects[2].toString()));
             jobCandidatePipelineCountMap.put("candidateCount10Plus",Integer.parseInt(objects[3].toString()));
@@ -453,7 +467,7 @@ public class CustomQueryExecutor {
         Map<String, Integer> monthViseInterviewCountMap = new LinkedHashMap<>();
         LocalDate startDate = LocalDate.parse(selectedMonthDate);
         LocalDate endDate = startDate.plusMonths(1);
-        monthViseInterviewCountMap.put(startDate.getMonth().toString(),getFutureInterviewCount(loggedInUser, startDate.toString(), endDate.toString()));
+        monthViseInterviewCountMap.put(startDate.getMonth().toString(),     getFutureInterviewCount(loggedInUser, startDate.toString(), endDate.toString()));
         monthViseInterviewCountMap.put(endDate.getMonth().toString(),getFutureInterviewCount(loggedInUser, endDate.toString(), endDate.plusMonths(1).toString()));
         return monthViseInterviewCountMap;
     }
