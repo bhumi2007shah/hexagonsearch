@@ -148,27 +148,39 @@ public class UploadDataProcessService implements IUploadDataProcessService {
         if(Util.isNull(candidate.getEmail()))
             candidate.setEmail("notavailable" + new Date().getTime() + IConstant.NOT_AVAILABLE_EMAIL);
 
-        if (!Util.isValidateEmail(candidate.getEmail(), Optional.of(candidate))) {
-            String cleanEmail = candidate.getEmail().replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL,"");
-            log.error("Special characters found, cleaning Email \"" + candidate.getEmail() + "\" to " + cleanEmail);
-            if (!Util.isValidateEmail(cleanEmail, Optional.of(candidate))) {
-                throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + candidate.getEmail(), HttpStatus.BAD_REQUEST);
+        String [] emailList = candidate.getEmail().split(",");
+        String combinedEmailList = "";
+        for(int i=0; i< emailList.length; i++) {
+            if (!Util.isValidateEmail(emailList[i], Optional.of(candidate))) {
+                emailList[i] = emailList[i].replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL, "");
+                log.error("Special characters found, cleaning Email \"" + emailList[i] + "\" to " + emailList[i]);
+                if (!Util.isValidateEmail(emailList[i], Optional.of(candidate))) {
+                    throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + candidate.getEmail(), HttpStatus.BAD_REQUEST);
+                }
             }
-            candidate.setEmail(cleanEmail.toLowerCase());
+            combinedEmailList += emailList[i].toLowerCase() + ",";
         }
+        candidate.setEmail(emailList[0]);
 
         StringBuffer msg = new  StringBuffer(candidate.getFirstName()).append(" ").append(candidate.getLastName()).append(" (").append(candidate.getEmail());
 
+        String combinedMobileList = "";
         if(Util.isNotNull(candidate.getMobile())) {
-            candidate.setMobile(Util.indianMobileConvertor(candidate.getMobile(), (null != candidate.getCountryCode())?candidate.getCountryCode():job.getCompanyId().getCountryId().getCountryCode()));
-            if (!Util.validateMobile(candidate.getMobile(), (null != candidate.getCountryCode())?candidate.getCountryCode():job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate))) {
-                String cleanMobile = candidate.getMobile().replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_MOBILE, "");
-                log.error("Special characters found, cleaning mobile number \"" + candidate.getMobile() + "\" to " + cleanMobile);
-                if (!Util.validateMobile(cleanMobile, (null != candidate.getCountryCode())?candidate.getCountryCode():job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate)))
-                    throw new ValidationException(IErrorMessages.MOBILE_INVALID_DATA + " - " + candidate.getMobile(), HttpStatus.BAD_REQUEST);
-                candidate.setMobile(cleanMobile);
+            String [] mobileList = candidate.getMobile().split(",");
+
+            for (int i=0; i< mobileList.length; i++) {
+                mobileList[i] = (Util.indianMobileConvertor(mobileList[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode()));
+                if (!Util.validateMobile(mobileList[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate))) {
+                    mobileList[i] = mobileList[i].replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_MOBILE, "");
+                    log.error("Special characters found, cleaning mobile number \"" + candidate.getMobile() + "\" to " + mobileList[i]);
+                    if (!Util.validateMobile(mobileList[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate)))
+                        throw new ValidationException(IErrorMessages.MOBILE_INVALID_DATA + " - " + mobileList[i], HttpStatus.BAD_REQUEST);
+                }
+                combinedMobileList += mobileList[i] + ",";
             }
+            candidate.setMobile(mobileList[0]);
             msg.append(",").append(candidate.getMobile()).append(") ");
+
         }else {
             //mobile number of candidate is null
             //check if ignore mobile flag is set
@@ -197,14 +209,14 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             candidate.setCreatedBy(loggedInUser);
             if(Util.isNull(candidate.getCountryCode()))
                 candidate.setCountryCode(job.getCompanyId().getCountryId().getCountryCode());
-            candidateObjToUse = candidateService.createCandidate(candidate.getFirstName(), candidate.getLastName(), candidate.getEmail(), candidate.getMobile(), candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
+            candidateObjToUse = candidateService.createCandidate(candidate.getFirstName(), candidate.getLastName(), combinedEmailList, combinedMobileList, candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
             candidate.setId(candidateObjToUse.getId());
         }
         else {
             log.info("Found existing candidate: " + existingCandidate.getId());
             candidate.setId(existingCandidate.getId());
             if(Util.isNotNull(existingCandidate.getEmail()))
-                candidate.setEmail(existingCandidate.getEmail());
+                candidate.setEmail(candidate.getEmail());
         }
 
         log.info(msg);

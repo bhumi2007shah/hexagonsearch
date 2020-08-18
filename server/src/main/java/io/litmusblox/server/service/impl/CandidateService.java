@@ -151,10 +151,12 @@ public class CandidateService implements ICandidateService {
 
             if (null == dupCandidateByMobile && Util.isNotNull(mobile)) {
                 //Candidate by email exists, add mobile history
+                log.info("CandidateService.java 154 Mobile value = {}", mobile);
                 candidateMobileHistoryRepository.save(new CandidateMobileHistory(dupCandidateByEmail, mobile, countryCode, new Date(), loggedInUser));
             }
             if (null != mobile && !isAlternateMobilePresentInDb && alternateMobile.isPresent() && !mobile.equals(alternateMobile.get())) {
                 //Candidate by email exists, add alternate mobile history
+                log.info("CandidateService.java 159 Mobile value = {}", mobile);
                 candidateMobileHistoryRepository.save(new CandidateMobileHistory(dupCandidateByEmail, alternateMobile.get(), countryCode, new Date(), loggedInUser));
             }
             return dupCandidateByEmail;
@@ -208,11 +210,21 @@ public class CandidateService implements ICandidateService {
     public Candidate createCandidate(String firstName, String lastName, String email, String mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
 
         log.info("Inside createCandidate method - create candidate, emailHistory, mobileHistory");
-        Candidate candidate = candidateRepository.save(new Candidate(firstName, lastName, email, mobile, countryCode, new Date(), loggedInUser));
-        candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, email, new Date(), loggedInUser));
-        if(null != mobile)
-            candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobile, countryCode, new Date(), loggedInUser));
-
+        String [] emailList = email.split(",");
+        String [] mobileList = mobile.split(",");
+        Candidate candidate = candidateRepository.save(new Candidate(firstName, lastName, emailList[0], mobile, countryCode, new Date(), loggedInUser));
+        for(int i=0; i< emailList.length; i++) {
+            if(null == candidateEmailHistoryRepository.findByEmail(emailList[i]))
+                candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, emailList[i], new Date(), loggedInUser));
+        }
+        if(null != mobile) {
+            log.info("CandidateService.java 221 Mobile value = {}", mobile);
+            log.info("Prashant Check: " + candidate.getMobile());
+            for(int i=0; i< mobileList.length; i++) {
+                candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobileList[i], countryCode, new Date(), loggedInUser));
+            }
+        }
+        log.info("CandidateService.java 227 Alternate Mobile value = {}", alternateMobile);
         if(null != mobile && alternateMobile.isPresent() && !mobile.equals(alternateMobile.get()))
             candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, alternateMobile.get(), countryCode, new Date(), loggedInUser));
 
