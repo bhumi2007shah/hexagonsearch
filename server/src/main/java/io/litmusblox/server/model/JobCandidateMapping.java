@@ -164,6 +164,7 @@ public class JobCandidateMapping implements Serializable {
     @Column(name = "COMMENTS")
     private String comments;
 
+    //TODO:For now we have commit this hr question response changes for current prod deployment 19/08/2020
 //    @Type(type = "string-array")
 //    @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "text[]")
 //    private String[] candidateChatbotResponse;

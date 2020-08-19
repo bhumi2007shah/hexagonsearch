@@ -586,6 +586,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         });
 //        log.info("Completed looping through map in {}ms", (System.currentTimeMillis()-startTime));
 
+        //TODO:For now we have commit this hr question changes for current prod deployment 19/08/2020
         //updating hr_chat_complete_flag
 //        startTime = System.currentTimeMillis();
 //        String [] responses = responsesInArrayList.toArray(new String[responsesInArrayList.size()]);
