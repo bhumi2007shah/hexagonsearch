@@ -80,6 +80,8 @@ public class UploadDataProcessService implements IUploadDataProcessService {
 
         for (Candidate candidate:candidateList) {
 
+            long startTime = System.currentTimeMillis();
+
             if(recordsProcessed >= MasterDataBean.getInstance().getConfigSettings().getCandidatesPerFileLimit()) {
                 log.error(IErrorMessages.MAX_CANDIDATE_PER_FILE_EXCEEDED + " : user id : " +  loggedInUser.getId());
                 candidate.setUploadErrorMessage(IErrorMessages.MAX_CANDIDATE_PER_FILE_EXCEEDED + ". Max number of " +
@@ -115,6 +117,8 @@ public class UploadDataProcessService implements IUploadDataProcessService {
                 uploadResponseBean.getFailedCandidates().add(candidate);
                 failureCount++;
             }
+
+            log.info("Time taken to upload candidate is {}ms ",System.currentTimeMillis()-startTime);
         }
 
         uploadResponseBean.setFailureCount(failureCount);
@@ -197,7 +201,6 @@ public class UploadDataProcessService implements IUploadDataProcessService {
 
         //create a candidate if no history found for email and mobile
         Candidate existingCandidate = candidateService.findByMobileOrEmail(emailList,mobileList,(Util.isNull(candidate.getCountryCode())?job.getCompanyId().getCountryId().getCountryCode():candidate.getCountryCode()), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
-        log.info("Prashant Check" + existingCandidate);
         if(null == existingCandidate && candidate.getCandidateSource().equalsIgnoreCase(IConstant.CandidateSource.LinkedIn.getValue())){
             existingCandidate = candidateService.findByProfileTypeAndUniqueId(candidate.getCandidateOnlineProfiles());
         }

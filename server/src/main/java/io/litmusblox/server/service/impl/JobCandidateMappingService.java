@@ -347,6 +347,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Async("asyncTaskExecutor")
     public void uploadCandidatesFromFile(String fileName, Long jobId, String fileFormat, User loggedInUser, int candidatesProcessed, String originalFileName) throws Exception {
         log.info("Thread - {} : Started processing uploadCandidatesFromFile in JobCandidateMappingService", Thread.currentThread().getName());
+        long startTime = System.currentTimeMillis();
         UploadResponseBean uploadResponseBean = new UploadResponseBean();
         List<Candidate> candidateList = null;
         Job job = jobRepository.getOne(jobId);
@@ -366,7 +367,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         } catch (WebException webException) {
             asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(jobId, null, null, null, null, webException.getErrorMessage(), IConstant.ASYNC_OPERATIONS.FileUpload.name(), loggedInUser, new Date(), originalFileName));
         }
-        log.info("Thread - {} : Completed processing uploadCandidatesFromFile in JobCandidateMappingService", Thread.currentThread().getName());
+        log.info("Thread - {} : Completed processing uploadCandidatesFromFile in JobCandidateMappingService in {}ms", Thread.currentThread().getName(), System.currentTimeMillis()- startTime);
     }
 
     private List<Candidate> processUploadedFile(String fileName, UploadResponseBean responseBean, User user, String fileSource, String repoLocation, String countryCode) {

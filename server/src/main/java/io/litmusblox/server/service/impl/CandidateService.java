@@ -121,26 +121,30 @@ public class CandidateService implements ICandidateService {
             return null;
 
         Long dupCandidateId = candidateEmailHistory.get(0).getCandidate().getId();
-        log.info(dupCandidateId);
+        log.info("First Id based on Duplicate Email: {}", dupCandidateId);
         candidateEmailHistory.forEach( (candidate) -> {
-            log.info(candidate.getCandidate().getId());
+            log.info("Candidate ID Check for Duplicate Email: {}", candidate.getCandidate().getId());
             if (!dupCandidateId.equals(candidate.getCandidate().getId()))
                 throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY, HttpStatus.BAD_REQUEST);
         });
         candidateMobileHistory.forEach( (candidate) -> {
-            log.info(candidate.getCandidate().getId());
+            log.info("Candidate ID Check for Duplicate Mobile: {}", candidate.getCandidate().getId());
             if (!dupCandidateId.equals(candidate.getCandidate().getId()))
                 throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY, HttpStatus.BAD_REQUEST);
         });
 
         Candidate candidate = candidateEmailHistory.get(0).getCandidate();
         emailList.forEach( (emailToAdd) -> {
-            if(candidateEmailHistoryRepository.findByEmail(emailToAdd) == null)
+            if(candidateEmailHistoryRepository.findByEmail(emailToAdd) == null) {
+                log.info("Inside findMobileAndEmail - saving email {} to existing candidate id {}", emailToAdd, candidate.getId());
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, emailToAdd, new Date(), loggedInUser));
+            }
         });
         mobileList.forEach( (mobileToAdd) -> {
-            if(candidateMobileHistoryRepository.findByMobileAndCountryCode(mobileToAdd, countryCode) == null)
+            if(candidateMobileHistoryRepository.findByMobileAndCountryCode(mobileToAdd, countryCode) == null) {
+                log.info("Inside findMobileAndEmail - saving email {} to existing candidate id {}", mobileToAdd, candidate.getId());
                 candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobileToAdd, countryCode, new Date(), loggedInUser));
+            }
         });
 
         return candidate;
