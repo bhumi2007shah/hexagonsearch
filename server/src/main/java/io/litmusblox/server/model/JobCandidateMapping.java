@@ -36,7 +36,7 @@ import java.util.*;
 @Table(name="JOB_CANDIDATE_MAPPING")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonFilter("JobCandidateMapping")
-@TypeDefs({@TypeDef(name = "string-array",typeClass = StringArrayType.class), @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)})
+//@TypeDefs({@TypeDef(name = "string-array",typeClass = StringArrayType.class), @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)})
 
 public class JobCandidateMapping implements Serializable {
 
@@ -164,9 +164,9 @@ public class JobCandidateMapping implements Serializable {
     @Column(name = "COMMENTS")
     private String comments;
 
-    @Type(type = "string-array")
-    @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "text[]")
-    private String[] candidateChatbotResponse;
+//    @Type(type = "string-array")
+//    @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "text[]")
+//    private String[] candidateChatbotResponse;
 
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
