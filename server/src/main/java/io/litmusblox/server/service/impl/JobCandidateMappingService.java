@@ -1465,6 +1465,25 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                         JobCandidateMapping jcmForExistingCandidate = jobCandidateMappingRepository.findByJobAndCandidate(jcmFromDb.getJob(), existingCandidate);
 
                         if(jcmForExistingCandidate!=null) {
+
+                            //Update candidate firstName
+                            if (Util.isNotNull(jobCandidateMapping.getCandidateFirstName())) {
+                                jcmForExistingCandidate.setCandidateFirstName(Util.validateCandidateName(jobCandidateMapping.getCandidateFirstName()));
+                            }
+                            //Update candidate lastName
+                            if (Util.isNotNull(jobCandidateMapping.getCandidateLastName())) {
+                                jcmForExistingCandidate.setCandidateLastName(Util.validateCandidateName(jobCandidateMapping.getCandidateLastName()));
+                            }
+                            //Update candidate email
+                            if (Util.isNotNull(jobCandidateMapping.getEmail())) {
+                                jcmForExistingCandidate.setEmail(Util.validateEmail(jobCandidateMapping.getEmail(), Optional.ofNullable(existingCandidate)));
+                            }
+
+                            //Update candidate email
+                            if (Util.isNotNull(jobCandidateMapping.getMobile()) && Util.validateMobile(jobCandidateMapping.getMobile(), jobCandidateMapping.getCountryCode(), Optional.ofNullable(existingCandidate))) {
+                                jcmForExistingCandidate.setMobile(jobCandidateMapping.getMobile());
+                            }
+
                             //call function to delete requested jcm record and change updated by to current user for exiting jcm
                             deleteAndUpdateJcmRecord(jcmFromDb, jcmForExistingCandidate, loggedInUser);
                             jcmFromDbDeleted = true;
@@ -1473,6 +1492,14 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                             List<CandidateMobileHistory> existingCandidateMobileList = candidateMobileHistoryRepository.findByCandidateIdOrderByIdDesc(existingCandidate.getId());
                             if(existingCandidateMobileList.size()>0){
                                 jcmFromDb.setMobile(existingCandidateMobileList.get(0).getMobile());
+                            }
+                            //Update candidate firstName
+                            if (Util.isNotNull(jobCandidateMapping.getCandidateFirstName())) {
+                                jcmFromDb.setCandidateFirstName(Util.validateCandidateName(jobCandidateMapping.getCandidateFirstName()));
+                            }
+                            //Update candidate lastName
+                            if (Util.isNotNull(jobCandidateMapping.getCandidateLastName())) {
+                                jcmFromDb.setCandidateLastName(Util.validateCandidateName(jobCandidateMapping.getCandidateLastName()));
                             }
                             jcmFromDb.setEmail(jobCandidateMapping.getEmail());
                             //update jcm with existing candidate and delete candidate with email "@notavailable"
