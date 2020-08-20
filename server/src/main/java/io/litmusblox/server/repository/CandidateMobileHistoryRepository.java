@@ -32,4 +32,7 @@ public interface CandidateMobileHistoryRepository extends JpaRepository<Candidat
 
     @Transactional
     void deleteByCandidateId(Long candidateId);
+
+    @Transactional
+    List<CandidateMobileHistory> findByCountryCodeAndMobileIn(String countryCode, List<String> mobileList);
 }

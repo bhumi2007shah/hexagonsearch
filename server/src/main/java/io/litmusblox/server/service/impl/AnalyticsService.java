@@ -169,12 +169,10 @@ public class AnalyticsService implements IAnalyticsService {
      * Service to fetch interview analytics
      *
      * @param selectedMonthDate for which 2 months we want data
-     * @param startDate from which date we want data
-     * @param endDate up-to which date we want data, optional parameter
      * @return InterviewAnalyticsResponseBean
      */
     @Override
-    public InterviewAnalyticsResponseBean getInterviewAnalyticsData(String selectedMonthDate, String startDate, String endDate) {
+    public InterviewAnalyticsResponseBean getInterviewAnalyticsData(String selectedMonthDate) {
         //Logged in  user
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
@@ -184,7 +182,7 @@ public class AnalyticsService implements IAnalyticsService {
         }
         log.info("User : {} - {} fetch analytics data related to interview", loggedInUser.getEmail(), loggedInUser.getMobile());
         InterviewAnalyticsResponseBean interviewAnalyticsResponseBean = new InterviewAnalyticsResponseBean();
-        interviewAnalyticsResponseBean.setTotalFutureInterviews(customQueryExecutor.getFutureInterviewCount(loggedInUser, startDate, endDate));
+        interviewAnalyticsResponseBean.setTotalFutureInterviews(customQueryExecutor.getFutureInterviewCount(loggedInUser, null, null));
         interviewAnalyticsResponseBean.setNext7DaysInterviews(customQueryExecutor.get7DaysInterviewCount(loggedInUser));
         interviewAnalyticsResponseBean.setMonthInterviewMap(customQueryExecutor.get2MonthInterviewCount(loggedInUser, selectedMonthDate));
         interviewAnalyticsResponseBean.setTwoMonthInterviewDatesMap(customQueryExecutor.getInterviewDateList(loggedInUser, selectedMonthDate));
