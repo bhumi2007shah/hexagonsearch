@@ -100,7 +100,10 @@ public class CandidateService implements ICandidateService {
         log.info("Inside findByMobileOrEmail method");
         //check if candidate exists for email
         List<String> emailList = Arrays.asList(email);
-        List<String> mobileList = Arrays.asList(mobile);
+
+        List<String> mobileList = new ArrayList<String>();
+        if(null != mobile)
+            mobileList = Arrays.asList(mobile);
         Candidate dupCandidateByEmail = null;
         List<CandidateEmailHistory> candidateEmailHistory = candidateEmailHistoryRepository.findByEmailIn(emailList);
 //        if (null != candidateEmailHistory && !candidateEmailHistory.isEmpty())
@@ -111,7 +114,7 @@ public class CandidateService implements ICandidateService {
         //check if candidate exists for mobile
 
         List<CandidateMobileHistory> candidateMobileHistory = new ArrayList<CandidateMobileHistory>();
-        if (null != mobileList && !mobileList.isEmpty())
+        if  (null != mobileList && !mobileList.isEmpty())
             candidateMobileHistory = candidateMobileHistoryRepository.findByCountryCodeAndMobileIn(countryCode, mobileList);
 
         log.info("Candidate Email History Size: {}", candidateEmailHistory.size());
@@ -135,7 +138,7 @@ public class CandidateService implements ICandidateService {
 
         Candidate candidate = candidateEmailHistory.get(0).getCandidate();
         emailList.forEach( (emailToAdd) -> {
-            if(candidateEmailHistoryRepository.findByEmail(emailToAdd) == null) {
+            if(!isEmailExist(emailToAdd, candidate) && candidateEmailHistoryRepository.findByEmail(emailToAdd) == null) {
                 log.info("Inside findMobileAndEmail - saving email {} to existing candidate id {}", emailToAdd, candidate.getId());
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, emailToAdd, new Date(), loggedInUser));
             }
