@@ -153,15 +153,15 @@ public class CustomQueryExecutor {
     private static final String jobRejectedAnalyticsGroupByQuery = " group by \n" +
             "jcm.id, jcm.job_id, ssm.stage, jcm.candidate_rejection_value;";
 
-    private static final String basicCandidateStagePerCountQuery = "SELECT \n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Sourcing' and rejected = 'f'))\\:\\:INT) AS sourcingCandidatesCount,\n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Screening' and rejected = 'f'))\\:\\:INT) AS screeningCandidatesCount,\n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Submitted' and rejected = 'f'))\\:\\:INT) AS submittedCandidatesCount,\n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Interview' and rejected = 'f'))\\:\\:INT) AS interviewCandidatesCount,\n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Make Offer' and rejected = 'f'))\\:\\:INT) AS makeOfferCandidatesCount,\n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Offer' and rejected = 'f'))\\:\\:INT) AS offerCandidatesCount,\n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Hired' and rejected = 'f'))\\:\\:INT) AS hiredCandidatesCount\n" +
-            "from job left join job_candidate_mapping on job_candidate_mapping.job_id = job.id where job.date_archived is null";
+    private static final String basicCandidateCountPerStageQuery = "SELECT \n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Sourcing'))\\:\\:INT) AS sourcingCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Screening'))\\:\\:INT) AS screeningCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Submitted'))\\:\\:INT) AS submittedCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Interview'))\\:\\:INT) AS interviewCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Make Offer'))\\:\\:INT) AS makeOfferCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Offer'))\\:\\:INT) AS offerCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Hired'))\\:\\:INT) AS hiredCandidatesCount\n" +
+            "from job left join job_candidate_mapping on job_candidate_mapping.job_id = job.id where job.date_archived is null and job_candidate_mapping.rejected = 'f'";
 
     private static final String stageCountClientAdminWhereClause = " and job.id in (select id from job where company_id =";
     private static final String stageCountRecruiterWhereClause = " and job.id in (select id from job where created_by =";
@@ -356,7 +356,7 @@ public class CustomQueryExecutor {
     public Map<String, Integer> getCandidateCountByStage(User loggedInUser) {
         Map<String, Integer> candidateCountByStageMap = new LinkedHashMap<>();
         StringBuffer queryString = new StringBuffer();
-        queryString.append(basicCandidateStagePerCountQuery);
+        queryString.append(basicCandidateCountPerStageQuery);
         if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
             queryString.append(stageCountClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(")");
         else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
