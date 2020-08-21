@@ -101,19 +101,21 @@ public class CandidateService implements ICandidateService {
         //check if candidate exists for email
         List<String> emailList = Arrays.asList(email);
 
-        List<String> mobileList = new ArrayList<String>();
+        List<String> mobileList = new ArrayList<>();
+
         if(null != mobile)
-            mobileList = Arrays.asList(mobile);
+            mobileList.addAll(Arrays.asList(mobile));
+
         Candidate dupCandidateByEmail = null;
         List<CandidateEmailHistory> candidateEmailHistory = candidateEmailHistoryRepository.findByEmailIn(emailList);
-//        if (null != candidateEmailHistory && !candidateEmailHistory.isEmpty())
-//            dupCandidateByEmail = candidateEmailHistory.getCandidate();
+        /*if (null != candidateEmailHistory && !candidateEmailHistory.isEmpty())
+            dupCandidateByEmail = candidateEmailHistory.getCandidate();*/
 
-        alternateMobile.ifPresent(mobileList::add);
+        if(alternateMobile.isPresent() && !mobileList.contains(alternateMobile.get()))
+            mobileList.add(alternateMobile.get());
 
         //check if candidate exists for mobile
-
-        List<CandidateMobileHistory> candidateMobileHistory = new ArrayList<CandidateMobileHistory>();
+        List<CandidateMobileHistory> candidateMobileHistory = new ArrayList<>();
         if  (null != mobileList && !mobileList.isEmpty())
             candidateMobileHistory = candidateMobileHistoryRepository.findByCountryCodeAndMobileIn(countryCode, mobileList);
 
