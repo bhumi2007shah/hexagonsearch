@@ -254,7 +254,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         log.info("Inside saveCandidateSupportiveInfo Method");
 
         //find candidateId
-        Candidate candidateFromDb=candidateService.findByMobileOrEmail(candidate.getEmail(), candidate.getMobile(), (null==candidate.getCountryCode())?loggedInUser.getCountryId().getCountryCode():candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
+        Candidate candidateFromDb=candidateService.findByMobileOrEmail(candidate.getEmail().split(","), candidate.getMobile().split(","), (null==candidate.getCountryCode())?loggedInUser.getCountryId().getCountryCode():candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
 
         Long candidateId = null;
         if (null != candidateFromDb)
@@ -274,7 +274,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                             telephone = telephone.substring(0, 15);
 
                         if (null == candidateMobileHistoryRepository.findByMobileAndCountryCode(telephone, candidate.getCountryCode()));
-                        candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidateFromDb, telephone, (null == candidateFromDb.getCountryCode()) ? loggedInUser.getCountryId().getCountryCode() : candidateFromDb.getCountryCode(), new Date(), loggedInUser));
+                            candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidateFromDb, telephone, (null == candidateFromDb.getCountryCode()) ? loggedInUser.getCountryId().getCountryCode() : candidateFromDb.getCountryCode(), new Date(), loggedInUser));
                     }
                 }
             }catch (Exception ex){
@@ -347,6 +347,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Async("asyncTaskExecutor")
     public void uploadCandidatesFromFile(String fileName, Long jobId, String fileFormat, User loggedInUser, int candidatesProcessed, String originalFileName) throws Exception {
         log.info("Thread - {} : Started processing uploadCandidatesFromFile in JobCandidateMappingService", Thread.currentThread().getName());
+        long startTime = System.currentTimeMillis();
         UploadResponseBean uploadResponseBean = new UploadResponseBean();
         List<Candidate> candidateList = null;
         Job job = jobRepository.getOne(jobId);
@@ -366,7 +367,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         } catch (WebException webException) {
             asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(jobId, null, null, null, null, webException.getErrorMessage(), IConstant.ASYNC_OPERATIONS.FileUpload.name(), loggedInUser, new Date(), originalFileName));
         }
-        log.info("Thread - {} : Completed processing uploadCandidatesFromFile in JobCandidateMappingService", Thread.currentThread().getName());
+        log.info("Thread - {} : Completed processing uploadCandidatesFromFile in JobCandidateMappingService in {}ms", Thread.currentThread().getName(), System.currentTimeMillis()- startTime);
     }
 
     private List<Candidate> processUploadedFile(String fileName, UploadResponseBean responseBean, User user, String fileSource, String repoLocation, String countryCode) {
@@ -524,8 +525,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         objFromDb.setCandidateInterestDate(new Date());
         //set stage = Screening where stage = Source
         Map<String, Long> stageIdMap = MasterDataBean.getInstance().getStageStepMasterMap();
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        jobCandidateMappingRepository.updateStageStepId(Arrays.asList(objFromDb.getId()), stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), loggedInUser.getId(), new Date());
+        jobCandidateMappingRepository.updateStageStepId(Arrays.asList(objFromDb.getId()), stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), objFromDb.getCreatedBy().getId(), new Date());
 
         //commented below code to not set flags to true.
         /*if(!objFromDb.getJob().getHrQuestionAvailable()){
@@ -537,7 +537,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         jobCandidateMappingRepository.save(objFromDb);
         StringBuffer historyMsg = new StringBuffer(objFromDb.getCandidateFirstName());
         historyMsg.append(" ").append(objFromDb.getCandidateLastName()).append(" is ").append(interest?" interested - ":" not interested - ").append(objFromDb.getJob().getJobTitle()).append(" - ").append(objFromDb.getJob().getId());
-        jcmHistoryRepository.save(new JcmHistory(objFromDb, historyMsg.toString(), new Date(), null, objFromDb.getStage()));
+        jcmHistoryRepository.save(new JcmHistory(objFromDb, historyMsg.toString(), new Date(), null, objFromDb.getStage(), true));
     }
 
     /**
@@ -565,8 +565,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
 
         //delete existing response for chatbot for the jcm
+//        long startTime = System.currentTimeMillis();
         candidateScreeningQuestionResponseRepository.deleteByJobCandidateMappingId(objFromDb.getId());
 
+//        ArrayList<String> responsesInArrayList = new ArrayList<String>();
         candidateResponse.forEach((key,value) -> {
             String[] valuesToSave = new String[value.size()];
             for(int i=0;i<value.size();i++) {
@@ -581,9 +583,17 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 }
             }
             candidateScreeningQuestionResponseRepository.save(new CandidateScreeningQuestionResponse(objFromDb.getId(),key, valuesToSave[0], (valuesToSave.length > 1)?valuesToSave[1]:null));
+//            responsesInArrayList.add(String.join(",", valuesToSave));
         });
+//        log.info("Completed looping through map in {}ms", (System.currentTimeMillis()-startTime));
 
+        //TODO:For now we have commit this hr question changes for current prod deployment 19/08/2020
         //updating hr_chat_complete_flag
+//        startTime = System.currentTimeMillis();
+//        String [] responses = responsesInArrayList.toArray(new String[responsesInArrayList.size()]);
+//        objFromDb.setCandidateChatbotResponse(responses);
+//        log.info("Completed adding response to db in {}ms",(System.currentTimeMillis()-startTime));
+
         jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(objFromDb.getId());
 
         //update chatbot updated date
@@ -820,7 +830,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             JobCandidateMapping tempObj = jobCandidateMappingRepository.getOne(jcmId);
             StringBuffer historyMessage = new StringBuffer(tempObj.getCandidateFirstName());
             historyMessage.append(" ").append(tempObj.getCandidateLastName()).append(" invited for - ").append(tempObj.getJob().getJobTitle()).append(" - ").append(tempObj.getJob().getId());
-            jcmHistoryList.add(new JcmHistory(tempObj, historyMessage.toString(), new Date(), loggedInUser, tempObj.getStage()));
+            jcmHistoryList.add(new JcmHistory(tempObj, historyMessage.toString(), new Date(), loggedInUser, tempObj.getStage(), false));
         }
 
         if (jcmHistoryList.size() > 0) {
@@ -879,7 +889,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
 
         JobCandidateMapping tempObj = jobCandidateMappingRepository.getOne(requestBean.getJcmId().get(0));
-        jcmHistoryRepository.save(new JcmHistory(tempObj, "Profiles shared with : "+String.join(", ", recieverEmails)+".", new Date(), loggedInUser, tempObj.getStage()));
+        jcmHistoryRepository.save(new JcmHistory(tempObj, "Profiles shared with : "+String.join(", ", recieverEmails)+".", new Date(), loggedInUser, tempObj.getStage(), false));
 
         //move to Submit stage
         if(IConstant.Stage.Source.getValue().equals(tempObj.getStage().getStage()) || IConstant.Stage.Screen.getValue().equals(tempObj.getStage().getStage())){
@@ -1455,6 +1465,25 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                         JobCandidateMapping jcmForExistingCandidate = jobCandidateMappingRepository.findByJobAndCandidate(jcmFromDb.getJob(), existingCandidate);
 
                         if(jcmForExistingCandidate!=null) {
+
+                            //Update candidate firstName
+                            if (Util.isNotNull(jobCandidateMapping.getCandidateFirstName())) {
+                                jcmForExistingCandidate.setCandidateFirstName(Util.validateCandidateName(jobCandidateMapping.getCandidateFirstName()));
+                            }
+                            //Update candidate lastName
+                            if (Util.isNotNull(jobCandidateMapping.getCandidateLastName())) {
+                                jcmForExistingCandidate.setCandidateLastName(Util.validateCandidateName(jobCandidateMapping.getCandidateLastName()));
+                            }
+                            //Update candidate email
+                            if (Util.isNotNull(jobCandidateMapping.getEmail())) {
+                                jcmForExistingCandidate.setEmail(Util.validateEmail(jobCandidateMapping.getEmail(), Optional.ofNullable(existingCandidate)));
+                            }
+
+                            //Update candidate email
+                            if (Util.isNotNull(jobCandidateMapping.getMobile()) && Util.validateMobile(jobCandidateMapping.getMobile(), jobCandidateMapping.getCountryCode(), Optional.ofNullable(existingCandidate))) {
+                                jcmForExistingCandidate.setMobile(jobCandidateMapping.getMobile());
+                            }
+
                             //call function to delete requested jcm record and change updated by to current user for exiting jcm
                             deleteAndUpdateJcmRecord(jcmFromDb, jcmForExistingCandidate, loggedInUser);
                             jcmFromDbDeleted = true;
@@ -1463,6 +1492,14 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                             List<CandidateMobileHistory> existingCandidateMobileList = candidateMobileHistoryRepository.findByCandidateIdOrderByIdDesc(existingCandidate.getId());
                             if(existingCandidateMobileList.size()>0){
                                 jcmFromDb.setMobile(existingCandidateMobileList.get(0).getMobile());
+                            }
+                            //Update candidate firstName
+                            if (Util.isNotNull(jobCandidateMapping.getCandidateFirstName())) {
+                                jcmFromDb.setCandidateFirstName(Util.validateCandidateName(jobCandidateMapping.getCandidateFirstName()));
+                            }
+                            //Update candidate lastName
+                            if (Util.isNotNull(jobCandidateMapping.getCandidateLastName())) {
+                                jcmFromDb.setCandidateLastName(Util.validateCandidateName(jobCandidateMapping.getCandidateLastName()));
                             }
                             jcmFromDb.setEmail(jobCandidateMapping.getEmail());
                             //update jcm with existing candidate and delete candidate with email "@notavailable"
@@ -1728,7 +1765,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         RejectionReasonMasterData finalReasonMasterData = reasonMasterData;
         jcmList.stream().forEach(jcm -> {
             JobCandidateMapping mappingObj = jobCandidateMappingRepository.getOne(jcm);
-            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage "+((null != finalReasonMasterData)? "for reason "+finalReasonMasterData.getLabel():""):"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage()));
+            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage "+((null != finalReasonMasterData)? "for reason "+finalReasonMasterData.getLabel():""):"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage(), false));
+            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage "+((null != finalReasonMasterData)? "for reason "+finalReasonMasterData.getLabel():""):"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage(), false));
 
         });
         jcmHistoryRepository.saveAll(jcmHistoryList);
@@ -2054,7 +2092,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             });
 
             interviewDetailsFromReq.getInterviewIdList().add(interviewDetailsFromDb.get());
-            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, "Interview scheduled on :" + Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), new Date()) + ((null != interviewDetailsFromReq.getInterviewLocation()) ? (" ,address :" + interviewDetailsFromReq.getInterviewLocation().getAddress()) : " "), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, "Interview scheduled on :" + Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), new Date()) + ((null != interviewDetailsFromReq.getInterviewLocation()) ? (" ,address :" + interviewDetailsFromReq.getInterviewLocation().getAddress()) : " "), new Date(), loggedInUser, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue())), false));
         });
         return interviewDetailsRepository.findByIdIn(interviewDetailsFromReq.getInterviewIdList());
     }
@@ -2092,7 +2130,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         interviewDetailsFromDb.setCancellationReason(cancellationDetails.getCancellationReason());
         interviewDetailsRepository.save(interviewDetailsFromDb);
-        jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview cancelled on :"+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+((null != cancellationDetails.getCancellationComments()) ?(" ~ "+cancellationDetails.getCancellationComments()):""), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+        jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview cancelled on :"+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+((null != cancellationDetails.getCancellationComments()) ?(" ~ "+cancellationDetails.getCancellationComments()):""), new Date(), loggedInUser, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue())), false));
         log.info("Interview cancelled in " + (System.currentTimeMillis()-startTime) + "ms.");
     }
 
@@ -2135,9 +2173,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         interviewDetailsFromDb.setNoShowReason(showNoShowDetails.getNoShowReason());
         interviewDetailsRepository.save(interviewDetailsFromDb);
         if(!showNoShowDetails.isShowNoShow())
-            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview no show("+MasterDataBean.getInstance().getNoShowReasons().get(showNoShowDetails.getNoShowReason().getId())+") : "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+((null != showNoShowDetails.getShowNoShowComments())?(" ~ "+showNoShowDetails.getShowNoShowComments()):""), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview no show("+MasterDataBean.getInstance().getNoShowReasons().get(showNoShowDetails.getNoShowReason().getId())+") : "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+((null != showNoShowDetails.getShowNoShowComments())?(" ~ "+showNoShowDetails.getShowNoShowComments()):""), new Date(), loggedInUser, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue())), false));
         else
-            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview show on : "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+((null != showNoShowDetails.getShowNoShowComments())?(" ~ "+showNoShowDetails.getShowNoShowComments()):""), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+            jcmHistoryRepository.save(new JcmHistory(jcmFromDb, "Interview show on : "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),new Date())+((null != showNoShowDetails.getShowNoShowComments())?(" ~ "+showNoShowDetails.getShowNoShowComments()):""), new Date(), loggedInUser, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue())), false));
 
         log.info("Interview marked Show NoShow in " + (System.currentTimeMillis()-startTime) + "ms.");
     }
@@ -2161,7 +2199,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         interviewDetailsFromDb.setCandidateConfirmationTime(new Date());
         interviewDetailsRepository.save(interviewDetailsFromDb);
-        jcmHistoryRepository.save(new JcmHistory(jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null), "Candidate response for interview on "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),interviewDetailsFromDb.getInterviewDate())+" : "+confirmationDetails.getConfirmationText()+" "+Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), new Date()), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue()))));
+        jcmHistoryRepository.save(new JcmHistory(jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null), "Candidate response for interview on "+ Util.getDateWithTimezone(TimeZone.getTimeZone("IST"),interviewDetailsFromDb.getInterviewDate())+" : "+confirmationDetails.getConfirmationText()+" "+Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), new Date()), new Date(), null, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue())), true));
     }
 
     /**

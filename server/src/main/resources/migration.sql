@@ -2584,7 +2584,9 @@ delete from master_data where id in (407, 408);
 ALTER TABLE master_data
 ADD CONSTRAINT unique_master_data UNIQUE (type, value);
 
-
-
 -- #591 increase default answers length in tech screening questions
 alter table tech_screening_question alter column default_answers type varchar(250)[];
+
+-- for ticket #612
+update Job j set recruiter[1] = j.created_by where id = j.id and recruiter = '{NULL}';
+UPDATE Job j set recruiter = array_append(recruiter, j.created_by) where id = j.id and NOT(j.created_by = ANY(j.recruiter));

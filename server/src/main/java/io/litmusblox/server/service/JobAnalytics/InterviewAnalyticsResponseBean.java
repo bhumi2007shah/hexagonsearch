@@ -9,8 +9,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author : Sumit
@@ -26,5 +26,5 @@ public class InterviewAnalyticsResponseBean {
      Integer totalFutureInterviews;
      Integer next7DaysInterviews;
      Map<String, Integer> monthInterviewMap = new LinkedHashMap<>();
-     Map<String, Set<String>> twoMonthInterviewDatesMap = new LinkedHashMap<>();
+     Map<String, List<String>> twoMonthInterviewDatesMap = new LinkedHashMap<>();
 }

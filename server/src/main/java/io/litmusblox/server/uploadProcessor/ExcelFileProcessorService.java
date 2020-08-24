@@ -95,14 +95,10 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
                                 candidate.setLastName(Util.toSentenceCase(cellValue.trim()));
                                 break;
                             case 2:
-                                candidate.setEmail(cellValue.split(",")[0].trim());
-                                if(null == candidateEmailHistoryRepository.findByEmail(cellValue.split(",")[1].trim()))
-                                    candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate.getCandidateDetails().getCandidateId(), cellValue.split(",")[1].trim(), new Date(), loggedInUser));
+                                candidate.setEmail(cellValue.trim());
                                 break;
                             case 3:
-                                candidate.setMobile(cellValue.split(",")[0].trim());
-                                if(null == candidateMobileHistoryRepository.findByMobileAndCountryCode(cellValue.split(",")[1].trim(), candidate.getCountryCode()))
-                                    candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate.getCandidateDetails().getCandidateId(),cellValue.split(",")[1].trim(), candidate.getCountryCode(), new Date(), loggedInUser));
+                                candidate.setMobile(cellValue.trim());
                         }
                     }
                     if (!discardRow)

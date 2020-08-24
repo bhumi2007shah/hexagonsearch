@@ -153,49 +153,50 @@ public class CustomQueryExecutor {
     private static final String jobRejectedAnalyticsGroupByQuery = " group by \n" +
             "jcm.id, jcm.job_id, ssm.stage, jcm.candidate_rejection_value;";
 
-    private static final String basicCandidateStagePerCountQuery = "SELECT \n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Sourcing' and rejected = 'f'))\\:\\:INT) AS sourcingCandidatesCount,\n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Screening' and rejected = 'f'))\\:\\:INT) AS screeningCandidatesCount,\n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Submitted' and rejected = 'f'))\\:\\:INT) AS submittedCandidatesCount,\n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Interview' and rejected = 'f'))\\:\\:INT) AS interviewCandidatesCount,\n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Make Offer' and rejected = 'f'))\\:\\:INT) AS makeOfferCandidatesCount,\n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Offer' and rejected = 'f'))\\:\\:INT) AS offerCandidatesCount,\n" +
-            "sum((stage = (select id from stage_step_master where stage = 'Hired' and rejected = 'f'))\\:\\:INT) AS hiredCandidatesCount\n" +
-            "from job left join job_candidate_mapping on job_candidate_mapping.job_id = job.id";
+    private static final String basicCandidateCountPerStageQuery = "SELECT \n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Sourcing'))\\:\\:INT) AS sourcingCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Screening'))\\:\\:INT) AS screeningCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Submitted'))\\:\\:INT) AS submittedCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Interview'))\\:\\:INT) AS interviewCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Make Offer'))\\:\\:INT) AS makeOfferCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Offer'))\\:\\:INT) AS offerCandidatesCount,\n" +
+            "sum((stage = (select id from stage_step_master where stage = 'Hired'))\\:\\:INT) AS hiredCandidatesCount\n" +
+            "from job left join job_candidate_mapping on job_candidate_mapping.job_id = job.id where job.date_archived is null and job_candidate_mapping.rejected = 'f'";
 
-    private static final String stageCountClientAdminWhereClause = " where job.id in (select id from job where company_id =";
-    private static final String stageCountRecruiterWhereClause = " where job.id in (select id from job where created_by =";
+    private static final String stageCountClientAdminWhereClause = " and job.id in (select id from job where company_id =";
+    private static final String stageCountRecruiterWhereClause = " and job.id in (select id from job where created_by =";
 
 
     private static final String basicJobAgingCountQuery = "SELECT sum(((DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)) >=0 AND (DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)<=15))\\:\\:INT) as jobAging0TO15Days,\n" +
             "sum(((DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)) >=16 AND (DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)<=30))\\:\\:INT) as jobAging16TO30Days,\n" +
             "sum(((DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)) >=31 AND (DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)<=60))\\:\\:INT) as jobAging31TO60Days,\n" +
             "sum(((DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)) >=61 AND (DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)<=90))\\:\\:INT) as jobAging61TO90Days,\n" +
-            "sum(((DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)) > 90)\\:\\:INT) as jobAging90PlusDays from job";
+            "sum(((DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)) > 90)\\:\\:INT) as jobAging90PlusDays from job where job.date_published is not null and job.date_archived is null";
 
-    private static final String jobAgingClientAdminWhereClause = " where date_published is not null and date_archived is null and job.id in (select id from job where company_id =";
-    private static final String jobAgingRecruiterWhereClause = " where date_published is not null and date_archived is null and job.id in (select id from job where created_by =";
+    private static final String jobAgingClientAdminWhereClause = " and job.id in (select id from job where company_id =";
+    private static final String jobAgingRecruiterWhereClause = " and job.id in (select id from job where created_by =";
 
     private static final String basicJobCandidatePipelineQuery = "SELECT sum((jCount.candidateCount >=0 AND jCount.candidateCount<=3)\\:\\:INT) as candidateCount0TO3Days,\n" +
             "sum((jCount.candidateCount >=4 AND jCount.candidateCount<=6)\\:\\:INT) as candidateCount4TO6Days,\n" +
             "sum((jCount.candidateCount >=7 AND jCount.candidateCount<=10)\\:\\:INT) as candidateCount7TO10Days,\n" +
-            "sum((jCount.candidateCount > 10)\\:\\:INT) as candidateCount10PlusDays from (select job.id , count(jcm.id) as candidateCount from job left join job_candidate_mapping jcm on job.id = jcm.job_id";
+            "sum((jCount.candidateCount > 10)\\:\\:INT) as candidateCount10PlusDays from (select job.id , count(jcm.id) as candidateCount from job left join job_candidate_mapping jcm on job.id = jcm.job_id where job.date_archived is null and job.date_published is not null \n"+
+            "and jcm.stage in (3, 4) and jcm.rejected = 'f'";
 
-    private static final String jobPipelineClientAdminWhereClause = " where job.company_id=";
-    private static final String jobPipelineRecruiterWhereClause = " where job.created_by =";
+    private static final String jobPipelineClientAdminWhereClause = "  and job.company_id=";
+    private static final String jobPipelineRecruiterWhereClause = " and job.created_by =";
 
     private static final String basicInterviewQuery = "select count(iv.id) from interview_details iv \n" +
             "inner join job_candidate_mapping jcm on jcm.id = iv.job_candidate_mapping_id\n" +
-            "inner join job on job.id = jcm.job_id";
+            "inner join job on job.id = jcm.job_id where job.date_archived is null";
 
     private static final String selectInterviewDateQuery = "select CAST(iv.interview_date as VARCHAR) from interview_details iv \n" +
             "inner join job_candidate_mapping jcm on jcm.id = iv.job_candidate_mapping_id\n" +
-            "inner join job on job.id = jcm.job_id";
+            "inner join job on job.id = jcm.job_id where job.date_archived is null";
 
     private static final String interviewStartDateClause = " interview_date >= ";
     private static final String interviewEndDateClause = " interview_date < ";
 
-    private static final String selectInterviewDetailsQuery = "select iv.id, CONCAT(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidate_name, job.job_title as job_title, job.id as job_id, substring(CAST((cast (iv.interview_date\\:\\:timestamp as time)) as VARCHAR) from 1 for 5)  as interview_time,\n" +
+    private static final String selectInterviewDetailsQuery = "select iv.id, CONCAT(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidate_name, job.job_title as job_title, job.id as job_id, to_char(iv.interview_date + time '05:30', 'HH12:MI AM')  as interview_time,\n" +
             "(CASE when (iv.candidate_confirmation_value is not null and md.value like 'Yes%') then 'Confirmed'\n" +
             "when (iv.candidate_confirmation_value is not null and md.value like '%reschedule%') then 'Rescheduled'\n" +
             "when (iv.candidate_confirmation_value is not null and md.value like 'No%') or  iv.cancelled = 't' then 'Cancelled'\n" +
@@ -204,9 +205,11 @@ public class CustomQueryExecutor {
             "from job_candidate_mapping jcm \n" +
             "left join interview_details iv on iv.job_candidate_mapping_id = jcm.id\n" +
             "left join job on job.id = jcm.job_id\n" +
-            "left join master_data md on md.id = iv.candidate_confirmation_value";
+            "left join master_data md on md.id = iv.candidate_confirmation_value where job.date_archived is null";
 
     private static final String getIVDetailsWhereClause = " iv.interview_date =";
+
+    private static final String totalLiveJobCountSelectQuery = "select count(id) from job where date_published is not null and date_archived is null";
 
     @Transactional(readOnly = true)
     public List<AnalyticsResponseBean> analyticsByCompany(String startDate, String endDate, String companyIdList) throws Exception {
@@ -353,7 +356,7 @@ public class CustomQueryExecutor {
     public Map<String, Integer> getCandidateCountByStage(User loggedInUser) {
         Map<String, Integer> candidateCountByStageMap = new LinkedHashMap<>();
         StringBuffer queryString = new StringBuffer();
-        queryString.append(basicCandidateStagePerCountQuery);
+        queryString.append(basicCandidateCountPerStageQuery);
         if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
             queryString.append(stageCountClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(")");
         else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
@@ -361,13 +364,13 @@ public class CustomQueryExecutor {
 
         List<Object[]> resultSet = entityManager.createNativeQuery(queryString.toString()).getResultList();
         for (Object[] objects : resultSet) {
-            candidateCountByStageMap.put("sourcingCandidateCount", Integer.parseInt(objects[0].toString()));
-            candidateCountByStageMap.put("screeningCandidateCount", Integer.parseInt(objects[1].toString()));
-            candidateCountByStageMap.put("submittedCandidateCount", Integer.parseInt(objects[2].toString()));
-            candidateCountByStageMap.put("interviewCandidateCount", Integer.parseInt(objects[3].toString()));
-            candidateCountByStageMap.put("makeOfferCandidateCount", Integer.parseInt(objects[4].toString()));
-            candidateCountByStageMap.put("OfferCandidateCount", Integer.parseInt(objects[5].toString()));
-            candidateCountByStageMap.put("hiredCandidateCount", Integer.parseInt(objects[6].toString()));
+            candidateCountByStageMap.put("sourcingCandidateCount", (null == objects[0])?0:Integer.parseInt(objects[0].toString()));
+            candidateCountByStageMap.put("screeningCandidateCount", (null == objects[1])?0:Integer.parseInt(objects[1].toString()));
+            candidateCountByStageMap.put("submittedCandidateCount", (null == objects[2])?0:Integer.parseInt(objects[2].toString()));
+            candidateCountByStageMap.put("interviewCandidateCount", (null == objects[3])?0:Integer.parseInt(objects[3].toString()));
+            candidateCountByStageMap.put("makeOfferCandidateCount", (null == objects[4])?0:Integer.parseInt(objects[4].toString()));
+            candidateCountByStageMap.put("OfferCandidateCount", (null == objects[5])?0:Integer.parseInt(objects[5].toString()));
+            candidateCountByStageMap.put("hiredCandidateCount", (null == objects[6])?0:Integer.parseInt(objects[6].toString()));
         }
         return candidateCountByStageMap;
     }
@@ -383,11 +386,11 @@ public class CustomQueryExecutor {
             queryString.append(jobAgingRecruiterWhereClause).append(loggedInUser.getId()).append(")");
         List<Object[]> resultSet = entityManager.createNativeQuery(queryString.toString()).getResultList();
         for(Object[] objects: resultSet){
-            jobAgingCountMap.put("jobAging0To15Days",Integer.parseInt(objects[0].toString()));
-            jobAgingCountMap.put("jobAging16To30Days",Integer.parseInt(objects[1].toString()));
-            jobAgingCountMap.put("jobAging31To60Days",Integer.parseInt(objects[2].toString()));
-            jobAgingCountMap.put("jobAging61To90Days",Integer.parseInt(objects[3].toString()));
-            jobAgingCountMap.put("jobAging90PlusDays",Integer.parseInt(objects[4].toString()));
+            jobAgingCountMap.put("jobAging0To15Days",(null == objects[0])?0:Integer.parseInt(objects[0].toString()));
+            jobAgingCountMap.put("jobAging16To30Days",(null == objects[1])?0:Integer.parseInt(objects[1].toString()));
+            jobAgingCountMap.put("jobAging31To60Days",(null == objects[2])?0:Integer.parseInt(objects[2].toString()));
+            jobAgingCountMap.put("jobAging61To90Days",(null == objects[3])?0:Integer.parseInt(objects[3].toString()));
+            jobAgingCountMap.put("jobAging90PlusDays",(null == objects[4])?0:Integer.parseInt(objects[4].toString()));
         }
         return jobAgingCountMap;
     }
@@ -396,20 +399,30 @@ public class CustomQueryExecutor {
     public Map<String, Integer> getJobCandidatePipelineCount(User loggedInUser) {
         Map<String, Integer> jobCandidatePipelineCountMap = new LinkedHashMap<>();
         StringBuffer queryString = new StringBuffer();
+        StringBuffer totalJobQueryString = new StringBuffer();
+        totalJobQueryString.append(totalLiveJobCountSelectQuery);
         queryString.append(basicJobCandidatePipelineQuery);
-        if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
-            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(" group by job.id) as jCount");
-        else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
-            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId()).append(" group by job.id) as jCount");
-        else if(IConstant.UserRole.SUPER_ADMIN.toString().equals(loggedInUser.getRole()))
-            queryString.append(" group by job.id) as jCount");
+        if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole())){
+            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId());
+            totalJobQueryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId());
+        }
+        else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole())){
+            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId());
+        totalJobQueryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId());
+        }
 
+        int totalJobCount = Integer.parseInt(entityManager.createNativeQuery(totalJobQueryString.toString()).getResultList().get(0).toString());
+
+
+        queryString.append(" group by job.id) as jCount");
         List<Object[]> resultSet = entityManager.createNativeQuery(queryString.toString()).getResultList();
+
         for(Object[] objects: resultSet){
-            jobCandidatePipelineCountMap.put("candidateCount0To3",Integer.parseInt(objects[0].toString()));
-            jobCandidatePipelineCountMap.put("candidateCount4To6",Integer.parseInt(objects[1].toString()));
-            jobCandidatePipelineCountMap.put("candidateCount7To10",Integer.parseInt(objects[2].toString()));
-            jobCandidatePipelineCountMap.put("candidateCount10Plus",Integer.parseInt(objects[3].toString()));
+            jobCandidatePipelineCountMap.put("candidateCount0To3", (null == objects[0])?0:(Integer.parseInt(objects[0].toString()) + (totalJobCount - (Integer.parseInt(objects[0].toString())
+            + Integer.parseInt(objects[1].toString()) + Integer.parseInt(objects[2].toString()) + Integer.parseInt(objects[3].toString())))));
+            jobCandidatePipelineCountMap.put("candidateCount4To6",(null == objects[1])?0:Integer.parseInt(objects[1].toString()));
+            jobCandidatePipelineCountMap.put("candidateCount7To10",(null == objects[2])?0:Integer.parseInt(objects[2].toString()));
+            jobCandidatePipelineCountMap.put("candidateCount10Plus",(null == objects[3])?0:Integer.parseInt(objects[3].toString()));
         }
         return jobCandidatePipelineCountMap;
     }
@@ -419,16 +432,14 @@ public class CustomQueryExecutor {
         StringBuffer queryString = new StringBuffer();
         queryString.append(basicInterviewQuery);
         if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
-            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(" and");
+            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId());
          else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
-            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId()).append(" and");
-         else
-             queryString.append(" where ");
+            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId());
 
          if(null != startDate)
-             queryString.append(interviewStartDateClause).append("'").append(startDate).append("'");
+             queryString.append(" and ").append(interviewStartDateClause).append("'").append(startDate).append("'");
          else
-             queryString.append(interviewStartDateClause).append("CURRENT_DATE");
+             queryString.append(" and ").append(interviewStartDateClause).append("CURRENT_DATE");
 
         if(null != endDate)
             queryString.append(" and ").append(interviewEndDateClause).append("'").append(endDate).append("'");
@@ -442,13 +453,11 @@ public class CustomQueryExecutor {
         StringBuffer queryString = new StringBuffer();
         queryString.append(basicInterviewQuery);
         if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
-            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(" and");
+            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId());
         else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
-            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId()).append(" and");
-        else
-            queryString.append(" where ");
+            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId());
 
-        queryString.append(interviewStartDateClause).append("CURRENT_DATE");
+        queryString.append(" and").append(interviewStartDateClause).append("CURRENT_DATE");
         queryString.append(" and ").append(interviewEndDateClause).append("CURRENT_DATE+7");
         return Integer.parseInt(entityManager.createNativeQuery(queryString.toString()).getResultList().get(0).toString());
     }
@@ -458,34 +467,32 @@ public class CustomQueryExecutor {
         Map<String, Integer> monthViseInterviewCountMap = new LinkedHashMap<>();
         LocalDate startDate = LocalDate.parse(selectedMonthDate);
         LocalDate endDate = startDate.plusMonths(1);
-        monthViseInterviewCountMap.put(startDate.getMonth().toString(),getFutureInterviewCount(loggedInUser, startDate.toString(), endDate.toString()));
+        monthViseInterviewCountMap.put(startDate.getMonth().toString(),     getFutureInterviewCount(loggedInUser, startDate.toString(), endDate.toString()));
         monthViseInterviewCountMap.put(endDate.getMonth().toString(),getFutureInterviewCount(loggedInUser, endDate.toString(), endDate.plusMonths(1).toString()));
         return monthViseInterviewCountMap;
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Set<String>> getInterviewDateList(User loggedInUser, String selectedMonthDate) {
-        Map<String, Set<String>> interviewDateSetMap = new LinkedHashMap<>();
+    public Map<String, List<String>> getInterviewDateList(User loggedInUser, String selectedMonthDate) {
+        Map<String, List<String>> interviewDateSetMap = new LinkedHashMap<>();
         StringBuffer queryString = new StringBuffer();
         queryString.append(selectInterviewDateQuery);
         if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
-            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(" and");
+            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId());
         else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
-            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId()).append(" and");
-        else
-            queryString.append(" where ");
+            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId());
 
         String query = queryString.toString();
         StringBuffer queryString2 = new StringBuffer();
         queryString2.append(query);
         LocalDate startDate = LocalDate.parse(selectedMonthDate);
         LocalDate endDate = startDate.plusMonths(1);
-        queryString.append(interviewStartDateClause).append("'").append(startDate).append("'");
+        queryString.append(" and ").append(interviewStartDateClause).append("'").append(startDate).append("'");
         queryString.append(" and ").append(interviewEndDateClause).append("'").append(endDate).append("'");
-        interviewDateSetMap.put(startDate.getMonth().toString(), (Set<String>) entityManager.createNativeQuery(queryString.toString()).getResultList().stream().collect(Collectors.toSet()));
-        queryString2.append(interviewStartDateClause).append("'").append(endDate).append("'");
+        interviewDateSetMap.put(startDate.getMonth().toString(),entityManager.createNativeQuery(queryString.toString()).getResultList());
+        queryString2.append(" and ").append(interviewStartDateClause).append("'").append(endDate).append("'");
         queryString2.append(" and ").append(interviewEndDateClause).append("'").append(endDate.plusMonths(1)).append("'");
-        interviewDateSetMap.put(endDate.getMonth().toString(), (Set<String>) entityManager.createNativeQuery(queryString2.toString()).getResultList().stream().collect(Collectors.toSet()));
+        interviewDateSetMap.put(endDate.getMonth().toString(), entityManager.createNativeQuery(queryString2.toString()).getResultList());
         return interviewDateSetMap;
     }
 
@@ -494,13 +501,11 @@ public class CustomQueryExecutor {
         StringBuffer queryString = new StringBuffer();
         queryString.append(selectInterviewDetailsQuery);
         if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
-            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(" and");
+            queryString.append(jobPipelineClientAdminWhereClause).append(loggedInUser.getCompany().getId());
         else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
-            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId()).append(" and");
-        else
-            queryString.append(" where");
+            queryString.append(jobPipelineRecruiterWhereClause).append(loggedInUser.getId());
 
-        queryString.append(" interview_date\\:\\:text LIKE '").append(selectedDate).append("%'");
+        queryString.append(" and interview_date\\:\\:text LIKE '").append(selectedDate).append("%'");
         Query query = entityManager.createNativeQuery(queryString.toString(), InterviewDetailBean.class);
         return query.getResultList();
     }
