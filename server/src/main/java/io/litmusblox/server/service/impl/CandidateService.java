@@ -125,8 +125,12 @@ public class CandidateService implements ICandidateService {
         if(candidateEmailHistory.size()==0 && candidateMobileHistory.size()==0)
             return null;
 
-        Long dupCandidateId = candidateEmailHistory.get(0).getCandidate().getId();
-        log.info("First Id based on Duplicate Email: {}", dupCandidateId);
+        Long dupCandidateId;
+        if(candidateEmailHistory.size() != 0)
+            dupCandidateId = candidateEmailHistory.get(0).getCandidate().getId();
+        else
+            dupCandidateId = candidateMobileHistory.get(0).getCandidate().getId();
+        log.info("First Id based to check for duplicate: {}", dupCandidateId);
         candidateEmailHistory.forEach( (candidate) -> {
             log.info("Candidate ID Check for Duplicate Email: {}", candidate.getCandidate().getId());
             if (!dupCandidateId.equals(candidate.getCandidate().getId()))
@@ -138,7 +142,11 @@ public class CandidateService implements ICandidateService {
                 throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY, HttpStatus.BAD_REQUEST);
         });
 
-        Candidate candidate = candidateEmailHistory.get(0).getCandidate();
+        Candidate candidate;
+        if(candidateEmailHistory.size() != 0)
+            candidate = candidateEmailHistory.get(0).getCandidate();
+        else
+            candidate = candidateMobileHistory.get(0).getCandidate();
         emailList.forEach( (emailToAdd) -> {
             if(!isEmailExist(emailToAdd, candidate) && candidateEmailHistoryRepository.findByEmail(emailToAdd) == null) {
                 log.info("Inside findMobileAndEmail - saving email {} to existing candidate id {}", emailToAdd, candidate.getId());
