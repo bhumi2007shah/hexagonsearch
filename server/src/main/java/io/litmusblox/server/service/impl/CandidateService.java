@@ -106,10 +106,7 @@ public class CandidateService implements ICandidateService {
         if(null != mobile)
             mobileList.addAll(Arrays.asList(mobile));
 
-        Candidate dupCandidateByEmail = null;
         List<CandidateEmailHistory> candidateEmailHistory = candidateEmailHistoryRepository.findByEmailIn(emailList);
-        /*if (null != candidateEmailHistory && !candidateEmailHistory.isEmpty())
-            dupCandidateByEmail = candidateEmailHistory.getCandidate();*/
 
         if(alternateMobile.isPresent() && !mobileList.contains(alternateMobile.get()))
             mobileList.add(alternateMobile.get());
@@ -126,7 +123,7 @@ public class CandidateService implements ICandidateService {
             return null;
 
         Long dupCandidateId;
-        if(candidateEmailHistory.size() != 0)
+        if(candidateEmailHistory.size() > 0)
             dupCandidateId = candidateEmailHistory.get(0).getCandidate().getId();
         else
             dupCandidateId = candidateMobileHistory.get(0).getCandidate().getId();
@@ -143,7 +140,7 @@ public class CandidateService implements ICandidateService {
         });
 
         Candidate candidate;
-        if(candidateEmailHistory.size() != 0)
+        if(candidateEmailHistory.size() > 0)
             candidate = candidateEmailHistory.get(0).getCandidate();
         else
             candidate = candidateMobileHistory.get(0).getCandidate();
