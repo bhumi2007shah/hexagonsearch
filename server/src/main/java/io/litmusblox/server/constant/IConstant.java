@@ -298,7 +298,7 @@ public interface IConstant {
     }
 
     enum ChatbotStatus {
-        COMPLETE("Complete"), INCOMPLETE("Incomplete"), NOT_INSTERESTED("Not Interested"), INVITED("Invited");
+        COMPLETE("Complete"), INCOMPLETE("Incomplete"), NOT_INTERESTED("Not Interested"), INVITED("Invited");
         private String value;
 
         ChatbotStatus(String val){ this.value = val;}

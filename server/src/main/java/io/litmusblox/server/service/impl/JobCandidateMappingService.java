@@ -520,7 +520,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             }
         }
         else{
-            objFromDb.setChatbotStatus(IConstant.ChatbotStatus.NOT_INSTERESTED.getValue());
+            objFromDb.setChatbotStatus(IConstant.ChatbotStatus.NOT_INTERESTED.getValue());
         }
         objFromDb.setCandidateInterestDate(new Date());
         //set stage = Screening where stage = Source
@@ -2022,7 +2022,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         if(null != candidateCountList.get(0)[0]) {
             countMap.put(IConstant.ChatbotStatus.INVITED.getValue(), ((BigInteger)candidateCountList.get(0)[0]).intValue());
-            countMap.put(IConstant.ChatbotStatus.NOT_INSTERESTED.getValue(), ((BigInteger)candidateCountList.get(0)[1]).intValue());
+            countMap.put(IConstant.ChatbotStatus.NOT_INTERESTED.getValue(), ((BigInteger)candidateCountList.get(0)[1]).intValue());
             countMap.put(IConstant.ChatbotStatus.COMPLETE.getValue(), ((BigInteger)candidateCountList.get(0)[2]).intValue());
             countMap.put(IConstant.ChatbotStatus.INCOMPLETE.getValue(), ((BigInteger)candidateCountList.get(0)[3]).intValue());
         }
