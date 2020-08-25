@@ -585,9 +585,6 @@ public class CompanyService implements ICompanyService {
         Company company = companyRepository.findById(validCompanyId).orElse(null);
         if(null == company)
             throw new ValidationException("Company not found for id : " + validCompanyId, HttpStatus.BAD_REQUEST);
-        else if(null != company.getRecruitmentAgencyId() && !company.getRecruitmentAgencyId().equals(loggedInUser.getCompany().getId())) {
-            throw new ValidationException("Client company : " + company.getCompanyName() + " not belonging to agency : "+loggedInUser.getCompany().getCompanyName(), HttpStatus.UNAUTHORIZED);
-        }
 
         Hibernate.initialize(company.getCompanyBuList());
         Hibernate.initialize(company.getCompanyAddressList());
@@ -595,20 +592,16 @@ public class CompanyService implements ICompanyService {
     }
 
     public Long validateCompanyId(User user, Long companyId){
-        if(user.getCompany().getId() == companyId)
-            return companyId;
-        else if(!IConstant.UserRole.SUPER_ADMIN.name().equals(user.getRole())) {
+        if(!IConstant.UserRole.SUPER_ADMIN.name().equals(user.getRole())) {
             if (IConstant.CompanyType.AGENCY.getValue().equals(user.getCompany().getCompanyType())) {
-                List<Long> clientCompanyIdList = companyRepository.findCompanyIdListByForAgency(user.getCompany().getId());
-                if (clientCompanyIdList.contains(companyId))
+                Company company = companyRepository.findByIdAndRecruitmentAgencyId(companyId, user.getCompany().getId());
+                if (null != company || user.getCompany().getId() == companyId)
                     return companyId;
                 else
                     throw new ValidationException("Client companyId : " + companyId + " not belonging to agency : " + user.getCompany().getCompanyName(), HttpStatus.UNAUTHORIZED);
             }else
                 return user.getCompany().getId();
-        }else if (IConstant.UserRole.SUPER_ADMIN.name().equals(user.getRole()))
-            return companyId;
-
+        }
         return companyId;
     }
 

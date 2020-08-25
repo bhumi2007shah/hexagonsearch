@@ -46,6 +46,6 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     @Transactional
     List<Company> findByShortNameIsNotNullAndRecruitmentAgencyIdIsNullAndCompanyUniqueIdIsNull();
 
-    @Query(value = "select id from company where recruitment_agency_id =:agencyId", nativeQuery = true)
-    List<Long> findCompanyIdListByForAgency(Long agencyId);
+    @Transactional(readOnly = true)
+    Company findByIdAndRecruitmentAgencyId(Long companyId, Long agencyId);
 }
