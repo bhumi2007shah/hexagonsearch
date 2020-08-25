@@ -209,11 +209,10 @@ public class CandidateService implements ICandidateService {
         log.info("Inside createCandidate method - create candidate, emailHistory, mobileHistory");
 
         Candidate candidate;
-        if(null != mobile && mobile.length > 0)
+        if(null != mobile && mobile.length>0)
             candidate = candidateRepository.save(new Candidate(firstName, lastName, email[0], mobile[0], countryCode, new Date(), loggedInUser));
         else
             candidate = candidateRepository.save(new Candidate(firstName, lastName, email[0], null, countryCode, new Date(), loggedInUser));
-
         for(int i=0; i< email.length; i++) {
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, email[i], new Date(), loggedInUser));
         }
