@@ -207,9 +207,13 @@ public class CandidateService implements ICandidateService {
     public Candidate createCandidate(String firstName, String lastName, String [] email, String [] mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
 
         log.info("Inside createCandidate method - create candidate, emailHistory, mobileHistory");
-//        ArrayList<CandidateEmailHistory> candidateEmailHistoryList;
-//        ArrayList email
-        Candidate candidate = candidateRepository.save(new Candidate(firstName, lastName, email[0], mobile[0], countryCode, new Date(), loggedInUser));
+
+        Candidate candidate;
+        if(null != mobile && mobile.length > 0)
+            candidate = candidateRepository.save(new Candidate(firstName, lastName, email[0], mobile[0], countryCode, new Date(), loggedInUser));
+        else
+            candidate = candidateRepository.save(new Candidate(firstName, lastName, email[0], null, countryCode, new Date(), loggedInUser));
+
         for(int i=0; i< email.length; i++) {
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, email[i], new Date(), loggedInUser));
         }
