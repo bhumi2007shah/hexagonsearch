@@ -479,8 +479,13 @@ public class LbUserDetailsService implements UserDetailsService {
     public List<UserWorkspaceBean> fetchUsers(Long companyId) throws Exception {
         log.info("Received request to get list of users");
         long startTime = System.currentTimeMillis();
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        List<User> userList = userRepository.findByCompanyId(companyId);
+        Long validCompanyId = companyService.validateCompanyId(loggedInUser, companyId);
+        if(!validCompanyId.equals(companyId))
+            log.error("Given company id : {} and valid company id : {} both are mismatched", companyId, validCompanyId);
+
+        List<User> userList = userRepository.findByCompanyId(validCompanyId);
         List<UserWorkspaceBean> responseBeans = new ArrayList<>(userList.size());
         userList.forEach(user->{
             UserWorkspaceBean workspaceBean = new UserWorkspaceBean(user.getId(), user.getDisplayName(), user.getStatus(), user.getCompanyAddressId(), user.getCompanyBuId(), user.getEmail(), user.getMobile(), user.getRole());
