@@ -20,8 +20,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginResponseBean {
+    private Long userId;
     private String jwtToken;
     private String userName;
     private Company company;
     private int candidatesProcessed;
+    private String userRole;
 }

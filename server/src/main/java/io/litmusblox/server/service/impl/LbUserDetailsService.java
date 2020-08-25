@@ -113,7 +113,7 @@ public class LbUserDetailsService implements UserDetailsService {
 
         log.info("Completed processing login request in " + (System.currentTimeMillis() - startTime) +" ms.");
 
-        return new LoginResponseBean(token, userDetails.getDisplayName(), userDetails.getCompany(),jobCandidateMappingRepository.getUploadedCandidateCount(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()), userDetails));
+        return new LoginResponseBean(userDetails.getId(), token, userDetails.getDisplayName(), userDetails.getCompany(),jobCandidateMappingRepository.getUploadedCandidateCount(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()), userDetails), userDetails.getRole());
     }
 
 
