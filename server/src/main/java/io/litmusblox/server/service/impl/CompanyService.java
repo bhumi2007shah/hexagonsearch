@@ -591,17 +591,24 @@ public class CompanyService implements ICompanyService {
         return company;
     }
 
+    /**
+     * This public method is used for validate company Id Check which is really related to loggedIn user or not
+     *
+     * @param user LoggedInUser
+     * @param companyId given company id through api call
+     * @return valid company id
+     */
     public Long validateCompanyId(User user, Long companyId){
-        if(!IConstant.UserRole.SUPER_ADMIN.name().equals(user.getRole())) {
+        if(user.getCompany().getId() != companyId && !IConstant.UserRole.SUPER_ADMIN.name().equals(user.getRole())) {
+            //Check loggedIn user company is agency or not if yes then check company id belonging to it's client or not
             if (IConstant.CompanyType.AGENCY.getValue().equals(user.getCompany().getCompanyType())) {
                 Company company = companyRepository.findByIdAndRecruitmentAgencyId(companyId, user.getCompany().getId());
-                if (null != company || user.getCompany().getId() == companyId)
-                    return companyId;
-                else
+                if (null == company )
                     throw new ValidationException("Client companyId : " + companyId + " not belonging to agency : " + user.getCompany().getCompanyName(), HttpStatus.UNAUTHORIZED);
             }else
-                return user.getCompany().getId();
+                return user.getCompany().getId();  //if loggedIn user trying to access other company data but we send it his own company data default
         }
+        //if user is super admin then give data for gives company id
         return companyId;
     }
 
