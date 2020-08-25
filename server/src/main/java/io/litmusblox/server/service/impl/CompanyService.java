@@ -577,10 +577,14 @@ public class CompanyService implements ICompanyService {
     @Transactional
     public Company getCompanyDetail(Long companyId) {
         log.info("inside getCompanyDetail method");
-        Company company = companyRepository.findById(companyId).orElse(null);
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long validCompanyId = validateCompanyId(loggedInUser, companyId);
+        if(!validCompanyId.equals(companyId))
+            log.error("Given company id : {} and valid company id : {} both are mismatched", companyId, validCompanyId);
+
+        Company company = companyRepository.findById(validCompanyId).orElse(null);
         if(null == company)
-            throw new ValidationException("Company not found for id : " + companyId, HttpStatus.BAD_REQUEST);
+            throw new ValidationException("Company not found for id : " + validCompanyId, HttpStatus.BAD_REQUEST);
         else if(null != company.getRecruitmentAgencyId() && !company.getRecruitmentAgencyId().equals(loggedInUser.getCompany().getId())) {
             throw new ValidationException("Client company : " + company.getCompanyName() + " not belonging to agency : "+loggedInUser.getCompany().getCompanyName(), HttpStatus.UNAUTHORIZED);
         }
@@ -588,6 +592,24 @@ public class CompanyService implements ICompanyService {
         Hibernate.initialize(company.getCompanyBuList());
         Hibernate.initialize(company.getCompanyAddressList());
         return company;
+    }
+
+    public Long validateCompanyId(User user, Long companyId){
+        if(user.getCompany().getId() == companyId)
+            return companyId;
+        else if(!IConstant.UserRole.SUPER_ADMIN.name().equals(user.getRole())) {
+            if (IConstant.CompanyType.AGENCY.getValue().equals(user.getCompany().getCompanyType())) {
+                List<Long> clientCompanyIdList = companyRepository.findCompanyIdListByForAgency(user.getCompany().getId());
+                if (clientCompanyIdList.contains(companyId))
+                    return companyId;
+                else
+                    throw new ValidationException("Client companyId : " + companyId + " not belonging to agency : " + user.getCompany().getCompanyName(), HttpStatus.UNAUTHORIZED);
+            }else
+                return user.getCompany().getId();
+        }else if (IConstant.UserRole.SUPER_ADMIN.name().equals(user.getRole()))
+            return companyId;
+
+        return companyId;
     }
 
     @Transactional

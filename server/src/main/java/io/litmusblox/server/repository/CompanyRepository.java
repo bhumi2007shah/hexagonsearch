@@ -6,6 +6,7 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.Company;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -44,4 +45,7 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     @Transactional
     List<Company> findByShortNameIsNotNullAndRecruitmentAgencyIdIsNullAndCompanyUniqueIdIsNull();
+
+    @Query(value = "select id from company where recruitment_agency_id =:agencyId", nativeQuery = true)
+    List<Long> findCompanyIdListByForAgency(Long agencyId);
 }
