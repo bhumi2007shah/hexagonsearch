@@ -600,7 +600,7 @@ public class CompanyService implements ICompanyService {
      */
     public Long validateCompanyId(User user, Long companyId){
         log.info("LoggedIn user company id is : {} and given company id through api is : {}", user.getCompany().getId(), companyId);
-        if(!user.getCompany().getId().equals(companyId) && !IConstant.UserRole.SUPER_ADMIN.name().equals(user.getRole())) {
+        if(!user.getCompany().getId().equals(companyId) && !IConstant.UserRole.SUPER_ADMIN.toString().equals(user.getRole())) {
             //Check loggedIn user company is agency or not if yes then check company id belonging to it's client or not
             if (IConstant.CompanyType.AGENCY.getValue().equals(user.getCompany().getCompanyType())) {
                 Company company = companyRepository.findByIdAndRecruitmentAgencyId(companyId, user.getCompany().getId());
