@@ -5,7 +5,6 @@
 package io.litmusblox.server.scheduler;
 
 import io.litmusblox.server.service.IJobCandidateMappingService;
-import io.litmusblox.server.service.client.IClientService;
 import io.litmusblox.server.service.impl.FetchEmailService;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import lombok.extern.log4j.Log4j2;
@@ -36,9 +35,6 @@ public class ScheduledTasks {
 
     @Autowired
     IJobCandidateMappingService jobCandidateMappingService;
-
-    @Autowired
-    IClientService clientService;
 
     @Scheduled(fixedDelay = 300000, initialDelay = 5000)
     public void parseAndProcessCv() {
@@ -80,10 +76,5 @@ public class ScheduledTasks {
         log.info("started convert cv file to cv text. Thread: {}", Thread.currentThread().getId());
         processUploadedCV.cvToCvText();
         log.info("completed convert cv file to cv text. Thread: {}", Thread.currentThread().getId());
-    }
-
-    @Scheduled(fixedDelay = 2*60*1000, initialDelay = 2000)
-    public void pushClientEmployeeData(){
-        clientService.pushEmployeesData();
     }
 }
