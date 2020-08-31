@@ -585,30 +585,33 @@ public class CompanyService implements ICompanyService {
         Company company = companyRepository.findById(validCompanyId).orElse(null);
         if(null == company)
             throw new ValidationException("Company not found for id : " + validCompanyId, HttpStatus.BAD_REQUEST);
-        else if(null != company.getRecruitmentAgencyId() && !company.getRecruitmentAgencyId().equals(loggedInUser.getCompany().getId())) {
-            throw new ValidationException("Client company : " + company.getCompanyName() + " not belonging to agency : "+loggedInUser.getCompany().getCompanyName(), HttpStatus.UNAUTHORIZED);
-        }
 
         Hibernate.initialize(company.getCompanyBuList());
         Hibernate.initialize(company.getCompanyAddressList());
         return company;
     }
 
+    /**
+     * This public method is used for validate company Id Check which is really related to loggedIn user or not
+     *
+     * @param user LoggedInUser
+     * @param companyId given company id through api call
+     * @return valid company id
+     */
     public Long validateCompanyId(User user, Long companyId){
-        if(user.getCompany().getId() == companyId)
-            return companyId;
-        else if(!IConstant.UserRole.SUPER_ADMIN.name().equals(user.getRole())) {
+        log.info("LoggedIn user company id is : {} and given company id through api is : {}", user.getCompany().getId(), companyId);
+        if(!user.getCompany().getId().equals(companyId) && !IConstant.UserRole.SUPER_ADMIN.toString().equals(user.getRole())) {
+            //Check loggedIn user company is agency or not if yes then check company id belonging to it's client or not
             if (IConstant.CompanyType.AGENCY.getValue().equals(user.getCompany().getCompanyType())) {
-                List<Long> clientCompanyIdList = companyRepository.findCompanyIdListByForAgency(user.getCompany().getId());
-                if (clientCompanyIdList.contains(companyId))
-                    return companyId;
-                else
+                Company company = companyRepository.findByIdAndRecruitmentAgencyId(companyId, user.getCompany().getId());
+                if (null == company ){
+                    log.error("Client companyId : {} not belonging to agency : {}",companyId, user.getCompany().getId());
                     throw new ValidationException("Client companyId : " + companyId + " not belonging to agency : " + user.getCompany().getCompanyName(), HttpStatus.UNAUTHORIZED);
+                }
             }else
-                return user.getCompany().getId();
-        }else if (IConstant.UserRole.SUPER_ADMIN.name().equals(user.getRole()))
-            return companyId;
-
+                return user.getCompany().getId();  //if loggedIn user trying to access other company data but we send it his own company data default
+        }
+        //if user is super admin then give data for gives company id
         return companyId;
     }
 
