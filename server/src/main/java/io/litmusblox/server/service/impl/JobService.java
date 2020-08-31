@@ -595,26 +595,30 @@ public class JobService implements IJobService {
             jobStageStepRepository.flush();
         }*/
 
-        if (null != oldJob && !IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())) {//only update existing job
+        if (null != oldJob) {//only update existing job
             if(!isNewAddJobFlow && null != job.getHiringManager())
                 oldJob.setHiringManager(job.getHiringManager());
             if(!isNewAddJobFlow && null != job.getRecruiter())
                 oldJob.setRecruiter(job.getRecruiter());
 
-            oldJob.setJobTitle(job.getJobTitle());
-            oldJob.setJobDescription(job.getJobDescription());
+            if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())){
+                oldJob.setJobTitle(job.getJobTitle());
+                oldJob.setJobDescription(job.getJobDescription());
+            }
             oldJob.setUpdatedBy(loggedInUser);
             oldJob.setUpdatedOn(new Date());
             oldJob = jobRepository.save(oldJob);
             historyMsg = "Updated";
 
-            //remove all data from job_key_skills and job_capabilities
-            jobKeySkillsRepository.deleteByJobId(job.getId());
-            jobKeySkillsRepository.flush();
+            if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())) {
+                //remove all data from job_key_skills and job_capabilities
+                jobKeySkillsRepository.deleteByJobId(job.getId());
+                jobKeySkillsRepository.flush();
 
-            if(!isNewAddJobFlow){
-                jobCapabilitiesRepository.deleteByJobId(job.getId());
-                jobCapabilitiesRepository.flush();
+                if(!isNewAddJobFlow){
+                    jobCapabilitiesRepository.deleteByJobId(job.getId());
+                    jobCapabilitiesRepository.flush();
+                }
             }
 
         } else if(null == oldJob){ //Create new entry for job
@@ -632,7 +636,7 @@ public class JobService implements IJobService {
 
         saveJobHistory(job.getId(), historyMsg + " job overview", loggedInUser);
 
-        if(null != oldJob && !IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())){
+        if(null != oldJob && !IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())){
             //make a call to ML api to obtain skills and capabilities
             if(MasterDataBean.getInstance().getConfigSettings().getMlCall()==1) {
                 try {
@@ -804,7 +808,7 @@ public class JobService implements IJobService {
             throw new ValidationException(IErrorMessages.SCREENING_QUESTIONS_VALIDATION_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
         }
         */
-        if(null != oldJob && IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())){
+        if(null != oldJob && IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())){
             return;
         }
         String historyMsg = "Added";
@@ -862,7 +866,7 @@ public class JobService implements IJobService {
     }
 
     private void addJobKeySkills(Job job, Job oldJob, User loggedInUser) throws Exception { //update and add new key skill
-        if(null != oldJob && IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus()))
+        if(null != oldJob && IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus()))
             return;
 
         List<JobKeySkills> mlProvidedKeySkills = jobKeySkillsRepository.findByJobIdAndMlProvided(oldJob.getId(), true);
@@ -954,7 +958,7 @@ public class JobService implements IJobService {
 
     private void addJobCapabilities(Job job, Job oldJob, User loggedInUser) { //add job capabilities
 
-        if(null != oldJob && IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus()))
+        if(null != oldJob && IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus()))
             return;
 
         //if there are capabilities that were returned from ML, and the request for add job - capabilities has a 0 length array, throw an error, otherwise, proceed
@@ -1014,7 +1018,7 @@ public class JobService implements IJobService {
         oldJob.setNoOfPositions(job.getNoOfPositions());
 
         //Update JobIndustry
-        if(isNewAddJobFlow){
+        if(isNewAddJobFlow && !IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus())){
             if (null == job.getJobIndustry() || null == masterDataBean.getJobIndustry().get(job.getJobIndustry().getId())) {
                 //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
                 log.error("In JobId : {}, jobIndustry {}",job.getId(),IErrorMessages.NULL_MESSAGE);
@@ -1023,17 +1027,19 @@ public class JobService implements IJobService {
             }
         }
 
-        //Update Function
-        if (null == masterDataBean.getFunction().get(job.getFunction().getId())) {
-            //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
-            log.error("In JobId : {}, function {}",job.getId(),IErrorMessages.NULL_MESSAGE);
-        }else{
-            oldJob.setFunction(job.getFunction());
-        }
+        if(!IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus())) {
+            //Update Function
+            if (null == masterDataBean.getFunction().get(job.getFunction().getId())) {
+                //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
+                log.error("In JobId : {}, function {}", job.getId(), IErrorMessages.NULL_MESSAGE);
+            } else {
+                oldJob.setFunction(job.getFunction());
+            }
 
-        //Update Role
-        if (isNewAddJobFlow && null != job.getRole() && null != masterDataBean.getRole().get(job.getRole().getId()))
-            oldJob.setRole(job.getRole());
+            //Update Role
+            if (isNewAddJobFlow && null != job.getRole() && null != masterDataBean.getRole().get(job.getRole().getId()))
+                oldJob.setRole(job.getRole());
+        }
 
         //Update Currency
         if (null == job.getCurrency())
@@ -1096,21 +1102,19 @@ public class JobService implements IJobService {
         oldJob.setMinSalary(job.getMinSalary());
         oldJob.setMaxSalary(job.getMaxSalary());
 
-        if(!IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus())){
+         //Update Education
+        if(null != job.getEducation()){
+            for (Integer educationId : job.getEducation()) {
+                if (null == masterDataBean.getEducation().get(Long.valueOf(educationId)))
+                    throw new ValidationException("EducationId : "+educationId +" not match with master data for jobId : "+ job.getId(), HttpStatus.BAD_REQUEST);
+            }
+            oldJob.setEducation(job.getEducation());
+        }else
+            log.error("In Job, education " + IErrorMessages.NULL_MESSAGE + job.getId());
 
-            //Update Education
-            if(null != job.getEducation()){
-                for (Integer educationId : job.getEducation()) {
-                    if (null == masterDataBean.getEducation().get(Long.valueOf(educationId)))
-                        throw new ValidationException("EducationId : "+educationId +" not match with master data for jobId : "+ job.getId(), HttpStatus.BAD_REQUEST);
-                }
-                oldJob.setEducation(job.getEducation());
-            }else
-                log.error("In Job, education " + IErrorMessages.NULL_MESSAGE + job.getId());
+        //Update Notice period
+        oldJob.setNoticePeriod(job.getNoticePeriod());
 
-            //Update Notice period
-            oldJob.setNoticePeriod(job.getNoticePeriod());
-        }
 
         oldJob.setUpdatedOn(new Date());
         jobRepository.save(oldJob);
@@ -1142,10 +1146,6 @@ public class JobService implements IJobService {
     }
 
     private void addJobExpertise(Job job, Job oldJob){
-
-        if(null != oldJob && IConstant.JobStatus.PUBLISHED.equals(oldJob.getStatus()))
-            return;
-
         MasterDataBean masterDataBean = MasterDataBean.getInstance();
         if(null == masterDataBean.getExpertise().get(job.getExpertise().getId())){
             throw new ValidationException("In Job, Expertise " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
@@ -1612,7 +1612,8 @@ public class JobService implements IJobService {
                 addJobExpertise(job, oldJob);
                 break;
             case jobScreening:
-                addJobScreeningQuestions(job, oldJob, loggedInUser, true);
+                if(!IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus()))
+                    addJobScreeningQuestions(job, oldJob, loggedInUser, true);
                 break;
             default:
                 throw new OperationNotSupportedException("Unknown page: " + pageName);

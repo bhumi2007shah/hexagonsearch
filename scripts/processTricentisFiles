@@ -1,0 +1,20 @@
+#!/bin/bash
+
+
+dirName="Tricentis"$(date '+%Y-%m-%d')
+fileStorePath="/home/lbprod/serverApplication/FileStore/"
+
+#create new folder for that day
+mkdir -v $dirName
+
+#Copy data files generated in the postgresql folder to this folder for data massaging
+sudo mv /var/lib/postgresql/Tricentis* $dirName/.
+
+#Convert QA data to table format where each question is a column header
+sudo python3 convertToTable.py
+
+#Merge the candidate data & formatted QA file into the needed format file
+sudo python3 mergeFiles.py
+
+#Create a zip of the final format file & save in the FileStore location, so it is available for the user to get it
+zip -r $fileStorePath/tricentis.zip $dirName/*Finale*

@@ -56,12 +56,13 @@ public class JcmHistory {
     @JoinColumn(name = "STAGE")
     private StageStepMaster stage;
 
-    public JcmHistory(JobCandidateMapping jcmId, @NotNull String comment, Date updatedOn, User userId, StageStepMaster stage) {
+    public JcmHistory(JobCandidateMapping jcmId, @NotNull String comment, Date updatedOn, User userId, StageStepMaster stage, Boolean systemGenerated) {
         this.jcmId = jcmId;
         this.comment = comment;
         this.updatedOn = updatedOn;
         this.userId = userId;
         this.stage = stage;
+        this.systemGenerated = systemGenerated;
     }
 
     public JcmHistory(JobCandidateMapping jcmId, @NotNull String comment, String callLogOutCome, Boolean systemGenerated, Date updatedOn, StageStepMaster stage, User userId) {

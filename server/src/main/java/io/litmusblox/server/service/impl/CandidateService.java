@@ -100,18 +100,20 @@ public class CandidateService implements ICandidateService {
         log.info("Inside findByMobileOrEmail method");
         //check if candidate exists for email
         List<String> emailList = Arrays.asList(email);
-        List<String> mobileList = Arrays.asList(mobile);
-        Candidate dupCandidateByEmail = null;
-        List<CandidateEmailHistory> candidateEmailHistory = candidateEmailHistoryRepository.findByEmailIn(emailList);
-//        if (null != candidateEmailHistory && !candidateEmailHistory.isEmpty())
-//            dupCandidateByEmail = candidateEmailHistory.getCandidate();
 
-        alternateMobile.ifPresent(mobileList::add);
+        List<String> mobileList = new ArrayList<>();
+
+        if(null != mobile)
+            mobileList.addAll(Arrays.asList(mobile));
+
+        List<CandidateEmailHistory> candidateEmailHistory = candidateEmailHistoryRepository.findByEmailIn(emailList);
+
+        if(alternateMobile.isPresent() && !mobileList.contains(alternateMobile.get()))
+            mobileList.add(alternateMobile.get());
 
         //check if candidate exists for mobile
-
-        List<CandidateMobileHistory> candidateMobileHistory = new ArrayList<CandidateMobileHistory>();
-        if (null != mobileList && !mobileList.isEmpty())
+        List<CandidateMobileHistory> candidateMobileHistory = new ArrayList<>();
+        if  (null != mobileList && !mobileList.isEmpty())
             candidateMobileHistory = candidateMobileHistoryRepository.findByCountryCodeAndMobileIn(countryCode, mobileList);
 
         log.info("Candidate Email History Size: {}", candidateEmailHistory.size());
@@ -120,8 +122,12 @@ public class CandidateService implements ICandidateService {
         if(candidateEmailHistory.size()==0 && candidateMobileHistory.size()==0)
             return null;
 
-        Long dupCandidateId = candidateEmailHistory.get(0).getCandidate().getId();
-        log.info("First Id based on Duplicate Email: {}", dupCandidateId);
+        Long dupCandidateId;
+        if(candidateEmailHistory.size() > 0)
+            dupCandidateId = candidateEmailHistory.get(0).getCandidate().getId();
+        else
+            dupCandidateId = candidateMobileHistory.get(0).getCandidate().getId();
+        log.info("First Id based to check for duplicate: {}", dupCandidateId);
         candidateEmailHistory.forEach( (candidate) -> {
             log.info("Candidate ID Check for Duplicate Email: {}", candidate.getCandidate().getId());
             if (!dupCandidateId.equals(candidate.getCandidate().getId()))
@@ -133,9 +139,13 @@ public class CandidateService implements ICandidateService {
                 throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY, HttpStatus.BAD_REQUEST);
         });
 
-        Candidate candidate = candidateEmailHistory.get(0).getCandidate();
+        Candidate candidate;
+        if(candidateEmailHistory.size() > 0)
+            candidate = candidateEmailHistory.get(0).getCandidate();
+        else
+            candidate = candidateMobileHistory.get(0).getCandidate();
         emailList.forEach( (emailToAdd) -> {
-            if(candidateEmailHistoryRepository.findByEmail(emailToAdd) == null) {
+            if(!isEmailExist(emailToAdd, candidate) && candidateEmailHistoryRepository.findByEmail(emailToAdd) == null) {
                 log.info("Inside findMobileAndEmail - saving email {} to existing candidate id {}", emailToAdd, candidate.getId());
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, emailToAdd, new Date(), loggedInUser));
             }
@@ -197,9 +207,12 @@ public class CandidateService implements ICandidateService {
     public Candidate createCandidate(String firstName, String lastName, String [] email, String [] mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
 
         log.info("Inside createCandidate method - create candidate, emailHistory, mobileHistory");
-//        ArrayList<CandidateEmailHistory> candidateEmailHistoryList;
-//        ArrayList email
-        Candidate candidate = candidateRepository.save(new Candidate(firstName, lastName, email[0], mobile[0], countryCode, new Date(), loggedInUser));
+
+        Candidate candidate;
+        if(null != mobile && mobile.length>0)
+            candidate = candidateRepository.save(new Candidate(firstName, lastName, email[0], mobile[0], countryCode, new Date(), loggedInUser));
+        else
+            candidate = candidateRepository.save(new Candidate(firstName, lastName, email[0], null, countryCode, new Date(), loggedInUser));
         for(int i=0; i< email.length; i++) {
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, email[i], new Date(), loggedInUser));
         }
