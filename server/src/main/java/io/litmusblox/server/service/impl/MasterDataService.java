@@ -479,7 +479,7 @@ public class MasterDataService implements IMasterDataService {
     }
 
     public void addIndustryMasterData(List<IndustryMasterDataRequestBean> industryMasterDataRequestBeanList){
-
+        log.info("Received request to add Industry Master Data with data: {}", industryMasterDataRequestBeanList);
         for(IndustryMasterDataRequestBean industryMasterDataRequestBean:industryMasterDataRequestBeanList) {
             IndustryMasterData industryMasterData = null;
             String industry = industryMasterDataRequestBean.getIndustryName();
@@ -523,5 +523,6 @@ public class MasterDataService implements IMasterDataService {
         } catch (Exception e) {
             Util.getStackTrace(e);
         }
+        log.info("Successfully added industry Master Data for {}", industryMasterDataRequestBeanList);
     }
 }
