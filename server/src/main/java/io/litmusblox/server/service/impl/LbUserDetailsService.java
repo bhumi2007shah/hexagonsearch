@@ -13,6 +13,7 @@ import io.litmusblox.server.model.Country;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.security.JwtTokenUtil;
+import io.litmusblox.server.service.AbstractAccessControl;
 import io.litmusblox.server.service.LoginResponseBean;
 import io.litmusblox.server.service.UserWorkspaceBean;
 import io.litmusblox.server.utils.Util;
@@ -47,7 +48,7 @@ import java.util.regex.Pattern;
  */
 @Service
 @Log4j2
-public class LbUserDetailsService implements UserDetailsService {
+public class LbUserDetailsService extends AbstractAccessControl implements UserDetailsService {
 
     @Resource
     UserRepository userRepository;
@@ -481,7 +482,7 @@ public class LbUserDetailsService implements UserDetailsService {
         long startTime = System.currentTimeMillis();
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        Long validCompanyId = companyService.validateCompanyId(loggedInUser, companyId);
+        Long validCompanyId = validateCompanyId(loggedInUser, companyId);
         if(!validCompanyId.equals(companyId))
             log.error("Given company id : {} and valid company id : {} both are mismatched", companyId, validCompanyId);
 

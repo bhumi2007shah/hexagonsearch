@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author : Sumit
@@ -34,5 +35,5 @@ public interface CandidateMobileHistoryRepository extends JpaRepository<Candidat
     void deleteByCandidateId(Long candidateId);
 
     @Transactional
-    List<CandidateMobileHistory> findByCountryCodeAndMobileIn(String countryCode, List<String> mobileList);
+    List<CandidateMobileHistory> findByCountryCodeAndMobileIn(String countryCode, Set<String> mobileList);
 }
