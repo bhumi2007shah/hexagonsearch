@@ -550,12 +550,17 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void saveScreeningQuestionResponses(UUID uuid, Map<Long, List<String>> candidateResponse) throws Exception {
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
+        log.info("Saving chatbot response for uuid : {}, jobId : {} and jcmId : {}", uuid, objFromDb.getJob().getId(), objFromDb.getId());
         Map<String, String> breadCrumb = new HashMap<>();
         breadCrumb.put("Chatbot uuid", uuid.toString());
         breadCrumb.put("JcmId",objFromDb.getId().toString());
+        breadCrumb.put("JobId",objFromDb.getJob().getId().toString());
+        breadCrumb.put("Chatbot response", candidateResponse.toString());
         JcmCommunicationDetails jcmCommunicationDetailsFromDb = jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId());
-        if (null == objFromDb)
+        if (null == objFromDb){
+            log.error("JcmCommunicationDetails not found for jcmId : {}", objFromDb.getId());
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
+        }
 
         if(objFromDb.getJob().getJobScreeningQuestionsList().size() != candidateResponse.size()){
             log.error("Job screening question count : {} and candidate screening question responses count : {} both are mismatch", objFromDb.getJob().getJobScreeningQuestionsList().size(), candidateResponse.size());
@@ -599,9 +604,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         objFromDb.setChatbotUpdatedOn(new Date());
 
         //set chatbot status to complete if scoring engine does not have job or tech chatbot is complete.
-        if(!objFromDb.getJob().getScoringEngineJobAvailable() || jcmCommunicationDetailsFromDb.isTechChatCompleteFlag()){
+        if((!objFromDb.getJob().getScoringEngineJobAvailable() || jcmCommunicationDetailsFromDb.isTechChatCompleteFlag()) && objFromDb.getJob().getJobScreeningQuestionsList().size() == candidateResponse.size()){
             objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
-        }
+            log.info("Chatbot completed for uuid : {}, jobId : {} and jcmId : {}", uuid, objFromDb.getJob().getId(), objFromDb.getId());
+        }else
+            log.info("Chatbot inCompleted for uuid : {}, jobId : {} and jcmId : {}", uuid, objFromDb.getJob().getId(), objFromDb.getId());
+
 
         //Commented below code as we are not setting flag to true as per discussion on 10-01-2020
         //updating chat_complete_flag if corresponding job is not available on scoring engine due to lack of ML data,
