@@ -2590,3 +2590,8 @@ alter table tech_screening_question alter column default_answers type varchar(25
 -- for ticket #612
 update Job j set recruiter[1] = j.created_by where id = j.id and recruiter = '{NULL}';
 UPDATE Job j set recruiter = array_append(recruiter, j.created_by) where id = j.id and NOT(j.created_by = ANY(j.recruiter));
+
+--FOr ticket #573
+alter table job_candidate_mapping add column CANDIDATE_CHATBOT_RESPONSE text[];
+--Update candidate response in jcm for existing candidate chatbot responses
+update job_candidate_mapping jcm set candidate_chatbot_response = cr.responseList from (select job_candidate_mapping_id, array_agg(response::text order by id asc) as responseList from candidate_screening_question_response group by 1) as cr where jcm.id = cr.job_candidate_mapping_id;
