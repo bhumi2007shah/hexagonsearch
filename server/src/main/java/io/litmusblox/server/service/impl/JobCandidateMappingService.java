@@ -554,6 +554,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         Map<String, String> breadCrumb = new HashMap<>();
         breadCrumb.put("Chatbot uuid", uuid.toString());
         breadCrumb.put("JcmId",objFromDb.getId().toString());
+        breadCrumb.put("JobId",objFromDb.getJob().getId().toString());
         breadCrumb.put("Chatbot response", candidateResponse.toString());
         JcmCommunicationDetails jcmCommunicationDetailsFromDb = jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId());
         if (null == objFromDb){
