@@ -596,9 +596,9 @@ public class JobService implements IJobService {
         }*/
 
         if (null != oldJob) {//only update existing job
-            if(!isNewAddJobFlow && null != job.getHiringManager())
+            if(null != job.getHiringManager())
                 oldJob.setHiringManager(job.getHiringManager());
-            if(!isNewAddJobFlow && null != job.getRecruiter())
+            if(null != job.getRecruiter())
                 oldJob.setRecruiter(job.getRecruiter());
 
             if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())){
