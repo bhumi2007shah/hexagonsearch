@@ -27,5 +27,4 @@ public class JcmExportQAResponseBean {
     private Long jcmId;
 
     private String screeningQuestion;
-    private String candidateResponse;
 }

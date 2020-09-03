@@ -392,7 +392,7 @@ public class CandidateService implements ICandidateService {
      * @param candidate
      */
     public void createCandidateOnSearchEngine(Candidate candidate , Job job, String authToken) {
-        log.info("inside create candidate on search engine.");
+        log.info("inside create candidate on search engine for candidate {}, in job {}, for company {}.", candidate, job, job.getCompanyName());
         long startTime = System.currentTimeMillis();
 
         CandidateRequestBean candidateRequestBean = getCandidateRequestBean(candidate, job);
@@ -411,7 +411,7 @@ public class CandidateService implements ICandidateService {
             log.error("Failed to create candidate on search engine. " + e.getMessage());
         }
 
-        log.info("Added candidate on search engine in {}ms", System.currentTimeMillis()-startTime);
+        log.info("Added candidate on search engine in {}ms for candidate {}, in job {}, for company {}.",System.currentTimeMillis()-startTime, candidate, job, job.getCompanyName());
     }
     //Method to truncate the value in the field and send out a sentry message for the same
     //move this truncateField method to Util class because it is use in other place also like CandidateCompanyDetails model
