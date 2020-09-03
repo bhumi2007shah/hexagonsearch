@@ -156,9 +156,6 @@ public class JobService implements IJobService {
     @Autowired
     Environment environment;
 
-    @Value("${pythonJdParser}")
-    private String pythonJdParser;
-
     @Value("${scoringEngineBaseUrl}")
     private String scoringEngineBaseUrl;
 
@@ -666,24 +663,24 @@ public class JobService implements IJobService {
             Map<String, List<SearchEngineQuestionsResponseBean>> skillQuestionMap = new HashMap<>();
             ObjectMapper objectMapper = new ObjectMapper();
 
-            //Send function to searchEngine request
+            //Send function to JdParser request
             if(null != function)
                 requestBean.setFunction(function);
 
             objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            log.info("Sending request to searchEngine for LB job id : "+jobId);
+            log.info("Sending request to JdParser for LB job id : {}",jobId);
             long searchEngineApiStartTime = System.currentTimeMillis();
-            String searEngineResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), pythonJdParser, HttpMethod.POST, JwtTokenUtil.getAuthToken()).getResponseBody();
-            log.info("Response received: " + searEngineResponse);
-            log.info("Getting response from searchEngine for LB job id : {} in {}ms",jobId,System.currentTimeMillis()-searchEngineApiStartTime);
+            String jdParserResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonJdParserUrl"), HttpMethod.POST, JwtTokenUtil.getAuthToken()).getResponseBody();
+            log.info("For jobId : {}, Jd Parser response received: {}", jobId, jdParserResponse);
+            log.info("Getting response from JdParser for LB job id : {} in {}ms",jobId,System.currentTimeMillis()-searchEngineApiStartTime);
             long startTime = System.currentTimeMillis();
 
             //add data in breadCrumb
             breadCrumb.put("Job Id: ", String.valueOf(jobId));
             breadCrumb.put("Request", requestBean.toString());
-            breadCrumb.put("Response", searEngineResponse);
-            skillQuestionMap = objectMapper.readValue(searEngineResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
+            breadCrumb.put("Response", jdParserResponse);
+            skillQuestionMap = objectMapper.readValue(jdParserResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
             log.info("Time taken to process JD in {}ms ",(System.currentTimeMillis() - startTime) + "ms.");
             if(skillQuestionMap.size()>0){
                 job.setSearchEngineSkillQuestionMap(skillQuestionMap);
