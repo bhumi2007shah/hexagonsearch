@@ -1401,7 +1401,7 @@ public class JobService implements IJobService {
                 null
                 );
 
-        log.info("Completed processing export data in {}", System.currentTimeMillis() - startTime);
+        log.info("Completed processing export data in {}ms", System.currentTimeMillis() - startTime);
         return exportResponseBean;
     }
 
