@@ -156,8 +156,8 @@ public class JobService implements IJobService {
     @Autowired
     Environment environment;
 
-    @Value("${mlApiUrl}")
-    private String mlUrl;
+    @Value("${pythonJdParser}")
+    private String pythonJdParser;
 
     @Value("${scoringEngineBaseUrl}")
     private String scoringEngineBaseUrl;
@@ -623,7 +623,7 @@ public class JobService implements IJobService {
 
         } else if(null == oldJob){ //Create new entry for job
             job.setCreatedOn(new Date());
-            job.setMlDataAvailable(false);
+            job.setSeDataAvailable(false);
             job.setStatus(IConstant.JobStatus.DRAFT.getValue());
             job.setCreatedBy(loggedInUser);
             job.setJobReferenceId(UUID.randomUUID());
@@ -640,25 +640,19 @@ public class JobService implements IJobService {
             //make a call to ML api to obtain skills and capabilities
             if(MasterDataBean.getInstance().getConfigSettings().getMlCall()==1) {
                 try {
-                    RolePredictionBean rolePredictionBean = new RolePredictionBean();
-                    RolePredictionBean.RolePrediction rolePrediction= new RolePredictionBean.RolePrediction();
-                    rolePrediction.setJobTitle(job.getJobTitle());
-                    rolePrediction.setJobDescription(job.getJobDescription());
-                    if(null != job.getSelectedRole() && job.getSelectedRole().size()>0)
-                        rolePrediction.getRecruiterRoles().addAll(job.getSelectedRole());
-                    rolePredictionBean.setRolePrediction(rolePrediction);
-                    callMl(rolePredictionBean, job.getId(), job, isNewAddJobFlow);
+                    JdParserRequestBean jdParserRequestBean = new JdParserRequestBean(job.getJobDescription(),true, false,job.getCompanyId().getId());
+                    callJdParser(jdParserRequestBean, oldJob.getId(), job);
                     if(null == oldJob) {
-                        job.setMlDataAvailable(true);
+                        job.setSeDataAvailable(true);
                         jobRepository.save(job);
                     }
                     else {
-                        oldJob.setMlDataAvailable(true);
+                        oldJob.setSeDataAvailable(true);
                         jobRepository.save(oldJob);
                     }
                 } catch (Exception e) {
-                    log.error("Error while fetching data from ML: " + e.getMessage());
-                    job.setMlErrorMessage(IErrorMessages.ML_DATA_UNAVAILABLE);
+                    log.error("Error while fetching data from searchEngine: " + e.getMessage());
+                    job.setSearchEngineErrorMessage(IErrorMessages.SEARCH_ENGINE_DATA_UNAVAILABLE);
                 }
             }
         }
@@ -667,107 +661,68 @@ public class JobService implements IJobService {
         return oldJob;
     }
 
-    private void callMl(RolePredictionBean requestBean, long jobId, Job job, boolean isNewAddJobFlow) throws Exception {
-        log.info("inside callMl method");
-        String mlResponse = null;
-        String mlRequest = null;
+    private void callJdParser(JdParserRequestBean requestBean, long jobId, Job job) throws Exception {
+        log.info("Inside callJdParser method for jobId : {}",jobId);
         String function = MasterDataBean.getInstance().getFunction().get(job.getFunction().getId()).getFunction();
         Map breadCrumb = new HashMap<String, String>();
         try {
+            Map<String, List<SearchEngineQuestionsResponseBean>> skillQuestionMap = new HashMap<>();
             ObjectMapper objectMapper = new ObjectMapper();
-            List<String> roles = new ArrayList<>();
 
-            if(null != job.getSelectedRole() && job.getSelectedRole().size()>0){
-                requestBean.getRolePrediction().getRecruiterRoles().addAll(job.getSelectedRole());
-            }
-
-            //Send function to ml
+            //Send function to searchEngine request
             if(null != function)
-                requestBean.getRolePrediction().setIndustry(function);
+                requestBean.setFunction(function);
 
             objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            mlRequest = objectMapper.writeValueAsString(requestBean);
-            log.info("Sending request to ml for LB job id : "+jobId);
-            mlResponse = RestClient.getInstance().consumeRestApi(mlRequest, mlUrl, HttpMethod.POST,null).getResponseBody();
-            log.info("Response received: " + mlResponse);
-            log.info("Getting response from ml for LB job id : "+jobId);
+            log.info("Sending request to searchEngine for LB job id : "+jobId);
+            long searchEngineApiStartTime = System.currentTimeMillis();
+            String searEngineResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), pythonJdParser, HttpMethod.POST, JwtTokenUtil.getAuthToken()).getResponseBody();
+            log.info("Response received: " + searEngineResponse);
+            log.info("Getting response from searchEngine for LB job id : {} in {}ms",jobId,System.currentTimeMillis()-searchEngineApiStartTime);
             long startTime = System.currentTimeMillis();
 
             //add data in breadCrumb
             breadCrumb.put("Job Id: ", String.valueOf(jobId));
-            breadCrumb.put("Request", mlRequest);
-            breadCrumb.put("Response", mlResponse);
-
-            MLResponseBean responseBean = objectMapper.readValue(mlResponse, MLResponseBean.class);
-
-            //if ml status is jdc_jtm_Error
-            if(!isNewAddJobFlow && (IConstant.MlRolePredictionStatus.JDC_JTM_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus()) ||
-                    IConstant.MlRolePredictionStatus.JDC_JTN_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus()) ||
-                    IConstant.MlRolePredictionStatus.JDB_JTM_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus()))){
-                log.info("ml response status is " +responseBean.getRolePrediction().getStatus()+" for job id : "+jobId);
-                responseBean.getRolePrediction().getJdRoles().forEach(role -> {
-                    roles.add(role.getRoleName());
-                });
-                responseBean.getRolePrediction().getJtRoles().forEach(role -> {
-                    roles.add(role.getRoleName());
-                });
-                //job.setRoles(roles);
-                return;
-            }else if((isNewAddJobFlow || IConstant.MlRolePredictionStatus.NO_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus()))
-                    && !IConstant.MlRolePredictionStatus.SUFF_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus())){
-                //if ml status is no_Error
-                log.info("ml response status is no_Error for job id : "+jobId);
-                int numUniqueSkills = handleSkillsFromML(responseBean.getTowerGeneration().getSkills(), jobId);
-                if(numUniqueSkills != responseBean.getTowerGeneration().getSkills().size()) {
-                    log.error(IErrorMessages.ML_DATA_DUPLICATE_SKILLS + mlResponse);
-                    SentryUtil.logWithStaticAPI(null, IErrorMessages.ML_DATA_DUPLICATE_SKILLS + mlResponse, breadCrumb);
-                }
-                Set<Integer> uniqueCapabilityIds = new HashSet<>();
-                //For now both capabilities(Suggested and Additional) are set as not selected because we don't want tech chatbot for regular flow
-                handleCapabilitiesFromMl(responseBean.getTowerGeneration().getSuggestedCapabilities(), jobId, false, uniqueCapabilityIds);
-                handleCapabilitiesFromMl(responseBean.getTowerGeneration().getAdditionalCapabilities(), jobId, false, uniqueCapabilityIds);
-            }else{
-                SentryUtil.logWithStaticAPI(null, "ml status is different than expected or suff_error", breadCrumb);
-                if(IConstant.MlRolePredictionStatus.SUFF_ERROR.getValue().equalsIgnoreCase(responseBean.getRolePrediction().getStatus())) {
-                    //if ml status is suff_Error
-                    log.info("ml response status is suff_Error for job id : " + jobId);
-                    throw new ValidationException("There was no enough data in JD and JT for this job : " + jobId, HttpStatus.BAD_REQUEST);
-                }
+            breadCrumb.put("Request", requestBean.toString());
+            breadCrumb.put("Response", searEngineResponse);
+            skillQuestionMap = objectMapper.readValue(searEngineResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
+            log.info("Time taken to process JD in {}ms ",(System.currentTimeMillis() - startTime) + "ms.");
+            if(skillQuestionMap.size()>0){
+                job.setSearchEngineSkillQuestionMap(skillQuestionMap);
+                handleSkillsFromSearchEngine(skillQuestionMap.keySet(), jobId);
             }
-            log.info("Time taken to process ml data: " + (System.currentTimeMillis() - startTime) + "ms.");
 
         }catch(Exception e) {
-            log.error("Error While processing ml call : "+e.getMessage());
-            SentryUtil.logWithStaticAPI(null, "Error While processing ml call : "+e.getMessage(), breadCrumb);
+            log.error("Error While Parse jd : "+Util.getStackTrace(e));
+            SentryUtil.logWithStaticAPI(null, "Error While Parse jd : "+Util.getStackTrace(e), breadCrumb);
         }
     }
 
     /**
-     * Method to handle all skills provided by ML
+     * Method to handle all skills provided by search engine
      *
-     * @param skillsList List of skills obtained from ML
+     * @param skillsSet Set of skills obtained from search engine
      * @param jobId the job id for which the skills have to persisted
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private int handleSkillsFromML(List<Skills> skillsList, long jobId) throws Exception {
-        log.info("Size of skill list: " + skillsList.size());
-        Set<Skills> uniqueSkills = skillsList.stream().collect(Collectors.toSet());
-        List<JobKeySkills> jobKeySkillsToSave = new ArrayList<>(uniqueSkills.size());
-        uniqueSkills.forEach(skill-> {
+    private int handleSkillsFromSearchEngine(Set<String> skillsSet, long jobId) throws Exception {
+        log.info("Size of skill set : {} for job id ", skillsSet.size());
+        List<JobKeySkills> jobKeySkillsToSave = new ArrayList<>(skillsSet.size());
+        skillsSet.forEach(skill-> {
             //find a skill from the master table for the skill name provided
-            SkillsMaster skillFromDb = skillMasterRepository.findBySkillNameIgnoreCase(skill.getName());
+            SkillsMaster skillFromDb = skillMasterRepository.findBySkillNameIgnoreCase(skill);
             //if none if found, add a skill
             if (null == skillFromDb) {
-                skillFromDb = new SkillsMaster(skill.getName());
+                skillFromDb = new SkillsMaster(skill);
                 skillMasterRepository.save(skillFromDb);
             }
             //add a record in job_key_skills with this skill id
             jobKeySkillsToSave.add(new JobKeySkills(skillFromDb, true,true, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), jobId));
         });
         jobKeySkillsRepository.saveAll(jobKeySkillsToSave);
-        return uniqueSkills.size();
+        return skillsSet.size();
     }
 
     /**
@@ -869,7 +824,7 @@ public class JobService implements IJobService {
         if(null != oldJob && IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus()))
             return;
 
-        List<JobKeySkills> mlProvidedKeySkills = jobKeySkillsRepository.findByJobIdAndMlProvided(oldJob.getId(), true);
+        List<JobKeySkills> mlProvidedKeySkills = jobKeySkillsRepository.findByJobIdAndSeProvided(oldJob.getId(), true);
 
         //if there were key skills suggested by ML, and the request for add job - key skills has a 0 length array, throw an error, otherwise, proceed
         if (mlProvidedKeySkills.size() > 0 && null != job.getJobKeySkillsList() && job.getJobKeySkillsList().isEmpty()) {
@@ -877,7 +832,7 @@ public class JobService implements IJobService {
         }
 
         //delete all key skills where MlProvided=false
-        List<JobKeySkills> userProvidedJobKeySkillslist = jobKeySkillsRepository.findByJobIdAndMlProvided(job.getId(), false);
+        List<JobKeySkills> userProvidedJobKeySkillslist = jobKeySkillsRepository.findByJobIdAndSeProvided(job.getId(), false);
         if (userProvidedJobKeySkillslist.size() > 0) {
             jobKeySkillsRepository.deleteAll(userProvidedJobKeySkillslist);
         }
@@ -889,7 +844,7 @@ public class JobService implements IJobService {
         job.getJobKeySkillsList().stream().forEach(jobKeySkill -> newSkillValues.put(jobKeySkill.getSkillId().getId(), jobKeySkill));
 
         oldJob.getJobKeySkillsList().forEach(oldKeySkill -> {
-            if (oldKeySkill.getMlProvided()) {
+            if (oldKeySkill.getSeProvided()) {
                 JobKeySkills newValue = newSkillValues.get(oldKeySkill.getSkillId().getId());
                 if(null != newValue) {
                     oldKeySkill.setSelected(newValue.getSelected());

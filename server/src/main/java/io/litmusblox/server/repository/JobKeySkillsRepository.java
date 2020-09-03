@@ -21,7 +21,7 @@ import java.util.List;
 public interface JobKeySkillsRepository extends JpaRepository<JobKeySkills, Long> {
 
     @Transactional
-    List<JobKeySkills> findByJobIdAndMlProvided(Long jobId, Boolean mlProvided);
+    List<JobKeySkills> findByJobIdAndSeProvided(Long jobId, Boolean mlProvided);
 
     @Transactional
     void deleteByJobId(Long jobId);

@@ -14,6 +14,7 @@ import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.service.MasterDataBean;
+import io.litmusblox.server.service.SearchEngineQuestionsResponseBean;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -75,8 +76,8 @@ public class Job implements Serializable {
     private String jobDescription;
 
     @NotNull
-    @Column(name = "ML_DATA_AVAILABLE")
-    private Boolean mlDataAvailable;
+    @Column(name = "SE_DATA_AVAILABLE")
+    private Boolean seDataAvailable;
 
     @NotNull
     @OneToOne(fetch = FetchType.LAZY)
@@ -237,7 +238,7 @@ public class Job implements Serializable {
     private String companyName;
 
     @Transient
-    private String mlErrorMessage;
+    private String searchEngineErrorMessage;
 
     @Transient
     private Map<String,Integer> candidateCountByStage = new HashMap<>();
@@ -273,6 +274,10 @@ public class Job implements Serializable {
 
     @Transient
     private List<User> recruiterList;
+
+    @Transient
+    @JsonProperty
+    private Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineSkillQuestionMap;
 
     //Remove minExperience, maxExperience, experienceRange because add masterdata for experience
     //Also add jobdetail model in job

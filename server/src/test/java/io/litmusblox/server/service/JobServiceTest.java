@@ -245,7 +245,7 @@ class JobServiceTest extends AbstractTest {
                     .jobTitle("job title")
                     .jobDescription("job description")
                     .noOfPositions(1)
-                    .mlDataAvailable(false)
+                    .seDataAvailable(false)
                     .createdBy(User.builder().id(1L).build())
                     .createdOn(new Date())
                     .companyId(Company.builder().id(2L).build())
