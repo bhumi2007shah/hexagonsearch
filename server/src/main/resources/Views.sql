@@ -100,7 +100,7 @@ create view export_data_qa_view AS
       select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
       union
       select jsq.id as jsqId, jsq.job_id as jsqJobId, tech_question as ScreeningQn from job_screening_questions jsq inner join tech_screening_question tsq ON tsq.id = jsq.tech_screening_question_id
-    ) as jsq on jsq.jsqJobId = jcm.job_id
+    ) as jsq on jsq.jsqJobId = jcm.job_id;
 
 -- view to select all required fields for search query
 drop view if exists jobDetailsView;
