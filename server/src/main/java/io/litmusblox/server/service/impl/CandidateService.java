@@ -99,9 +99,10 @@ public class CandidateService implements ICandidateService {
     public Candidate findByMobileOrEmail(String [] email, String [] mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
         log.info("Inside findByMobileOrEmail method");
         //check if candidate exists for email
-        List<String> emailList = Arrays.asList(email);
 
-        List<String> mobileList = new ArrayList<>();
+        Set<String> emailList = new HashSet<>(Arrays.asList(email));
+
+        Set<String> mobileList = new HashSet<>();
 
         if(null != mobile)
             mobileList.addAll(Arrays.asList(mobile));
@@ -208,23 +209,28 @@ public class CandidateService implements ICandidateService {
 
         log.info("Inside createCandidate method - create candidate, emailHistory, mobileHistory");
 
+        Set<String> emailList = new HashSet<>(Arrays.asList(email));
+        Set<String> mobileList = new HashSet<>();
+
+        if(null != mobile)
+            mobileList.addAll(Arrays.asList(mobile));
+
+        if(mobileList.size()>0 && alternateMobile.isPresent() && !mobileList.contains(alternateMobile.get()))
+            mobileList.add(alternateMobile.get());
+
         Candidate candidate;
-        if(null != mobile && mobile.length>0)
-            candidate = candidateRepository.save(new Candidate(firstName, lastName, email[0], mobile[0], countryCode, new Date(), loggedInUser));
+        if(mobileList.size()>0)
+            candidate = candidateRepository.save(new Candidate(firstName, lastName, emailList.stream().findFirst().get(), mobileList.stream().findFirst().get(), countryCode, new Date(), loggedInUser));
         else
-            candidate = candidateRepository.save(new Candidate(firstName, lastName, email[0], null, countryCode, new Date(), loggedInUser));
-        for(int i=0; i< email.length; i++) {
-                candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, email[i], new Date(), loggedInUser));
-        }
+            candidate = candidateRepository.save(new Candidate(firstName, lastName, emailList.stream().findFirst().get(), null, countryCode, new Date(), loggedInUser));
 
-        if(null != mobile) {
-            for(int i=0; i< mobile.length; i++) {
-                candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobile[i], countryCode, new Date(), loggedInUser));
-            }
-        }
-        if(null != mobile && alternateMobile.isPresent() && !mobile.equals(alternateMobile.get()))
-            candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, alternateMobile.get(), countryCode, new Date(), loggedInUser));
+        emailList.forEach((emailToAdd) -> {
+            candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, emailToAdd, new Date(), loggedInUser));
+        });
 
+        mobileList.forEach((mobileToAdd) -> {
+            candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobileToAdd, countryCode, new Date(), loggedInUser));
+        });
         return candidate;
     }
 
@@ -386,7 +392,7 @@ public class CandidateService implements ICandidateService {
      * @param candidate
      */
     public void createCandidateOnSearchEngine(Candidate candidate , Job job, String authToken) {
-        log.info("inside create candidate on search engine.");
+        log.info("inside create candidate on search engine for candidate {}, in job {}, for company {}.", candidate, job, job.getCompanyName());
         long startTime = System.currentTimeMillis();
 
         CandidateRequestBean candidateRequestBean = getCandidateRequestBean(candidate, job);
@@ -405,7 +411,7 @@ public class CandidateService implements ICandidateService {
             log.error("Failed to create candidate on search engine. " + e.getMessage());
         }
 
-        log.info("Added candidate on search engine in {}ms", System.currentTimeMillis()-startTime);
+        log.info("Added candidate on search engine in {}ms for candidate {}, in job {}, for company {}.",System.currentTimeMillis()-startTime, candidate, job, job.getCompanyName());
     }
     //Method to truncate the value in the field and send out a sentry message for the same
     //move this truncateField method to Util class because it is use in other place also like CandidateCompanyDetails model

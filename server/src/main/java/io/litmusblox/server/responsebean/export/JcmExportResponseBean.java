@@ -72,6 +72,9 @@ public class JcmExportResponseBean {
     @JsonFormat(pattern = IConstant.EXPORT_DATE_FORMAT)
     private Date chatbotFilledTimestamp;
 
+    @JsonProperty("Candidate Response")
+    private String candidateResponse;
+
     @JsonProperty("Key Skills Strength")
     private Long keySkillsStrength;
 

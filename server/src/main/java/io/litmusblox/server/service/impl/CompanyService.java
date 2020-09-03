@@ -15,6 +15,7 @@ import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.security.JwtTokenUtil;
+import io.litmusblox.server.service.AbstractAccessControl;
 import io.litmusblox.server.service.CompanyWorspaceBean;
 import io.litmusblox.server.service.ICompanyService;
 import io.litmusblox.server.service.MasterDataBean;
@@ -59,7 +60,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 @Log4j2
 @Service
-public class CompanyService implements ICompanyService {
+public class CompanyService extends AbstractAccessControl implements ICompanyService {
 
     @Resource
     CompanyRepository companyRepository;
@@ -589,30 +590,6 @@ public class CompanyService implements ICompanyService {
         Hibernate.initialize(company.getCompanyBuList());
         Hibernate.initialize(company.getCompanyAddressList());
         return company;
-    }
-
-    /**
-     * This public method is used for validate company Id Check which is really related to loggedIn user or not
-     *
-     * @param user LoggedInUser
-     * @param companyId given company id through api call
-     * @return valid company id
-     */
-    public Long validateCompanyId(User user, Long companyId){
-        log.info("LoggedIn user company id is : {} and given company id through api is : {}", user.getCompany().getId(), companyId);
-        if(!user.getCompany().getId().equals(companyId) && !IConstant.UserRole.SUPER_ADMIN.toString().equals(user.getRole())) {
-            //Check loggedIn user company is agency or not if yes then check company id belonging to it's client or not
-            if (IConstant.CompanyType.AGENCY.getValue().equals(user.getCompany().getCompanyType())) {
-                Company company = companyRepository.findByIdAndRecruitmentAgencyId(companyId, user.getCompany().getId());
-                if (null == company ){
-                    log.error("Client companyId : {} not belonging to agency : {}",companyId, user.getCompany().getId());
-                    throw new ValidationException("Client companyId : " + companyId + " not belonging to agency : " + user.getCompany().getCompanyName(), HttpStatus.UNAUTHORIZED);
-                }
-            }else
-                return user.getCompany().getId();  //if loggedIn user trying to access other company data but we send it his own company data default
-        }
-        //if user is super admin then give data for gives company id
-        return companyId;
     }
 
     @Transactional
