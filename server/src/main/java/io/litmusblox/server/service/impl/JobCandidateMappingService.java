@@ -570,10 +570,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
 
         //delete existing response for chatbot for the jcm
-//        long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
         candidateScreeningQuestionResponseRepository.deleteByJobCandidateMappingId(objFromDb.getId());
 
-//        ArrayList<String> responsesInArrayList = new ArrayList<String>();
+        ArrayList<String> responsesInArrayList = new ArrayList<String>();
         candidateResponse.forEach((key,value) -> {
             String[] valuesToSave = new String[value.size()];
             for(int i=0;i<value.size();i++) {
@@ -588,16 +588,15 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 }
             }
             candidateScreeningQuestionResponseRepository.save(new CandidateScreeningQuestionResponse(objFromDb.getId(),key, valuesToSave[0], (valuesToSave.length > 1)?valuesToSave[1]:null));
-//            responsesInArrayList.add(String.join(",", valuesToSave));
+            responsesInArrayList.add(String.join(",", valuesToSave));
         });
-//        log.info("Completed looping through map in {}ms", (System.currentTimeMillis()-startTime));
+        log.info("Completed looping through map in {}ms", (System.currentTimeMillis()-startTime));
 
-        //TODO:For now we have commit this hr question changes for current prod deployment 19/08/2020
         //updating hr_chat_complete_flag
-//        startTime = System.currentTimeMillis();
-//        String [] responses = responsesInArrayList.toArray(new String[responsesInArrayList.size()]);
-//        objFromDb.setCandidateChatbotResponse(responses);
-//        log.info("Completed adding response to db in {}ms",(System.currentTimeMillis()-startTime));
+        startTime = System.currentTimeMillis();
+        String [] responses = responsesInArrayList.toArray(new String[responsesInArrayList.size()]);
+        objFromDb.setCandidateChatbotResponse(responses);
+        log.info("Completed adding response to db in {}ms",(System.currentTimeMillis()-startTime));
 
         jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(objFromDb.getId());
 

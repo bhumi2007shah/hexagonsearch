@@ -2590,3 +2590,13 @@ alter table tech_screening_question alter column default_answers type varchar(25
 -- for ticket #612
 update Job j set recruiter[1] = j.created_by where id = j.id and recruiter = '{NULL}';
 UPDATE Job j set recruiter = array_append(recruiter, j.created_by) where id = j.id and NOT(j.created_by = ANY(j.recruiter));
+
+--FOr ticket #573
+alter table job_candidate_mapping add column CANDIDATE_CHATBOT_RESPONSE text[];
+--Update candidate response in jcm for existing candidate chatbot responses
+update job_candidate_mapping jcm set candidate_chatbot_response = cr.responseList from (select job_candidate_mapping_id, array_agg(CONCAT(response,' ',comment)::text order by id asc) as responseList from candidate_screening_question_response group by 1) as cr where jcm.id = cr.job_candidate_mapping_id;
+INSERT INTO export_format_detail(format_id, column_name, header,  "position", stage) values(1, 'candidateResponse','Candidate Response', 25, null);
+
+-- For ticket #624
+ALTER TABLE JOB RENAME COLUMN ML_DATA_AVAILABLE TO SE_DATA_AVAILABLE;
+ALTER TABLE JOB_KEY_SKILLS RENAME COLUMN ML_PROVIDED TO SE_PROVIDED;
