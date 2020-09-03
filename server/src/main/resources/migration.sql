@@ -2595,3 +2595,4 @@ UPDATE Job j set recruiter = array_append(recruiter, j.created_by) where id = j.
 alter table job_candidate_mapping add column CANDIDATE_CHATBOT_RESPONSE text[];
 --Update candidate response in jcm for existing candidate chatbot responses
 update job_candidate_mapping jcm set candidate_chatbot_response = cr.responseList from (select job_candidate_mapping_id, array_agg(CONCAT(response,' ',comment)::text order by id asc) as responseList from candidate_screening_question_response group by 1) as cr where jcm.id = cr.job_candidate_mapping_id;
+INSERT INTO export_format_detail(format_id, column_name, header,  "position", stage) values(1, 'candidateResponse','Candidate Response', 25, null);
