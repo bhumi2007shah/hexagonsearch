@@ -440,6 +440,8 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
         User objFromDb = userRepository.getOne(user.getId());
         if (null == objFromDb)
             throw new ValidationException("Invalid user", HttpStatus.UNPROCESSABLE_ENTITY);
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateloggedInUser(loggedInUser, objFromDb.getCompany().getId());
 
         //Currently company block functionality not depend on the client admin status
         /*if(IConstant.UserRole.Names.CLIENT_ADMIN.equals(objFromDb.getRole())) {
@@ -521,9 +523,12 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
     public User getUserDetails(Long userId) throws Exception {
         log.info("Inside getUserDetails");
         User user = findById(userId);
+
         if(null == user)
             throw new ValidationException("User not found for userId : "+userId, HttpStatus.BAD_REQUEST);
         else{
+            User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            validateloggedInUser(loggedInUser, user.getCompany().getId());
             if(IConstant.UserRole.Names.RECRUITER.equals(user.getRole()))
                 user.setRole(IConstant.HR_RECRUITER);
             else if(IConstant.UserRole.Names.CLIENT_ADMIN.equals(user.getRole()))

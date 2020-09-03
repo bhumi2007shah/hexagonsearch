@@ -5,6 +5,7 @@
 package io.litmusblox.server.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.Http;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
@@ -54,7 +55,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Log4j2
-public class JobCandidateMappingService implements IJobCandidateMappingService {
+public class JobCandidateMappingService extends AbstractAccessControl implements IJobCandidateMappingService {
 
     @Resource
     JobRepository jobRepository;
@@ -178,7 +179,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Value("${scoringEngineBaseUrl}")
     private String scoringEngineBaseUrl;
 
-    @Value("${scoringEngineAddCandidateUrlSuffix}")
+        @Value("${scoringEngineAddCandidateUrlSuffix}")
     private String scoringEngineAddCandidateUrlSuffix;
 
     /**
@@ -195,6 +196,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         //verify that the job is live before processing candidates
         Job job = jobRepository.getOne(jobId);
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, job);
         if(null == job || !IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus())) {
             StringBuffer info = new StringBuffer("Selected job is not live ").append("JobId :").append(jobId);
             Map<String, String> breadCrumb = new HashMap<>();
@@ -203,7 +206,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         }
 
         UploadResponseBean uploadResponseBean = new UploadResponseBean();
-        User loggedInUser = (null != createdBy && createdBy.isPresent())?createdBy.get():(User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        loggedInUser = (null != createdBy && createdBy.isPresent())?createdBy.get():(User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Date createdOn=Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
 
         int candidateProcessed=jobCandidateMappingRepository.getUploadedCandidateCount(createdOn,loggedInUser);
@@ -351,8 +354,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         UploadResponseBean uploadResponseBean = new UploadResponseBean();
         List<Candidate> candidateList = null;
         Job job = jobRepository.getOne(jobId);
-
         try {
+            validateLoggedInUser(loggedInUser, job);
             candidateList = processUploadedFile(fileName, uploadResponseBean, loggedInUser, fileFormat, environment.getProperty(IConstant.REPO_LOCATION), loggedInUser.getCountryCode());
 
             try {
@@ -366,6 +369,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             }
         } catch (WebException webException) {
             asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(jobId, null, null, null, null, webException.getErrorMessage(), IConstant.ASYNC_OPERATIONS.FileUpload.name(), loggedInUser, new Date(), originalFileName));
+        } catch (ValidationException validationException) {
+            asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(jobId, null, null, null, null, validationException.getErrorMessage(), IConstant.ASYNC_OPERATIONS.FileUpload.name(), loggedInUser, new Date(), originalFileName));
         }
         log.info("Thread - {} : Completed processing uploadCandidatesFromFile in JobCandidateMappingService in {}ms", Thread.currentThread().getName(), System.currentTimeMillis()- startTime);
     }
@@ -788,24 +793,31 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         Job jobObjToUse = null;
         //iterate over jcm list
-        for (JobCandidateMapping jobCandidateMapping : jobCandidateMappingList) {
 
-            if (null == jobObjToUse)
-                jobObjToUse = jobCandidateMapping.getJob();
+        try {
+            for (JobCandidateMapping jobCandidateMapping : jobCandidateMappingList) {
 
-            //https://github.com/hexagonsearch/litmusblox-backend/issues/527
-            //Check if mobile or email valid then invite candidate if both are invalid then skip to invite candidate
-            if (((!Util.isValidateEmail(jobCandidateMapping.getEmail(), null) || jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)) && Util.isNull(jobCandidateMapping.getMobile())) || null != jobCandidateMapping.getChatbotStatus()) {
-                if (null != jobCandidateMapping.getChatbotStatus())
-                    jobCandidateMapping.setInviteErrorMessage("Candidate is already invited. Cannot be invited again.");
-                else
-                    jobCandidateMapping.setInviteErrorMessage("Invalid mobile and Email address: " + jobCandidateMapping.getEmail());
+                if (null == jobObjToUse)
+                    jobObjToUse = jobCandidateMapping.getJob();
 
-                failedJcm.add(jobCandidateMapping);
-                continue;
+                validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
+
+                //https://github.com/hexagonsearch/litmusblox-backend/issues/527
+                //Check if mobile or email valid then invite candidate if both are invalid then skip to invite candidate
+                if (((!Util.isValidateEmail(jobCandidateMapping.getEmail(), null) || jobCandidateMapping.getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL)) && Util.isNull(jobCandidateMapping.getMobile())) || null != jobCandidateMapping.getChatbotStatus()) {
+                    if (null != jobCandidateMapping.getChatbotStatus())
+                        jobCandidateMapping.setInviteErrorMessage("Candidate is already invited. Cannot be invited again.");
+                    else
+                        jobCandidateMapping.setInviteErrorMessage("Invalid mobile and Email address: " + jobCandidateMapping.getEmail());
+
+                    failedJcm.add(jobCandidateMapping);
+                    continue;
+                }
+
+                jcmListWithoutError.add(jobCandidateMapping.getId());
             }
-
-            jcmListWithoutError.add(jobCandidateMapping.getId());
+        } catch(ValidationException validationException){
+            asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(null, null, null, null, null, validationException.getErrorMessage(), IConstant.ASYNC_OPERATIONS.InviteCandidates.name(), loggedInUser, new Date(), null));
         }
 
         if(null != jobObjToUse) {
@@ -858,6 +870,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     public void shareCandidateProfiles(ShareCandidateProfileRequestBean requestBean) {
 
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        JobCandidateMapping jcm = jobCandidateMappingRepository.findById(requestBean.getJcmId().get(0)).orElse(null);
+        if(jcm!=null)
+            validateLoggedInUser(loggedInUser, jcm.getJob());
 
         List<String> recieverEmails = new ArrayList<>();
 
@@ -936,6 +952,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findById(jobCandidateMappingId).orElse(null);
         if(null == objFromDb)
             throw new ValidationException("No job candidate mapping found for id: " + jobCandidateMappingId, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, objFromDb.getJob());
 
         List<JobScreeningQuestions> screeningQuestions = jobScreeningQuestionsRepository.findByJobId(objFromDb.getJob().getId());
         Map<Long, JobScreeningQuestions> screeningQuestionsMap = new LinkedHashMap<>(screeningQuestions.size());
@@ -1053,6 +1072,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         Integer successCount = 0, failureCount =0;
         Integer[] countArray = new Integer[0];
 
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Job job = jobRepository.getOne(jobId);
+        validateLoggedInUser(loggedInUser, job);
+
         for (MultipartFile fileToProcess :multipartFiles) {
             StringBuffer location = new StringBuffer(environment.getProperty(IConstant.TEMP_REPO_LOCATION));
             location.append(IConstant.DRAG_AND_DROP).append(File.separator);
@@ -1074,7 +1097,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                 else
                     fileType=IConstant.FILE_TYPE.other.toString();
 
-                User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
                 try {
                     filePath = StoreFileUtil.storeFile(fileToProcess, jobId, location.toString(), fileType,null, loggedInUser);
                     successCount++;
@@ -1141,6 +1163,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         log.info("Inside editCandidate");
         User loggedInUser = (null != SecurityContextHolder.getContext().getAuthentication())?(User)SecurityContextHolder.getContext().getAuthentication().getPrincipal():jobCandidateMapping.getCreatedBy();
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(jobCandidateMapping.getId()).orElse(null);
+
+        if(null != jcmFromDb)
+            validateLoggedInUser(loggedInUser, jcmFromDb.getJob());
 
         //set country code in jcm if it is null in request then take existing jcm country code from db
         if(null == jobCandidateMapping.getCandidate().getCountryCode())
@@ -1751,11 +1776,22 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     public void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue) throws Exception {
         long startTime = System.currentTimeMillis();
         log.info("Setting {} jcms to {} stage", jcmList, stage);
+
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        //check that all jcm are in the same jobId
+        List<Long> jobId = jobCandidateMappingRepository.findDistinctJobIdByJcmID(jcmList);
+
+        if(jobId.size() > 1)
+            throw new ValidationException("Access to data not allowed", HttpStatus.UNAUTHORIZED);
+        if(jobId.size() == 1) {
+            Job job = jobRepository.getOne(jobId.get(0));
+            validateLoggedInUser(loggedInUser, job);
+        }
         //check that all the jcm are currently in the same stage
         if(!areCandidatesInSameStage(jcmList))
             throw new WebException("Select candidates that are all in Source stage", HttpStatus.UNPROCESSABLE_ENTITY);
 
-        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<JcmHistory> jcmHistoryList = new ArrayList<>(jcmList.size());
 
         //check if new stage is rejected stage so update candidate rejection reason and rejected flag
@@ -1824,6 +1860,9 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Transactional
     public List<JcmHistory> retrieveCandidateHistory(Long jcmId) {
         JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findById(jcmId).orElse(null);
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(null != jobCandidateMapping)
+            validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
         return jcmHistoryRepository.getJcmHistoryList(jobCandidateMapping.getJob().getCompanyId().getId(), jobCandidateMapping.getCandidate().getId());
     }
 
@@ -1840,6 +1879,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findById(jcmId).orElse(null);
         if(null == jobCandidateMapping)
             throw new ValidationException("Job candidate mapping not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
+        else
+            validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
 
         jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, comment, callOutCome, false, new Date(), jobCandidateMapping.getStage(), loggedInUser));
     }
@@ -1853,9 +1894,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Transactional
     public void uploadResume(MultipartFile candidateCv, Long jcmId) throws Exception {
         log.info("inside uploadResume");
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(jcmId).orElse(null);
         if(null == jcmFromDb)
             throw new ValidationException("Job candidate mapping not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
+        else
+            validateLoggedInUser(loggedInUser, jcmFromDb.getJob());
 
         //Call private overloaded method upload resume which takes candidateCv and jobCandidateMapping as parameter
         uploadResume(candidateCv, jcmFromDb);
@@ -2025,6 +2069,10 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
     @Transactional(readOnly = true)
     public Map<String, Integer> getCandidateCountPerStatus(Long jobId, String stage) throws Exception {
 
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Job job = jobRepository.getOne(jobId);
+        validateLoggedInUser(loggedInUser, job);
+
         Map<String, Integer> countMap = new HashMap<>();
         List<Object[]> candidateCountList = jobCandidateMappingRepository.getCandidateCountPerStage(jobId, stage);
 
@@ -2082,7 +2130,6 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-
         if (interviewDetailsFromReq.getInterviewDate().before(new Date())) {
             log.error("Interview date : {}  should be future date, Current date : {}", interviewDetailsFromReq.getInterviewDate(), new Date());
             throw new ValidationException("Interview date : " + Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), interviewDetailsFromReq.getInterviewDate()) + " should be future date, Current date : " + Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), new Date()), HttpStatus.BAD_REQUEST);
@@ -2090,6 +2137,11 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         AtomicReference<Long> interviewDetailsFromDb = new AtomicReference<>();
         interviewDetailsFromReq.getJobCandidateMappingList().forEach(jobCandidateMapping -> {
+
+//            Long companyId = companyRepository.findCompanyIdByJcmId(jobCandidateMapping.getId());
+            JobCandidateMapping jcm = jobCandidateMappingRepository.findById(jobCandidateMapping.getId()).orElse(null);
+            if(null != jcm)
+                validateLoggedInUser(loggedInUser, jcm.getJob());
             if (null != interviewDetailsFromReq.getComments() && interviewDetailsFromReq.getComments().length() > IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue())
                 interviewDetailsFromReq.setComments(Util.truncateField(jobCandidateMapping.getCandidate(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.INTERVIEW_COMMENTS.getValue(), interviewDetailsFromReq.getComments()));
 
@@ -2122,8 +2174,11 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             throw new ValidationException("Interview details not found for id : "+cancellationDetails.getId(), HttpStatus.BAD_REQUEST);
 
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null);
+
         if(null == jcmFromDb)
             throw new ValidationException("Job Candidate Mapping not found for id : "+interviewDetailsFromDb.getJobCandidateMappingId(), HttpStatus.BAD_REQUEST);
+
+        validateLoggedInUser(loggedInUser, jcmFromDb.getJob());
 
         if(null == cancellationDetails.getCancellationReason())
             throw new ValidationException("For Interview cancel, cancellation reason should not be null : "+cancellationDetails.getId(), HttpStatus.BAD_REQUEST);
@@ -2149,7 +2204,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
      * @return Boolean value is interview mark showNoShow
      */
     @Transactional
-    public void markShowNoShow(InterviewDetails showNoShowDetails) {
+        public void markShowNoShow(InterviewDetails showNoShowDetails) {
         log.info("Inside markShowNoShow");
         long startTime = System.currentTimeMillis();
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -2166,6 +2221,8 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(interviewDetailsFromDb.getJobCandidateMappingId()).orElse(null);
         if(null == jcmFromDb)
             throw new ValidationException("Job Candidate Mapping not found for id : "+interviewDetailsFromDb.getJobCandidateMappingId(), HttpStatus.BAD_REQUEST);
+
+        validateLoggedInUser(loggedInUser, jcmFromDb.getJob());
 
         if(!showNoShowDetails.isShowNoShow() && null == showNoShowDetails.getNoShowReason())
             throw new ValidationException("Interview NoShowReason should not be null : "+showNoShowDetails.getId(), HttpStatus.BAD_REQUEST);
