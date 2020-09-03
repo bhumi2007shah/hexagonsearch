@@ -28,6 +28,8 @@ public class FileSanitization {
 
     public static String sanitizePdf(MultipartFile multipartFile) {
 
+        log.info("Inside file sanitization method for file {}", multipartFile.getOriginalFilename());
+
         String responseByteArray = null;
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -36,6 +38,7 @@ public class FileSanitization {
 
         ByteArrayResource fileContent = null;
         try {
+            log.info("extracting byte array resource from file {}", multipartFile.getOriginalFilename());
             fileContent = new ByteArrayResource(multipartFile.getBytes()){
                 @Override
                 public String getFilename() {
@@ -52,6 +55,7 @@ public class FileSanitization {
             log.info(e.getCause());
         }
         if(null!=fileContent) {
+            log.info("Creating request object and calling python rest api to sanitize byte array of file {}", multipartFile.getOriginalFilename());
             body.add("file", fileContent);
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity
@@ -69,6 +73,7 @@ public class FileSanitization {
                         );
 
                 if(responseEntity.getStatusCode()==HttpStatus.OK && responseEntity.hasBody()){
+                    log.info("Received sanitized file content for file {} from python api", multipartFile.getOriginalFilename());
                     responseByteArray = responseEntity.getBody();
                 }
             } catch (Exception e) {
