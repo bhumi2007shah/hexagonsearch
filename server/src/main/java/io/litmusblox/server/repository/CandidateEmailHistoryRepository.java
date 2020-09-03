@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author : Sumit
@@ -34,5 +35,5 @@ public interface CandidateEmailHistoryRepository extends JpaRepository<Candidate
     void deleteByCandidateId(Long candidateId);
 
     @Transactional
-    List<CandidateEmailHistory> findByEmailIn(List<String> emailList);
+    List<CandidateEmailHistory> findByEmailIn(Set<String> emailList);
 }
