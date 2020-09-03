@@ -623,7 +623,6 @@ public class JobService implements IJobService {
 
         } else if(null == oldJob){ //Create new entry for job
             job.setCreatedOn(new Date());
-            job.setSeDataAvailable(false);
             job.setStatus(IConstant.JobStatus.DRAFT.getValue());
             job.setCreatedBy(loggedInUser);
             job.setJobReferenceId(UUID.randomUUID());
@@ -643,11 +642,9 @@ public class JobService implements IJobService {
                     JdParserRequestBean jdParserRequestBean = new JdParserRequestBean(job.getJobDescription(),true, false,job.getCompanyId().getId());
                     callJdParser(jdParserRequestBean, oldJob.getId(), job);
                     if(null == oldJob) {
-                        job.setSeDataAvailable(true);
                         jobRepository.save(job);
                     }
                     else {
-                        oldJob.setSeDataAvailable(true);
                         jobRepository.save(oldJob);
                     }
                 } catch (Exception e) {
@@ -719,7 +716,7 @@ public class JobService implements IJobService {
                 skillMasterRepository.save(skillFromDb);
             }
             //add a record in job_key_skills with this skill id
-            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb, true,true, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), jobId));
+            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb,true, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), jobId));
         });
         jobKeySkillsRepository.saveAll(jobKeySkillsToSave);
         return skillsSet.size();
@@ -824,37 +821,27 @@ public class JobService implements IJobService {
         if(null != oldJob && IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus()))
             return;
 
-        List<JobKeySkills> mlProvidedKeySkills = jobKeySkillsRepository.findByJobIdAndSeProvided(oldJob.getId(), true);
+        List<JobKeySkills> jobKeySkillsFromDb = jobKeySkillsRepository.findByJobId(oldJob.getId());
 
         //if there were key skills suggested by ML, and the request for add job - key skills has a 0 length array, throw an error, otherwise, proceed
-        if (mlProvidedKeySkills.size() > 0 && null != job.getJobKeySkillsList() && job.getJobKeySkillsList().isEmpty()) {
+        if (jobKeySkillsFromDb.size() > 0 && null != job.getJobKeySkillsList() && job.getJobKeySkillsList().isEmpty()) {
             throw new ValidationException("Job key skills " + IErrorMessages.EMPTY_AND_NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
         }
-
-        //delete all key skills where MlProvided=false
-        List<JobKeySkills> userProvidedJobKeySkillslist = jobKeySkillsRepository.findByJobIdAndSeProvided(job.getId(), false);
-        if (userProvidedJobKeySkillslist.size() > 0) {
-            jobKeySkillsRepository.deleteAll(userProvidedJobKeySkillslist);
-        }
-        jobKeySkillsRepository.flush();
-
 
         //For each keyskill in the request (will have only the mlProvided true ones), update the values for selected
         Map<Long, JobKeySkills> newSkillValues = new HashMap();
         job.getJobKeySkillsList().stream().forEach(jobKeySkill -> newSkillValues.put(jobKeySkill.getSkillId().getId(), jobKeySkill));
 
         oldJob.getJobKeySkillsList().forEach(oldKeySkill -> {
-            if (oldKeySkill.getSeProvided()) {
-                JobKeySkills newValue = newSkillValues.get(oldKeySkill.getSkillId().getId());
-                if(null != newValue) {
-                    oldKeySkill.setSelected(newValue.getSelected());
-                    log.info("ML provided skill {} not returned in the api call", oldKeySkill.getSkillId().getSkillName());
-                }
-                else
-                    oldKeySkill.setSelected(false);
-                oldKeySkill.setUpdatedOn(new Date());
-                oldKeySkill.setUpdatedBy(loggedInUser);
+            JobKeySkills newValue = newSkillValues.get(oldKeySkill.getSkillId().getId());
+            if(null != newValue) {
+                oldKeySkill.setSelected(newValue.getSelected());
+                log.info("ML provided skill {} not returned in the api call", oldKeySkill.getSkillId().getSkillName());
             }
+            else
+                oldKeySkill.setSelected(false);
+            oldKeySkill.setUpdatedOn(new Date());
+            oldKeySkill.setUpdatedBy(loggedInUser);
         });
 
         //get all skillMaster and tempskills master data
@@ -889,20 +876,20 @@ public class JobService implements IJobService {
                     continue;
                 } else {
                     //no match found in mlProvided skill, add a record
-                    jobKeySkillsRepository.save(new JobKeySkills(skillsMasterMap.get(skillId), false, true, new Date(), loggedInUser, job.getId()));
+                    jobKeySkillsRepository.save(new JobKeySkills(skillsMasterMap.get(skillId), true, new Date(), loggedInUser, job.getId()));
                 }
 
             }
             //check if the user entered skill exists in the temp skills table
             else if (tempSkillsMapByName.keySet().contains(userSkills)) {
                 Long tempSkillId = tempSkillsMapByName.get(userSkills);
-                jobKeySkillsRepository.save(new JobKeySkills(tempSkillsMap.get(tempSkillId), false, true, new Date(), loggedInUser, job.getId()));
+                jobKeySkillsRepository.save(new JobKeySkills(tempSkillsMap.get(tempSkillId), true, new Date(), loggedInUser, job.getId()));
 
             }
             //this is a new skill, add to temp skills and refer to jobkeyskills table
             else {
                 TempSkills tempSkills = tempSkillsRepository.save(new TempSkills(userSkills, false));
-                jobKeySkillsRepository.save(new JobKeySkills(tempSkills, false, true, new Date(), loggedInUser, job.getId()));
+                jobKeySkillsRepository.save(new JobKeySkills(tempSkills, true, new Date(), loggedInUser, job.getId()));
             }
         }
         saveJobHistory(job.getId(), "Added key skills", loggedInUser);

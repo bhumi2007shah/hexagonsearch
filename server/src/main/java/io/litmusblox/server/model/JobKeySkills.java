@@ -44,10 +44,6 @@ public class JobKeySkills implements Serializable {
     private TempSkills skillIdFromTemp;
 
     @NotNull
-    @Column(name = "SE_PROVIDED")
-    private Boolean seProvided;
-
-    @NotNull
     @Column(name = "SELECTED")
     private Boolean selected;
 
@@ -76,18 +72,16 @@ public class JobKeySkills implements Serializable {
     @NotNull
     private Long jobId;
 
-    public JobKeySkills(SkillsMaster skillId, @NotNull Boolean seProvided, @NotNull Boolean selected, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId) {
+    public JobKeySkills(SkillsMaster skillId, @NotNull Boolean selected, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId) {
         this.skillId = skillId;
-        this.seProvided = seProvided;
         this.selected = selected;
         this.createdOn = createdOn;
         this.createdBy = createdBy;
         this.jobId = jobId;
     }
 
-    public JobKeySkills(TempSkills skillIdFromTemp, @NotNull Boolean seProvided, @NotNull Boolean selected, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId) {
+    public JobKeySkills(TempSkills skillIdFromTemp, @NotNull Boolean selected, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId) {
         this.skillIdFromTemp = skillIdFromTemp;
-        this.seProvided = seProvided;
         this.selected = selected;
         this.createdOn = createdOn;
         this.createdBy = createdBy;

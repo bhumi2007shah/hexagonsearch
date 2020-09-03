@@ -76,10 +76,6 @@ public class Job implements Serializable {
     private String jobDescription;
 
     @NotNull
-    @Column(name = "SE_DATA_AVAILABLE")
-    private Boolean seDataAvailable;
-
-    @NotNull
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "COMPANY_ID")
     private Company companyId;
