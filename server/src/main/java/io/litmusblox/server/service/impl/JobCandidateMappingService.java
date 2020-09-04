@@ -238,7 +238,7 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
                     try {
                         candidateService.createCandidateOnSearchEngine(candidate, job, JwtTokenUtil.getAuthToken());
                     }catch (Exception e){
-                        log.error("Error while adding candidate : {} in searchEngine for job : {}", candidate.getId(), job.getId());
+                        log.error("Error while adding candidate : {} in searchEngine for job : {}:: {}", candidate.getId(), job.getId(), e.getMessage());
                     }
                 }
             }catch (Exception ex){
