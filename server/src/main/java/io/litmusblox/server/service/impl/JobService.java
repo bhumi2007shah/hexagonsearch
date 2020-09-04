@@ -607,17 +607,6 @@ public class JobService implements IJobService {
             oldJob = jobRepository.save(oldJob);
             historyMsg = "Updated";
 
-            if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())) {
-                //remove all data from job_key_skills and job_capabilities
-                jobKeySkillsRepository.deleteByJobId(job.getId());
-                jobKeySkillsRepository.flush();
-
-                if(!isNewAddJobFlow){
-                    jobCapabilitiesRepository.deleteByJobId(job.getId());
-                    jobCapabilitiesRepository.flush();
-                }
-            }
-
         } else if(null == oldJob){ //Create new entry for job
             job.setCreatedOn(new Date());
             job.setStatus(IConstant.JobStatus.DRAFT.getValue());
@@ -684,7 +673,6 @@ public class JobService implements IJobService {
             log.info("Time taken to process JD in {}ms ",(System.currentTimeMillis() - startTime) + "ms.");
             if(skillQuestionMap.size()>0){
                 job.setSearchEngineSkillQuestionMap(skillQuestionMap);
-                handleSkillsFromSearchEngine(skillQuestionMap.keySet(), jobId);
             }
 
         }catch(Exception e) {
@@ -694,17 +682,24 @@ public class JobService implements IJobService {
     }
 
     /**
-     * Method to handle all skills provided by search engine
+     * Method to handle all skills provided by jd parser
      *
-     * @param skillsSet Set of skills obtained from search engine
-     * @param jobId the job id for which the skills have to persisted
+     * @param skillsSet Set of skills obtained from jd parser
+     * @param oldJob the job for which the skills have to persisted
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private int handleSkillsFromSearchEngine(Set<String> skillsSet, long jobId) throws Exception {
+    private int handleSkillsFromCvParser(Set<String> skillsSet, Job oldJob) throws Exception {
         log.info("Size of skill set : {} for job id ", skillsSet.size());
+        List<String> skillList = new ArrayList<>(skillsSet);
+        Collections.sort(skillList);
+        if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())) {
+            //remove all data from job_key_skills
+            jobKeySkillsRepository.deleteByJobId(oldJob.getId());
+            jobKeySkillsRepository.flush();
+        }
         List<JobKeySkills> jobKeySkillsToSave = new ArrayList<>(skillsSet.size());
-        skillsSet.forEach(skill-> {
+        skillList.forEach(skill-> {
             //find a skill from the master table for the skill name provided
             SkillsMaster skillFromDb = skillMasterRepository.findBySkillNameIgnoreCase(skill);
             //if none if found, add a skill
@@ -713,7 +708,7 @@ public class JobService implements IJobService {
                 skillMasterRepository.save(skillFromDb);
             }
             //add a record in job_key_skills with this skill id
-            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb,true, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), jobId));
+            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb,true, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId()));
         });
         jobKeySkillsRepository.saveAll(jobKeySkillsToSave);
         return skillsSet.size();
@@ -1654,7 +1649,7 @@ public class JobService implements IJobService {
         }
         try {
             log.info("Add Key Skills in job : {}",job.getId());
-            addJobKeySkills(job, oldJob, loggedInUser);
+            handleSkillsFromCvParser(job.getSearchEngineSkillQuestionMap().keySet(), job);
         } catch (Exception exception) {
             log.error("Failed to add key skills. " + exception.getMessage());
         }
