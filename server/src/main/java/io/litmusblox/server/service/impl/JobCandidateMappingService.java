@@ -233,13 +233,17 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
 
         for (Candidate candidate:candidateList) {
             try {
-                if(null!=candidate.getId())
+                if(null!=candidate.getId()){
                     saveCandidateSupportiveInfo(candidate, loggedInUser);
-                    candidateService.createCandidateOnSearchEngine(candidate, job, JwtTokenUtil.getAuthToken());
+                    try {
+                        candidateService.createCandidateOnSearchEngine(candidate, job, JwtTokenUtil.getAuthToken());
+                    }catch (Exception e){
+                        log.error("Error while adding candidate : {} in searchEngine for job : {}", candidate.getId(), job.getId());
+                    }
+                }
             }catch (Exception ex){
                 log.error("Error while processing candidates supportive info :: " + ex.getMessage());
             }
-
         }
     }
 
@@ -453,11 +457,12 @@ public class JobCandidateMappingService implements IJobCandidateMappingService {
             if (candidate.getCandidateCompanyDetails() != null && candidate.getCandidateCompanyDetails().size() >0) {
                 candidate.getCandidateCompanyDetails().stream().forEach(candidateCompanyDetails -> {
                     if(!Util.isNull(candidateCompanyDetails.getNoticePeriod()) && candidateCompanyDetails.getNoticePeriod().length() > 0) {
+                        log.info("For candidate : {} notice period in request is : {} in job : {}", candidate.getEmail(), candidateCompanyDetails.getNoticePeriod(), jobId);
                         candidateCompanyDetails.setNoticePeriod(candidateCompanyDetails.getNoticePeriod()+" "+IConstant.DAYS);
                         candidateCompanyDetails.setNoticePeriodInDb(MasterDataBean.getInstance().getNoticePeriodMapping().get(candidateCompanyDetails.getNoticePeriod()));
                         if (null == candidateCompanyDetails.getNoticePeriodInDb()) {
                             //value in request object is not available in db
-                            SentryUtil.logWithStaticAPI(null,"Unmapped notice period: " + candidateCompanyDetails.getNoticePeriod(), new HashMap<>());
+                            //SentryUtil.logWithStaticAPI(null,"Unmapped notice period: " + candidateCompanyDetails.getNoticePeriod(), new HashMap<>());
                             candidateCompanyDetails.setNoticePeriodInDb(MasterDataBean.getInstance().getNoticePeriodMapping().get("Others"));
                         }
 
