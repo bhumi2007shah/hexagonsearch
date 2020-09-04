@@ -257,7 +257,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         log.info("Inside saveCandidateSupportiveInfo Method");
 
         //find candidateId
-        Candidate candidateFromDb=candidateService.findByMobileOrEmail(candidate.getEmail().split(","), candidate.getMobile().split(","), (null==candidate.getCountryCode())?loggedInUser.getCountryId().getCountryCode():candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
+        Candidate candidateFromDb=candidateService.findByMobileOrEmail(new HashSet<>(Arrays.asList(candidate.getEmail().split(","))), null == candidate.getMobile()?new HashSet<>():new HashSet<>(Arrays.asList(candidate.getMobile().split(","))), (null==candidate.getCountryCode())?loggedInUser.getCountryId().getCountryCode():candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
 
         Long candidateId = null;
         if (null != candidateFromDb)
