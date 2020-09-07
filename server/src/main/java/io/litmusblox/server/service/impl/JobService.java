@@ -1104,30 +1104,27 @@ public class JobService extends AbstractAccessControl implements IJobService {
     @Transactional(propagation=Propagation.REQUIRES_NEW)
     public void publishJob(Job job) throws Exception {
 
-        Job oldJob = jobRepository.getOne(job.getId());
         log.info("Received request to publish job with id: " + job.getId());
         Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite());
-        log.info("Completed publishing job with id: " + oldJob.getId());
-        if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())) {
-            if (null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
-                log.info("Subdomain does not exist for company: {}. Creating one.", publishedJob.getCompanyId().getCompanyName());
-                companyService.createSubdomain(publishedJob.getCompanyId());
-                log.info("Reloading apache for subdomain {}.", publishedJob.getCompanyId().getShortName());
-                companyService.reloadApache(Arrays.asList(publishedJob.getCompanyId()));
-            }
-            if (publishedJob.getJobCapabilityList().size() == 0)
-                log.info("No capabilities exist for the job: " + job.getId() + " Scoring engine api call will NOT happen");
-            else if (jobCapabilitiesRepository.findByJobIdAndSelected(job.getId(), true).size() == 0)
-                log.info("No capabilities have been selected for the job: {}. Scoring engine api call will NOT happen", job.getId());
-            else {
-                log.info("Calling Scoring Engine Api to create a job");
-                try {
-                    String scoringEngineResponse = RestClient.getInstance().consumeRestApi(convertJobToRequestPayload(job.getId(), publishedJob), scoringEngineBaseUrl + scoringEngineAddJobUrlSuffix, HttpMethod.POST, null).getResponseBody();
-                    publishedJob.setScoringEngineJobAvailable(true);
-                    jobRepository.save(publishedJob);
-                } catch (Exception e) {
-                    log.error("Error during create job api call on Scoring engine: " + e.getMessage());
-                }
+        log.info("Completed publishing job with id: " + job.getId());
+        if (null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
+            log.info("Subdomain does not exist for company: {}. Creating one.", publishedJob.getCompanyId().getCompanyName());
+            companyService.createSubdomain(publishedJob.getCompanyId());
+            log.info("Reloading apache for subdomain {}.", publishedJob.getCompanyId().getShortName());
+            companyService.reloadApache(Arrays.asList(publishedJob.getCompanyId()));
+        }
+        if (publishedJob.getJobCapabilityList().size() == 0)
+            log.info("No capabilities exist for the job: " + job.getId() + " Scoring engine api call will NOT happen");
+        else if (jobCapabilitiesRepository.findByJobIdAndSelected(job.getId(), true).size() == 0)
+            log.info("No capabilities have been selected for the job: {}. Scoring engine api call will NOT happen", job.getId());
+        else {
+            log.info("Calling Scoring Engine Api to create a job");
+            try {
+                String scoringEngineResponse = RestClient.getInstance().consumeRestApi(convertJobToRequestPayload(job.getId(), publishedJob), scoringEngineBaseUrl + scoringEngineAddJobUrlSuffix, HttpMethod.POST, null).getResponseBody();
+                publishedJob.setScoringEngineJobAvailable(true);
+                jobRepository.save(publishedJob);
+            } catch (Exception e) {
+                log.error("Error during create job api call on Scoring engine: " + e.getMessage());
             }
         }
     }
