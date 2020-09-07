@@ -70,10 +70,9 @@ public abstract class AbstractAccessControl {
      * @param job
      */
     protected void  validateLoggedInUser(User loggedInUser, Job job) {
-        if(IConstant.UserRole.SUPER_ADMIN.toString().equals(loggedInUser.getRole()))
-            return;
+
         log.info("LoggedIn user company id is : {} and given company id through api is : {}", loggedInUser.getCompany().getId(), job.getCompanyId().getId());
-        if (!loggedInUser.getCompany().getId().equals(job.getCompanyId().getId())) {
+        if (!loggedInUser.getCompany().getId().equals(job.getCompanyId().getId()) && !IConstant.UserRole.SUPER_ADMIN.toString().equals(loggedInUser.getRole())) {
             if (IConstant.CompanyType.AGENCY.getValue().equals(loggedInUser.getCompany().getCompanyType())) {
                 Company company = companyRepository.findByIdAndRecruitmentAgencyId(job.getCompanyId().getId(), loggedInUser.getCompany().getId());
                 if (null != company)
@@ -83,10 +82,8 @@ public abstract class AbstractAccessControl {
             throw new ValidationException("You are not a valid user for accessing data", HttpStatus.UNAUTHORIZED);
         }
         else {
-            if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
-                return;
             Integer [] recruiterList = job.getRecruiter();
-            if(!Arrays.asList(job.getRecruiter()).stream().mapToLong(Integer::longValue).boxed().collect(Collectors.toList()).contains(loggedInUser.getId())){
+            if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()) && !Arrays.asList(job.getRecruiter()).stream().mapToLong(Integer::longValue).boxed().collect(Collectors.toList()).contains(loggedInUser.getId())){
                 log.error("You are not a valid user for accessing data : {}", loggedInUser.getEmail());
                 throw new ValidationException("You are not a valid user for accessing data", HttpStatus.UNAUTHORIZED);
             }
@@ -94,9 +91,7 @@ public abstract class AbstractAccessControl {
     }
 
     protected void validateloggedInUser(User loggedInUser, Long companyId){
-        if(IConstant.UserRole.SUPER_ADMIN.toString().equals(loggedInUser.getRole()))
-            return;
-        if (!loggedInUser.getCompany().getId().equals(companyId)) {
+        if (!loggedInUser.getCompany().getId().equals(companyId) && !IConstant.UserRole.SUPER_ADMIN.toString().equals(loggedInUser.getRole())) {
             //Check loggedIn user company is agency or not if yes then check company id belonging to it's client or not
             if (IConstant.CompanyType.AGENCY.getValue().equals(loggedInUser.getCompany().getCompanyType())) {
                 Company company = companyRepository.findByIdAndRecruitmentAgencyId(companyId, loggedInUser.getCompany().getId());
