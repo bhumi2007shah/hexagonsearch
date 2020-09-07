@@ -406,8 +406,8 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public String forgotPassword(String email) throws Exception {
-        String buffer="";
+    public StringBuffer forgotPassword(String email) throws Exception {
+        StringBuffer msgInfo = new StringBuffer();
         if(Util.isNull(email))
             throw new ValidationException(IErrorMessages.NO_EMAIL_PROVIDED, HttpStatus.BAD_REQUEST);
 
@@ -419,20 +419,20 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
             throw new ValidationException(IErrorMessages.FORGOT_PASSWORD_USER_BLOCKED+email, HttpStatus.UNPROCESSABLE_ENTITY);
         }
         else if(IConstant.UserStatus.New.name().equals(userToReset.getStatus())) {
-            buffer = "User not activated "+ email + ". Another ";
+            msgInfo.append("User not activated. ").append(email).append(". Another ");
         }
         //commented out the following as a result of backend ticket #385
         /*else if(!IConstant.UserStatus.Active.name().equals(userToReset.getStatus())){
             throw new ValidationException(IErrorMessages.FORGOT_PASSWORD_DUPLICATE_REQUEST+email, HttpStatus.UNPROCESSABLE_ENTITY);
         }*/
-        buffer += "Set password email has been sent to the " + email + ". Please check your inbox.";
+        msgInfo.append("Set password email has been sent to the ").append(email).append(". Please check your inbox.");
         userToReset.setPassword(null);
         userToReset.setUserUuid(UUID.randomUUID());
         userToReset.setStatus(IConstant.UserStatus.Inactive.name());
         userToReset.setResetPasswordFlag(true);
         userToReset.setResetPasswordEmailTimestamp(null);
         userRepository.save(userToReset);
-        return buffer;
+        return msgInfo;
     }
 
     @Transactional(propagation = Propagation.REQUIRED)

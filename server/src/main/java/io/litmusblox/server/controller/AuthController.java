@@ -68,12 +68,12 @@ public class AuthController {
 
     @PutMapping(value="/forgotPassword")
     @ResponseStatus(value=HttpStatus.ACCEPTED)
-    String forgotPassword(@RequestParam String email) throws Exception {
+    StringBuffer forgotPassword(@RequestParam String email) throws Exception {
         log.info("Received forgot password request for " + email);
         long startTime = System.currentTimeMillis();
-        String buffer = userDetailsService.forgotPassword(email);
+        StringBuffer msgInfo = userDetailsService.forgotPassword(email);
         log.info("Completed processing set password request in {} ms.", (System.currentTimeMillis() - startTime));
-        return buffer;
+        return msgInfo;
     }
 
     @PostMapping(value="/createUpdateUser")
