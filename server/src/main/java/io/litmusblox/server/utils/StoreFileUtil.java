@@ -13,11 +13,10 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +43,14 @@ public class StoreFileUtil {
      */
 
     public static String storeFile(MultipartFile multipartFile, long id, String repoLocation, String uploadType, Candidate candidate, User user) throws Exception {
+        String sanitizedContent = null;
+        String extension = Util.getFileExtension(multipartFile.getOriginalFilename()).toLowerCase();
+        if(
+                Arrays.asList(IConstant.cvUploadSupportedExtensions).contains(extension) &&
+                extension.equals("pdf")
+        ) {
+            sanitizedContent = FileSanitization.sanitizePdf(multipartFile);
+        }
         File targetFile =  null;
         Boolean isZipFile=false;
         InputStream is = null;
@@ -74,6 +81,13 @@ public class StoreFileUtil {
             }
             targetFile = new File(repoLocation + File.separator + filePath);
             Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+            if(null != sanitizedContent){
+                Writer fileWriter = new FileWriter(targetFile.getAbsolutePath(), false);
+                fileWriter.write(sanitizedContent);
+                fileWriter.flush();
+                fileWriter.close();
+            }
 
             if(isZipFile)
                 return targetFile.toString();

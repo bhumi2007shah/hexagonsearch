@@ -156,9 +156,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
     @Autowired
     Environment environment;
 
-    @Value("${pythonJdParser}")
-    private String pythonJdParser;
-
     @Value("${scoringEngineBaseUrl}")
     private String scoringEngineBaseUrl;
 
@@ -613,17 +610,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
             oldJob = jobRepository.save(oldJob);
             historyMsg = "Updated";
 
-            if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())) {
-                //remove all data from job_key_skills and job_capabilities
-                jobKeySkillsRepository.deleteByJobId(job.getId());
-                jobKeySkillsRepository.flush();
-
-                if(!isNewAddJobFlow){
-                    jobCapabilitiesRepository.deleteByJobId(job.getId());
-                    jobCapabilitiesRepository.flush();
-                }
-            }
-
         } else if(null == oldJob){ //Create new entry for job
             job.setCreatedOn(new Date());
             job.setStatus(IConstant.JobStatus.DRAFT.getValue());
@@ -669,28 +655,27 @@ public class JobService extends AbstractAccessControl implements IJobService {
             Map<String, List<SearchEngineQuestionsResponseBean>> skillQuestionMap = new HashMap<>();
             ObjectMapper objectMapper = new ObjectMapper();
 
-            //Send function to searchEngine request
+            //Send function to JdParser request
             if(null != function)
                 requestBean.setFunction(function);
 
             objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            log.info("Sending request to searchEngine for LB job id : "+jobId);
+            log.info("Sending request to JdParser for LB job id : {}",jobId);
             long searchEngineApiStartTime = System.currentTimeMillis();
-            String searEngineResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), pythonJdParser, HttpMethod.POST, JwtTokenUtil.getAuthToken()).getResponseBody();
-            log.info("Response received: " + searEngineResponse);
-            log.info("Getting response from searchEngine for LB job id : {} in {}ms",jobId,System.currentTimeMillis()-searchEngineApiStartTime);
+            String jdParserResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonJdParserUrl"), HttpMethod.POST, JwtTokenUtil.getAuthToken()).getResponseBody();
+            log.info("For jobId : {}, Jd Parser response received: {}", jobId, jdParserResponse);
+            log.info("Getting response from JdParser for LB job id : {} in {}ms",jobId,System.currentTimeMillis()-searchEngineApiStartTime);
             long startTime = System.currentTimeMillis();
 
             //add data in breadCrumb
             breadCrumb.put("Job Id: ", String.valueOf(jobId));
             breadCrumb.put("Request", requestBean.toString());
-            breadCrumb.put("Response", searEngineResponse);
-            skillQuestionMap = objectMapper.readValue(searEngineResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
+            breadCrumb.put("Response", jdParserResponse);
+            skillQuestionMap = objectMapper.readValue(jdParserResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
             log.info("Time taken to process JD in {}ms ",(System.currentTimeMillis() - startTime) + "ms.");
             if(skillQuestionMap.size()>0){
                 job.setSearchEngineSkillQuestionMap(skillQuestionMap);
-                handleSkillsFromSearchEngine(skillQuestionMap.keySet(), jobId);
             }
 
         }catch(Exception e) {
@@ -700,17 +685,24 @@ public class JobService extends AbstractAccessControl implements IJobService {
     }
 
     /**
-     * Method to handle all skills provided by search engine
+     * Method to handle all skills provided by jd parser
      *
-     * @param skillsSet Set of skills obtained from search engine
-     * @param jobId the job id for which the skills have to persisted
+     * @param skillsSet Set of skills obtained from jd parser
+     * @param oldJob the job for which the skills have to persisted
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private int handleSkillsFromSearchEngine(Set<String> skillsSet, long jobId) throws Exception {
+    private int handleSkillsFromCvParser(Set<String> skillsSet, Job oldJob) throws Exception {
         log.info("Size of skill set : {} for job id ", skillsSet.size());
+        List<String> skillList = new ArrayList<>(skillsSet);
+        Collections.sort(skillList);
+        if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())) {
+            //remove all data from job_key_skills
+            jobKeySkillsRepository.deleteByJobId(oldJob.getId());
+            jobKeySkillsRepository.flush();
+        }
         List<JobKeySkills> jobKeySkillsToSave = new ArrayList<>(skillsSet.size());
-        skillsSet.forEach(skill-> {
+        skillList.forEach(skill-> {
             //find a skill from the master table for the skill name provided
             SkillsMaster skillFromDb = skillMasterRepository.findBySkillNameIgnoreCase(skill);
             //if none if found, add a skill
@@ -719,7 +711,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 skillMasterRepository.save(skillFromDb);
             }
             //add a record in job_key_skills with this skill id
-            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb,true, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), jobId));
+            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb,true, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId()));
         });
         jobKeySkillsRepository.saveAll(jobKeySkillsToSave);
         return skillsSet.size();
@@ -1683,7 +1675,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         }
         try {
             log.info("Add Key Skills in job : {}",job.getId());
-            addJobKeySkills(job, oldJob, loggedInUser);
+            handleSkillsFromCvParser(job.getSearchEngineSkillQuestionMap().keySet(), job);
         } catch (Exception exception) {
             log.error("Failed to add key skills. " + exception.getMessage());
         }
