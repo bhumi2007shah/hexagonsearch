@@ -2,9 +2,9 @@
 
 #Extract raw data from postgres
 
-for i in 597 599 600 601 602 603 604 605 606 607 608 609 610 611 612 613 614 615
+for i in 1832
 do
-  dataFile="Tricentis"
+  dataFile="Apisero"
   dataFile+=$i
   QAFile=$dataFile
   QAFile+="QA.csv"
