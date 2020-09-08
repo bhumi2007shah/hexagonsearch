@@ -952,14 +952,15 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @throws Exception
      */
     @Transactional
-    public JobCandidateMapping getCandidateProfile(Long jobCandidateMappingId, Date hiringManagerInterestDate) throws Exception {
+    public JobCandidateMapping getCandidateProfile(Long jobCandidateMappingId, Date hiringManagerInterestDate, boolean isCallFromNoAuth) throws Exception {
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findById(jobCandidateMappingId).orElse(null);
         if(null == objFromDb)
             throw new ValidationException("No job candidate mapping found for id: " + jobCandidateMappingId, HttpStatus.UNPROCESSABLE_ENTITY);
 
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        validateLoggedInUser(loggedInUser, objFromDb.getJob());
-
+        if(!isCallFromNoAuth) {
+            User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            validateLoggedInUser(loggedInUser, objFromDb.getJob());
+        }
         List<JobScreeningQuestions> screeningQuestions = jobScreeningQuestionsRepository.findByJobId(objFromDb.getJob().getId());
         Map<Long, JobScreeningQuestions> screeningQuestionsMap = new LinkedHashMap<>(screeningQuestions.size());
         screeningQuestions.forEach(screeningQuestion-> {
@@ -1025,7 +1026,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if(null == details)
             throw new WebException("Profile not found", HttpStatus.UNPROCESSABLE_ENTITY);
 
-        return getCandidateProfile(details.getJobCandidateMappingId(), details.getHiringManagerInterestDate());
+        return getCandidateProfile(details.getJobCandidateMappingId(), details.getHiringManagerInterestDate(), true);
     }
 
     /**
