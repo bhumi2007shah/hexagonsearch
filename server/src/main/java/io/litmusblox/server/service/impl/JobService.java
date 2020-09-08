@@ -642,8 +642,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 }
             }
         }
-        //populate key skills for the job
-        job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
         return oldJob;
     }
 
@@ -1679,6 +1677,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
         } catch (Exception exception) {
             log.error("Failed to add key skills. " + exception.getMessage());
         }
+
+        //populate key skills for the job
+        job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
         return techScreeningQuestionRepository.findByJobId(job.getId());
     }
 
