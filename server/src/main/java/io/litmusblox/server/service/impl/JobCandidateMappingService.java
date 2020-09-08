@@ -916,10 +916,14 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             recieverEmails.add(array[1]);
         }
 
-        JobCandidateMapping tempObj = jobCandidateMappingRepository.getOne(requestBean.getJcmId().get(0));
-        jcmHistoryRepository.save(new JcmHistory(tempObj, "Profiles shared with : "+String.join(", ", recieverEmails)+".", new Date(), loggedInUser, tempObj.getStage(), false));
-
+        List<JcmHistory> jcmHistoryList = new ArrayList<>();
+        requestBean.getJcmId().forEach(jcmId-> {
+            JobCandidateMapping tempObj = jobCandidateMappingRepository.getOne(jcmId);
+            jcmHistoryList.add(new JcmHistory(tempObj, "Profiles shared with : "+String.join(", ", recieverEmails)+".", new Date(), loggedInUser, tempObj.getStage(), false));
+        });
+        jcmHistoryRepository.saveAll(jcmHistoryList);
         //move to Submit stage
+        JobCandidateMapping tempObj = jobCandidateMappingRepository.getOne(requestBean.getJcmId().get(0));
         if(IConstant.Stage.Source.getValue().equals(tempObj.getStage().getStage()) || IConstant.Stage.Screen.getValue().equals(tempObj.getStage().getStage())){
             jobCandidateMappingRepository.updateStageStepId(requestBean.getJcmId(), tempObj.getStage().getId(), MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.ResumeSubmit.getValue()), loggedInUser.getId(), new Date());
         }
@@ -942,6 +946,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         jcmProfileSharingDetails.setHiringManagerInterestDate(new Date());
         jcmProfileSharingDetails.setHiringManagerInterest(interestValue);
         jcmProfileSharingDetailsRepository.save(jcmProfileSharingDetails);
+        JobCandidateMapping jcmObj = jobCandidateMappingRepository.getOne(jcmProfileSharingDetails.getJobCandidateMappingId());
+        jcmHistoryRepository.save(new JcmHistory(jcmObj, "Profile reviewed by Hiring Manager " + jcmProfileSharingDetails.getProfileSharingMaster().getReceiverName(), new Date(), null, jcmObj.getStage(), true));
     }
 
     /**
@@ -1814,7 +1820,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         RejectionReasonMasterData finalReasonMasterData = reasonMasterData;
         jcmList.stream().forEach(jcm -> {
             JobCandidateMapping mappingObj = jobCandidateMappingRepository.getOne(jcm);
-            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage "+((null != finalReasonMasterData)? "for reason "+finalReasonMasterData.getLabel():""):"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage(), false));
             jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage "+((null != finalReasonMasterData)? "for reason "+finalReasonMasterData.getLabel():""):"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage(), false));
 
         });
