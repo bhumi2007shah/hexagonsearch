@@ -13,6 +13,7 @@ sudo python3 mergeFiles.py
 #Remove old zip file
 rm $fileStorePath
 #Create a zip & store in fileStorePath so it is accessible for everybody
+ls $dirName/*Finale*
 zip -r $fileStorePath $dirName/*Finale*
 #Cleanup the created files
 rm -rf $dirName

@@ -96,26 +96,19 @@ public class CandidateService implements ICandidateService {
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public Candidate findByMobileOrEmail(String [] email, String [] mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
+    public Candidate findByMobileOrEmail(Set<String> email, Set<String> mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
         log.info("Inside findByMobileOrEmail method");
         //check if candidate exists for email
 
-        Set<String> emailList = new HashSet<>(Arrays.asList(email));
+        List<CandidateEmailHistory> candidateEmailHistory = candidateEmailHistoryRepository.findByEmailIn(email);
 
-        Set<String> mobileList = new HashSet<>();
-
-        if(null != mobile)
-            mobileList.addAll(Arrays.asList(mobile));
-
-        List<CandidateEmailHistory> candidateEmailHistory = candidateEmailHistoryRepository.findByEmailIn(emailList);
-
-        if(alternateMobile.isPresent() && !mobileList.contains(alternateMobile.get()))
-            mobileList.add(alternateMobile.get());
+        if(alternateMobile.isPresent() && !mobile.contains(alternateMobile.get()))
+            mobile.add(alternateMobile.get());
 
         //check if candidate exists for mobile
         List<CandidateMobileHistory> candidateMobileHistory = new ArrayList<>();
-        if  (null != mobileList && !mobileList.isEmpty())
-            candidateMobileHistory = candidateMobileHistoryRepository.findByCountryCodeAndMobileIn(countryCode, mobileList);
+        if  (null != mobile && !mobile.isEmpty())
+            candidateMobileHistory = candidateMobileHistoryRepository.findByCountryCodeAndMobileIn(countryCode, mobile);
 
         log.info("Candidate Email History Size: {}", candidateEmailHistory.size());
         log.info("Candidate Mobile History Size: {}", candidateMobileHistory.size());
@@ -145,13 +138,13 @@ public class CandidateService implements ICandidateService {
             candidate = candidateEmailHistory.get(0).getCandidate();
         else
             candidate = candidateMobileHistory.get(0).getCandidate();
-        emailList.forEach( (emailToAdd) -> {
+        email.forEach( (emailToAdd) -> {
             if(!isEmailExist(emailToAdd, candidate) && candidateEmailHistoryRepository.findByEmail(emailToAdd) == null) {
                 log.info("Inside findMobileAndEmail - saving email {} to existing candidate id {}", emailToAdd, candidate.getId());
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, emailToAdd, new Date(), loggedInUser));
             }
         });
-        mobileList.forEach( (mobileToAdd) -> {
+        mobile.forEach( (mobileToAdd) -> {
             if(candidateMobileHistoryRepository.findByMobileAndCountryCode(mobileToAdd, countryCode) == null) {
                 log.info("Inside findMobileAndEmail - saving email {} to existing candidate id {}", mobileToAdd, candidate.getId());
                 candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobileToAdd, countryCode, new Date(), loggedInUser));
@@ -205,30 +198,24 @@ public class CandidateService implements ICandidateService {
      * @return
      */
     @Override
-    public Candidate createCandidate(String firstName, String lastName, String [] email, String [] mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
+    public Candidate createCandidate(String firstName, String lastName, Set<String> email, Set<String> mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
 
         log.info("Inside createCandidate method - create candidate, emailHistory, mobileHistory");
 
-        Set<String> emailList = new HashSet<>(Arrays.asList(email));
-        Set<String> mobileList = new HashSet<>();
-
-        if(null != mobile)
-            mobileList.addAll(Arrays.asList(mobile));
-
-        if(mobileList.size()>0 && alternateMobile.isPresent() && !mobileList.contains(alternateMobile.get()))
-            mobileList.add(alternateMobile.get());
+        if(mobile.size()>0 && alternateMobile.isPresent() && !mobile.contains(alternateMobile.get()))
+            mobile.add(alternateMobile.get());
 
         Candidate candidate;
-        if(mobileList.size()>0)
-            candidate = candidateRepository.save(new Candidate(firstName, lastName, emailList.stream().findFirst().get(), mobileList.stream().findFirst().get(), countryCode, new Date(), loggedInUser));
+        if(mobile.size()>0)
+            candidate = candidateRepository.save(new Candidate(firstName, lastName, email.stream().findFirst().get(), mobile.stream().findFirst().get(), countryCode, new Date(), loggedInUser));
         else
-            candidate = candidateRepository.save(new Candidate(firstName, lastName, emailList.stream().findFirst().get(), null, countryCode, new Date(), loggedInUser));
+            candidate = candidateRepository.save(new Candidate(firstName, lastName, email.stream().findFirst().get(), null, countryCode, new Date(), loggedInUser));
 
-        emailList.forEach((emailToAdd) -> {
+        email.forEach((emailToAdd) -> {
             candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, emailToAdd, new Date(), loggedInUser));
         });
 
-        mobileList.forEach((mobileToAdd) -> {
+        mobile.forEach((mobileToAdd) -> {
             candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobileToAdd, countryCode, new Date(), loggedInUser));
         });
         return candidate;

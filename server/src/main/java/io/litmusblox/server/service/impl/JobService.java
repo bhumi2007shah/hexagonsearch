@@ -58,7 +58,7 @@ import static java.util.stream.Collectors.groupingBy;
 @Service
 @Log4j2
 
-public class JobService implements IJobService {
+public class JobService extends AbstractAccessControl implements IJobService {
 
     @Resource
     JobRepository jobRepository;
@@ -601,6 +601,9 @@ public class JobService implements IJobService {
             if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())){
                 oldJob.setJobTitle(job.getJobTitle());
                 oldJob.setJobDescription(job.getJobDescription());
+            } else {
+                oldJob.setAutoInvite(job.isAutoInvite());
+                oldJob.setVisibleToCareerPage(job.isVisibleToCareerPage());
             }
             oldJob.setUpdatedBy(loggedInUser);
             oldJob.setUpdatedOn(new Date());
@@ -1093,18 +1096,19 @@ public class JobService implements IJobService {
      */
     @Transactional(propagation=Propagation.REQUIRES_NEW)
     public void publishJob(Job job) throws Exception {
+
         log.info("Received request to publish job with id: " + job.getId());
         Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite());
         log.info("Completed publishing job with id: " + job.getId());
-        if(null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
+        if (null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
             log.info("Subdomain does not exist for company: {}. Creating one.", publishedJob.getCompanyId().getCompanyName());
             companyService.createSubdomain(publishedJob.getCompanyId());
             log.info("Reloading apache for subdomain {}.", publishedJob.getCompanyId().getShortName());
             companyService.reloadApache(Arrays.asList(publishedJob.getCompanyId()));
         }
-        if(publishedJob.getJobCapabilityList().size() == 0)
+        if (publishedJob.getJobCapabilityList().size() == 0)
             log.info("No capabilities exist for the job: " + job.getId() + " Scoring engine api call will NOT happen");
-        else if(jobCapabilitiesRepository.findByJobIdAndSelected(job.getId(), true).size() == 0)
+        else if (jobCapabilitiesRepository.findByJobIdAndSelected(job.getId(), true).size() == 0)
             log.info("No capabilities have been selected for the job: {}. Scoring engine api call will NOT happen", job.getId());
         else {
             log.info("Calling Scoring Engine Api to create a job");
@@ -1172,6 +1176,8 @@ public class JobService implements IJobService {
         if (null == job) {
             throw new WebException("Job with id " + jobId + "does not exist", HttpStatus.UNPROCESSABLE_ENTITY);
         }
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, job);
 
         if(null == status) {
             //check that the old status of job is archived
@@ -1201,7 +1207,6 @@ public class JobService implements IJobService {
             job.setHrQuestionAvailable(true);
         }
         job.setUpdatedOn(new Date());
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         job.setUpdatedBy(loggedInUser);
         saveJobHistory(job.getId(), "Status changed to " +job.getStatus(), loggedInUser);
         return jobRepository.save(job);
@@ -1213,6 +1218,8 @@ public class JobService implements IJobService {
         if (null == job) {
             throw new WebException("Job with id " + jobId + " does not exist", HttpStatus.UNPROCESSABLE_ENTITY);
         }
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, job);
         job.setHasCompletedCandidate(jobCandidateMappingRepository.countByJobIdAndStatus(job.getId(), IConstant.ChatbotStatus.COMPLETE.getValue())>0);
         job.setRecruiterList(userRepository.findByIdIn(Arrays.asList(job.getRecruiter()).stream()
                 .mapToLong(Integer::longValue)
@@ -1230,6 +1237,8 @@ public class JobService implements IJobService {
         if (null == job) {
             throw new WebException("Job with id " + jobId + "does not exist ", HttpStatus.UNPROCESSABLE_ENTITY);
         }
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, job);
         return jobHistoryRepository.findByJobIdOrderByIdDesc(jobId);
     }
 
@@ -1250,6 +1259,9 @@ public class JobService implements IJobService {
         if(null==job){
             throw new WebException("Job with id " + jobId + "does not exist ", HttpStatus.UNPROCESSABLE_ENTITY);
         }
+
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, job);
 
         Map<Long, String> exportFormatMapForCompany = new HashMap<>();
 
@@ -1281,6 +1293,11 @@ public class JobService implements IJobService {
         //get default export format master
         ExportFormatMaster exportFormatMaster = exportFormatMasterRepository.getOne(formatId!=null?formatId:1L);
         Job job= jobRepository.getOne(jobId);
+
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(null != job)
+            validateLoggedInUser(loggedInUser, job);
+
         Company company = null;
 
         if(null != job){
@@ -1491,6 +1508,8 @@ public class JobService implements IJobService {
         if(null == job){
             throw new WebException("Job not found.", HttpStatus.UNPROCESSABLE_ENTITY);
         }
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, job);
 
         return asyncOperationsErrorRecordsRepository.findAllByJobIdAndAsyncOperation(jobId, asyncOperation);
     }
@@ -1503,6 +1522,12 @@ public class JobService implements IJobService {
     public void updateJobVisibilityFlagOnCareerPage(Long jobId, boolean visibilityFlag) {
         log.info("Inside updateJobVisibilityFlagOnCareerPage");
         Job job = jobRepository.getOne(jobId);
+
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(job!=null)
+            validateLoggedInUser(loggedInUser, job);
+        validateLoggedInUser(loggedInUser, job);
+
         job.setVisibleToCareerPage(visibilityFlag);
         jobRepository.save(job);
     }
@@ -1514,6 +1539,7 @@ public class JobService implements IJobService {
             throw new ValidationException("Can't edit job because job in Archived state", HttpStatus.UNPROCESSABLE_ENTITY);
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, job);
 
         log.info("Received request to new add job flow for page " + pageName + " from user: " + loggedInUser.getEmail());
         long startTime = System.currentTimeMillis();
