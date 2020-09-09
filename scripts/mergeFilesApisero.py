@@ -3,15 +3,15 @@ import csv
 from collections import OrderedDict
 from datetime import date;
 
-fileNames=['597','599','600','601','602','603','604','605','606','607','608','609','610','611','612','613','614','615'];
+fileNames=['1832'];
 #fileNames=['597'];
 today=date.today();
-dirName="/home/lbprod/dataToTeam/Tricentis"+today.strftime("%Y-%m-%d");
+dirName="/home/lbprod/dataToTeam/Apisero"+today.strftime("%Y-%m-%d");
 
 for fileName in fileNames:
-  dataFileName=dirName+"/Tricentis"+fileName+"Data.csv";
-  QAFileName=dirName+"/Tricentis"+fileName+"QAFormatted.csv";
-  finalFileName=dirName+"/Tricentis"+fileName+"Finale.csv";
+  dataFileName=dirName+"/Apisero"+fileName+"Data.csv";
+  QAFileName=dirName+"/Apisero"+fileName+"QAFormatted.csv";
+  finalFileName=dirName+"/Apisero"+fileName+"Finale.csv";
 
   with open(dataFileName, 'r') as f:
       r = csv.reader(f,delimiter='|')

@@ -124,7 +124,7 @@ public interface IJobCandidateMappingService {
      * @return candidate object with required details
      * @throws Exception
      */
-    JobCandidateMapping getCandidateProfile(Long jobCandidateMappingId, Date hiringManagerInterestDate) throws Exception;
+    JobCandidateMapping getCandidateProfile(Long jobCandidateMappingId, Date hiringManagerInterestDate, boolean isCallFromNoAuth) throws Exception;
 
     /**
      * Service method to fetch details of a single candidate for a job

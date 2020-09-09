@@ -512,23 +512,33 @@ public class CompanyService extends AbstractAccessControl implements ICompanySer
         log.info("Received request to get list of BUs for companyId: "+companyId);
         long startTime = System.currentTimeMillis();
 
-        Company company = companyRepository.findById(companyId).orElse(null);
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long validCompanyId = validateCompanyId(loggedInUser, companyId);
+        if(!validCompanyId.equals(companyId))
+            log.error("Given company id : {} and valid company id : {} both are mismatched", companyId, validCompanyId);
+
+        Company company = companyRepository.findById(validCompanyId).orElse(null);
 
         if(company==null)
-            throw new WebException("No company found with id: "+companyId, HttpStatus.UNPROCESSABLE_ENTITY );
+            throw new WebException("No company found with id: "+validCompanyId, HttpStatus.UNPROCESSABLE_ENTITY );
 
-        log.info("Completed processing list of BUs for companyId: "+ companyId +" in " + (System.currentTimeMillis() - startTime) + "ms.");
+        log.info("Completed processing list of BUs for companyId: "+ validCompanyId +" in " + (System.currentTimeMillis() - startTime) + "ms.");
         return company.getCompanyBuList();
     }
 
     @Override
     public Map<String, List<CompanyAddress>>getCompanyAddresses(Long companyId, Boolean isInterviewLocation)throws Exception{
         //find company by companyId
-        Company company = companyRepository.findById(companyId).orElse(null);
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long validCompanyId = validateCompanyId(loggedInUser, companyId);
+        if(!validCompanyId.equals(companyId))
+            log.error("Given company id : {} and valid company id : {} both are mismatched", companyId, validCompanyId);
+
+        Company company = companyRepository.findById(validCompanyId).orElse(null);
 
         //if company is null throw exception
         if(company==null)
-            throw new WebException("No company found with id: "+companyId, HttpStatus.UNPROCESSABLE_ENTITY );
+            throw new WebException("No company found with id: "+validCompanyId, HttpStatus.UNPROCESSABLE_ENTITY );
 
         log.info("Received request to get list of Addresses for company: "+company.getCompanyName());
         long startTime = System.currentTimeMillis();
@@ -566,7 +576,7 @@ public class CompanyService extends AbstractAccessControl implements ICompanySer
         if(!isInterviewLocation)
             companyAddressListByType.put("Job Location", jobAddresses);
 
-        log.info("Completed processing list of Addresses for companyId: "+ companyId +" in " + (System.currentTimeMillis() - startTime) + "ms.");
+        log.info("Completed processing list of Addresses for companyId: "+ validCompanyId +" in " + (System.currentTimeMillis() - startTime) + "ms.");
         return companyAddressListByType;
     }
 
@@ -616,6 +626,8 @@ public class CompanyService extends AbstractAccessControl implements ICompanySer
 
     @Override
     public List<Company> getCompanyListByAgency(Long recruitmentAgencyId) {
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        recruitmentAgencyId = validateCompanyId(loggedInUser, recruitmentAgencyId);
         log.info("Inside getCompanyListByAgency "+companyRepository.findByRecruitmentAgencyId(recruitmentAgencyId).size());
         return companyRepository.findByRecruitmentAgencyId(recruitmentAgencyId);
     }

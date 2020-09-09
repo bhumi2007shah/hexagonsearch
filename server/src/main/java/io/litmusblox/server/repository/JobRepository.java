@@ -38,10 +38,6 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     @Query(value = "select * from job where date_archived is not null and :userId = ANY(recruiter) order by date_published desc, created_on desc", nativeQuery = true)
     List<Job> findByCreatedByAndDateArchivedIsNotNullOrderByDatePublishedDesc(Long userId);
 
-    //find all jobs for which ml data is not available
-    @Transactional
-    List<Job> findBySeDataAvailable(Boolean mlDataFlag);
-
     int countByCreatedBy(User createdBy);
 
     //find all archived jobs by company
