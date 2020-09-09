@@ -46,8 +46,8 @@ public class TimedCache {
                     continue;
                 }
                 long interval = currentTime - lastTime;
-                long elapsedTime = TimeUnit.NANOSECONDS.convert(interval, expiryTimeUnit);
-                if(elapsedTime > expiryTime){
+                long elapsedTime = TimeUnit.MINUTES.convert(interval, expiryTimeUnit);
+                if(elapsedTime >= expiryTime){
                     markedForRemoval.add(key);
                 }
             }
@@ -59,8 +59,8 @@ public class TimedCache {
                     continue;
                 }
                 long interval = currentTime - lastTime;
-                long elapsedTime = TimeUnit.NANOSECONDS.convert(interval, expiryTimeUnit);
-                if(elapsedTime > expiryTime){
+                long elapsedTime = TimeUnit.MINUTES.convert(interval, expiryTimeUnit);
+                if(elapsedTime >= expiryTime){
                     remove(key);
                 }
             }
