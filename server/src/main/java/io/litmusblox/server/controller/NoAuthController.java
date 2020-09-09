@@ -338,7 +338,7 @@ public class NoAuthController {
      * @param companyId company id for which we find addresses
      * @return List of CompanyAddresses
      */
-    @GetMapping(value = "/getCompanyAddress/{companyId}")
+        @GetMapping(value = "/getCompanyAddress/{companyId}")
     @ResponseStatus(value = HttpStatus.OK)
     List<CompanyAddress> getCompanyAddress(@PathVariable("companyId") Long companyId) throws Exception {
         return companyService.getCompanyAddress(companyId);

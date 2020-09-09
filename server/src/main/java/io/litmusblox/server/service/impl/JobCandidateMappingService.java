@@ -192,12 +192,14 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @throws Exception
      */
     //In this method we don't have any db related operation so remove @Transactional annotation
-    public UploadResponseBean uploadIndividualCandidate(List<Candidate> candidates, Long jobId, boolean ignoreMobile, Optional<User> createdBy) throws Exception {
+    public UploadResponseBean uploadIndividualCandidate(List<Candidate> candidates, Long jobId, boolean ignoreMobile, Optional<User> createdBy, boolean isCallFromNoAuth) throws Exception {
 
         //verify that the job is live before processing candidates
         Job job = jobRepository.getOne(jobId);
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        validateLoggedInUser(loggedInUser, job);
+        if(!isCallFromNoAuth) {
+            User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            validateLoggedInUser(loggedInUser, job);
+        }
         if(null == job || !IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus())) {
             StringBuffer info = new StringBuffer("Selected job is not live ").append("JobId :").append(jobId);
             Map<String, String> breadCrumb = new HashMap<>();
@@ -206,7 +208,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         }
 
         UploadResponseBean uploadResponseBean = new UploadResponseBean();
-        loggedInUser = (null != createdBy && createdBy.isPresent())?createdBy.get():(User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User loggedInUser = (null != createdBy && createdBy.isPresent())?createdBy.get():(User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Date createdOn=Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
 
         int candidateProcessed=jobCandidateMappingRepository.getUploadedCandidateCount(createdOn,loggedInUser);
@@ -475,7 +477,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 });
             }
 
-            responseBean = uploadIndividualCandidate(Arrays.asList(candidate), jobId, (null == candidate.getMobile() || candidate.getMobile().isEmpty()), createdBy);
+            responseBean = uploadIndividualCandidate(Arrays.asList(candidate), jobId, (null == candidate.getMobile() || candidate.getMobile().isEmpty()), createdBy, false);
 
             //Store candidate cv to repository location
             try{
@@ -2032,7 +2034,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 candidate.setEmployeeReferrer(referrerFromDb);
             }
             //Upload candidate
-            responseBean = uploadIndividualCandidate(Arrays.asList(candidate), job.getId(), false, Optional.ofNullable(userRepository.findByEmail(IConstant.SYSTEM_USER_EMAIL)));
+            responseBean = uploadIndividualCandidate(Arrays.asList(candidate), job.getId(), false, Optional.ofNullable(userRepository.findByEmail(IConstant.SYSTEM_USER_EMAIL)), true);
 
             //Store candidate cv to repository location
             try{

@@ -32,7 +32,7 @@ public interface IJobCandidateMappingService {
      * @return the status of upload operation
      * @throws Exception
      */
-    UploadResponseBean uploadIndividualCandidate(List<Candidate> candidates, Long jobId, boolean ignoreMobile, Optional<User> createdBy) throws Exception;
+    UploadResponseBean uploadIndividualCandidate(List<Candidate> candidates, Long jobId, boolean ignoreMobile, Optional<User> createdBy, boolean isCallFromNoAuth) throws Exception;
 
     /**
      * Service method to add candidates from a file in one of the supported formats
@@ -229,7 +229,8 @@ public interface IJobCandidateMappingService {
      * @return UploadResponseBean
      * @throws Exception
      */
-    UploadResponseBean uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, String jobShortCode, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception;
+    UploadResponseBean
+    uploadCandidateByNoAuthCall(String candidateSource, Candidate candidate, String jobShortCode, MultipartFile candidateCv, EmployeeReferrer employeeReferrer, String otp) throws Exception;
 
     /**
      * Service method to fetch a list of count of candidate per chatbot status per job

@@ -251,7 +251,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     if (null != candidateFromPython.getAlternateMobile() && candidateFromPython.getAlternateMobile().length() == 0)
                         candidateFromPython.setAlternateMobile(null);
 
-                    uploadResponseBean = jobCandidateMappingService.uploadIndividualCandidate(Arrays.asList(candidateFromPython), jobId, ((null != candidateFromPython.getMobile())?false:true), userRepository.findById(userId));
+                    uploadResponseBean = jobCandidateMappingService.uploadIndividualCandidate(Arrays.asList(candidateFromPython), jobId, ((null != candidateFromPython.getMobile())?false:true), userRepository.findById(userId), false);
                     if(uploadResponseBean.getStatus().equals(IConstant.UPLOAD_STATUS.Success.name())){
                         candidateId = uploadResponseBean.getSuccessfulCandidates().get(0).getId();
                     }
