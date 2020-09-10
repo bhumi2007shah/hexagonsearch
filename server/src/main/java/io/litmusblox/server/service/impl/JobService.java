@@ -701,6 +701,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         }
         List<JobKeySkills> jobKeySkillsToSave = new ArrayList<>(skillsSet.size());
         skillList.forEach(skill-> {
+            boolean skillSelected = false;
             //find a skill from the master table for the skill name provided
             SkillsMaster skillFromDb = skillMasterRepository.findBySkillNameIgnoreCase(skill);
             //if none if found, add a skill
@@ -708,8 +709,12 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 skillFromDb = new SkillsMaster(skill);
                 skillMasterRepository.save(skillFromDb);
             }
+            //Check user select skill or not
+            if(oldJob.getSelectedKeySkills().contains(skill))
+                skillSelected = true;
+
             //add a record in job_key_skills with this skill id
-            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb,true, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId()));
+            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb, skillSelected, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId()));
         });
         jobKeySkillsRepository.saveAll(jobKeySkillsToSave);
         return skillsSet.size();
@@ -763,16 +768,8 @@ public class JobService extends AbstractAccessControl implements IJobService {
         masterQuestions.set(false);
         techQuestions.set(false);
         userQuestions.set(false);
-      /*  if (isNewAddJobFlow && null != job.getJobScreeningQuestionsList() && job.getJobScreeningQuestionsList().size() > 0) {
-            job.getJobScreeningQuestionsList().forEach(jobScreeningQuestions -> {
-                if(null != jobScreeningQuestions.getMasterScreeningQuestionId())
-                    masterQuestions.set(true);
-                else if(null != jobScreeningQuestions.getTechScreeningQuestionId())
-                    techQuestions.set(true);
-                else if(null != jobScreeningQuestions.getUserScreeningQuestionId())
-                    userQuestions.set(true);
-            });
-        }*/
+
+        //Deleted code not used currently
 
         if (null != oldJob.getJobScreeningQuestionsList() && oldJob.getJobScreeningQuestionsList().size() > 0) {
             historyMsg = "Updated";
@@ -802,12 +799,19 @@ public class JobService extends AbstractAccessControl implements IJobService {
             oldJob.setHrQuestionAvailable(false);
         }
 
+        try {
+            log.info("Add Key Skills in job : {}",job.getId());
+            handleSkillsFromCvParser(job.getSearchEngineSkillQuestionMap().keySet(), job);
+        } catch (Exception exception) {
+            log.error("Failed to add key skills. " + exception.getMessage());
+        }
+
         oldJob.setRole(job.getRole());
         jobRepository.save(oldJob);
         saveJobHistory(job.getId(), historyMsg + " screening questions", loggedInUser);
 
         //populate key skills for the job
-        // job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
+        job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
     }
 
     private void addJobKeySkills(Job job, Job oldJob, User loggedInUser) throws Exception { //update and add new key skill
@@ -1671,15 +1675,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 techScreeningQuestionRepository.save(techScreeningQuestion);
             });
         }
-        try {
-            log.info("Add Key Skills in job : {}",job.getId());
-            handleSkillsFromCvParser(job.getSearchEngineSkillQuestionMap().keySet(), job);
-        } catch (Exception exception) {
-            log.error("Failed to add key skills. " + exception.getMessage());
-        }
 
-        //populate key skills for the job
-        job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
         return techScreeningQuestionRepository.findByJobId(job.getId());
     }
 
