@@ -15,10 +15,7 @@ import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.security.JwtTokenUtil;
-import io.litmusblox.server.service.AbstractAccessControl;
-import io.litmusblox.server.service.CompanyWorspaceBean;
-import io.litmusblox.server.service.ICompanyService;
-import io.litmusblox.server.service.MasterDataBean;
+import io.litmusblox.server.service.*;
 import io.litmusblox.server.utils.*;
 import lombok.extern.log4j.Log4j2;
 import org.hibernate.Hibernate;
@@ -70,6 +67,9 @@ public class CompanyService extends AbstractAccessControl implements ICompanySer
 
     @Autowired
     Environment environment;
+
+    @Autowired
+    ISearchEngineService searchEngineService;
 
     @Resource
     CompanyHistoryRepository companyHistoryRepository;
@@ -831,10 +831,10 @@ public class CompanyService extends AbstractAccessControl implements ICompanySer
         Map queryparams = new HashMap(2);
         queryparams.put("companyId", company.getId());
         queryparams.put("companyName", company.getCompanyName());
-
+        Map userDetails = searchEngineService.getLoggedInUserInformation();
         try {
             //calling sscoring engine api to add company in neo4j db.
-            RestClient.getInstance().consumeRestApi(null, searchEngineBaseUrl + searchEngineAddCompanyUrlSuffix, HttpMethod.POST, authToken, Optional.of(queryparams), null);
+            RestClient.getInstance(). consumeRestApi(null, searchEngineBaseUrl + searchEngineAddCompanyUrlSuffix, HttpMethod.POST, authToken, Optional.of(queryparams), null, Optional.of(userDetails));
         }
         catch (Exception e){
             log.error("Error while adding company on Search Engine: " + e.getMessage());

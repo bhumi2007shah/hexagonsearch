@@ -14,9 +14,11 @@ import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.CandidateRequestBean;
 import io.litmusblox.server.service.ICandidateService;
+import io.litmusblox.server.service.ISearchEngineService;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -75,6 +77,9 @@ public class CandidateService implements ICandidateService {
 
     @Resource
     CandidateCompanyDetailsRepository candidateCompanyDetailsRepository;
+
+    @Autowired
+    ISearchEngineService searchEngineService;
 
     @Value("${searchEngineBaseUrl}")
     String searchEngineBaseUrl;
@@ -386,10 +391,11 @@ public class CandidateService implements ICandidateService {
 
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
+        Map userDetails = searchEngineService.getLoggedInUserInformation();
 
         log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), job.getId());
         try {
-            RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null);
+            RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null, Optional.of(userDetails));
         }
         catch ( JsonProcessingException e ){
             log.error("Failed while converting candidateRequestBean to String. " + e.getMessage());
@@ -418,12 +424,13 @@ public class CandidateService implements ICandidateService {
 
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
+        Map userDetail = searchEngineService.getLoggedInUserInformation();
 
         log.info("Calling SearchEngine API to create candidates of job: {}", job.getId());
         try {
             List<List<CandidateRequestBean>> requestList= Lists.partition(candidateRequestBeans, 100);
             for (List<CandidateRequestBean> requestBeans : requestList) {
-                RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBeans), searchEngineBaseUrl + searchEngineAddCandidateBulkSuffix, HttpMethod.POST, authToken, null, null);
+                RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBeans), searchEngineBaseUrl + searchEngineAddCandidateBulkSuffix, HttpMethod.POST, authToken, null, null, Optional.of(userDetail));
             }
         }
         catch ( JsonProcessingException e ){
