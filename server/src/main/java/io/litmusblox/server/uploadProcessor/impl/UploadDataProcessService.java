@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -180,6 +181,10 @@ public class UploadDataProcessService implements IUploadDataProcessService {
         if(Util.isNotNull(candidate.getMobile())) {
             mobile = candidate.getMobile().split(",");
             for (int i=0; i< mobile.length; i++) {
+                if(mobile[i].matches(IConstant.REGEX_TO_FIND_SCIENTIFIC_NOTATION_MOBILE)){
+                    BigDecimal bd = new BigDecimal(mobile[i]);
+                    mobile[i] = Long.toString(bd.longValue()).trim();
+                }
                 mobile[i] = (Util.indianMobileConvertor(mobile[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode()));
                 if (!Util.validateMobile(mobile[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate))) {
                     mobile[i] = mobile[i].replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_MOBILE, "");

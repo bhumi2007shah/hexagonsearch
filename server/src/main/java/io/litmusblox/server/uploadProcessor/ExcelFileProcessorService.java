@@ -17,6 +17,7 @@ import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellAddress;
 import org.springframework.http.HttpStatus;
 
 import javax.annotation.Resource;
@@ -98,7 +99,7 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
                                 candidate.setEmail(cellValue.trim());
                                 break;
                             case 3:
-                                candidate.setMobile(cellValue.trim());
+                                candidate.setMobile(row.getCell(3).toString().trim());
                         }
                     }
                     if (!discardRow)
