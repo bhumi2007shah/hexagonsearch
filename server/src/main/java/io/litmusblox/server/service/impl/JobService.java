@@ -1650,7 +1650,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         long startTime = System.currentTimeMillis();
         String searchEngineResponse = null;
         Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineResponseBean = new HashMap<>();
-        Map userDetails = searchEngineService.getLoggedInUserInformation();
+        Map<String, Object> userDetails = searchEngineService.getLoggedInUserInformation();
         log.info("Calling SearchEngine API to generate tech questions for job: {}", job.getId());
         try {
             searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null, Optional.of(userDetails)).getResponseBody();

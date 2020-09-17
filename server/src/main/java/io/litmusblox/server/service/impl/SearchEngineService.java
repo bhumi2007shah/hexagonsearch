@@ -38,39 +38,43 @@ public class SearchEngineService implements ISearchEngineService {
 
     public String candidateSearch(String jsonData, String authToken) throws Exception{
         log.info("Inside candidateSearch method");
-        Map headerInformation = getLoggedInUserInformation();
+        Long startTime = System.currentTimeMillis();
+        Map<String, Object> headerInformation = getLoggedInUserInformation();
         if(jsonData == null)
             throw new ValidationException("Invalid request", HttpStatus.BAD_REQUEST);
         String responseData = RestClient.getInstance().consumeRestApi(jsonData, searchEngineBaseUrl+"candidate/search", HttpMethod.POST, authToken, null, null, Optional.of(headerInformation)).getResponseBody();
-        log.info("Completed execution of Candidate search method");
+        log.info("Completed execution of Candidate search method in {} ms", System.currentTimeMillis() - startTime);
         return responseData;
     }
 
     public String getUnverifiedNodes(String authToken) throws Exception{
         log.info("Inside getUnverifiedNodes method");
-        Map headerInformation = getLoggedInUserInformation();
+        Long startTime = System.currentTimeMillis();
+        Map<String, Object> headerInformation = getLoggedInUserInformation();
         String responseData = RestClient.getInstance().consumeRestApi(null, searchEngineBaseUrl + "data/getUnverifiedNodes", HttpMethod.GET, JwtTokenUtil.getAuthToken(), null, null, Optional.of(headerInformation)).getResponseBody();
-        log.info("Completed execution of getVerifiedNodes method");
+        log.info("Completed execution of getVerifiedNodes method in {} ms", System.currentTimeMillis() - startTime);
         return responseData;
     }
 
     public void verifyNodes(String jsonData, String authToken) throws Exception{
         log.info("Inside verifyNodes call");
-        Map headerInformation = getLoggedInUserInformation();
+        Long startTime = System.currentTimeMillis();
+        Map <String, Object> headerInformation = getLoggedInUserInformation();
         if(jsonData == null)
             throw new ValidationException("Invalid request", HttpStatus.BAD_REQUEST);
         RestClient.getInstance().consumeRestApi(jsonData, searchEngineBaseUrl+"candidate/search", HttpMethod.POST, authToken, null, null, Optional.of(headerInformation));
-        log.info("Completed execution of verifyNodes method");
+        log.info("Completed execution of verifyNodes method in {} ms", System.currentTimeMillis() - startTime);
     }
 
-    public Map getLoggedInUserInformation(){
-        log.info("Inside getLoggedInUserInformation method.");
+    public Map<String, Object> getLoggedInUserInformation(){
+        Long startTime = System.currentTimeMillis();
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Map userDetails = new HashMap(3);
+        log.info("Inside getLoggedInUserInformation method. Logged in by user {}", loggedInUser.getEmail());
+        Map<String, Object> userDetails = new HashMap(3);
         userDetails.put("userId", loggedInUser.getId());
         userDetails.put("userEmail", loggedInUser.getEmail());
         userDetails.put("userCompanyId", loggedInUser.getCompany().getId());
-        log.info("Completed adding loggedInUserInformation.");
+        log.info("Completed adding loggedInUserInformation in {} ms", System.currentTimeMillis() - startTime);
         return userDetails;
     }
 

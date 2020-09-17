@@ -391,7 +391,7 @@ public class CandidateService implements ICandidateService {
 
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
-        Map userDetails = searchEngineService.getLoggedInUserInformation();
+        Map<String, Object> userDetails = searchEngineService.getLoggedInUserInformation();
 
         log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), job.getId());
         try {
@@ -424,7 +424,7 @@ public class CandidateService implements ICandidateService {
 
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
-        Map userDetail = searchEngineService.getLoggedInUserInformation();
+        Map<String, Object> userDetail = searchEngineService.getLoggedInUserInformation();
 
         log.info("Calling SearchEngine API to create candidates of job: {}", job.getId());
         try {

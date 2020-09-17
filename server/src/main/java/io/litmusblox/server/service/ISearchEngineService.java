@@ -42,5 +42,5 @@ public interface ISearchEngineService {
      *
      * @return Map with user id, email, company id,
      */
-    public Map getLoggedInUserInformation();
+    public Map<String, Object> getLoggedInUserInformation();
 }
