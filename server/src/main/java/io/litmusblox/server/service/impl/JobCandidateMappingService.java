@@ -853,10 +853,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         List<JcmHistory> jcmHistoryList = new ArrayList<>();
 
         for (Long jcmId : jcmList) {
-            JobCandidateMapping tempObj = jobCandidateMappingRepository.getOne(jcmId);
-            StringBuffer historyMessage = new StringBuffer(tempObj.getCandidateFirstName());
-            historyMessage.append(" ").append(tempObj.getCandidateLastName()).append(" invited for - ").append(tempObj.getJob().getJobTitle()).append(" - ").append(tempObj.getJob().getId());
-            jcmHistoryList.add(new JcmHistory(tempObj, historyMessage.toString(), new Date(), loggedInUser, tempObj.getStage(), false));
+            JobCandidateMapping jcmObject = jobCandidateMappingRepository.getOne(jcmId);
+            StringBuffer historyMessage = new StringBuffer(jcmObject.getCandidateFirstName());
+            historyMessage.append(" ").append(jcmObject.getCandidateLastName()).append(" invited for - ").append(jcmObject.getJob().getJobTitle()).append(" - ").append(jcmObject.getJob().getId());
+            jcmHistoryList.add(new JcmHistory(jcmObject, historyMessage.toString(), new Date(), loggedInUser, jcmObject.getStage(), false));
         }
 
         if (jcmHistoryList.size() > 0) {
@@ -920,14 +920,14 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
         List<JcmHistory> jcmHistoryList = new ArrayList<>();
         requestBean.getJcmId().forEach(jcmId-> {
-            JobCandidateMapping tempObj = jobCandidateMappingRepository.getOne(jcmId);
-            jcmHistoryList.add(new JcmHistory(tempObj, "Profiles shared with : "+String.join(", ", recieverEmails)+".", new Date(), loggedInUser, tempObj.getStage(), false));
+            JobCandidateMapping jcmObject = jobCandidateMappingRepository.getOne(jcmId);
+            jcmHistoryList.add(new JcmHistory(jcmObject, "Profiles shared with : "+String.join(", ", recieverEmails)+".", new Date(), loggedInUser, jcmObject.getStage(), false));
         });
         jcmHistoryRepository.saveAll(jcmHistoryList);
         //move to Submit stage
-        JobCandidateMapping tempObj = jobCandidateMappingRepository.getOne(requestBean.getJcmId().get(0));
-        if(IConstant.Stage.Source.getValue().equals(tempObj.getStage().getStage()) || IConstant.Stage.Screen.getValue().equals(tempObj.getStage().getStage())){
-            jobCandidateMappingRepository.updateStageStepId(requestBean.getJcmId(), tempObj.getStage().getId(), MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.ResumeSubmit.getValue()), loggedInUser.getId(), new Date());
+        JobCandidateMapping jcmObject = jobCandidateMappingRepository.getOne(requestBean.getJcmId().get(0));
+        if(IConstant.Stage.Source.getValue().equals(jcmObject.getStage().getStage()) || IConstant.Stage.Screen.getValue().equals(jcmObject.getStage().getStage())){
+            jobCandidateMappingRepository.updateStageStepId(requestBean.getJcmId(), jcmObject.getStage().getId(), MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.ResumeSubmit.getValue()), loggedInUser.getId(), new Date());
         }
 
     }
