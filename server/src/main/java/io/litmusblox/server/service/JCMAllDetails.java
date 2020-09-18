@@ -10,13 +10,10 @@ import io.litmusblox.server.model.CandidateScreeningQuestionResponse;
 import io.litmusblox.server.model.InterviewDetails;
 import io.litmusblox.server.model.JcmProfileSharingDetails;
 import lombok.Data;
+import org.hibernate.annotations.Type;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Transient;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import javax.persistence.*;
+import java.util.*;
 
 /**
  * @author : Shital Raval
@@ -43,6 +40,9 @@ public class JCMAllDetails {
     String chatbot_status;
     Integer score;
     Boolean rejected;
+    @Type(type = "hstore")
+    @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "hstore")
+    Map<String, String> chatbot_response;
     Integer overall_rating;
     String recruiter;
     String company_name;

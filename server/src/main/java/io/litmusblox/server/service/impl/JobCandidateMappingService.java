@@ -20,6 +20,7 @@ import io.litmusblox.server.uploadProcessor.IUploadDataProcessService;
 import io.litmusblox.server.uploadProcessor.NaukriExcelFileProcessorService;
 import io.litmusblox.server.utils.*;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections.map.HashedMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -584,8 +585,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         //delete existing response for chatbot for the jcm
         long startTime = System.currentTimeMillis();
         candidateScreeningQuestionResponseRepository.deleteByJobCandidateMappingId(objFromDb.getId());
+        Map <String, String> responseMap = new HashMap<>();
 
-        ArrayList<String> responsesInArrayList = new ArrayList<String>();
         candidateResponse.forEach((key,value) -> {
             String[] valuesToSave = new String[value.size()];
             for(int i=0;i<value.size();i++) {
@@ -600,14 +601,13 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 }
             }
             candidateScreeningQuestionResponseRepository.save(new CandidateScreeningQuestionResponse(objFromDb.getId(),key, valuesToSave[0], (valuesToSave.length > 1)?valuesToSave[1]:null));
-            responsesInArrayList.add(String.join(",", valuesToSave));
+            responseMap.put(key.toString(), String.join("~", valuesToSave));
+
         });
         log.info("Completed looping through map in {}ms", (System.currentTimeMillis()-startTime));
-
         //updating hr_chat_complete_flag
         startTime = System.currentTimeMillis();
-        String [] responses = responsesInArrayList.toArray(new String[responsesInArrayList.size()]);
-        objFromDb.setCandidateChatbotResponse(responses);
+        objFromDb.setCandidateChatbotResponse(responseMap);
         log.info("Completed adding response to db in {}ms",(System.currentTimeMillis()-startTime));
 
         jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(objFromDb.getId());

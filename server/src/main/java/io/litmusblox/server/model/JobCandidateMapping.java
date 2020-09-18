@@ -163,9 +163,9 @@ public class JobCandidateMapping implements Serializable {
     @Column(name = "COMMENTS")
     private String comments;
 
-    @Type(type = "string-array")
-    @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "text[]")
-    private String[] candidateChatbotResponse;
+    @Type(type = "hstore")
+    @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "hstore")
+    private Map<String, String> candidateChatbotResponse = new HashMap<>();
 
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})

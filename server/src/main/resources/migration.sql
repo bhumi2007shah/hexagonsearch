@@ -2602,3 +2602,8 @@ ALTER TABLE JOB RENAME COLUMN ML_DATA_AVAILABLE TO SE_DATA_AVAILABLE;
 ALTER TABLE JOB_KEY_SKILLS RENAME COLUMN ML_PROVIDED TO SE_PROVIDED;
 ALTER TABLE JOB DROP COLUMN SE_DATA_AVAILABLE;
 ALTER TABLE JOB_KEY_SKILLS DROP COLUMN SE_PROVIDED;
+
+--For ticket #627
+alter table job_candidate_mapping drop column CANDIDATE_CHATBOT_RESPONSE;
+alter table job_candidate_mapping add column CANDIDATE_CHATBOT_RESPONSE hstore;
+update job_candidate_mapping jcm set candidate_chatbot_response = cr.responseList from (select job_candidate_mapping_id, hstore(array_agg(case when comment is not null then string_to_array(concat(job_screening_question_id,'^*^',concat(response, '~', comment)), '^*^') else string_to_array(concat(job_screening_question_id,'^*^',response), '^*^') end order by id)) as responseList from candidate_screening_question_response group by 1) as cr where jcm.id = cr.job_candidate_mapping_id;
