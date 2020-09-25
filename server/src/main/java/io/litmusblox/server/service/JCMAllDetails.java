@@ -12,8 +12,14 @@ import io.litmusblox.server.model.JcmProfileSharingDetails;
 import lombok.Data;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.*;
-import java.util.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Transient;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author : Shital Raval
@@ -38,6 +44,7 @@ public class JCMAllDetails {
     String candidate_first_name;
     String candidate_last_name;
     String chatbot_status;
+    String source;
     Integer score;
     Boolean rejected;
     @Type(type = "hstore")
