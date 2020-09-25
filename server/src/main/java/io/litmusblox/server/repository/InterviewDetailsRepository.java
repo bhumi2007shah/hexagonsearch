@@ -6,6 +6,7 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.InterviewDetails;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
@@ -29,5 +30,6 @@ public interface InterviewDetailsRepository extends JpaRepository<InterviewDetai
     InterviewDetails findByInterviewReferenceId(UUID interviewReferenceId);
 
     @Transactional(readOnly = true)
-    List<InterviewDetails> findByJobCandidateMappingIdIn(List<Long> jcmList);
+    @Query(value = "select * from interview_details where id = (select max(id) from  interview_details where job_candidate_mapping_id =:jcmId)", nativeQuery = true)
+    InterviewDetails findLatestEntryByJcmId(Long jcmId);
 }

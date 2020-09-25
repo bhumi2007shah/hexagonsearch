@@ -2164,7 +2164,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             });
 
             interviewDetailsFromReq.getInterviewIdList().add(interviewDetailsFromDb.get());
-            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, "Interview scheduled on :" + Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), new Date()) + ((null != interviewDetailsFromReq.getInterviewLocation()) ? (" ,address :" + interviewDetailsFromReq.getInterviewLocation().getAddress()) : " "), new Date(), loggedInUser, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue())), false));
+            jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, "Interview scheduled on " + Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), interviewDetailsFromReq.getInterviewDate()) + ((null != interviewDetailsFromReq.getInterviewLocation()) ? (" ,address :" + interviewDetailsFromReq.getInterviewLocation().getAddress()) : " "), new Date(), loggedInUser, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.Interview.getValue())), false));
         });
         return interviewDetailsRepository.findByIdIn(interviewDetailsFromReq.getInterviewIdList());
     }

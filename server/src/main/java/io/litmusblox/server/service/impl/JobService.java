@@ -460,9 +460,8 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         //find all interview details for the jcms
         if (IConstant.Stage.Interview.getValue().equalsIgnoreCase(stage)) {
-            List<InterviewDetails> interviewDetails = interviewDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
-            interviewDetails.stream().parallel().forEach(interviewDtls -> {
-                jcmAllDetailsMap.get(interviewDtls.getJobCandidateMappingId()).getInterviewDetails().add(interviewDtls);
+            jcmListFromDb.forEach(jcm ->{
+                jcmAllDetailsMap.get(jcm).getInterviewDetails().add(interviewDetailsRepository.findLatestEntryByJcmId(jcm));
             });
         }
 
