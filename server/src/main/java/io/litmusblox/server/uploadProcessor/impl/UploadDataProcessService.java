@@ -207,7 +207,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             if(ignoreMobile) {
                 if(null != candidate.getMobile() && candidate.getMobile().length()==0)
                     candidate.setMobile(null);
-
+                msg.append(") ");
                 log.info("Ignoring check for mobile number required for " + candidate.getEmail());
             }
             else {
