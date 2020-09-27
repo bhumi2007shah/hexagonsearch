@@ -176,7 +176,7 @@ public interface IJobCandidateMappingService {
      * @param candidateRejectionValue If stage is reject then set its reason(RejectionReasonMasterData id)
      * @throws Exception
      */
-    void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue) throws Exception;
+    void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue, Long userId) throws Exception;
 
     /**
      * Service to return error list for drag and drop CV's for a job
@@ -202,7 +202,7 @@ public interface IJobCandidateMappingService {
      * @param jcmId for which jcm we need to create jcm history
      * @param callOutCome callOutCome if callOutCome is present then set in jcm history
      */
-    void addComment(String comment, Long jcmId, String callOutCome);
+    void addComment(String comment, Long jcmId, String callOutCome, Long userId);
 
     /**
      * Service to upload resume against jcm
@@ -305,5 +305,13 @@ public interface IJobCandidateMappingService {
      * @return address string set(eg. "Baner, Pune, Maharashtra")
      */
     Set<String> getLiveJobAddressStringSetByCompanyId(String companyShortName);
+
+    /**
+     *
+     * @param jcmId for which we need candidate History related to hiring manager.
+     * @param userId of hiring manager that wants to check candidate history
+     * @return list of candidate history with call outcome 'For Hiring Manager'
+     */
+    List<JcmHistory> getCandidateHistoryForHiringManager(Long jcmId, Long userId);
 
 }
