@@ -256,7 +256,7 @@ public class JobCandidateMappingController {
     @ResponseBody
     @ResponseStatus(value = HttpStatus.OK)
     void setStageForCandidates(@RequestBody List<Long> jcmList, @PathVariable("stage") @NotNull String stage, @RequestParam(required = false, value = "candidateRejectionValue") Optional<Long> candidateRejectionValue) throws Exception {
-        jobCandidateMappingService.setStageForCandidates(jcmList, stage, candidateRejectionValue.isPresent()?candidateRejectionValue.get():null);
+        jobCandidateMappingService.setStageForCandidates(jcmList, stage, candidateRejectionValue.isPresent()?candidateRejectionValue.get():null, null);
     }
 
     @GetMapping("cvuploaderror/{jobId}")
@@ -300,7 +300,7 @@ public class JobCandidateMappingController {
     @ResponseStatus(value = HttpStatus.OK)
     void addComment(@RequestBody Map<String, String> requestJson, @PathVariable(required = false, value = "callOutcome") Optional callOutcome){
         log.info("inside addComment");
-        jobCandidateMappingService.addComment(requestJson.get("comment"), Long.parseLong(requestJson.get("jcmId")), callOutcome.isPresent()?callOutcome.get().toString():null);
+        jobCandidateMappingService.addComment(requestJson.get("comment"), Long.parseLong(requestJson.get("jcmId")), callOutcome.isPresent()?callOutcome.get().toString():null, null);
     }
 
     /**

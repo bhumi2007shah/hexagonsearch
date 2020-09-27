@@ -26,4 +26,7 @@ public interface JcmHistoryRepository extends JpaRepository<JcmHistory, Long> {
             "(select id from job_candidate_mapping where job_id in \n" +
             "(select id from job where company_id =:companyId) and candidate_id =:candidateId) order by updated_on desc", nativeQuery = true)
     List<JcmHistory> getJcmHistoryList(Long companyId, Long candidateId);
+
+    @Transactional(readOnly = true)
+    List<JcmHistory> findByJcmIdAndCallLogOutCome(JobCandidateMapping jcmId, String callLogOutcome);
 }

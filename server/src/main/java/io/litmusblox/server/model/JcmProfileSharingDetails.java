@@ -35,10 +35,6 @@ public class JcmProfileSharingDetails {
     @GeneratedValue(generator="system-uuid")
     private UUID id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="PROFILE_SHARING_MASTER_ID")
-    private JcmProfileSharingMaster profileSharingMaster;
-
     @NotNull
     @Column(name="JOB_CANDIDATE_MAPPING_ID")
     private Long jobCandidateMappingId;
@@ -50,6 +46,18 @@ public class JcmProfileSharingDetails {
     @Temporal(TemporalType.TIMESTAMP)
     private Date hiringManagerInterestDate;
 
+    @NotNull
+    @Column(name = "USER_ID")
+    private Long userId;
+
+    @NotNull
+    @Column(name="SENDER_ID")
+    private Long senderId;
+
+    @Column(name = "EMAIL_SENT_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date emailSentOn;
+
     @Transient
     @JsonProperty
     private String hiringManagerName;
@@ -59,16 +67,9 @@ public class JcmProfileSharingDetails {
     private String hiringManagerEmail;
 
 
-    public JcmProfileSharingDetails(JcmProfileSharingMaster profileSharingMasterId, @NotNull Long jobCandidateMappingId) {
-        this.profileSharingMaster = profileSharingMasterId;
+    public JcmProfileSharingDetails(Long senderId, @NotNull Long jobCandidateMappingId, Long userId) {
+        this.senderId = senderId;
         this.jobCandidateMappingId = jobCandidateMappingId;
-    }
-
-    public String getHiringManagerName() {
-        return this.getProfileSharingMaster().getReceiverName();
-    }
-
-    public String getHiringManagerEmail() {
-        return this.getProfileSharingMaster().getReceiverEmail();
+        this.userId = userId;
     }
 }

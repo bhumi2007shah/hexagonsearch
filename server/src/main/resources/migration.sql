@@ -2610,3 +2610,12 @@ alter table job_candidate_mapping drop column CANDIDATE_CHATBOT_RESPONSE;
 alter table job_candidate_mapping add column CANDIDATE_CHATBOT_RESPONSE hstore;
 update job_candidate_mapping jcm set candidate_chatbot_response = cr.responseList from (select job_candidate_mapping_id, hstore(array_agg(case when comment is not null then string_to_array(concat(job_screening_question_id,'^*^',concat(response, '~', comment)), '^*^') else string_to_array(concat(job_screening_question_id,'^*^',response), '^*^') end order by id)) as responseList from candidate_screening_question_response group by 1) as cr where jcm.id = cr.job_candidate_mapping_id;
 --Run create view for export data
+
+--For ticket #638
+alter table jcm_profile_sharing_details add column USER_ID integer not null default 0, add column SENDER_ID integer not null default 0, add column EMAIL_SENT_ON timestamp without time zone
+--Run the Api /api/admin/addHiringManagerAsUser
+alter table jcm_profile_sharing_details drop column PROFILE_SHARING_MASTER_ID;
+drop table jcm_profile_sharing_master;
+delete from jcm_profile_sharing_details where user_id = 0;
+alter table jcm_profile_sharing_details add constraint jcm_profile_sharing_details_sender_id FOREIGN KEY (USER_ID) REFERENCES users(id);
+alter table jcm_profile_sharing_details add constraint jcm_profile_sharing_details_sender_id FOREIGN KEY (SENDER_ID) REFERENCES users(id);
