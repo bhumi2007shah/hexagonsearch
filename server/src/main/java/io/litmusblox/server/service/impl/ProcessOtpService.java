@@ -50,7 +50,7 @@ public class ProcessOtpService implements IProcessOtpService {
     private static TimedCache otpCache;
 
     private synchronized void initializeCache() {
-        otpCache = new TimedCache(1, MasterDataBean.getInstance().getOtpExpiryMinutes(), MasterDataBean.getInstance().getOtpExpiryMinutes(), TimeUnit.MINUTES );
+        otpCache = new TimedCache(1, MasterDataBean.getInstance().getOtpExpiryMinutes(), MasterDataBean.getInstance().getOtpExpiryMinutes(), TimeUnit.NANOSECONDS);
     }
 
     /**

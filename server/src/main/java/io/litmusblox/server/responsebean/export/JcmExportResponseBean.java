@@ -10,13 +10,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.litmusblox.server.constant.IConstant;
 import lombok.Data;
+import org.hibernate.annotations.Type;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author : sameer
@@ -71,6 +70,11 @@ public class JcmExportResponseBean {
     @JsonProperty("Chatbot Filled Timestamp")
     @JsonFormat(pattern = IConstant.EXPORT_DATE_FORMAT)
     private Date chatbotFilledTimestamp;
+
+    @JsonProperty("Candidate Response")
+    @Type(type = "hstore")
+    @Column(name = "CANDIDATE_RESPONSE", columnDefinition = "hstore")
+    private Map<String, String> candidateResponse;
 
     @JsonProperty("Key Skills Strength")
     private Long keySkillsStrength;

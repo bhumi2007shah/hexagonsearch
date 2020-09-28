@@ -36,8 +36,7 @@ import java.util.*;
 @Table(name="JOB_CANDIDATE_MAPPING")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonFilter("JobCandidateMapping")
-//@TypeDefs({@TypeDef(name = "string-array",typeClass = StringArrayType.class), @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)})
-
+@TypeDefs({@TypeDef(name = "string-array",typeClass = StringArrayType.class), @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)})
 public class JobCandidateMapping implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285047L;
@@ -164,10 +163,9 @@ public class JobCandidateMapping implements Serializable {
     @Column(name = "COMMENTS")
     private String comments;
 
-    //TODO:For now we have commit this hr question response changes for current prod deployment 19/08/2020
-//    @Type(type = "string-array")
-//    @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "text[]")
-//    private String[] candidateChatbotResponse;
+    @Type(type = "hstore")
+    @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "hstore")
+    private Map<String, String> candidateChatbotResponse = new HashMap<>();
 
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})

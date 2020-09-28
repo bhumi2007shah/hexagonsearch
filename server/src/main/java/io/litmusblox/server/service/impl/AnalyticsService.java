@@ -108,13 +108,14 @@ public class AnalyticsService implements IAnalyticsService {
         //set job created on in jobAnalyticsResponseBean
         jobAnalyticsResponseBean.setJobCreatedOn(job.getCreatedOn());
 
-        if(null == getCandidateSourceAnalytics(jobId, startDate, endDate)){
+        CandidateSourceAnalyticsBean candidateSourceAnalyticsBean = getCandidateSourceAnalytics(jobId, startDate, endDate);
+
+        if(null == candidateSourceAnalyticsBean){
             log.error("No Candidates have been found for job with job id: {}",jobId);
-            throw new WebException("No candidates have been found for job with job id: "+jobId, HttpStatus.BAD_REQUEST);
         }
 
         // set candidate sources analytics i.e linkedin, naukri, individual etc for a job in jobAnalyticsResponseBean
-        jobAnalyticsResponseBean.setCandidateSources(getCandidateSourceAnalytics(jobId, startDate, endDate));
+        jobAnalyticsResponseBean.setCandidateSources(candidateSourceAnalyticsBean);
 
         log.info("Completed fetching candidate sources analytics in {}ms for job:{}, user:{}", System.currentTimeMillis()-startTime, jobId, loggedinUser.getEmail());
 

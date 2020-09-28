@@ -8,6 +8,7 @@ select
   jcm.chatbot_status as chatbot_status,
   jcm.chatbot_uuid::varchar(50) as chatbot_link,
   jcm.chatbot_updated_on as chatbot_filled_timeStamp,
+  jcm.candidate_chatbot_response as candidate_response,
   cvr.overall_rating as key_skills_strength,
   (
     case
@@ -88,8 +89,7 @@ from job_candidate_mapping jcm
 drop view if exists export_data_qa_view;
 create view export_data_qa_view AS
   select jsq.jsqId as jsq_id, jcm.id as jcm_id,
-         jsq.ScreeningQn as screening_question,
-         concat(csqr.response, ' ',csqr.comment) as candidate_response
+         jsq.ScreeningQn as screening_question
   from job_candidate_mapping jcm
     left join
     (
@@ -100,9 +100,7 @@ create view export_data_qa_view AS
       select jsq.id as jsqId, job_id jsqJobId, question as ScreeningQn from job_screening_questions jsq inner join company_screening_question csq ON csq.id = jsq.company_screening_question_id
       union
       select jsq.id as jsqId, jsq.job_id as jsqJobId, tech_question as ScreeningQn from job_screening_questions jsq inner join tech_screening_question tsq ON tsq.id = jsq.tech_screening_question_id
-    ) as jsq on jsq.jsqJobId = jcm.job_id
-    left join
-    candidate_screening_question_response csqr on csqr.job_screening_question_id = jsq.jsqId and csqr.job_candidate_mapping_id = jcm.id;
+    ) as jsq on jsq.jsqJobId = jcm.job_id;
 
 -- view to select all required fields for search query
 drop view if exists jobDetailsView;
@@ -135,9 +133,17 @@ order by jobPublishedOn desc, jobId asc;
 drop view if exists job_candidate_mapping_all_details;
 create view job_candidate_mapping_all_details
 as select
-job_candidate_mapping.id, job_candidate_mapping.job_id, job_candidate_mapping.candidate_id, job_candidate_mapping.email, job_candidate_mapping.mobile, job_candidate_mapping.country_code, job_candidate_mapping.stage, (select stage from stage_step_master where id = job_candidate_mapping.stage) as stage_name, job_candidate_mapping.created_on, job_candidate_mapping.candidate_first_name, job_candidate_mapping.candidate_last_name, job_candidate_mapping.chatbot_status, job_candidate_mapping.score,job_candidate_mapping.rejected,
-cv_rating.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name, candidateCompany.designation, candidateCompany.notice_period, candidate_details.total_experience,
-(CASE WHEN (job_candidate_mapping.cv_file_type!='') THEN (CONCAT('CandidateCv/',job_candidate_mapping.job_id, '/', job_candidate_mapping.candidate_id, job_candidate_mapping.cv_file_type))
+job_candidate_mapping.id, job_candidate_mapping.job_id, job_candidate_mapping.candidate_id, job_candidate_mapping.email,
+job_candidate_mapping.mobile, job_candidate_mapping.country_code, job_candidate_mapping.stage,
+(select stage from stage_step_master where id = job_candidate_mapping.stage) as stage_name,
+job_candidate_mapping.created_on, job_candidate_mapping.candidate_first_name, job_candidate_mapping.candidate_last_name,
+job_candidate_mapping.chatbot_status, job_candidate_mapping.score,job_candidate_mapping.rejected,
+job_candidate_mapping.candidate_chatbot_response, job_candidate_mapping.candidate_source as source,
+job_candidate_mapping.candidate_rejection_value as rejection_reason, job_candidate_mapping.updated_on, (select concat(first_name, ' ', last_name) from users where id=job_candidate_mapping.updated_by) as updated_by,
+cv_rating.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name,
+candidateCompany.designation, candidateCompany.notice_period, candidate_details.total_experience,
+(CASE WHEN (job_candidate_mapping.cv_file_type!='') THEN
+(CONCAT('CandidateCv/',job_candidate_mapping.job_id, '/', job_candidate_mapping.candidate_id, job_candidate_mapping.cv_file_type))
 else null
 END) as cv_location,
 job_candidate_mapping.cv_file_type as cv_file_type

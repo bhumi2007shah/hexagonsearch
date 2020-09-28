@@ -17,11 +17,13 @@ import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellAddress;
 import org.springframework.http.HttpStatus;
 
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -98,7 +100,12 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
                                 candidate.setEmail(cellValue.trim());
                                 break;
                             case 3:
-                                candidate.setMobile(cellValue.trim());
+                                String mobile = row.getCell(3).toString().trim();
+                                if(mobile.matches(IConstant.REGEX_TO_FIND_SCIENTIFIC_NOTATION_MOBILE)){
+                                    BigDecimal bd = new BigDecimal(mobile);
+                                    mobile = Long.toString(bd.longValue()).trim();
+                                }
+                                candidate.setMobile(mobile);
                         }
                     }
                     if (!discardRow)

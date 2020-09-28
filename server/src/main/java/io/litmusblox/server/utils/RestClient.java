@@ -60,7 +60,7 @@ public class RestClient {
      * @throws Exception
      */
     public RestClientResponseBean consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken) throws Exception {
-        return consumeRestApi(requestObj, apiUrl, requestType, authToken, null, null);
+        return consumeRestApi(requestObj, apiUrl, requestType, authToken, null, null, null);
     }
 
     /**
@@ -72,10 +72,11 @@ public class RestClient {
      * @param authToken authorization information
      * @param queryParameters Map of query parameters if any
      * @param customReadTimeout use this parameter when the time-out applied from the moment you have established a connection
+     * @param headerInformation Map of information to be set in header
      * @return response
      * @throws Exception
      */
-    public RestClientResponseBean consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken, Optional<Map> queryParameters, Optional<Integer> customReadTimeout) throws Exception {
+    public RestClientResponseBean consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken, Optional<Map> queryParameters, Optional<Integer> customReadTimeout, Optional<Map> headerInformation) throws Exception {
         RestTemplate restTemplate = new RestTemplate();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         if(null != customReadTimeout && customReadTimeout.isPresent())
@@ -93,9 +94,9 @@ public class RestClient {
 
         HttpEntity<String> entity;
         if (null != requestObj)
-            entity = new HttpEntity<String>(requestObj, getHttpHeader(authToken, true));
+            entity = new HttpEntity<String>(requestObj, getHttpHeader(authToken, true, headerInformation));
         else
-            entity = new HttpEntity<String>(getHttpHeader(authToken, false));
+            entity = new HttpEntity<String>(getHttpHeader(authToken, false, headerInformation));
         try {
             long startTime = System.currentTimeMillis();
             UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(apiUrl);
@@ -134,9 +135,17 @@ public class RestClient {
      * @param authToken authorization information
      * @return
      */
-    private HttpHeaders getHttpHeader(String authToken, boolean setContentType) {
+    private HttpHeaders getHttpHeader(String authToken, boolean setContentType, Optional<Map> headerInformation) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization",authToken);
+
+        if(null != headerInformation && headerInformation.isPresent()){
+            Map headerInformationToSet = headerInformation.get();
+            headerInformationToSet.forEach((k, v) -> {
+                headers.set(k.toString(), v.toString());
+            });
+        }
+
         if(setContentType) {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.add("Accept", MediaType.APPLICATION_JSON_VALUE);
