@@ -70,7 +70,7 @@ public class JobCandidateMappingController {
         log.info("Received request to add a list of individually added candidates. Number of candidates to be added: " + candidate.size());
         log.info("Candidate name: " + candidate.get(0).getFirstName()+" "+candidate.get(0).getLastName());
         long startTime = System.currentTimeMillis();
-        UploadResponseBean responseBean = jobCandidateMappingService.uploadIndividualCandidate(candidate, jobId, true, null);
+        UploadResponseBean responseBean = jobCandidateMappingService.uploadIndividualCandidate(candidate, jobId, true, null, false);
         log.info("Completed processing list of candidates in " + (System.currentTimeMillis()-startTime) + "ms.");
         return Util.stripExtraInfoFromResponseBean(responseBean, null,
                 new HashMap<String, List<String>>() {{
@@ -168,7 +168,7 @@ public class JobCandidateMappingController {
     String getCandidateProfile(@PathVariable("jobCandidateMappingId") Long jobCandidateMappingId) throws Exception {
         log.info("Received request to fetch candidate profile");
         long startTime = System.currentTimeMillis();
-        String response = Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.getCandidateProfile(jobCandidateMappingId, null),
+        String response = Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.getCandidateProfile(jobCandidateMappingId, null, false),
                 new HashMap<String, List<String>>() {{
                     put("User", Arrays.asList("displayName"));
                     put("ScreeningQuestions", Arrays.asList("id","question","options"));

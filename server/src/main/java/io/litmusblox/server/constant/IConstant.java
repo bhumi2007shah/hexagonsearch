@@ -48,6 +48,7 @@ public interface IConstant {
     String REGEX_TO_VALIDATE_COMPANY_SHORT_NAME = "^[a-zA-Z]+[a-zA-Z0-9]+$";
     String REGEX_TO_VALIDATE_JOB_SHORT_CODE = "[A-Z]{2}[0-9]{6}$";
     String LB_JOB_CODE_REGEX = "[a-zA-Z]{2}\\d{6}";
+    String REGEX_TO_FIND_SCIENTIFIC_NOTATION_MOBILE = "\\d\\.\\d+E\\+?\\d+";
 
     // lengths
     Integer TITLE_MAX_LENGTH = 100;
@@ -357,7 +358,7 @@ public interface IConstant {
     String GODADDY_SUCCESS_RESPONSE = "\"code\":";
 
     String NAUKRI_SUBJECT_STRING = "Naukri.com -";
-    String REF_ID_MATCH_REGEX = "[a-fA-F0-9]{8}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{12}";
+String REF_ID_MATCH_REGEX = "[a-fA-F0-9]{8}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{12}";
 
     String PARSING_RESPONSE_JSON = "PARSING_RESPONSE_JSON";
     String PARSING_RESPONSE_PYTHON = "PARSING_RESPONSE_PYTHON";

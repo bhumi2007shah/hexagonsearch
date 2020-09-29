@@ -2,13 +2,13 @@
 import csv;
 from datetime import date;
 
-fileNames=['597','599','600','601','602','603','604','605','606','607','608','609','610','611','612','613','614','615'];
+fileNames=['1832'];
 today=date.today();
-dirName="/home/lbprod/dataToTeam/Tricentis"+today.strftime("%Y-%m-%d");
+dirName="/home/lbprod/dataToTeam/Apisero"+today.strftime("%Y-%m-%d");
 
 for fileName in fileNames:
-  with open(dirName+'/Tricentis'+fileName+'QA.csv') as csv_file:
-      print(dirName+'/Tricentis'+fileName+'QA.csv');
+  with open(dirName+'/Apisero'+fileName+'QA.csv') as csv_file:
+      print(dirName+'/Apisero'+fileName+'QA.csv');
       csv_reader = csv.reader(csv_file, delimiter='|')
       line_count = 0;
       data = []
@@ -26,7 +26,7 @@ for fileName in fileNames:
 
       data.insert(0, questionList)
       csv_file.close()
-      newFile = dirName+'/Tricentis'+fileName+'QAFormatted.csv'
+      newFile = dirName+'/Apisero'+fileName+'QAFormatted.csv'
       newCsvFile = open(newFile, 'w', newline='\n')
       obj = csv.writer(newCsvFile, delimiter='|')
       obj.writerows(data)

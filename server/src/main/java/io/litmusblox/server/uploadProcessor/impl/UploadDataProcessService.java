@@ -23,10 +23,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.math.BigDecimal;
+import java.util.*;
 
 /**
  * @author : Sumit
@@ -152,34 +150,55 @@ public class UploadDataProcessService implements IUploadDataProcessService {
         if(Util.isNull(candidate.getEmail()))
             candidate.setEmail("notavailable" + new Date().getTime() + IConstant.NOT_AVAILABLE_EMAIL);
 
-        String [] emailList = candidate.getEmail().split(",");
-        for(int i=0; i< emailList.length; i++) {
-            if (!Util.isValidateEmail(emailList[i], Optional.of(candidate))) {
-                emailList[i] = emailList[i].replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL, "");
-                log.error("Special characters found, cleaning Email \"" + emailList[i] + "\" to " + emailList[i]);
-                if (!Util.isValidateEmail(emailList[i], Optional.of(candidate))) {
-                    throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + candidate.getEmail(), HttpStatus.BAD_REQUEST);
+        String [] email = candidate.getEmail().split(",");
+        Set<String> emailSet = new HashSet<>();
+        String invalidEmailId = null;
+
+        for(int i=0; i< email.length; i++) {
+            if (!Util.isValidateEmail(email[i], Optional.of(candidate))) {
+                email[i] = email[i].replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL, "");
+                log.error("Special characters found, cleaning Email \"" + email[i] + "\" to " + email[i]);
+                if (!Util.isValidateEmail(email[i], Optional.of(candidate))) {
+                    if(invalidEmailId == null)
+                        invalidEmailId = email[i];
+                    continue;
                 }
             }
+            emailSet.add(email[i]);
         }
-        candidate.setEmail(emailList[0]);
 
+        if(emailSet.size() == 0) {
+            candidate.setEmail(invalidEmailId);
+            throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + candidate.getEmail(), HttpStatus.BAD_REQUEST);
+        }
+
+        candidate.setEmail(emailSet.stream().findFirst().get());
         StringBuffer msg = new  StringBuffer(candidate.getFirstName()).append(" ").append(candidate.getLastName()).append(" (").append(candidate.getEmail());
 
-
-        String [] mobileList = null;
+        Set<String> mobileSet = new HashSet<>();
+        String [] mobile;
+        String inValidMobileNumber = null;
         if(Util.isNotNull(candidate.getMobile())) {
-            mobileList = candidate.getMobile().split(",");
-            for (int i=0; i< mobileList.length; i++) {
-                mobileList[i] = (Util.indianMobileConvertor(mobileList[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode()));
-                if (!Util.validateMobile(mobileList[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate))) {
-                    mobileList[i] = mobileList[i].replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_MOBILE, "");
-                    log.error("Special characters found, cleaning mobile number \"" + candidate.getMobile() + "\" to " + mobileList[i]);
-                    if (!Util.validateMobile(mobileList[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate)))
-                        throw new ValidationException(IErrorMessages.MOBILE_INVALID_DATA + " - " + mobileList[i], HttpStatus.BAD_REQUEST);
+            mobile = candidate.getMobile().split(",");
+            for (int i=0; i< mobile.length; i++) {
+                mobile[i] = (Util.indianMobileConvertor(mobile[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode()));
+                if (!Util.validateMobile(mobile[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate))) {
+                    mobile[i] = mobile[i].replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_MOBILE, "");
+                    log.error("Special characters found, cleaning mobile number \"" + candidate.getMobile() + "\" to " + mobile[i]);
+                    if (!Util.validateMobile(mobile[i], (null != candidate.getCountryCode()) ? candidate.getCountryCode() : job.getCompanyId().getCountryId().getCountryCode(), Optional.of(candidate))){
+                        if(null == inValidMobileNumber)
+                            inValidMobileNumber = mobile[i];
+                        continue;
+                    }
                 }
+                mobileSet.add(mobile[i]);
             }
-            candidate.setMobile(mobileList[0]);
+
+            if(mobileSet.size()==0) {
+                candidate.setMobile(inValidMobileNumber);
+                throw new ValidationException(IErrorMessages.MOBILE_INVALID_DATA + " - " + inValidMobileNumber, HttpStatus.BAD_REQUEST);
+            }
+            candidate.setMobile(mobileSet.stream().findFirst().get());
             msg.append(",").append(candidate.getMobile()).append(") ");
 
         }else {
@@ -188,7 +207,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             if(ignoreMobile) {
                 if(null != candidate.getMobile() && candidate.getMobile().length()==0)
                     candidate.setMobile(null);
-
+                msg.append(") ");
                 log.info("Ignoring check for mobile number required for " + candidate.getEmail());
             }
             else {
@@ -200,7 +219,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
         log.info(msg);
 
         //create a candidate if no history found for email and mobile
-        Candidate existingCandidate = candidateService.findByMobileOrEmail(emailList,mobileList,(Util.isNull(candidate.getCountryCode())?job.getCompanyId().getCountryId().getCountryCode():candidate.getCountryCode()), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
+        Candidate existingCandidate = candidateService.findByMobileOrEmail(emailSet,mobileSet,(Util.isNull(candidate.getCountryCode())?job.getCompanyId().getCountryId().getCountryCode():candidate.getCountryCode()), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
         if(null == existingCandidate && candidate.getCandidateSource().equalsIgnoreCase(IConstant.CandidateSource.LinkedIn.getValue())){
             existingCandidate = candidateService.findByProfileTypeAndUniqueId(candidate.getCandidateOnlineProfiles());
         }
@@ -210,7 +229,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
             candidate.setCreatedBy(loggedInUser);
             if(Util.isNull(candidate.getCountryCode()))
                 candidate.setCountryCode(job.getCompanyId().getCountryId().getCountryCode());
-            candidateObjToUse = candidateService.createCandidate(candidate.getFirstName(), candidate.getLastName(), emailList, mobileList, candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
+            candidateObjToUse = candidateService.createCandidate(candidate.getFirstName(), candidate.getLastName(), emailSet, mobileSet, candidate.getCountryCode(), loggedInUser, Optional.ofNullable(candidate.getAlternateMobile()));
             candidate.setId(candidateObjToUse.getId());
         }
         else {
@@ -251,7 +270,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
 
             //string to store detail about jcmHistory
             msg.append("sourced for - ").append(job.getJobTitle()).append(" - ").append(job.getId());
-            jcmHistoryRepository.save(new JcmHistory(savedObj, msg.toString(), new Date(), loggedInUser, savedObj.getStage(), true  ));
+            jcmHistoryRepository.save(new JcmHistory(savedObj, msg.toString(), new Date(), loggedInUser, savedObj.getStage(), false  ));
             savedObj.setTechResponseData(new CandidateTechResponseData(savedObj));
             jobCandidateMappingRepository.save(savedObj);
             //create an empty record in jcm Communication details table

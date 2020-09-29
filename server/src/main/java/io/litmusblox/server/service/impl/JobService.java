@@ -58,7 +58,7 @@ import static java.util.stream.Collectors.groupingBy;
 @Service
 @Log4j2
 
-public class JobService implements IJobService {
+public class JobService extends AbstractAccessControl implements IJobService {
 
     @Resource
     JobRepository jobRepository;
@@ -146,6 +146,9 @@ public class JobService implements IJobService {
 
     @Autowired
     CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
+
+    @Autowired
+    ISearchEngineService searchEngineService;
 
     @PersistenceContext
     EntityManager em;
@@ -457,9 +460,8 @@ public class JobService implements IJobService {
 
         //find all interview details for the jcms
         if (IConstant.Stage.Interview.getValue().equalsIgnoreCase(stage)) {
-            List<InterviewDetails> interviewDetails = interviewDetailsRepository.findByJobCandidateMappingIdIn(jcmListFromDb);
-            interviewDetails.stream().parallel().forEach(interviewDtls -> {
-                jcmAllDetailsMap.get(interviewDtls.getJobCandidateMappingId()).getInterviewDetails().add(interviewDtls);
+            jcmListFromDb.forEach(jcm ->{
+                jcmAllDetailsMap.get(jcm).getInterviewDetails().add(interviewDetailsRepository.findLatestEntryByJcmId(jcm));
             });
         }
 
@@ -601,22 +603,14 @@ public class JobService implements IJobService {
             if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())){
                 oldJob.setJobTitle(job.getJobTitle());
                 oldJob.setJobDescription(job.getJobDescription());
+            } else {
+                oldJob.setAutoInvite(job.isAutoInvite());
+                oldJob.setVisibleToCareerPage(job.isVisibleToCareerPage());
             }
             oldJob.setUpdatedBy(loggedInUser);
             oldJob.setUpdatedOn(new Date());
             oldJob = jobRepository.save(oldJob);
             historyMsg = "Updated";
-
-            if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())) {
-                //remove all data from job_key_skills and job_capabilities
-                jobKeySkillsRepository.deleteByJobId(job.getId());
-                jobKeySkillsRepository.flush();
-
-                if(!isNewAddJobFlow){
-                    jobCapabilitiesRepository.deleteByJobId(job.getId());
-                    jobCapabilitiesRepository.flush();
-                }
-            }
 
         } else if(null == oldJob){ //Create new entry for job
             job.setCreatedOn(new Date());
@@ -650,8 +644,6 @@ public class JobService implements IJobService {
                 }
             }
         }
-        //populate key skills for the job
-        job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
         return oldJob;
     }
 
@@ -684,7 +676,6 @@ public class JobService implements IJobService {
             log.info("Time taken to process JD in {}ms ",(System.currentTimeMillis() - startTime) + "ms.");
             if(skillQuestionMap.size()>0){
                 job.setSearchEngineSkillQuestionMap(skillQuestionMap);
-                handleSkillsFromSearchEngine(skillQuestionMap.keySet(), jobId);
             }
 
         }catch(Exception e) {
@@ -694,17 +685,25 @@ public class JobService implements IJobService {
     }
 
     /**
-     * Method to handle all skills provided by search engine
+     * Method to handle all skills provided by jd parser
      *
-     * @param skillsSet Set of skills obtained from search engine
-     * @param jobId the job id for which the skills have to persisted
+     * @param skillsSet Set of skills obtained from jd parser
+     * @param oldJob the job for which the skills have to persisted
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private int handleSkillsFromSearchEngine(Set<String> skillsSet, long jobId) throws Exception {
+    private int handleSkillsFromCvParser(Set<String> skillsSet, Job oldJob) throws Exception {
         log.info("Size of skill set : {} for job id ", skillsSet.size());
+        List<String> skillList = new ArrayList<>(skillsSet);
+        Collections.sort(skillList);
+        if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())) {
+            //remove all data from job_key_skills
+            jobKeySkillsRepository.deleteByJobId(oldJob.getId());
+            jobKeySkillsRepository.flush();
+        }
         List<JobKeySkills> jobKeySkillsToSave = new ArrayList<>(skillsSet.size());
-        skillsSet.forEach(skill-> {
+        skillList.forEach(skill-> {
+            boolean skillSelected = false;
             //find a skill from the master table for the skill name provided
             SkillsMaster skillFromDb = skillMasterRepository.findBySkillNameIgnoreCase(skill);
             //if none if found, add a skill
@@ -712,8 +711,12 @@ public class JobService implements IJobService {
                 skillFromDb = new SkillsMaster(skill);
                 skillMasterRepository.save(skillFromDb);
             }
+            //Check user select skill or not
+            if(oldJob.getSelectedKeySkills().contains(skill))
+                skillSelected = true;
+
             //add a record in job_key_skills with this skill id
-            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb,true, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), jobId));
+            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb, skillSelected, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId()));
         });
         jobKeySkillsRepository.saveAll(jobKeySkillsToSave);
         return skillsSet.size();
@@ -767,16 +770,8 @@ public class JobService implements IJobService {
         masterQuestions.set(false);
         techQuestions.set(false);
         userQuestions.set(false);
-      /*  if (isNewAddJobFlow && null != job.getJobScreeningQuestionsList() && job.getJobScreeningQuestionsList().size() > 0) {
-            job.getJobScreeningQuestionsList().forEach(jobScreeningQuestions -> {
-                if(null != jobScreeningQuestions.getMasterScreeningQuestionId())
-                    masterQuestions.set(true);
-                else if(null != jobScreeningQuestions.getTechScreeningQuestionId())
-                    techQuestions.set(true);
-                else if(null != jobScreeningQuestions.getUserScreeningQuestionId())
-                    userQuestions.set(true);
-            });
-        }*/
+
+        //Deleted code not used currently
 
         if (null != oldJob.getJobScreeningQuestionsList() && oldJob.getJobScreeningQuestionsList().size() > 0) {
             historyMsg = "Updated";
@@ -806,12 +801,19 @@ public class JobService implements IJobService {
             oldJob.setHrQuestionAvailable(false);
         }
 
+        try {
+            log.info("Add Key Skills in job : {}",job.getId());
+            handleSkillsFromCvParser(job.getSearchEngineSkillQuestionMap().keySet(), job);
+        } catch (Exception exception) {
+            log.error("Failed to add key skills. " + exception.getMessage());
+        }
+
         oldJob.setRole(job.getRole());
         jobRepository.save(oldJob);
         saveJobHistory(job.getId(), historyMsg + " screening questions", loggedInUser);
 
         //populate key skills for the job
-        // job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
+        job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
     }
 
     private void addJobKeySkills(Job job, Job oldJob, User loggedInUser) throws Exception { //update and add new key skill
@@ -1100,18 +1102,19 @@ public class JobService implements IJobService {
      */
     @Transactional(propagation=Propagation.REQUIRES_NEW)
     public void publishJob(Job job) throws Exception {
+
         log.info("Received request to publish job with id: " + job.getId());
         Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite());
         log.info("Completed publishing job with id: " + job.getId());
-        if(null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
+        if (null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
             log.info("Subdomain does not exist for company: {}. Creating one.", publishedJob.getCompanyId().getCompanyName());
             companyService.createSubdomain(publishedJob.getCompanyId());
             log.info("Reloading apache for subdomain {}.", publishedJob.getCompanyId().getShortName());
             companyService.reloadApache(Arrays.asList(publishedJob.getCompanyId()));
         }
-        if(publishedJob.getJobCapabilityList().size() == 0)
+        if (publishedJob.getJobCapabilityList().size() == 0)
             log.info("No capabilities exist for the job: " + job.getId() + " Scoring engine api call will NOT happen");
-        else if(jobCapabilitiesRepository.findByJobIdAndSelected(job.getId(), true).size() == 0)
+        else if (jobCapabilitiesRepository.findByJobIdAndSelected(job.getId(), true).size() == 0)
             log.info("No capabilities have been selected for the job: {}. Scoring engine api call will NOT happen", job.getId());
         else {
             log.info("Calling Scoring Engine Api to create a job");
@@ -1179,6 +1182,8 @@ public class JobService implements IJobService {
         if (null == job) {
             throw new WebException("Job with id " + jobId + "does not exist", HttpStatus.UNPROCESSABLE_ENTITY);
         }
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, job);
 
         if(null == status) {
             //check that the old status of job is archived
@@ -1208,7 +1213,6 @@ public class JobService implements IJobService {
             job.setHrQuestionAvailable(true);
         }
         job.setUpdatedOn(new Date());
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         job.setUpdatedBy(loggedInUser);
         saveJobHistory(job.getId(), "Status changed to " +job.getStatus(), loggedInUser);
         return jobRepository.save(job);
@@ -1220,6 +1224,8 @@ public class JobService implements IJobService {
         if (null == job) {
             throw new WebException("Job with id " + jobId + " does not exist", HttpStatus.UNPROCESSABLE_ENTITY);
         }
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, job);
         job.setHasCompletedCandidate(jobCandidateMappingRepository.countByJobIdAndStatus(job.getId(), IConstant.ChatbotStatus.COMPLETE.getValue())>0);
         job.setRecruiterList(userRepository.findByIdIn(Arrays.asList(job.getRecruiter()).stream()
                 .mapToLong(Integer::longValue)
@@ -1237,6 +1243,8 @@ public class JobService implements IJobService {
         if (null == job) {
             throw new WebException("Job with id " + jobId + "does not exist ", HttpStatus.UNPROCESSABLE_ENTITY);
         }
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, job);
         return jobHistoryRepository.findByJobIdOrderByIdDesc(jobId);
     }
 
@@ -1257,6 +1265,9 @@ public class JobService implements IJobService {
         if(null==job){
             throw new WebException("Job with id " + jobId + "does not exist ", HttpStatus.UNPROCESSABLE_ENTITY);
         }
+
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, job);
 
         Map<Long, String> exportFormatMapForCompany = new HashMap<>();
 
@@ -1288,6 +1299,11 @@ public class JobService implements IJobService {
         //get default export format master
         ExportFormatMaster exportFormatMaster = exportFormatMasterRepository.getOne(formatId!=null?formatId:1L);
         Job job= jobRepository.getOne(jobId);
+
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(null != job)
+            validateLoggedInUser(loggedInUser, job);
+
         Company company = null;
 
         if(null != job){
@@ -1498,6 +1514,8 @@ public class JobService implements IJobService {
         if(null == job){
             throw new WebException("Job not found.", HttpStatus.UNPROCESSABLE_ENTITY);
         }
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, job);
 
         return asyncOperationsErrorRecordsRepository.findAllByJobIdAndAsyncOperation(jobId, asyncOperation);
     }
@@ -1510,6 +1528,12 @@ public class JobService implements IJobService {
     public void updateJobVisibilityFlagOnCareerPage(Long jobId, boolean visibilityFlag) {
         log.info("Inside updateJobVisibilityFlagOnCareerPage");
         Job job = jobRepository.getOne(jobId);
+
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(job!=null)
+            validateLoggedInUser(loggedInUser, job);
+        validateLoggedInUser(loggedInUser, job);
+
         job.setVisibleToCareerPage(visibilityFlag);
         jobRepository.save(job);
     }
@@ -1521,6 +1545,7 @@ public class JobService implements IJobService {
             throw new ValidationException("Can't edit job because job in Archived state", HttpStatus.UNPROCESSABLE_ENTITY);
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, job);
 
         log.info("Received request to new add job flow for page " + pageName + " from user: " + loggedInUser.getEmail());
         long startTime = System.currentTimeMillis();
@@ -1624,9 +1649,10 @@ public class JobService implements IJobService {
         long startTime = System.currentTimeMillis();
         String searchEngineResponse = null;
         Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineResponseBean = new HashMap<>();
+        Map<String, Object> userDetails = searchEngineService.getLoggedInUserInformation();
         log.info("Calling SearchEngine API to generate tech questions for job: {}", job.getId());
         try {
-            searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null).getResponseBody();
+            searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null, Optional.of(userDetails)).getResponseBody();
             searchEngineResponseBean = mapper.readValue(searchEngineResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
             log.info("Search engine rest call response : {}", searchEngineResponse);
 
@@ -1652,12 +1678,7 @@ public class JobService implements IJobService {
                 techScreeningQuestionRepository.save(techScreeningQuestion);
             });
         }
-        try {
-            log.info("Add Key Skills in job : {}",job.getId());
-            addJobKeySkills(job, oldJob, loggedInUser);
-        } catch (Exception exception) {
-            log.error("Failed to add key skills. " + exception.getMessage());
-        }
+
         return techScreeningQuestionRepository.findByJobId(job.getId());
     }
 

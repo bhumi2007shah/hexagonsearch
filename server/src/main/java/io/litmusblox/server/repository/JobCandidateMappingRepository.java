@@ -135,4 +135,9 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Transactional(readOnly = true)
     @Query(nativeQuery = true, value = "select count(*) as count from job_candidate_mapping where job_id=:jobId and chatbot_status=:status")
     Long countByJobIdAndStatus(Long jobId, String status);
+
+    @Transactional(readOnly = true)
+    @Query(nativeQuery = true, value = "select distinct(job_id) from job_candidate_mapping where id in :jcmList")
+    List<Long> findDistinctJobIdByJcmID(List<Long> jcmList);
+
 }

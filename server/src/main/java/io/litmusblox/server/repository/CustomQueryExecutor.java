@@ -174,7 +174,8 @@ public class CustomQueryExecutor {
             "sum(((DATE_PART('day', CURRENT_DATE\\:\\:timestamp - date_published\\:\\:timestamp)) > 90)\\:\\:INT) as jobAging90PlusDays from job where job.date_published is not null and job.date_archived is null";
 
     private static final String jobAgingClientAdminWhereClause = " and job.id in (select id from job where company_id =";
-    private static final String jobAgingRecruiterWhereClause = " and job.id in (select id from job where created_by =";
+    private static final String jobAgingRecruiterWhereClause = " and job.id in (select id from job where ";
+    private static final String checkForRecruiterList = "=ANY(recruiter)";
 
     private static final String basicJobCandidatePipelineQuery = "SELECT sum((jCount.candidateCount >=0 AND jCount.candidateCount<=3)\\:\\:INT) as candidateCount0TO3Days,\n" +
             "sum((jCount.candidateCount >=4 AND jCount.candidateCount<=6)\\:\\:INT) as candidateCount4TO6Days,\n" +
@@ -383,7 +384,7 @@ public class CustomQueryExecutor {
         if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()))
             queryString.append(jobAgingClientAdminWhereClause).append(loggedInUser.getCompany().getId()).append(")");
         else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
-            queryString.append(jobAgingRecruiterWhereClause).append(loggedInUser.getId()).append(")");
+            queryString.append(jobAgingRecruiterWhereClause).append(loggedInUser.getId()).append(checkForRecruiterList).append(")");
         List<Object[]> resultSet = entityManager.createNativeQuery(queryString.toString()).getResultList();
         for(Object[] objects: resultSet){
             jobAgingCountMap.put("jobAging0To15Days",(null == objects[0])?0:Integer.parseInt(objects[0].toString()));

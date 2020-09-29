@@ -14,9 +14,11 @@ import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.CandidateRequestBean;
 import io.litmusblox.server.service.ICandidateService;
+import io.litmusblox.server.service.ISearchEngineService;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -76,6 +78,9 @@ public class CandidateService implements ICandidateService {
     @Resource
     CandidateCompanyDetailsRepository candidateCompanyDetailsRepository;
 
+    @Autowired
+    ISearchEngineService searchEngineService;
+
     @Value("${searchEngineBaseUrl}")
     String searchEngineBaseUrl;
 
@@ -96,26 +101,19 @@ public class CandidateService implements ICandidateService {
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public Candidate findByMobileOrEmail(String [] email, String [] mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
+    public Candidate findByMobileOrEmail(Set<String> email, Set<String> mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
         log.info("Inside findByMobileOrEmail method");
         //check if candidate exists for email
 
-        Set<String> emailList = new HashSet<>(Arrays.asList(email));
+        List<CandidateEmailHistory> candidateEmailHistory = candidateEmailHistoryRepository.findByEmailIn(email);
 
-        Set<String> mobileList = new HashSet<>();
-
-        if(null != mobile)
-            mobileList.addAll(Arrays.asList(mobile));
-
-        List<CandidateEmailHistory> candidateEmailHistory = candidateEmailHistoryRepository.findByEmailIn(emailList);
-
-        if(alternateMobile.isPresent() && !mobileList.contains(alternateMobile.get()))
-            mobileList.add(alternateMobile.get());
+        if(alternateMobile.isPresent() && !mobile.contains(alternateMobile.get()))
+            mobile.add(alternateMobile.get());
 
         //check if candidate exists for mobile
         List<CandidateMobileHistory> candidateMobileHistory = new ArrayList<>();
-        if  (null != mobileList && !mobileList.isEmpty())
-            candidateMobileHistory = candidateMobileHistoryRepository.findByCountryCodeAndMobileIn(countryCode, mobileList);
+        if  (null != mobile && !mobile.isEmpty())
+            candidateMobileHistory = candidateMobileHistoryRepository.findByCountryCodeAndMobileIn(countryCode, mobile);
 
         log.info("Candidate Email History Size: {}", candidateEmailHistory.size());
         log.info("Candidate Mobile History Size: {}", candidateMobileHistory.size());
@@ -145,13 +143,13 @@ public class CandidateService implements ICandidateService {
             candidate = candidateEmailHistory.get(0).getCandidate();
         else
             candidate = candidateMobileHistory.get(0).getCandidate();
-        emailList.forEach( (emailToAdd) -> {
+        email.forEach( (emailToAdd) -> {
             if(!isEmailExist(emailToAdd, candidate) && candidateEmailHistoryRepository.findByEmail(emailToAdd) == null) {
                 log.info("Inside findMobileAndEmail - saving email {} to existing candidate id {}", emailToAdd, candidate.getId());
                 candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, emailToAdd, new Date(), loggedInUser));
             }
         });
-        mobileList.forEach( (mobileToAdd) -> {
+        mobile.forEach( (mobileToAdd) -> {
             if(candidateMobileHistoryRepository.findByMobileAndCountryCode(mobileToAdd, countryCode) == null) {
                 log.info("Inside findMobileAndEmail - saving email {} to existing candidate id {}", mobileToAdd, candidate.getId());
                 candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobileToAdd, countryCode, new Date(), loggedInUser));
@@ -205,30 +203,24 @@ public class CandidateService implements ICandidateService {
      * @return
      */
     @Override
-    public Candidate createCandidate(String firstName, String lastName, String [] email, String [] mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
+    public Candidate createCandidate(String firstName, String lastName, Set<String> email, Set<String> mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
 
         log.info("Inside createCandidate method - create candidate, emailHistory, mobileHistory");
 
-        Set<String> emailList = new HashSet<>(Arrays.asList(email));
-        Set<String> mobileList = new HashSet<>();
-
-        if(null != mobile)
-            mobileList.addAll(Arrays.asList(mobile));
-
-        if(mobileList.size()>0 && alternateMobile.isPresent() && !mobileList.contains(alternateMobile.get()))
-            mobileList.add(alternateMobile.get());
+        if(mobile.size()>0 && alternateMobile.isPresent() && !mobile.contains(alternateMobile.get()))
+            mobile.add(alternateMobile.get());
 
         Candidate candidate;
-        if(mobileList.size()>0)
-            candidate = candidateRepository.save(new Candidate(firstName, lastName, emailList.stream().findFirst().get(), mobileList.stream().findFirst().get(), countryCode, new Date(), loggedInUser));
+        if(mobile.size()>0)
+            candidate = candidateRepository.save(new Candidate(firstName, lastName, email.stream().findFirst().get(), mobile.stream().findFirst().get(), countryCode, new Date(), loggedInUser));
         else
-            candidate = candidateRepository.save(new Candidate(firstName, lastName, emailList.stream().findFirst().get(), null, countryCode, new Date(), loggedInUser));
+            candidate = candidateRepository.save(new Candidate(firstName, lastName, email.stream().findFirst().get(), null, countryCode, new Date(), loggedInUser));
 
-        emailList.forEach((emailToAdd) -> {
+        email.forEach((emailToAdd) -> {
             candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, emailToAdd, new Date(), loggedInUser));
         });
 
-        mobileList.forEach((mobileToAdd) -> {
+        mobile.forEach((mobileToAdd) -> {
             candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobileToAdd, countryCode, new Date(), loggedInUser));
         });
         return candidate;
@@ -399,10 +391,11 @@ public class CandidateService implements ICandidateService {
 
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> userDetails = searchEngineService.getLoggedInUserInformation();
 
         log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), job.getId());
         try {
-            RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null);
+            RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null, Optional.of(userDetails));
         }
         catch ( JsonProcessingException e ){
             log.error("Failed while converting candidateRequestBean to String. " + e.getMessage());
@@ -431,12 +424,13 @@ public class CandidateService implements ICandidateService {
 
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> userDetail = searchEngineService.getLoggedInUserInformation();
 
         log.info("Calling SearchEngine API to create candidates of job: {}", job.getId());
         try {
             List<List<CandidateRequestBean>> requestList= Lists.partition(candidateRequestBeans, 100);
             for (List<CandidateRequestBean> requestBeans : requestList) {
-                RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBeans), searchEngineBaseUrl + searchEngineAddCandidateBulkSuffix, HttpMethod.POST, authToken, null, null);
+                RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBeans), searchEngineBaseUrl + searchEngineAddCandidateBulkSuffix, HttpMethod.POST, authToken, null, null, Optional.of(userDetail));
             }
         }
         catch ( JsonProcessingException e ){
