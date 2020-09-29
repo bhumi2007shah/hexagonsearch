@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -99,6 +100,17 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
      *
      * @throws Exception
      */
+
+    public Map getLoggedInUserInformation(long jobId){
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Map userDetails = new HashMap(4);
+        userDetails.put("userId", loggedInUser.getId());
+        userDetails.put("userEmail", loggedInUser.getEmail());
+        userDetails.put("userCompanyId", loggedInUser.getCompany().getId());
+        userDetails.put("jobId",jobId);
+        return userDetails;
+    }
+
     @Override
     public void processCv() {
         try{
@@ -150,6 +162,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         AtomicReference<String> pythonResponse = new AtomicReference<>();
         String fileName = filePath.toString().substring(filePath.toString().lastIndexOf(File.separator) + 1);
         String[] s = fileName.split("_");
+        Map headerInformation = getLoggedInUserInformation(Long.parseLong(s[1]));
         cvParsingApiDetailsRepository.findAllByActiveOrderByApiSequenceAsc(true).forEach(cvParsingApiDetails -> {
             switch (cvParsingApiDetails.getColumnToUpdate()) {
                 case PARSING_RESPONSE_JSON:
@@ -161,7 +174,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     queryString.append("?file=");
                     queryString.append(environment.getProperty(IConstant.FILE_STORAGE_URL)+tempFolderName+"/"+ fileName);
                     try {
-                        RestClientResponseBean restResponseBean = rest.consumeRestApi(null, queryString.toString(), HttpMethod.GET, null,null, java.util.Optional.of(IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT), null);
+                        RestClientResponseBean restResponseBean = rest.consumeRestApi(null, queryString.toString(), HttpMethod.GET, null,null, java.util.Optional.of(IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT), Optional.of(headerInformation));
                         statusCode.set(restResponseBean.getStatusCode());
                         pythonResponse.set(restResponseBean.getResponseBody());
                         log.info("Python parser response : {}",pythonResponse.get());
@@ -183,7 +196,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     queryObjectString.append("\"" + environment.getProperty(IConstant.FILE_STORAGE_URL)+tempFolderName+"/"+ fileName + "\"");
                     queryObjectString.append("}");
                     try {
-                        candidate.get().getCvParsingDetails().setParsingResponseMl(rest.consumeRestApi(queryObjectString.toString(), cvParsingApiDetails.getApiUrl(), HttpMethod.POST, null).getResponseBody());
+                        candidate.get().getCvParsingDetails().setParsingResponseMl(rest.consumeRestApi(queryObjectString.toString(), cvParsingApiDetails.getApiUrl(), HttpMethod.POST, null,null,null,Optional.of(headerInformation)).getResponseBody());
                         log.info("Received response from ML parser in {}ms.", (System.currentTimeMillis() - mlStartTime));
                     } catch (Exception e) {
                         log.error("Error while parse resume by ML parser : {}", e.getMessage());
@@ -365,6 +378,8 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         String cvText = null;
         Candidate candidateFromPython = null;
         long responseTime = 0L;
+        long jobId = jobCandidateMappingRepository.getOne(cvParsingDetailsFromDb.getJobCandidateMappingId().getId()).getId();
+        Map headerInformation = getLoggedInUserInformation(jobId);
         Map<String, String> queryParameters = new HashMap<>();
         Map<String, String> breadCrumb = new HashMap<>();
         breadCrumb.put("cvParsingDetailsId", cvParsingDetailsFromDb.getId().toString());
@@ -375,7 +390,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             breadCrumb.put("FilePath", queryParameters.get("file"));
             long apiCallStartTime = System.currentTimeMillis();
             //Call to cv parser for convert cv to cvText
-            cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("parserBaseUrl")+environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), Optional.of(MasterDataBean.getInstance().getRestReadTimeoutForCvParser()), null).getResponseBody();
+            cvText = RestClient.getInstance().consumeRestApi(null, environment.getProperty("parserBaseUrl")+environment.getProperty("pythonCvParserUrl"), HttpMethod.GET, null, Optional.of(queryParameters), Optional.of(MasterDataBean.getInstance().getRestReadTimeoutForCvParser()), Optional.of(headerInformation)).getResponseBody();
             responseTime = System.currentTimeMillis() - apiCallStartTime;
             log.info("Finished rest call- Time taken to convert cv to text : {}ms. For cvParsingDetailsId : {}", responseTime, cvParsingDetailsFromDb.getId());
             if (null != cvText && cvText.trim().length()>IConstant.CV_TEXT_API_RESPONSE_MIN_LENGTH && !cvText.isEmpty()) {
@@ -433,11 +448,14 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
     }
 
     private Candidate pythonCvParser(String queryString){
+        String fileName = queryString.toString().substring(queryString.toString().lastIndexOf(File.separator) + 1);
+        String[] s = fileName.split("_");
+        Map headerInformation = getLoggedInUserInformation(Long.parseLong(s[1]));
         log.info("Inside pythonCvParser");
         long PythonStartTime = System.currentTimeMillis();
         Candidate candidateFromPython = null;
         try {
-            RestClientResponseBean restClientResponseBean = RestClient.getInstance().consumeRestApi(null, queryString, HttpMethod.GET, null);
+            RestClientResponseBean restClientResponseBean = RestClient.getInstance().consumeRestApi(null, queryString, HttpMethod.GET, null,null,null,Optional.of(headerInformation));
             if(HttpStatus.OK.value() == restClientResponseBean.getStatusCode())
                 candidateFromPython = new ObjectMapper().readValue(restClientResponseBean.getResponseBody(), Candidate.class);
             log.info("Received response from Python parser in {}ms.",(System.currentTimeMillis() - PythonStartTime));
@@ -455,12 +473,12 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
-
+        long jobId = jobCandidateMappingRepository.getOne(jcmId).getId();
+        Map headerInformation = getLoggedInUserInformation(jobId);
         long apiCallStartTime = System.currentTimeMillis();
         String mlResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), mlCvRatingUrl, HttpMethod.POST, null).getResponseBody();
         log.info("Response received from CV Rating Api : {}, JcmId : {}", mlResponse, jcmId);
         long apiCallEndTime = System.currentTimeMillis();
-
         long startTime = System.currentTimeMillis();
         CvRatingResponseWrapper responseBean = objectMapper.readValue(mlResponse, CvRatingResponseWrapper.class);
 

@@ -171,6 +171,16 @@ public class JobService extends AbstractAccessControl implements IJobService {
     @Value("${searchEngineBaseUrl}")
     String searchEngineBaseUrl;
 
+    public Map getLoggedInUserInformation(long jobId){
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Map userDetails = new HashMap(4);
+        userDetails.put("userId", loggedInUser.getId());
+        userDetails.put("userEmail", loggedInUser.getEmail());
+        userDetails.put("userCompanyId", loggedInUser.getCompany().getId());
+        userDetails.put("jobId",jobId);
+        return userDetails;
+    }
+
     @Transactional
     public Job addJob(Job job, String pageName) throws Exception {//add job with respective pageName
 
@@ -630,7 +640,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             //make a call to ML api to obtain skills and capabilities
             if(MasterDataBean.getInstance().getConfigSettings().getMlCall()==1) {
                 try {
-                    JdParserRequestBean jdParserRequestBean = new JdParserRequestBean(job.getJobDescription(),true, false,job.getCompanyId().getId());
+                    JdParserRequestBean jdParserRequestBean = new JdParserRequestBean(Util.removeHtmlTags(job.getJobDescription()),true, false,job.getCompanyId().getId());
                     callJdParser(jdParserRequestBean, oldJob.getId(), job);
                     if(null == oldJob) {
                         jobRepository.save(job);
@@ -650,6 +660,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     private void callJdParser(JdParserRequestBean requestBean, long jobId, Job job) throws Exception {
         log.info("Inside callJdParser method for jobId : {}",jobId);
         String function = MasterDataBean.getInstance().getFunction().get(job.getFunction().getId()).getFunction();
+        Map headerInformation = getLoggedInUserInformation(jobId);
         Map breadCrumb = new HashMap<String, String>();
         try {
             Map<String, List<SearchEngineQuestionsResponseBean>> skillQuestionMap = new HashMap<>();
@@ -663,7 +674,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             log.info("Sending request to JdParser for LB job id : {}",jobId);
             long searchEngineApiStartTime = System.currentTimeMillis();
-            String jdParserResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonJdParserUrl"), HttpMethod.POST, JwtTokenUtil.getAuthToken()).getResponseBody();
+            String jdParserResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonJdParserUrl"), HttpMethod.POST, JwtTokenUtil.getAuthToken(),null,null,Optional.of(headerInformation)).getResponseBody();
             log.info("For jobId : {}, Jd Parser response received: {}", jobId, jdParserResponse);
             log.info("Getting response from JdParser for LB job id : {} in {}ms",jobId,System.currentTimeMillis()-searchEngineApiStartTime);
             long startTime = System.currentTimeMillis();

@@ -2633,3 +2633,11 @@ update screening_question set question_category = (select id from master_data wh
 update screening_question set question_category = (select id from master_data where value= 'Job Title') where question ='What is your Job Title?';
 update screening_question set question_category = (select id from master_data where value= 'Exp in Current Org') where question ='How many years have you completed in your current organization?';
 -- Script done for ticket #643
+
+-- For ticket #641
+update tech_screening_question set question_type = (select id from master_data where type='questionType' and value = 'Radio button') where scoring_type = 'Graded';
+update tech_screening_question tsq set default_answers = tsq.options where id = tsq.id and scoring_type = 'Graded';
+update tech_screening_questions set answer_selection = 'Any 1' where scoring_type = 'Graded';
+update tech_screening_question set scoring_type = 'Flat' where scoring_type = 'Graded';
+update job set expected_answer = null where expected_answer is not null;
+-- Script for ticket #641
