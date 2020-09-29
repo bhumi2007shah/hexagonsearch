@@ -2623,7 +2623,6 @@ Insert into MASTER_DATA (TYPE, VALUE) values
 update master_data set value = 'Current Salary' where type = 'questionCategory' and value = 'Salary';
 update master_data set value = 'Job Title' where type = 'questionCategory' and value = 'Organization';
 update master_data set value = 'Total Experience' where type = 'questionCategory' and value = 'Experience';
-update master_data set value = 'Exp in Current Org' where type = 'questionCategory' and value = 'Relevant Experience';
 
 update screening_question set question_category = (select id from master_data where value= 'Relocation') where question ='For a great job opportunity, which cities are you willing to relocate?';
 update screening_question set question_category = (select id from master_data where value= 'Current Shifts') where question ='Does your current job require you to work in Shifts?';
