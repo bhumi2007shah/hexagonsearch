@@ -2619,3 +2619,6 @@ drop table jcm_profile_sharing_master;
 delete from jcm_profile_sharing_details where user_id = 0;
 alter table jcm_profile_sharing_details add constraint jcm_profile_sharing_details_sender_id FOREIGN KEY (USER_ID) REFERENCES users(id);
 alter table jcm_profile_sharing_details add constraint jcm_profile_sharing_details_sender_id FOREIGN KEY (SENDER_ID) REFERENCES users(id);
+
+--For ticket #644
+alter table job alter column hiring_manager type integer[] using array[hiring_manager]::INTEGER[];

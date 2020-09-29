@@ -241,6 +241,7 @@ class JobServiceTest extends AbstractTest {
         try {
             int educationArray[] = {15};
             Integer recruiterArray[] = {1};
+            Integer hiringManagerArray[]={1};
             Job testJob = Job.builder()
                     .jobTitle("job title")
                     .jobDescription("job description")
@@ -257,7 +258,7 @@ class JobServiceTest extends AbstractTest {
                     .function(FunctionMasterData.builder().id(13L).build())
                     .jobReferenceId(UUID.randomUUID())
                     .recruiter(recruiterArray)
-                    .hiringManager(User.builder().id(1L).build())
+                    .hiringManager(hiringManagerArray)
                     .currency("INR")
                     .usersForCompany(new ArrayList<>())
                     .customizedChatbot(false)
