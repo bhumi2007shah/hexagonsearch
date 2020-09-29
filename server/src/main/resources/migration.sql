@@ -2618,11 +2618,12 @@ Insert into MASTER_DATA (TYPE, VALUE) values
 ('questionCategory','Notice Period Buyout'),
 ('questionCategory','Expected Salary'),
 ('questionCategory','Current Company'),
-('questionCategory','Relevant Experience');
+('questionCategory','Exp in Current Org');
 
 update master_data set value = 'Current Salary' where type = 'questionCategory' and value = 'Salary';
 update master_data set value = 'Job Title' where type = 'questionCategory' and value = 'Organization';
 update master_data set value = 'Total Experience' where type = 'questionCategory' and value = 'Experience';
+update master_data set value = 'Exp in Current Org' where type = 'questionCategory' and value = 'Relevant Experience';
 
 update screening_question set question_category = (select id from master_data where value= 'Relocation') where question ='For a great job opportunity, which cities are you willing to relocate?';
 update screening_question set question_category = (select id from master_data where value= 'Current Shifts') where question ='Does your current job require you to work in Shifts?';
@@ -2631,5 +2632,5 @@ update screening_question set question_category = (select id from master_data wh
 update screening_question set question_category = (select id from master_data where value= 'Expected Salary') where question ='What is your expected annual salary requirement?';
 update screening_question set question_category = (select id from master_data where value= 'Current Company') where question ='Which Company are you currently working for?';
 update screening_question set question_category = (select id from master_data where value= 'Job Title') where question ='What is your Job Title?';
-update screening_question set question_category = (select id from master_data where value= 'Relevant Experience') where question ='How many years have you completed in your current organization?';
+update screening_question set question_category = (select id from master_data where value= 'Exp in Current Org') where question ='How many years have you completed in your current organization?';
 -- Script done for ticket #643
