@@ -2602,3 +2602,26 @@ ALTER TABLE JOB RENAME COLUMN ML_DATA_AVAILABLE TO SE_DATA_AVAILABLE;
 ALTER TABLE JOB_KEY_SKILLS RENAME COLUMN ML_PROVIDED TO SE_PROVIDED;
 ALTER TABLE JOB DROP COLUMN SE_DATA_AVAILABLE;
 ALTER TABLE JOB_KEY_SKILLS DROP COLUMN SE_PROVIDED;
+
+-- For ticket #643
+Insert into MASTER_DATA (TYPE, VALUE) values
+('questionCategory','Relocation'),
+('questionCategory','Current Shifts'),
+('questionCategory','Notice Period Buyout'),
+('questionCategory','Expected Salary'),
+('questionCategory','Current Company'),
+('questionCategory','Relevant Experience');
+
+update master_data set value = 'Current Salary' where type = 'questionCategory' and value = 'Salary';
+update master_data set value = 'Job Title' where type = 'questionCategory' and value = 'Organization';
+update master_data set value = 'Total Experience' where type = 'questionCategory' and value = 'Experience';
+
+update screening_question set question_category = (select id from master_data where value= 'Relocation') where question ='For a great job opportunity, which cities are you willing to relocate?';
+update screening_question set question_category = (select id from master_data where value= 'Current Shifts') where question ='Does your current job require you to work in Shifts?';
+update screening_question set question_category = (select id from master_data where value= 'Notice Period Buyout') where question ='What is the official Notice Period you are required to serve in your current company?';
+update screening_question set question_category = (select id from master_data where value= 'Current Salary') where question ='What is your Current Annual Salary?';
+update screening_question set question_category = (select id from master_data where value= 'Expected Salary') where question ='What is your expected annual salary requirement?';
+update screening_question set question_category = (select id from master_data where value= 'Current Company') where question ='Which Company are you currently working for?';
+update screening_question set question_category = (select id from master_data where value= 'Job Title') where question ='What is your Job Title?';
+update screening_question set question_category = (select id from master_data where value= 'Relevant Experience') where question ='How many years have you completed in your current organization?';
+-- Script done for ticket #643
