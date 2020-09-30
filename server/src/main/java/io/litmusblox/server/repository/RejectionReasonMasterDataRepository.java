@@ -8,8 +8,6 @@ import io.litmusblox.server.model.RejectionReasonMasterData;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 /**
  * @author : Sumit
  * Date : 19/03/20
@@ -19,5 +17,4 @@ import java.util.List;
  */
 @Repository
 public interface RejectionReasonMasterDataRepository extends JpaRepository<RejectionReasonMasterData, Long> {
-    List<RejectionReasonMasterData> findByType(String type);
 }

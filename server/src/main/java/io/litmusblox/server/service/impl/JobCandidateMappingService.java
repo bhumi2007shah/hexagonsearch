@@ -101,6 +101,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     JcmProfileSharingDetailsRepository jcmProfileSharingDetailsRepository;
 
     @Resource
+    JcmProfileSharingMasterRepository jcmProfileSharingMasterRepository;
+
+    @Resource
     JcmHistoryRepository jcmHistoryRepository;
 
     @Resource
@@ -878,24 +881,47 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if(jcm!=null)
             validateLoggedInUser(loggedInUser, jcm.getJob());
 
-        List<String> receiverEmails = new ArrayList<>();
+        List<String> recieverEmails = new ArrayList<>();
 
-        for (Long receiverUser:requestBean.getReceiverUserId()) {
+        for (String[] array:requestBean.getReceiverInfo()) {
 
-            User user = userRepository.getOne(receiverUser);
-            validateHiringManagerCompany(user, jcm.getJob());
+            String receiverNameToUse = array[0], receiverEmailToUse =  array[1];
+
+            if (!Util.validateName(receiverNameToUse.trim())) {
+                String cleanName = receiverNameToUse.replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_NAME, "");
+                log.error("Special characters found, cleaning First name \"" + receiverNameToUse + "\" to " + cleanName);
+                if (!Util.validateName(cleanName))
+                    throw new ValidationException(IErrorMessages.NAME_FIELD_SPECIAL_CHARACTERS + " - " + receiverNameToUse, HttpStatus.BAD_REQUEST);
+                receiverNameToUse =cleanName;
+            }
+            if (receiverNameToUse.trim().length()==0 || receiverNameToUse.length()>45)
+                throw new WebException(IErrorMessages.INVALID_RECEIVER_NAME, HttpStatus.BAD_REQUEST);
+
+            //validate recevier email
+            if (!Util.isValidateEmail(receiverEmailToUse, null)) {
+                String cleanEmail = receiverEmailToUse.replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL,"");
+                log.error("Special characters found, cleaning Email \"" + receiverEmailToUse + "\" to " + cleanEmail);
+                if (!Util.isValidateEmail(cleanEmail, null)) {
+                    throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + receiverEmailToUse, HttpStatus.BAD_REQUEST);
+                }
+                receiverEmailToUse=cleanEmail;
+            }
+            if(receiverEmailToUse.length()>50)
+                throw new ValidationException(IErrorMessages.EMAIL_TOO_LONG, HttpStatus.BAD_REQUEST);
+
+            JcmProfileSharingMaster masterObj = jcmProfileSharingMasterRepository.save(new JcmProfileSharingMaster(loggedInUser.getId(), receiverNameToUse, receiverEmailToUse));
             Set<JcmProfileSharingDetails> detailsSet = new HashSet<>(requestBean.getJcmId().size());
             requestBean.getJcmId().forEach(jcmId ->{
-                detailsSet.add(new JcmProfileSharingDetails(loggedInUser.getId(),jcmId, user.getId()));
+                detailsSet.add(new JcmProfileSharingDetails(masterObj,jcmId));
             });
             jcmProfileSharingDetailsRepository.saveAll(detailsSet);
-            receiverEmails.add(user.getEmail());
+            recieverEmails.add(array[1]);
         }
 
         List<JcmHistory> jcmHistoryList = new ArrayList<>();
         requestBean.getJcmId().forEach(jcmId-> {
             JobCandidateMapping jcmObject = jobCandidateMappingRepository.getOne(jcmId);
-            jcmHistoryList.add(new JcmHistory(jcmObject, "Profiles shared with : "+String.join(", ", receiverEmails)+".", new Date(), loggedInUser, jcmObject.getStage(), false));
+            jcmHistoryList.add(new JcmHistory(jcmObject, "Profiles shared with : "+String.join(", ", recieverEmails)+".", new Date(), loggedInUser, jcmObject.getStage(), false));
         });
         jcmHistoryRepository.saveAll(jcmHistoryList);
         //move to Submit stage
@@ -923,8 +949,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         jcmProfileSharingDetails.setHiringManagerInterest(interestValue);
         jcmProfileSharingDetailsRepository.save(jcmProfileSharingDetails);
         JobCandidateMapping jcmObj = jobCandidateMappingRepository.getOne(jcmProfileSharingDetails.getJobCandidateMappingId());
-        User user = userRepository.getOne(jcmProfileSharingDetails.getUserId());
-        jcmHistoryRepository.save(new JcmHistory(jcmObj, "Profile reviewed by Hiring Manager " + jcmProfileSharingDetails.getUserId(), new Date(), null, jcmObj.getStage(), true));
+        jcmHistoryRepository.save(new JcmHistory(jcmObj, "Profile reviewed by Hiring Manager " + jcmProfileSharingDetails.getProfileSharingMaster().getReceiverName(), new Date(), null, jcmObj.getStage(), true));
     }
 
     /**
@@ -1761,11 +1786,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @throws Exception
      */
     @Transactional
-    public void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue, Long userId) throws Exception {
+    public void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue) throws Exception {
         long startTime = System.currentTimeMillis();
         log.info("Setting {} jcms to {} stage", jcmList, stage);
 
-        User loggedInUser = null;
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         //check that all jcm are in the same jobId
         List<Long> jobId = jobCandidateMappingRepository.findDistinctJobIdByJcmID(jcmList);
@@ -1774,14 +1799,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             throw new ValidationException("Access to data not allowed", HttpStatus.UNAUTHORIZED);
         if(jobId.size() == 1) {
             Job job = jobRepository.getOne(jobId.get(0));
-            if(null == userId) {
-                loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-                validateLoggedInUser(loggedInUser, job);
-            }
-            else {
-                loggedInUser = userRepository.getOne(userId);
-                validateHiringManagerCompany(loggedInUser, job);
-            }
+            validateLoggedInUser(loggedInUser, job);
         }
         //check that all the jcm are currently in the same stage
         if(!areCandidatesInSameStage(jcmList))
@@ -1802,10 +1820,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             jobCandidateMappingRepository.updateStageStepId(jcmList, jobCandidateMappingObj.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
         }
         RejectionReasonMasterData finalReasonMasterData = reasonMasterData;
-        User finalLoggedInUser = loggedInUser;
         jcmList.stream().forEach(jcm -> {
             JobCandidateMapping mappingObj = jobCandidateMappingRepository.getOne(jcm);
-            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage "+((null != finalReasonMasterData)? "for reason "+finalReasonMasterData.getLabel():""):"Candidate moved to " + stage, new Date(), finalLoggedInUser, mappingObj.getStage(), false));
+            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage "+((null != finalReasonMasterData)? "for reason "+finalReasonMasterData.getLabel():""):"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage(), false));
+
         });
         jcmHistoryRepository.saveAll(jcmHistoryList);
         jcmCommunicationDetailsRepository.setScreeningRejectionTimestampNull(jcmList);
@@ -1867,24 +1885,14 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @param callOutCome callOutCome if callOutCome is present then set in jcm history
      */
     @Transactional
-    public void addComment(String comment, Long jcmId, String callOutCome, Long userId) {
+    public void addComment(String comment, Long jcmId, String callOutCome) {
         log.info("inside addComment");
-
-        User loggedInUser = null;
-
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findById(jcmId).orElse(null);
         if(null == jobCandidateMapping)
             throw new ValidationException("Job candidate mapping not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
-        else {
-            if(userId == null) {
-                loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-                validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
-            }
-            else {
-                loggedInUser = userRepository.getOne(userId);
-                validateHiringManagerCompany(loggedInUser, jobCandidateMapping.getJob());
-            }
-        }
+        else
+            validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
 
         jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, comment, callOutCome, false, new Date(), jobCandidateMapping.getStage(), loggedInUser));
     }
@@ -2337,15 +2345,4 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         }
     }
 
-    @Transactional
-    public List<JcmHistory> getCandidateHistoryForHiringManager(Long jcmId, Long userId){
-
-        JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findById(jcmId).orElse(null);
-        if(null == jobCandidateMapping)
-            throw new ValidationException("Job candidate mapping not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
-        else {
-            validateHiringManagerCompany(userRepository.getOne(userId), jobCandidateMapping.getJob());
-            return jcmHistoryRepository.findByJcmIdAndCallLogOutCome(jobCandidateMapping, "For hiring manager");
-        }
-    }
 }

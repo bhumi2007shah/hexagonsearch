@@ -19,6 +19,6 @@ import java.util.List;
  */
 @Data
 public class ShareCandidateProfileRequestBean {
-    private List<Long> receiverUserId;
+    private String[][] receiverInfo;
     private List<Long> jcmId;
 }
