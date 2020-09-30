@@ -46,10 +46,6 @@ public class JcmProfileSharingDetails {
     @Temporal(TemporalType.TIMESTAMP)
     private Date hiringManagerInterestDate;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="PROFILE_SHARING_MASTER_ID")
-    private JcmProfileSharingMaster profileSharingMaster;
-
     @NotNull
     @Column(name = "USER_ID")
     private Long userId;
