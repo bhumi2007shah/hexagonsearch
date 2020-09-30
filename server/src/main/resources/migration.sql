@@ -2612,13 +2612,13 @@ update job_candidate_mapping jcm set candidate_chatbot_response = cr.responseLis
 --Run create view for export data
 
 --For ticket #638
-alter table jcm_profile_sharing_details add column USER_ID integer not null default 0, add column SENDER_ID integer not null default 0, add column EMAIL_SENT_ON timestamp without time zone
+alter table jcm_profile_sharing_master add column receiver_id integer not null default 0;
 --Run the Api /api/admin/addHiringManagerAsUser
-alter table jcm_profile_sharing_details drop column PROFILE_SHARING_MASTER_ID;
-drop table jcm_profile_sharing_master;
-delete from jcm_profile_sharing_details where user_id = 0;
-alter table jcm_profile_sharing_details add constraint jcm_profile_sharing_details_sender_id FOREIGN KEY (USER_ID) REFERENCES users(id);
-alter table jcm_profile_sharing_details add constraint jcm_profile_sharing_details_sender_id FOREIGN KEY (SENDER_ID) REFERENCES users(id);
+alter table jcm_profile_sharing_master drop column receiver_email, drop column receiver_name;
+ALTER TABLE jcm_profile_sharing_details DROP CONSTRAINT jcm_profile_sharing_details_profile_sharing_master_id_fkey, ADD CONSTRAINT jcm_profile_sharing_details_profile_sharing_master_id_fkey FOREIGN KEY (profile_sharing_master_id) REFERENCES jcm_profile_sharing_master (id) ON DELETE CASCADE;
+delete from jcm_profile_sharing_master where receiver_id = 0;
+alter table jcm_profile_sharing_master add constraint jcm_profile_sharing_master_sender_id FOREIGN KEY (RECEIVER_ID) REFERENCES users(ID);
 
 --For ticket #644
+alter table job drop constraint job_hiring_manager_fkey ;
 alter table job alter column hiring_manager type integer[] using array[hiring_manager]::INTEGER[];
