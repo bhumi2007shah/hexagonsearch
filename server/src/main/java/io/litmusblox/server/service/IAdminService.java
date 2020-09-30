@@ -23,11 +23,4 @@ public interface IAdminService {
      * @throws Exception
      */
     void addCompanyCandidateOnSearchEngine(Long companyId) throws Exception;
-
-    /**
-     * Service method to migrate all hiring manger in jcm_profile_sharing_master table to user table
-     * @throws Exception
-     */
-    void addHiringManagerAsUser() throws Exception;
-
 }
