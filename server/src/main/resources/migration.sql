@@ -2619,3 +2619,7 @@ alter table jcm_profile_sharing_master alter column receiver_name drop not null,
 ALTER TABLE jcm_profile_sharing_details DROP CONSTRAINT jcm_profile_sharing_details_profile_sharing_master_id_fkey, ADD CONSTRAINT jcm_profile_sharing_details_profile_sharing_master_id_fkey FOREIGN KEY (profile_sharing_master_id) REFERENCES jcm_profile_sharing_master (id) ON DELETE CASCADE;
 delete from jcm_profile_sharing_master where receiver_id = 0;
 alter table jcm_profile_sharing_master add constraint jcm_profile_sharing_master_sender_id FOREIGN KEY (RECEIVER_ID) REFERENCES users(ID);
+
+--For ticket #644
+alter table job drop constraint job_hiring_manager_fkey ;
+alter table job alter column hiring_manager type integer[] using array[hiring_manager]::INTEGER[];
