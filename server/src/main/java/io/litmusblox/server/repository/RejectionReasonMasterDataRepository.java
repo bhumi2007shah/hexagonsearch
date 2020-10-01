@@ -5,8 +5,11 @@
 package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.RejectionReasonMasterData;
+import io.litmusblox.server.model.StageStepMaster;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 /**
  * @author : Sumit
@@ -17,4 +20,5 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface RejectionReasonMasterDataRepository extends JpaRepository<RejectionReasonMasterData, Long> {
+    List<RejectionReasonMasterData> findByStageId(StageStepMaster stageId);
 }

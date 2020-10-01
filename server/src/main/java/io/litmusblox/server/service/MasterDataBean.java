@@ -86,6 +86,8 @@ public class MasterDataBean {
     private Integer restReadTimeoutForCvParser = IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT;
     private Map<String, MasterData> questionTypeMap = new HashMap<>();
     private Map<String , Map<String, String>> salaryRange = new HashMap<>();
+    private Map<String, List> hiringManagerRejectReasonMap = new LinkedHashMap<>();
+
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;
 

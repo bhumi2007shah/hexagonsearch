@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -404,4 +405,61 @@ public class NoAuthController {
         log.info("Resume upload successFully in {}ms", System.currentTimeMillis()-startTime);
         return responseEntity;
     }
+
+    /**
+     *
+     * @param jcmId JcmId of the candidate which is to be processed
+     * @param stage Stage to set for the candidate
+     * @param candidateRejectionValue id of rejection master data
+     * @param userId id of hiring manager who rejected the candidate
+     * @throws Exception
+     */
+    @PostMapping(value= "/rejectCandidate/{stage}")
+    @ResponseStatus(value = HttpStatus.OK)
+    void rejectCandidate(@RequestBody Long jcmId, @PathVariable("stage") @NotNull String stage, @RequestParam("candidateRejectionValue") Long candidateRejectionValue, @RequestParam("userId") Long userId) throws Exception{
+        long startTime = System.currentTimeMillis();
+        log.info("Inside rejectCandidate");
+        List<Long> jcmList = new ArrayList<>();
+        jcmList.add(jcmId);
+        jobCandidateMappingService.setStageForCandidates(jcmList, stage, candidateRejectionValue, userId);
+        log.info("Completed rejectCandidate call in {} ms", System.currentTimeMillis()-startTime);
+    }
+
+    /**
+     *
+     * @param requestJson Request which contains details of comment from hiring manager
+     */
+    @PostMapping(value = "/addComment")
+    @ResponseStatus(value = HttpStatus.OK)
+    void addHiringManagerComment(@RequestBody Map<String, String> requestJson) {
+        long startTime = System.currentTimeMillis();
+        log.info("Inside add Comments for Hiring Manager");
+        jobCandidateMappingService.addComment(requestJson.get("comment"), Long.parseLong(requestJson.get("jcmId")), null, Long.parseLong(requestJson.get("userId")));
+        log.info("Completed adding comments for Hiring Manager in {} ms", System.currentTimeMillis()-startTime);
+    }
+
+    /**
+     *
+     * @param jcmId of user whose history is required
+     * @param userId Hiring manager user Id
+     * @return All the candidate history 'For Hiring Manager'
+     */
+    @GetMapping(value = "/candidateHistory/{jcmId}")
+    String getCandidateHistoryForHiringManager(@PathVariable Long jcmId, @RequestParam Long userId){
+        long startTime = System.currentTimeMillis();
+        log.info("Inside get Candidate History for Hiring manager.");
+        String response = Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.getCandidateHistoryForHiringManager(jcmId, userId),
+                new HashMap<String, List<String>>() {{
+                    put("User", Arrays.asList("displayName"));
+                    put("JobStageStep", new ArrayList<>(0));
+                    put("JobCandidateMapping",  new ArrayList<>(0));
+                }},
+                new HashMap<String, List<String>>() {{
+                    put("JcmHistory", Arrays.asList("id", "jcmId", "stage"));
+                }});
+        log.info("Received Candidate in {} ms", System.currentTimeMillis()-startTime);
+        return response;
+    }
 }
+
+

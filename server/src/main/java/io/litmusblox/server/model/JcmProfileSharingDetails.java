@@ -50,25 +50,8 @@ public class JcmProfileSharingDetails {
     @Temporal(TemporalType.TIMESTAMP)
     private Date hiringManagerInterestDate;
 
-    @Transient
-    @JsonProperty
-    private String hiringManagerName;
-
-    @Transient
-    @JsonProperty
-    private String hiringManagerEmail;
-
-
     public JcmProfileSharingDetails(JcmProfileSharingMaster profileSharingMasterId, @NotNull Long jobCandidateMappingId) {
         this.profileSharingMaster = profileSharingMasterId;
         this.jobCandidateMappingId = jobCandidateMappingId;
-    }
-
-    public String getHiringManagerName() {
-        return this.getProfileSharingMaster().getReceiverName();
-    }
-
-    public String getHiringManagerEmail() {
-        return this.getProfileSharingMaster().getReceiverEmail();
     }
 }

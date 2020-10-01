@@ -320,7 +320,10 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
             log.info("Update User : {}", user.getId());
         }else{
             u.setUserUuid(UUID.randomUUID());
-            u.setCreatedBy(loggedInUser.getId());
+            if(user.getCreatedBy() == null)
+                u.setCreatedBy(loggedInUser.getId());
+            else
+                u.setCreatedBy(user.getCreatedBy());
             u.setCreatedOn(new Date());
         }
 

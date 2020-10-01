@@ -101,4 +101,10 @@ public abstract class AbstractAccessControl {
             throw new ValidationException("You are not valid user for accessing data", HttpStatus.UNAUTHORIZED);
         }
     }
+
+    protected void validateHiringManagerCompany(User hiringManager, Job job){
+        log.info("Hiring manager company id is {} and company id through job is {}", hiringManager.getCompany().getId(), job.getCompanyId().getId());
+        if(!hiringManager.getCompany().getId().equals(job.getCompanyId().getId()))
+            throw new ValidationException("You are not a valid user for accessing data", HttpStatus.UNAUTHORIZED);
+    }
 }

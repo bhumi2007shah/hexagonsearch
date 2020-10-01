@@ -2610,3 +2610,12 @@ alter table job_candidate_mapping drop column CANDIDATE_CHATBOT_RESPONSE;
 alter table job_candidate_mapping add column CANDIDATE_CHATBOT_RESPONSE hstore;
 update job_candidate_mapping jcm set candidate_chatbot_response = cr.responseList from (select job_candidate_mapping_id, hstore(array_agg(case when comment is not null then string_to_array(concat(job_screening_question_id,'^*^',concat(response, '~', comment)), '^*^') else string_to_array(concat(job_screening_question_id,'^*^',response), '^*^') end order by id)) as responseList from candidate_screening_question_response group by 1) as cr where jcm.id = cr.job_candidate_mapping_id;
 --Run create view for export data
+
+--For ticket #638
+INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES ('callOutCome', 'For Hiring Manager');
+alter table jcm_profile_sharing_master add column receiver_id integer not null default 0;
+alter table jcm_profile_sharing_master alter column receiver_name drop not null, alter column receiver_email drop not null;
+--Run the Api /api/admin/addHiringManagerAsUser
+ALTER TABLE jcm_profile_sharing_details DROP CONSTRAINT jcm_profile_sharing_details_profile_sharing_master_id_fkey, ADD CONSTRAINT jcm_profile_sharing_details_profile_sharing_master_id_fkey FOREIGN KEY (profile_sharing_master_id) REFERENCES jcm_profile_sharing_master (id) ON DELETE CASCADE;
+delete from jcm_profile_sharing_master where receiver_id = 0;
+alter table jcm_profile_sharing_master add constraint jcm_profile_sharing_master_sender_id FOREIGN KEY (RECEIVER_ID) REFERENCES users(ID);
