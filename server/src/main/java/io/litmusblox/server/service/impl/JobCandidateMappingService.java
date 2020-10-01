@@ -928,7 +928,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         jcmProfileSharingDetailsRepository.save(jcmProfileSharingDetails);
         JobCandidateMapping jcmObj = jobCandidateMappingRepository.getOne(jcmProfileSharingDetails.getJobCandidateMappingId());
         User user = userRepository.getOne(jcmProfileSharingDetails.getProfileSharingMaster().getReceiverId());
-        jcmHistoryRepository.save(new JcmHistory(jcmObj, "Profile reviewed by Hiring Manager " + user.getDisplayName(), new Date(), null, jcmObj.getStage(), true));
+        StringBuffer jcmHistoryMsg = new StringBuffer("Hiring Manager ").append(user.getDisplayName()).append(" is").append(interestValue?" interested ":" not interested ").append("in this Profile.");
+        jcmHistoryRepository.save(new JcmHistory(jcmObj, jcmHistoryMsg.toString(), new Date(), null, jcmObj.getStage(), true));
     }
 
     /**
