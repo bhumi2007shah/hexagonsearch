@@ -2623,3 +2623,6 @@ alter table jcm_profile_sharing_master add constraint jcm_profile_sharing_master
 --For ticket #644
 alter table job drop constraint job_hiring_manager_fkey ;
 alter table job alter column hiring_manager type integer[] using array[hiring_manager]::INTEGER[];
+
+--For ticket #584
+update candidate_company_details set salary = regexp_replace(salary, '[^0-9.]','', 'g');
