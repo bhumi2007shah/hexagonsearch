@@ -20,8 +20,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MlCvRatingRequestBean {
-    List<String> jdKeyskills;
+public class CvRatingRequestBean {
+    List<String> jdKeySkills;
     String resumeContent;
     String industry;
 }

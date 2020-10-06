@@ -14,7 +14,7 @@ import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.IJobCandidateMappingService;
 import io.litmusblox.server.service.MasterDataBean;
 import io.litmusblox.server.service.UploadResponseBean;
-import io.litmusblox.server.service.impl.MlCvRatingRequestBean;
+import io.litmusblox.server.service.impl.CvRatingRequestBean;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import io.litmusblox.server.uploadProcessor.RChilliCvProcessor;
 import io.litmusblox.server.utils.*;
@@ -322,7 +322,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                         log.error("Found no key skills for jobId: {}.  Not making api call to rate CV.", cvToRate.getJobCandidateMappingId().getJob().getId());
                     else {
                         try {
-                            cvRatingApiProcessingTime = callCvRatingApi(new MlCvRatingRequestBean(jdKeySkills, cvToRate.getParsingResponseText(), cvToRate.getJobCandidateMappingId().getJob().getFunction().getFunction()), cvToRate.getJobCandidateMappingId().getId());
+                            cvRatingApiProcessingTime = callCvRatingApi(new CvRatingRequestBean(jdKeySkills, cvToRate.getParsingResponseText(), cvToRate.getJobCandidateMappingId().getJob().getFunction().getFunction()), cvToRate.getJobCandidateMappingId().getId());
                         } catch (Exception e) {
                             log.info("Error while performing CV rating operation " + e.getMessage());
                             processingError = true;
@@ -450,19 +450,19 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
 
 
     @Transactional(propagation = Propagation.REQUIRED)
-    private long callCvRatingApi(MlCvRatingRequestBean requestBean, Long jcmId) throws Exception {
+    private long callCvRatingApi(CvRatingRequestBean requestBean, Long jcmId) throws Exception {
         CvRating cvRatingFromDb = null;
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
 
         long apiCallStartTime = System.currentTimeMillis();
-        String mlResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), mlCvRatingUrl, HttpMethod.POST, null).getResponseBody();
-        log.info("Response received from CV Rating Api : {}, JcmId : {}", mlResponse, jcmId);
+        String cvRatingResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonCvRatingUrl"), HttpMethod.POST, null).getResponseBody();
+        log.info("Response received from CV Rating Api : {}, JcmId : {}", cvRatingResponse, jcmId);
         long apiCallEndTime = System.currentTimeMillis();
 
         long startTime = System.currentTimeMillis();
-        CvRatingResponseWrapper responseBean = objectMapper.readValue(mlResponse, CvRatingResponseWrapper.class);
+        CvRatingResponseWrapper responseBean = objectMapper.readValue(cvRatingResponse, CvRatingResponseWrapper.class);
 
         cvRatingFromDb = cvRatingRepository.findByJobCandidateMappingId(jcmId);
         if(null == cvRatingFromDb){
