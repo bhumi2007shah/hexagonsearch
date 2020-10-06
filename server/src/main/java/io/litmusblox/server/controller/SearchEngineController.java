@@ -7,7 +7,11 @@ import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.ISearchEngineService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 /**
  * Controller to manage search engine operations
  *
@@ -25,6 +29,9 @@ public class SearchEngineController{
 
     @Autowired
     ISearchEngineService searchEngineService;
+
+    @Autowired
+    Environment environment;
 
     @Value("${searchEngineBaseUrl}")
     String searchEngineBaseUrl;
@@ -60,6 +67,19 @@ public class SearchEngineController{
     @GetMapping(value = "/data/getUnverifiedNodes")
     String getUnverifiedNodes() throws Exception{
         return searchEngineService.getUnverifiedNodes(JwtTokenUtil.getAuthToken());
+    }
+
+    /**
+     *
+     * @param masterDataFile file to passed to be passed to search engine
+     * @param companyId company to which the file belongs
+     * @param fileType the type of file
+     * @return
+     * @throws Exception
+     */
+    @PostMapping(value = "/data/importData")
+    String importData(@RequestParam MultipartFile masterDataFile, Long companyId, String fileType) throws Exception{
+        return searchEngineService.importData(masterDataFile, companyId, fileType, JwtTokenUtil.getAuthToken());
     }
 }
 
