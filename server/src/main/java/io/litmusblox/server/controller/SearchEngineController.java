@@ -78,7 +78,7 @@ public class SearchEngineController{
      * @throws Exception
      */
     @PostMapping(value = "/data/importData")
-    String importData(@RequestParam MultipartFile masterDataFile, Long companyId, String fileType) throws Exception{
+    String importData(@RequestParam("masterDataFile") MultipartFile masterDataFile, @RequestParam(name = "companyId", required = false) Long companyId, @RequestParam("fileType")String fileType) throws Exception{
         return searchEngineService.importData(masterDataFile, companyId, fileType, JwtTokenUtil.getAuthToken());
     }
 }

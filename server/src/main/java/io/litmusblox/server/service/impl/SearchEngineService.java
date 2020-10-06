@@ -91,10 +91,11 @@ public class SearchEngineService implements ISearchEngineService {
         } catch(Exception e){
             log.info(e.getCause());
         }
-        if(null == fileContent || null == companyId || null == fileType)
+        if(null == fileContent || null == fileType)
             throw new ValidationException("Invalid request", HttpStatus.BAD_REQUEST);
         formData.add("masterDataFile", fileContent);
-        formData.add("companyId", companyId);
+        if(companyId!= null)
+            formData.add("companyId", companyId);
         formData.add("fileType", fileType);
         String responseData = RestClient.getInstance().consumeRestApi( searchEngineBaseUrl+"data/importData", authToken, HttpMethod.POST, formData, Optional.of(headerInformation)).getResponseBody();
         log.info("Completed execution of importData method in {} ms", System.currentTimeMillis()-startTime);
