@@ -889,7 +889,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         for (Long user:requestBean.getReceiverUserId()) {
 
             User receiverUser = userRepository.getOne(user);
-            validateHiringManagerCompany(receiverUser, jcm.getJob());
+            validateHiringManagerCompany(receiverUser, jcm.getJob().getCompanyId().getId());
             JcmProfileSharingMaster masterObj = jcmProfileSharingMasterRepository.save(new JcmProfileSharingMaster(loggedInUser.getId(), receiverUser.getId()));
             Set<JcmProfileSharingDetails> detailsSet = new HashSet<>(requestBean.getJcmId().size());
             requestBean.getJcmId().forEach(jcmId ->{

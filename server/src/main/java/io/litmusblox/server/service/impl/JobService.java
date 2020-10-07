@@ -1572,6 +1572,12 @@ public class JobService extends AbstractAccessControl implements IJobService {
         if(null == oldJob)
             job = setRecruiterArray(job, loggedInUser);
 
+        //Validate Hiring Manager
+        for (Integer hiringManager : job.getHiringManager()) {
+            User user = userRepository.getOne(Long.valueOf(hiringManager));
+            validateHiringManagerCompany(user, job.getCompanyId().getId());
+        }
+
         switch (IConstant.AddJobPages.valueOf(pageName)) {
             case jobDetail:
                 oldJob = addJobOverview(job, oldJob, loggedInUser, true);
