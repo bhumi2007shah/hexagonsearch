@@ -893,7 +893,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             JcmProfileSharingMaster masterObj = jcmProfileSharingMasterRepository.save(new JcmProfileSharingMaster(loggedInUser.getId(), receiverUser.getId()));
             Set<JcmProfileSharingDetails> detailsSet = new HashSet<>(requestBean.getJcmId().size());
             requestBean.getJcmId().forEach(jcmId ->{
-                detailsSet.add(new JcmProfileSharingDetails(masterObj, loggedInUser.getId()));
+                detailsSet.add(new JcmProfileSharingDetails(masterObj, jcmId));
             });
             jcmProfileSharingDetailsRepository.saveAll(detailsSet);
             receiverEmails.add(receiverUser.getEmail());
