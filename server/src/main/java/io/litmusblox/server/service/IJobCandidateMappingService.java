@@ -113,9 +113,10 @@ public interface IJobCandidateMappingService {
      *
      * @param sharingId the uuid corresponding to which the interest needs to be captured
      * @param interestValue interested true / false response
+     * @param requestBean contains comment and rejectionReasonId from hiring Manager.
      * @throws Exception
      */
-    void updateHiringManagerInterest(UUID sharingId, Boolean interestValue);
+    void updateHiringManagerInterest(UUID sharingId, Boolean interestValue, HiringManagerInterestRequestBean requestBean);
 
     /**
      * Service method to fetch details of a single candidate for a job
@@ -202,7 +203,7 @@ public interface IJobCandidateMappingService {
      * @param jcmId for which jcm we need to create jcm history
      * @param callOutCome callOutCome if callOutCome is present then set in jcm history
      */
-    void addComment(String comment, Long jcmId, String callOutCome, Long userId);
+    void addComment(String comment, Long jcmId, String callOutCome);
 
     /**
      * Service to upload resume against jcm
@@ -305,13 +306,5 @@ public interface IJobCandidateMappingService {
      * @return address string set(eg. "Baner, Pune, Maharashtra")
      */
     Set<String> getLiveJobAddressStringSetByCompanyId(String companyShortName);
-
-    /**
-     *
-     * @param jcmId for which we need candidate History related to hiring manager.
-     * @param userId of hiring manager that wants to check candidate history
-     * @return list of candidate history with call outcome 'For Hiring Manager'
-     */
-    List<JcmHistory> getCandidateHistoryForHiringManager(Long jcmId, Long userId);
 
 }

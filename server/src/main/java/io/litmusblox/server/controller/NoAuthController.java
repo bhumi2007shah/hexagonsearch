@@ -111,11 +111,11 @@ public class NoAuthController {
      */
     @PutMapping(value = "/hiringManagerInterest/{sharingId}/{interestValue}")
     @ResponseStatus(value = HttpStatus.OK)
-    public void updateHiringManagerInterest(@PathVariable(value = "sharingId") UUID sharingId, @PathVariable(value = "interestValue") Boolean interestValue) {
+    public void updateHiringManagerInterest(@PathVariable(value = "sharingId") UUID sharingId, @PathVariable(value = "interestValue") Boolean interestValue, @RequestBody HiringManagerInterestRequestBean requestBean) {
         log.info("Received Hiring Manager Interest information");
         long startTime = System.currentTimeMillis();
 
-        jobCandidateMappingService.updateHiringManagerInterest(sharingId, interestValue);
+        jobCandidateMappingService.updateHiringManagerInterest(sharingId, interestValue,requestBean);
 
         log.info("Completed processing request for Hiring Manager Interest in {}ms",(System.currentTimeMillis()-startTime));
     }
@@ -159,6 +159,7 @@ public class NoAuthController {
                     put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("MasterData", new ArrayList<>(0));
                     put("CompanyAddress", new ArrayList<>(0));
+                    put("JcmHistory", Arrays.asList("id", "jcmId", "stage"));
                 }});
        // log.info("before call to replace:\n {}",response);
         response = response.replaceAll(Pattern.quote("$companyName"),responseObj.getCreatedBy().getCompany().getCompanyName());
@@ -425,41 +426,6 @@ public class NoAuthController {
         log.info("Completed rejectCandidate call in {} ms", System.currentTimeMillis()-startTime);
     }
 
-    /**
-     *
-     * @param requestJson Request which contains details of comment from hiring manager
-     */
-    @PostMapping(value = "/addComment")
-    @ResponseStatus(value = HttpStatus.OK)
-    void addHiringManagerComment(@RequestBody Map<String, String> requestJson) {
-        long startTime = System.currentTimeMillis();
-        log.info("Inside add Comments for Hiring Manager");
-        jobCandidateMappingService.addComment(requestJson.get("comment"), Long.parseLong(requestJson.get("jcmId")), null, Long.parseLong(requestJson.get("userId")));
-        log.info("Completed adding comments for Hiring Manager in {} ms", System.currentTimeMillis()-startTime);
-    }
-
-    /**
-     *
-     * @param jcmId of user whose history is required
-     * @param userId Hiring manager user Id
-     * @return All the candidate history 'For Hiring Manager'
-     */
-    @GetMapping(value = "/candidateHistory/{jcmId}")
-    String getCandidateHistoryForHiringManager(@PathVariable Long jcmId, @RequestParam Long userId){
-        long startTime = System.currentTimeMillis();
-        log.info("Inside get Candidate History for Hiring manager.");
-        String response = Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.getCandidateHistoryForHiringManager(jcmId, userId),
-                new HashMap<String, List<String>>() {{
-                    put("User", Arrays.asList("displayName"));
-                    put("JobStageStep", new ArrayList<>(0));
-                    put("JobCandidateMapping",  new ArrayList<>(0));
-                }},
-                new HashMap<String, List<String>>() {{
-                    put("JcmHistory", Arrays.asList("id", "jcmId", "stage"));
-                }});
-        log.info("Received Candidate in {} ms", System.currentTimeMillis()-startTime);
-        return response;
-    }
 }
 
 

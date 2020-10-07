@@ -68,7 +68,7 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     @Transactional
     @Query(value = "select j.id as jobId, j.job_title as jobTitle, ssm.step as currentStatus, jcm.created_on as sourcedOn,(CASE when jcm.rejected = 't' then CONCAT('Rejected', ' - ', ssm.step) else ssm.step end) as lastStage, \n" +
-            "(select CONCAT(first_name,' ', last_name) from users where id=j.hiring_manager) as hiringManager, (select array_to_string(array(select CONCAT(first_name, ' ', last_name) from users where id in (select (UNNEST(j.recruiter)))),', ')) as recruiter \n" +
+            "(select array_to_string(array(select CONCAT(first_name, ' ', last_name) from users where id in (select (UNNEST(j.recruiter)))),', ')) as hiringManager, (select array_to_string(array(select CONCAT(first_name, ' ', last_name) from users where id in (select (UNNEST(j.recruiter)))),', ')) as recruiter \n" +
             "from job_candidate_mapping jcm inner join job j on j.id = jcm.job_id inner join stage_step_master ssm on ssm.id = jcm.stage where jcm.candidate_id =:candidateId and j.company_id =:companyId order by jcm.created_on desc;", nativeQuery = true)
     List<CandidateInteractionHistory> getCandidateInteractionHistoryByCandidateId(Long candidateId, Long companyId);
 

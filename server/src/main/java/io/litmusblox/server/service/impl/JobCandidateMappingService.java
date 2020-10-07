@@ -169,6 +169,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     @Resource
     JcmCandidateSourceHistoryRepository jcmCandidateSourceHistoryRepository;
 
+    @Resource
+    RejectionReasonMasterDataRepository rejectionReasonMasterDataRepository;
+
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
         return jobRepository.findById(jobId).get();
@@ -915,20 +918,34 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      *
      * @param sharingId     the uuid corresponding to which the interest needs to be captured
      * @param interestValue interested true / false response
+     * @param requestBean   contains comment and rejectionReasonId from hiring Manager.
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public void updateHiringManagerInterest(UUID sharingId, Boolean interestValue) {
+    public void updateHiringManagerInterest(UUID sharingId, Boolean interestValue, HiringManagerInterestRequestBean requestBean) {
         //TODO: For the uuid,
         //1. fetch record from JCM_PROFILE_SHARING_DETAILS table
         //2. update the record by setting the HIRING_MANAGER_INTEREST = interest value and HIRING_MANAGER_INTEREST_DATE as current date
         JcmProfileSharingDetails jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.findById(sharingId);
         jcmProfileSharingDetails.setHiringManagerInterestDate(new Date());
         jcmProfileSharingDetails.setHiringManagerInterest(interestValue);
-        jcmProfileSharingDetailsRepository.save(jcmProfileSharingDetails);
         JobCandidateMapping jcmObj = jobCandidateMappingRepository.getOne(jcmProfileSharingDetails.getJobCandidateMappingId());
         User user = userRepository.getOne(jcmProfileSharingDetails.getProfileSharingMaster().getReceiverId());
-        StringBuffer jcmHistoryMsg = new StringBuffer("Hiring Manager ").append(user.getDisplayName()).append(" is").append(interestValue?" interested ":" not interested ").append("in this Profile.");
+        StringBuffer jcmHistoryMsg = new StringBuffer("Hiring Manager ").append(user.getDisplayName()).append(" is").append(interestValue?" interested ":" not interested ").append("in this Profile");
+        if(null != requestBean.getComment()) {
+            jcmProfileSharingDetails.setComments(requestBean.getComment());
+            jcmHistoryMsg.append(", Comments: ").append(requestBean.getComment());
+        }
+        if(!interestValue){
+            if(null == requestBean.getRejectionReasonId())
+                throw new ValidationException("Invalid Request", HttpStatus.BAD_REQUEST);
+            else{
+                jcmProfileSharingDetails.setRejectionReasonId(requestBean.getRejectionReasonId());
+                RejectionReasonMasterData rejectionReasonMasterData = rejectionReasonMasterDataRepository.getOne(requestBean.getRejectionReasonId());
+                jcmHistoryMsg.append(", Rejection Reason: ").append(rejectionReasonMasterData.getValue()).append("- ").append(rejectionReasonMasterData.getLabel());
+            }
+        }
+        jcmProfileSharingDetailsRepository.save(jcmProfileSharingDetails);
         jcmHistoryRepository.save(new JcmHistory(jcmObj, jcmHistoryMsg.toString(), new Date(), null, jcmObj.getStage(), true));
     }
 
@@ -948,6 +965,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if(!isCallFromNoAuth) {
             User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             validateLoggedInUser(loggedInUser, objFromDb.getJob());
+        }else {
+            objFromDb.setCandidateHistoryForHiringManager(jcmHistoryRepository.findByJcmIdAndCallLogOutComeIgnoreCase(objFromDb, "For Hiring Manager"));
         }
         List<JobScreeningQuestions> screeningQuestions = jobScreeningQuestionsRepository.findByJobId(objFromDb.getJob().getId());
         Map<Long, JobScreeningQuestions> screeningQuestionsMap = new LinkedHashMap<>(screeningQuestions.size());
@@ -1872,24 +1891,14 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @param callOutCome callOutCome if callOutCome is present then set in jcm history
      */
     @Transactional
-    public void addComment(String comment, Long jcmId, String callOutCome, Long userId) {
+    public void addComment(String comment, Long jcmId, String callOutCome) {
         log.info("inside addComment");
-
-        User loggedInUser = null;
-
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findById(jcmId).orElse(null);
         if(null == jobCandidateMapping)
             throw new ValidationException("Job candidate mapping not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
-        else {
-            if(userId == null) {
-                loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-                validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
-            }
-            else {
-                loggedInUser = userRepository.getOne(userId);
-                validateHiringManagerCompany(loggedInUser, jobCandidateMapping.getJob());
-            }
-        }
+        else
+            validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
 
         jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, comment, callOutCome, false, new Date(), jobCandidateMapping.getStage(), loggedInUser));
     }
@@ -2339,18 +2348,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         //save records to db
         if(null != recordsToSave && recordsToSave.size() > 0) {
             asyncOperationsErrorRecordsRepository.saveAll(recordsToSave);
-        }
-    }
-
-    @Transactional
-    public List<JcmHistory> getCandidateHistoryForHiringManager(Long jcmId, Long userId){
-
-        JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findById(jcmId).orElse(null);
-        if(null == jobCandidateMapping)
-            throw new ValidationException("Job candidate mapping not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
-        else {
-            validateHiringManagerCompany(userRepository.getOne(userId), jobCandidateMapping.getJob());
-            return jcmHistoryRepository.findByJcmIdAndCallLogOutComeIgnoreCase(jobCandidateMapping, "For Hiring Manager");
         }
     }
 }

@@ -206,6 +206,10 @@ public class JobCandidateMapping implements Serializable {
     @Transient
     private String inviteErrorMessage;
 
+    @JsonInclude
+    @Transient
+    private List<JcmHistory> candidateHistoryForHiringManager;
+
     @OneToMany(cascade = {CascadeType.MERGE}, mappedBy = "jobCandidateMappingId")
     private List<JcmCandidateSourceHistory> candidateSourceHistories = new ArrayList<>(0);
 

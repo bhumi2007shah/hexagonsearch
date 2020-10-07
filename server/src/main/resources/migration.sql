@@ -2615,6 +2615,7 @@ update job_candidate_mapping jcm set candidate_chatbot_response = cr.responseLis
 INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES ('callOutCome', 'For Hiring Manager');
 alter table jcm_profile_sharing_master add column receiver_id integer not null default 0;
 alter table jcm_profile_sharing_master alter column receiver_name drop not null, alter column receiver_email drop not null;
+alter table jcm_profile_sharing_details add column comments varchar(50), add column rejection_reason_master_data_id integer references rejection_reason_master_data(id);
 --Run the Api /api/admin/addHiringManagerAsUser
 ALTER TABLE jcm_profile_sharing_details DROP CONSTRAINT jcm_profile_sharing_details_profile_sharing_master_id_fkey, ADD CONSTRAINT jcm_profile_sharing_details_profile_sharing_master_id_fkey FOREIGN KEY (profile_sharing_master_id) REFERENCES jcm_profile_sharing_master (id) ON DELETE CASCADE;
 delete from jcm_profile_sharing_master where receiver_id = 0;

@@ -300,7 +300,7 @@ public class JobCandidateMappingController {
     @ResponseStatus(value = HttpStatus.OK)
     void addComment(@RequestBody Map<String, String> requestJson, @PathVariable(required = false, value = "callOutcome") Optional callOutcome){
         log.info("inside addComment");
-        jobCandidateMappingService.addComment(requestJson.get("comment"), Long.parseLong(requestJson.get("jcmId")), callOutcome.isPresent()?callOutcome.get().toString():null, null);
+        jobCandidateMappingService.addComment(requestJson.get("comment"), Long.parseLong(requestJson.get("jcmId")), callOutcome.isPresent()?callOutcome.get().toString():null);
     }
 
     /**
