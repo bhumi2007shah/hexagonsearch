@@ -256,7 +256,7 @@ public class JobCandidateMappingController {
     @ResponseBody
     @ResponseStatus(value = HttpStatus.OK)
     void setStageForCandidates(@RequestBody List<Long> jcmList, @PathVariable("stage") @NotNull String stage, @RequestParam(required = false, value = "candidateRejectionValue") Optional<Long> candidateRejectionValue) throws Exception {
-        jobCandidateMappingService.setStageForCandidates(jcmList, stage, candidateRejectionValue.isPresent()?candidateRejectionValue.get():null, null);
+        jobCandidateMappingService.setStageForCandidates(jcmList, stage, candidateRejectionValue.isPresent()?candidateRejectionValue.get():null);
     }
 
     @GetMapping("cvuploaderror/{jobId}")

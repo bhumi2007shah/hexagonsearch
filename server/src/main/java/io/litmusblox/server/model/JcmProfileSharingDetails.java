@@ -53,7 +53,7 @@ public class JcmProfileSharingDetails {
     @Column(name = "COMMENTS")
     private String comments;
 
-    @Column(name="REJECTION_REASON_MASTER_DATA_ID")
+    @Column(name="REJECTION_REASON_ID")
     private Long rejectionReasonId;
 
     public JcmProfileSharingDetails(JcmProfileSharingMaster profileSharingMasterId, @NotNull Long jobCandidateMappingId) {

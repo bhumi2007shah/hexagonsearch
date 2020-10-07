@@ -916,32 +916,28 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     /**
      * Service method to capture hiring manager interest
      *
-     * @param sharingId     the uuid corresponding to which the interest needs to be captured
-     * @param interestValue interested true / false response
-     * @param requestBean   contains comment and rejectionReasonId from hiring Manager.
+     * @param jcmProfileSharingDetails details of hiring manager response like interestValue, comment, rejectionReasonId
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public void updateHiringManagerInterest(UUID sharingId, Boolean interestValue, HiringManagerInterestRequestBean requestBean) {
+    public void updateHiringManagerInterest(JcmProfileSharingDetails jcmProfileSharingDetails) {
         //TODO: For the uuid,
         //1. fetch record from JCM_PROFILE_SHARING_DETAILS table
         //2. update the record by setting the HIRING_MANAGER_INTEREST = interest value and HIRING_MANAGER_INTEREST_DATE as current date
-        JcmProfileSharingDetails jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.findById(sharingId);
+        JcmProfileSharingDetails existingJcmProfileSharingDetails = jcmProfileSharingDetailsRepository.findById(jcmProfileSharingDetails.getId());
         jcmProfileSharingDetails.setHiringManagerInterestDate(new Date());
-        jcmProfileSharingDetails.setHiringManagerInterest(interestValue);
+        jcmProfileSharingDetails.setJobCandidateMappingId(existingJcmProfileSharingDetails.getJobCandidateMappingId());
+        jcmProfileSharingDetails.setProfileSharingMaster(existingJcmProfileSharingDetails.getProfileSharingMaster());
         JobCandidateMapping jcmObj = jobCandidateMappingRepository.getOne(jcmProfileSharingDetails.getJobCandidateMappingId());
         User user = userRepository.getOne(jcmProfileSharingDetails.getProfileSharingMaster().getReceiverId());
-        StringBuffer jcmHistoryMsg = new StringBuffer("Hiring Manager ").append(user.getDisplayName()).append(" is").append(interestValue?" interested ":" not interested ").append("in this Profile");
-        if(null != requestBean.getComment()) {
-            jcmProfileSharingDetails.setComments(requestBean.getComment());
-            jcmHistoryMsg.append(", Comments: ").append(requestBean.getComment());
-        }
-        if(!interestValue){
-            if(null == requestBean.getRejectionReasonId())
+        StringBuffer jcmHistoryMsg = new StringBuffer("Hiring Manager ").append(user.getDisplayName()).append(" is").append(jcmProfileSharingDetails.getHiringManagerInterest()?" interested ":" not interested ").append("in this Profile");
+        if(null != jcmProfileSharingDetails.getComments())
+            jcmHistoryMsg.append(", Comments: ").append(jcmProfileSharingDetails.getComments());
+        if(!jcmProfileSharingDetails.getHiringManagerInterest()){
+            if(null == jcmProfileSharingDetails.getRejectionReasonId())
                 throw new ValidationException("Invalid Request", HttpStatus.BAD_REQUEST);
             else{
-                jcmProfileSharingDetails.setRejectionReasonId(requestBean.getRejectionReasonId());
-                RejectionReasonMasterData rejectionReasonMasterData = rejectionReasonMasterDataRepository.getOne(requestBean.getRejectionReasonId());
+                RejectionReasonMasterData rejectionReasonMasterData = rejectionReasonMasterDataRepository.getOne(jcmProfileSharingDetails.getRejectionReasonId());
                 jcmHistoryMsg.append(", Rejection Reason: ").append(rejectionReasonMasterData.getValue()).append("- ").append(rejectionReasonMasterData.getLabel());
             }
         }
@@ -1785,11 +1781,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @throws Exception
      */
     @Transactional
-    public void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue, Long userId) throws Exception {
+    public void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue) throws Exception {
         long startTime = System.currentTimeMillis();
         log.info("Setting {} jcms to {} stage", jcmList, stage);
 
-        User loggedInUser = null;
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         //check that all jcm are in the same jobId
         List<Long> jobId = jobCandidateMappingRepository.findDistinctJobIdByJcmID(jcmList);
@@ -1798,14 +1794,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             throw new ValidationException("Access to data not allowed", HttpStatus.UNAUTHORIZED);
         if(jobId.size() == 1) {
             Job job = jobRepository.getOne(jobId.get(0));
-            if(null == userId) {
-                loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-                validateLoggedInUser(loggedInUser, job);
-            }
-            else {
-                loggedInUser = userRepository.getOne(userId);
-                validateHiringManagerCompany(loggedInUser, job);
-            }
+            validateLoggedInUser(loggedInUser, job);
         }
         //check that all the jcm are currently in the same stage
         if(!areCandidatesInSameStage(jcmList))
@@ -1826,10 +1815,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             jobCandidateMappingRepository.updateStageStepId(jcmList, jobCandidateMappingObj.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
         }
         RejectionReasonMasterData finalReasonMasterData = reasonMasterData;
-        User finalLoggedInUser = loggedInUser;
         jcmList.stream().forEach(jcm -> {
             JobCandidateMapping mappingObj = jobCandidateMappingRepository.getOne(jcm);
-            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage "+((null != finalReasonMasterData)? "for reason "+finalReasonMasterData.getLabel():""):"Candidate moved to " + stage, new Date(), finalLoggedInUser, mappingObj.getStage(), false));
+            jcmHistoryList.add(new JcmHistory(mappingObj, IConstant.Stage.Reject.getValue().equals(stage)?"Candidate Rejected from " + mappingObj.getStage().getStage() + " stage "+((null != finalReasonMasterData)? "for reason "+finalReasonMasterData.getLabel():""):"Candidate moved to " + stage, new Date(), loggedInUser, mappingObj.getStage(), false));
+
         });
         jcmHistoryRepository.saveAll(jcmHistoryList);
         jcmCommunicationDetailsRepository.setScreeningRejectionTimestampNull(jcmList);

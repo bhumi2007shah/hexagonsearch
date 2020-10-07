@@ -105,18 +105,15 @@ public class NoAuthController {
     /**
      * REST Api to capture hiring manager interest
      *
-     * @param sharingId the uuid corresponding to which the interest needs to be captured
-     * @param interestValue interested true / false response
+     * @param jcmProfileSharingDetails details of hiring manager response like interestValue, comment, rejectionReasonId
      * @throws Exception
      */
-    @PutMapping(value = "/hiringManagerInterest/{sharingId}/{interestValue}")
+    @PutMapping(value = "/hiringManagerInterest")
     @ResponseStatus(value = HttpStatus.OK)
-    public void updateHiringManagerInterest(@PathVariable(value = "sharingId") UUID sharingId, @PathVariable(value = "interestValue") Boolean interestValue, @RequestBody HiringManagerInterestRequestBean requestBean) {
+    public void updateHiringManagerInterest(@RequestBody JcmProfileSharingDetails jcmProfileSharingDetails) {
         log.info("Received Hiring Manager Interest information");
         long startTime = System.currentTimeMillis();
-
-        jobCandidateMappingService.updateHiringManagerInterest(sharingId, interestValue,requestBean);
-
+        jobCandidateMappingService.updateHiringManagerInterest(jcmProfileSharingDetails);
         log.info("Completed processing request for Hiring Manager Interest in {}ms",(System.currentTimeMillis()-startTime));
     }
 
@@ -406,26 +403,6 @@ public class NoAuthController {
         log.info("Resume upload successFully in {}ms", System.currentTimeMillis()-startTime);
         return responseEntity;
     }
-
-    /**
-     *
-     * @param jcmId JcmId of the candidate which is to be processed
-     * @param stage Stage to set for the candidate
-     * @param candidateRejectionValue id of rejection master data
-     * @param userId id of hiring manager who rejected the candidate
-     * @throws Exception
-     */
-    @PostMapping(value= "/rejectCandidate/{stage}")
-    @ResponseStatus(value = HttpStatus.OK)
-    void rejectCandidate(@RequestBody Long jcmId, @PathVariable("stage") @NotNull String stage, @RequestParam("candidateRejectionValue") Long candidateRejectionValue, @RequestParam("userId") Long userId) throws Exception{
-        long startTime = System.currentTimeMillis();
-        log.info("Inside rejectCandidate");
-        List<Long> jcmList = new ArrayList<>();
-        jcmList.add(jcmId);
-        jobCandidateMappingService.setStageForCandidates(jcmList, stage, candidateRejectionValue, userId);
-        log.info("Completed rejectCandidate call in {} ms", System.currentTimeMillis()-startTime);
-    }
-
 }
 
 

@@ -111,12 +111,10 @@ public interface IJobCandidateMappingService {
     /**
      * Service method to capture hiring manager interest
      *
-     * @param sharingId the uuid corresponding to which the interest needs to be captured
-     * @param interestValue interested true / false response
-     * @param requestBean contains comment and rejectionReasonId from hiring Manager.
+     * @param jcmProfileSharingDetails details of hiring manager response like interestValue, comment, rejectionReasonId
      * @throws Exception
      */
-    void updateHiringManagerInterest(UUID sharingId, Boolean interestValue, HiringManagerInterestRequestBean requestBean);
+    void updateHiringManagerInterest(JcmProfileSharingDetails jcmProfileSharingDetails);
 
     /**
      * Service method to fetch details of a single candidate for a job
@@ -177,7 +175,7 @@ public interface IJobCandidateMappingService {
      * @param candidateRejectionValue If stage is reject then set its reason(RejectionReasonMasterData id)
      * @throws Exception
      */
-    void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue, Long userId) throws Exception;
+    void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue) throws Exception;
 
     /**
      * Service to return error list for drag and drop CV's for a job
