@@ -652,7 +652,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
         String function = MasterDataBean.getInstance().getFunction().get(job.getFunction().getId()).getFunction();
         Map breadCrumb = new HashMap<String, String>();
         try {
-            Map<String, List<SearchEngineQuestionsResponseBean>> skillQuestionMap = new HashMap<>();
             ObjectMapper objectMapper = new ObjectMapper();
 
             //Send function to JdParser request
@@ -672,11 +671,13 @@ public class JobService extends AbstractAccessControl implements IJobService {
             breadCrumb.put("Job Id: ", String.valueOf(jobId));
             breadCrumb.put("Request", requestBean.toString());
             breadCrumb.put("Response", jdParserResponse);
-            skillQuestionMap = objectMapper.readValue(jdParserResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
+            JdParserResponseBean jdParserResponseBean = objectMapper.readValue(jdParserResponse, JdParserResponseBean.class);
             log.info("Time taken to process JD in {}ms ",(System.currentTimeMillis() - startTime) + "ms.");
-            if(skillQuestionMap.size()>0){
-                job.setSearchEngineSkillQuestionMap(skillQuestionMap);
-            }
+            if(jdParserResponseBean.getQuestionMap().size()>0)
+                job.setSearchEngineSkillQuestionMap(jdParserResponseBean.getQuestionMap());
+
+            if(jdParserResponseBean.getNeighbourSkillMap().size()>0)
+                job.setNeighbourSkillsMap(jdParserResponseBean.getNeighbourSkillMap());
 
         }catch(Exception e) {
             log.error("Error While Parse jd : "+Util.getStackTrace(e));
@@ -687,12 +688,13 @@ public class JobService extends AbstractAccessControl implements IJobService {
     /**
      * Method to handle all skills provided by jd parser
      *
-     * @param skillsSet Set of skills obtained from jd parser
+     * @param neighbourSkillMap map of skill and related skills
      * @param oldJob the job for which the skills have to persisted
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private int handleSkillsFromCvParser(Set<String> skillsSet, Job oldJob) throws Exception {
+    private int handleSkillsFromCvParser(Map<String, List<String>> neighbourSkillMap, Job oldJob) throws Exception {
+        Set<String> skillsSet = neighbourSkillMap.keySet();
         log.info("Size of skill set : {} for job id ", skillsSet.size());
         List<String> skillList = new ArrayList<>(skillsSet);
         Collections.sort(skillList);
@@ -716,7 +718,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 skillSelected = true;
 
             //add a record in job_key_skills with this skill id
-            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb, skillSelected, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId()));
+            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb, skillSelected, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId(), neighbourSkillMap.get(skill).toArray(new String[neighbourSkillMap.get(skill).size()])));
         });
         jobKeySkillsRepository.saveAll(jobKeySkillsToSave);
         return skillsSet.size();
@@ -803,7 +805,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         try {
             log.info("Add Key Skills in job : {}",job.getId());
-            handleSkillsFromCvParser(job.getSearchEngineSkillQuestionMap().keySet(), job);
+            handleSkillsFromCvParser(job.getNeighbourSkillsMap(), job);
         } catch (Exception exception) {
             log.error("Failed to add key skills. " + exception.getMessage());
         }
@@ -875,7 +877,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                     continue;
                 } else {
                     //no match found in mlProvided skill, add a record
-                    jobKeySkillsRepository.save(new JobKeySkills(skillsMasterMap.get(skillId), true, new Date(), loggedInUser, job.getId()));
+                    //jobKeySkillsRepository.save(new JobKeySkills(skillsMasterMap.get(skillId), true, new Date(), loggedInUser, job.getId()));
                 }
 
             }

@@ -315,14 +315,19 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                 boolean processingError = false;
                 long cvRatingApiProcessingTime = -1;
                 if(null != cvToRate.getJobCandidateMappingId()) {
+                    Map<String, List<String>> neighbourSkillMap = new HashMap<>();
                     //call rest api with the text part of cv
                     log.info("Processing CV for job id: " + cvToRate.getJobCandidateMappingId().getJob().getId() + " and candidate id: " + cvToRate.getJobCandidateMappingId().getCandidate().getId());
-                    List<String> jdKeySkills = jobKeySkillsRepository.findSkillNameByJobId(cvToRate.getJobCandidateMappingId().getJob().getId());
+                    List<JobKeySkills> jdKeySkills = jobKeySkillsRepository.findByJobId(cvToRate.getJobCandidateMappingId().getJob().getId());
                     if (jdKeySkills.size() == 0)
                         log.error("Found no key skills for jobId: {}.  Not making api call to rate CV.", cvToRate.getJobCandidateMappingId().getJob().getId());
                     else {
+                        jdKeySkills.forEach(jobKeySkills -> {
+                            neighbourSkillMap.put(jobKeySkills.getSkillId().getSkillName(), (null != jobKeySkills.getNeighbourSkills())?Arrays.asList(jobKeySkills.getNeighbourSkills()):null);
+                        });
+
                         try {
-                            cvRatingApiProcessingTime = callCvRatingApi(new CvRatingRequestBean(jdKeySkills, cvToRate.getParsingResponseText(), cvToRate.getJobCandidateMappingId().getJob().getFunction().getFunction()), cvToRate.getJobCandidateMappingId().getId());
+                            cvRatingApiProcessingTime = callCvRatingApi(new CvRatingRequestBean(neighbourSkillMap, cvToRate.getParsingResponseText(), cvToRate.getJobCandidateMappingId().getJob().getFunction().getFunction()), cvToRate.getJobCandidateMappingId().getId());
                         } catch (Exception e) {
                             log.info("Error while performing CV rating operation " + e.getMessage());
                             processingError = true;

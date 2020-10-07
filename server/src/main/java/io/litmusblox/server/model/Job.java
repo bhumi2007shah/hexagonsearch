@@ -275,6 +275,10 @@ public class Job implements Serializable {
     @JsonProperty
     private Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineSkillQuestionMap;
 
+    @Transient
+    @JsonProperty
+    private Map<String, List<String>> neighbourSkillsMap;
+
     //Remove minExperience, maxExperience, experienceRange because add masterdata for experience
     //Also add jobdetail model in job
 

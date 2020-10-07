@@ -2670,3 +2670,6 @@ update master_data set value_to_use = 23 where type = 'questionCategory' and val
 update master_data set value_to_use = 24 where type = 'questionCategory' and value = 'Contract';
 update master_data set value_to_use = 25 where type = 'questionCategory' and value = 'Education';
 
+--FOr ticket #656
+ALTER TABLE JOB_KEY_SKILLS
+ADD COLUMN NEIGHBOUR_SKILLS VARCHAR(100)[];
