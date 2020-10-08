@@ -305,4 +305,12 @@ public interface IJobCandidateMappingService {
      */
     Set<String> getLiveJobAddressStringSetByCompanyId(String companyShortName);
 
+    /**
+     *Service method to get All future Interviews for a particular company
+     *
+     * @param companyId id of company whose future interview List is to be fetched
+     * @return List of future interviews details for the particular company
+     */
+    List<InterviewsResponseBean> getInterviewsForCompany(Long companyId);
+
 }
