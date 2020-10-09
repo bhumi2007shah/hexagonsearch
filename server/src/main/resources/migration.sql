@@ -2611,6 +2611,14 @@ alter table job_candidate_mapping add column CANDIDATE_CHATBOT_RESPONSE hstore;
 update job_candidate_mapping jcm set candidate_chatbot_response = cr.responseList from (select job_candidate_mapping_id, hstore(array_agg(case when comment is not null then string_to_array(concat(job_screening_question_id,'^*^',concat(response, '~', comment)), '^*^') else string_to_array(concat(job_screening_question_id,'^*^',response), '^*^') end order by id)) as responseList from candidate_screening_question_response group by 1) as cr where jcm.id = cr.job_candidate_mapping_id;
 --Run create view for export data
 
+
+-- For ticket #635
+update screening_question set options = options || '{I wish not to answer}' where question_type in (97, 98, 100);
+
+insert into master_data(type, value, value_to_use) values ('questionType', 'FutureCalendar', 'Future Calendar'),('questionType', 'PastCalendar', 'Past Calendar');
+
+update screening_question set question_type=(select id from master_data where value='FutureCalendar') where question_type=(select id from master_data where value='Calendar');
+
 -- For ticket #643
 Insert into MASTER_DATA (TYPE, VALUE) values
 ('questionCategory','Relocation'),
@@ -2626,7 +2634,8 @@ update master_data set value = 'Total Experience' where type = 'questionCategory
 
 update screening_question set question_category = (select id from master_data where value= 'Relocation') where question ='For a great job opportunity, which cities are you willing to relocate?';
 update screening_question set question_category = (select id from master_data where value= 'Current Shifts') where question ='Does your current job require you to work in Shifts?';
-update screening_question set question_category = (select id from master_data where value= 'Notice Period Buyout') where question ='What is the official Notice Period you are required to serve in your current company?';
+update screening_question set question_category = (select id from master_data where value= 'Notice Period') where question ='What is the official Notice Period you are required to serve in your current company?';
+update screening_question set question_category = (select id from master_data where value= 'Notice Period Buyout') where question ='If the need arises, can you buyout your notice period?';
 update screening_question set question_category = (select id from master_data where value= 'Current Salary') where question ='What is your Current Annual Salary?';
 update screening_question set question_category = (select id from master_data where value= 'Expected Salary') where question ='What is your expected annual salary requirement?';
 update screening_question set question_category = (select id from master_data where value= 'Current Company') where question ='Which Company are you currently working for?';
@@ -2637,7 +2646,38 @@ update screening_question set question_category = (select id from master_data wh
 -- For ticket #641
 update tech_screening_question set question_type = (select id from master_data where type='questionType' and value = 'Radio button') where scoring_type = 'Graded';
 update tech_screening_question tsq set default_answers = tsq.options where id = tsq.id and scoring_type = 'Graded';
-update tech_screening_questions set answer_selection = 'Any 1' where scoring_type = 'Graded';
+update tech_screening_question set answer_selection = 'Any 1' where scoring_type = 'Graded';
 update tech_screening_question set scoring_type = 'Flat' where scoring_type = 'Graded';
 update job set expected_answer = null where expected_answer is not null;
 -- Script for ticket #641
+
+
+update master_data set value_to_use = 1 where type = 'questionCategory' and value = 'Current Company';
+update master_data set value_to_use = 2 where type = 'questionCategory' and value = 'Job Title';
+update master_data set value_to_use = 3 where type = 'questionCategory' and value = 'Total Experience';
+update master_data set value_to_use = 4 where type = 'questionCategory' and value = 'Exp in Current Org';
+update master_data set value_to_use = 5 where type = 'questionCategory' and value = 'Remote Working';
+update master_data set value_to_use = 6 where type = 'questionCategory' and value = 'Team Size (Direct)';
+update master_data set value_to_use = 7 where type = 'questionCategory' and value = 'Team Size (Indirect)';
+update master_data set value_to_use = 8 where type = 'questionCategory' and value = 'Notice Period';
+update master_data set value_to_use = 9 where type = 'questionCategory' and value = 'Notice Period Buyout';
+update master_data set value_to_use = 10 where type = 'questionCategory' and value = 'Required Docs';
+update master_data set value_to_use = 11 where type = 'questionCategory' and value = 'Shifts';
+update master_data set value_to_use = 12 where type = 'questionCategory' and value = 'Current Shifts';
+update master_data set value_to_use = 13 where type = 'questionCategory' and value = 'Domain';
+update master_data set value_to_use = 14 where type = 'questionCategory' and value = 'Reason for job change';
+update master_data set value_to_use = 15 where type = 'questionCategory' and value = 'Location';
+update master_data set value_to_use = 16 where type = 'questionCategory' and value = 'Relocation';
+update master_data set value_to_use = 17 where type = 'questionCategory' and value = 'Current Salary';
+update master_data set value_to_use = 18 where type = 'questionCategory' and value = 'Expected Salary';
+update master_data set value_to_use = 19 where type = 'questionCategory' and value = 'Start Date';
+update master_data set value_to_use = 20 where type = 'questionCategory' and value = 'Other Offers';
+update master_data set value_to_use = 21 where type = 'questionCategory' and value = 'Interview';
+update master_data set value_to_use = 22 where type = 'questionCategory' and value = 'Languages';
+update master_data set value_to_use = 23 where type = 'questionCategory' and value = 'Travel';
+update master_data set value_to_use = 24 where type = 'questionCategory' and value = 'Contract';
+update master_data set value_to_use = 25 where type = 'questionCategory' and value = 'Education';
+
+--FOr ticket #656
+ALTER TABLE JOB_KEY_SKILLS
+ADD COLUMN NEIGHBOUR_SKILLS VARCHAR(100)[];

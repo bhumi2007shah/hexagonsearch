@@ -17,7 +17,6 @@ import io.litmusblox.server.repository.*;
 import io.litmusblox.server.responsebean.export.JcmExportResponseBean;
 import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.*;
-import io.litmusblox.server.service.impl.ml.RolePredictionBean;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.SentryUtil;
 import io.litmusblox.server.utils.Util;
@@ -640,7 +639,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             //make a call to ML api to obtain skills and capabilities
             if(MasterDataBean.getInstance().getConfigSettings().getMlCall()==1) {
                 try {
-                    JdParserRequestBean jdParserRequestBean = new JdParserRequestBean(job.getJobDescription(),true, false,job.getCompanyId().getId());
+                    JdParserRequestBean jdParserRequestBean = new JdParserRequestBean(Util.removeHtmlTags(job.getJobDescription()),true, false,job.getCompanyId().getId());
                     callJdParser(jdParserRequestBean, oldJob.getId(), job);
                     if(null == oldJob) {
                         jobRepository.save(job);
@@ -663,7 +662,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
         Map headerInformation = getLoggedInUserInformation(jobId);
         Map breadCrumb = new HashMap<String, String>();
         try {
-            Map<String, List<SearchEngineQuestionsResponseBean>> skillQuestionMap = new HashMap<>();
             ObjectMapper objectMapper = new ObjectMapper();
 
             //Send function to JdParser request
@@ -683,11 +681,13 @@ public class JobService extends AbstractAccessControl implements IJobService {
             breadCrumb.put("Job Id: ", String.valueOf(jobId));
             breadCrumb.put("Request", requestBean.toString());
             breadCrumb.put("Response", jdParserResponse);
-            skillQuestionMap = objectMapper.readValue(jdParserResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
+            JdParserResponseBean jdParserResponseBean = objectMapper.readValue(jdParserResponse, JdParserResponseBean.class);
             log.info("Time taken to process JD in {}ms ",(System.currentTimeMillis() - startTime) + "ms.");
-            if(skillQuestionMap.size()>0){
-                job.setSearchEngineSkillQuestionMap(skillQuestionMap);
-            }
+            if(jdParserResponseBean.getQuestionMap().size()>0)
+                job.setSearchEngineSkillQuestionMap(jdParserResponseBean.getQuestionMap());
+
+            if(jdParserResponseBean.getNeighbourSkillMap().size()>0)
+                job.setNeighbourSkillsMap(jdParserResponseBean.getNeighbourSkillMap());
 
         }catch(Exception e) {
             log.error("Error While Parse jd : "+Util.getStackTrace(e));
@@ -698,12 +698,13 @@ public class JobService extends AbstractAccessControl implements IJobService {
     /**
      * Method to handle all skills provided by jd parser
      *
-     * @param skillsSet Set of skills obtained from jd parser
+     * @param neighbourSkillMap map of skill and related skills
      * @param oldJob the job for which the skills have to persisted
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private int handleSkillsFromCvParser(Set<String> skillsSet, Job oldJob) throws Exception {
+    private int handleSkillsFromCvParser(Map<String, List<String>> neighbourSkillMap, Job oldJob) throws Exception {
+        Set<String> skillsSet = neighbourSkillMap.keySet();
         log.info("Size of skill set : {} for job id ", skillsSet.size());
         List<String> skillList = new ArrayList<>(skillsSet);
         Collections.sort(skillList);
@@ -727,7 +728,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 skillSelected = true;
 
             //add a record in job_key_skills with this skill id
-            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb, skillSelected, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId()));
+            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb, skillSelected, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId(), neighbourSkillMap.get(skill).toArray(new String[neighbourSkillMap.get(skill).size()])));
         });
         jobKeySkillsRepository.saveAll(jobKeySkillsToSave);
         return skillsSet.size();
@@ -814,7 +815,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         try {
             log.info("Add Key Skills in job : {}",job.getId());
-            handleSkillsFromCvParser(job.getSearchEngineSkillQuestionMap().keySet(), job);
+            handleSkillsFromCvParser(job.getNeighbourSkillsMap(), job);
         } catch (Exception exception) {
             log.error("Failed to add key skills. " + exception.getMessage());
         }
@@ -886,7 +887,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                     continue;
                 } else {
                     //no match found in mlProvided skill, add a record
-                    jobKeySkillsRepository.save(new JobKeySkills(skillsMasterMap.get(skillId), true, new Date(), loggedInUser, job.getId()));
+                    //jobKeySkillsRepository.save(new JobKeySkills(skillsMasterMap.get(skillId), true, new Date(), loggedInUser, job.getId()));
                 }
 
             }
@@ -1674,6 +1675,12 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         for (Map.Entry<String, List<SearchEngineQuestionsResponseBean>> entry : searchEngineResponseBean.entrySet()) {
             entry.getValue().forEach(object -> {
+                List<String> options = new ArrayList<>(object.getOptions().length+1);
+                options.addAll(Arrays.asList(object.getOptions()));
+                if(!options.stream().anyMatch(option ->option.contains(IConstant.NO_EXPERIENCE_TECH))){
+                    options.add(IConstant.NO_EXPERIENCE_TECH);
+                }
+                object.setOptions(options.toArray(new String[options.size()]));
                 TechScreeningQuestion techScreeningQuestion = new TechScreeningQuestion(
                         object.getQuestionText(),
                         object.getOptions(),
