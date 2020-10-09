@@ -2611,6 +2611,14 @@ alter table job_candidate_mapping add column CANDIDATE_CHATBOT_RESPONSE hstore;
 update job_candidate_mapping jcm set candidate_chatbot_response = cr.responseList from (select job_candidate_mapping_id, hstore(array_agg(case when comment is not null then string_to_array(concat(job_screening_question_id,'^*^',concat(response, '~', comment)), '^*^') else string_to_array(concat(job_screening_question_id,'^*^',response), '^*^') end order by id)) as responseList from candidate_screening_question_response group by 1) as cr where jcm.id = cr.job_candidate_mapping_id;
 --Run create view for export data
 
+
+-- For ticket #635
+update screening_question set options = options || '{I wish not to answer}' where question_type in (97, 98, 100);
+
+insert into master_data(type, value, value_to_use) values ('questionType', 'FutureCalendar', 'Future Calendar'),('questionType', 'PastCalendar', 'Past Calendar');
+
+update screening_question set question_type=(select id from master_data where value='FutureCalendar') where question_type=(select id from master_data where value='Calendar');
+
 -- For ticket #643
 Insert into MASTER_DATA (TYPE, VALUE) values
 ('questionCategory','Relocation'),
