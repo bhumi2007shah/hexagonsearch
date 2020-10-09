@@ -17,7 +17,6 @@ import io.litmusblox.server.repository.*;
 import io.litmusblox.server.responsebean.export.JcmExportResponseBean;
 import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.*;
-import io.litmusblox.server.service.impl.ml.RolePredictionBean;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.SentryUtil;
 import io.litmusblox.server.utils.Util;
@@ -1663,6 +1662,11 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         for (Map.Entry<String, List<SearchEngineQuestionsResponseBean>> entry : searchEngineResponseBean.entrySet()) {
             entry.getValue().forEach(object -> {
+                List<String> options = Arrays.asList(object.getOptions());
+                if(!options.contains(IConstant.NO_EXPERIENCE_TECH)){
+                    options.add(IConstant.NO_EXPERIENCE_TECH);
+                }
+                object.setOptions(options.toArray(new String[options.size()]));
                 TechScreeningQuestion techScreeningQuestion = new TechScreeningQuestion(
                         object.getQuestionText(),
                         object.getOptions(),
