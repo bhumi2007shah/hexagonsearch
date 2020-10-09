@@ -14,10 +14,11 @@ import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.IJobCandidateMappingService;
 import io.litmusblox.server.service.MasterDataBean;
 import io.litmusblox.server.service.UploadResponseBean;
-import io.litmusblox.server.service.impl.MlCvRatingRequestBean;
+import io.litmusblox.server.service.impl.CvRatingRequestBean;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import io.litmusblox.server.uploadProcessor.RChilliCvProcessor;
 import io.litmusblox.server.utils.*;
+import lombok.extern.java.Log;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,23 +94,12 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
     private static final String PARSING_RESPONSE_PYTHON = "PARSING_RESPONSE_PYTHON";
     private static final String PARSING_RESPONSE_ML = "PARSING_RESPONSE_ML";
 
-
     /**
      * Method that will be called by scheduler
      * process all cv from temp folder (DragAndDrop, MassMail, JObPosting)
      *
      * @throws Exception
      */
-
-    public Map getLoggedInUserInformation(long jobId){
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Map userDetails = new HashMap(4);
-        userDetails.put("userId", loggedInUser.getId());
-        userDetails.put("userEmail", loggedInUser.getEmail());
-        userDetails.put("userCompanyId", loggedInUser.getCompany().getId());
-        userDetails.put("jobId",jobId);
-        return userDetails;
-    }
 
     @Override
     public void processCv() {
@@ -162,7 +152,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         AtomicReference<String> pythonResponse = new AtomicReference<>();
         String fileName = filePath.toString().substring(filePath.toString().lastIndexOf(File.separator) + 1);
         String[] s = fileName.split("_");
-        Map headerInformation = getLoggedInUserInformation(Long.parseLong(s[1]));
+        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(Long.parseLong(s[1]));
         cvParsingApiDetailsRepository.findAllByActiveOrderByApiSequenceAsc(true).forEach(cvParsingApiDetails -> {
             switch (cvParsingApiDetails.getColumnToUpdate()) {
                 case PARSING_RESPONSE_JSON:
@@ -328,14 +318,19 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                 boolean processingError = false;
                 long cvRatingApiProcessingTime = -1;
                 if(null != cvToRate.getJobCandidateMappingId()) {
+                    Map<String, List<String>> neighbourSkillMap = new HashMap<>();
                     //call rest api with the text part of cv
                     log.info("Processing CV for job id: " + cvToRate.getJobCandidateMappingId().getJob().getId() + " and candidate id: " + cvToRate.getJobCandidateMappingId().getCandidate().getId());
-                    List<String> jdKeySkills = jobKeySkillsRepository.findSkillNameByJobId(cvToRate.getJobCandidateMappingId().getJob().getId());
+                    List<JobKeySkills> jdKeySkills = jobKeySkillsRepository.findByJobId(cvToRate.getJobCandidateMappingId().getJob().getId());
                     if (jdKeySkills.size() == 0)
                         log.error("Found no key skills for jobId: {}.  Not making api call to rate CV.", cvToRate.getJobCandidateMappingId().getJob().getId());
                     else {
+                        jdKeySkills.forEach(jobKeySkills -> {
+                            neighbourSkillMap.put(jobKeySkills.getSkillId().getSkillName(), (null != jobKeySkills.getNeighbourSkills())?Arrays.asList(jobKeySkills.getNeighbourSkills()):null);
+                        });
+
                         try {
-                            cvRatingApiProcessingTime = callCvRatingApi(new MlCvRatingRequestBean(jdKeySkills, cvToRate.getParsingResponseText(), cvToRate.getJobCandidateMappingId().getJob().getFunction().getFunction()), cvToRate.getJobCandidateMappingId().getId());
+                            cvRatingApiProcessingTime = callCvRatingApi(new CvRatingRequestBean(neighbourSkillMap, cvToRate.getParsingResponseText(), cvToRate.getJobCandidateMappingId().getJob().getFunction().getFunction()), cvToRate.getJobCandidateMappingId().getId());
                         } catch (Exception e) {
                             log.info("Error while performing CV rating operation " + e.getMessage());
                             processingError = true;
@@ -379,7 +374,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         Candidate candidateFromPython = null;
         long responseTime = 0L;
         long jobId = jobCandidateMappingRepository.getOne(cvParsingDetailsFromDb.getJobCandidateMappingId().getId()).getId();
-        Map headerInformation = getLoggedInUserInformation(jobId);
+        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId);
         Map<String, String> queryParameters = new HashMap<>();
         Map<String, String> breadCrumb = new HashMap<>();
         breadCrumb.put("cvParsingDetailsId", cvParsingDetailsFromDb.getId().toString());
@@ -450,7 +445,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
     private Candidate pythonCvParser(String queryString){
         String fileName = queryString.toString().substring(queryString.toString().lastIndexOf(File.separator) + 1);
         String[] s = fileName.split("_");
-        Map headerInformation = getLoggedInUserInformation(Long.parseLong(s[1]));
+        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(Long.parseLong(s[1]));
         log.info("Inside pythonCvParser");
         long PythonStartTime = System.currentTimeMillis();
         Candidate candidateFromPython = null;
@@ -468,19 +463,19 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
 
 
     @Transactional(propagation = Propagation.REQUIRED)
-    private long callCvRatingApi(MlCvRatingRequestBean requestBean, Long jcmId) throws Exception {
+    private long callCvRatingApi(CvRatingRequestBean requestBean, Long jcmId) throws Exception {
         CvRating cvRatingFromDb = null;
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
         long jobId = jobCandidateMappingRepository.getOne(jcmId).getId();
-        Map headerInformation = getLoggedInUserInformation(jobId);
+        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId);
         long apiCallStartTime = System.currentTimeMillis();
-        String mlResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), mlCvRatingUrl, HttpMethod.POST, null).getResponseBody();
-        log.info("Response received from CV Rating Api : {}, JcmId : {}", mlResponse, jcmId);
+        String cvRatingResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonCvRatingUrl"), HttpMethod.POST, null).getResponseBody();
+        log.info("Response received from CV Rating Api : {}, JcmId : {}", cvRatingResponse, jcmId);
         long apiCallEndTime = System.currentTimeMillis();
         long startTime = System.currentTimeMillis();
-        CvRatingResponseWrapper responseBean = objectMapper.readValue(mlResponse, CvRatingResponseWrapper.class);
+        CvRatingResponseWrapper responseBean = objectMapper.readValue(cvRatingResponse, CvRatingResponseWrapper.class);
 
         cvRatingFromDb = cvRatingRepository.findByJobCandidateMappingId(jcmId);
         if(null == cvRatingFromDb){

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -72,12 +73,17 @@ public class JobKeySkills implements Serializable {
     @NotNull
     private Long jobId;
 
-    public JobKeySkills(SkillsMaster skillId, @NotNull Boolean selected, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId) {
+    @Column(name = "NEIGHBOUR_SKILLS", columnDefinition = "varchar[]")
+    @Type(type = "com.vladmihalcea.hibernate.type.array.StringArrayType")
+    private String[] neighbourSkills;
+
+    public JobKeySkills(SkillsMaster skillId, @NotNull Boolean selected, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId, String[] neighbourSkills) {
         this.skillId = skillId;
         this.selected = selected;
         this.createdOn = createdOn;
         this.createdBy = createdBy;
         this.jobId = jobId;
+        this.neighbourSkills = neighbourSkills;
     }
 
     public JobKeySkills(TempSkills skillIdFromTemp, @NotNull Boolean selected, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId) {

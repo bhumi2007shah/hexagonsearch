@@ -15,6 +15,7 @@ import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.CandidateRequestBean;
 import io.litmusblox.server.service.ICandidateService;
 import io.litmusblox.server.service.ISearchEngineService;
+import io.litmusblox.server.utils.LoggedInUserInfoUtil;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
@@ -391,7 +392,7 @@ public class CandidateService implements ICandidateService {
 
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, Object> userDetails = searchEngineService.getLoggedInUserInformation();
+        Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
 
         log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), job.getId());
         try {
@@ -424,7 +425,7 @@ public class CandidateService implements ICandidateService {
 
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, Object> userDetail = searchEngineService.getLoggedInUserInformation();
+        Map<String, Object> userDetail = LoggedInUserInfoUtil.getLoggedInUserInformation();
 
         log.info("Calling SearchEngine API to create candidates of job: {}", job.getId());
         try {

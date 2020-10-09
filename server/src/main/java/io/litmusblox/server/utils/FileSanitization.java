@@ -61,11 +61,10 @@ public class FileSanitization {
         }
         if(null!=fileContent) {
             log.info("Creating request object and calling python rest api to sanitize byte array of file {}", multipartFile.getOriginalFilename());
-
-            User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            headers.add("userId", loggedInUser.getId().toString());
-            headers.add("userEmail", loggedInUser.getEmail().toString());
-            headers.add("userCompanyId", loggedInUser.getCompany().getId().toString());
+            Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserInformation();
+            headers.add("userId", headerInformation.get("userId").toString());
+            headers.add("userEmail", headerInformation.get("getEmail").toString());
+            headers.add("userCompanyId", headerInformation.get("getCompany").toString());
             body.add("file", fileContent);
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity

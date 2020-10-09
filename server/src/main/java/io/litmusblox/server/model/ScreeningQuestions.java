@@ -70,4 +70,7 @@ public class ScreeningQuestions implements Serializable {
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "COUNTRY_ID")
     private Country countryId;
+
+    @Column(name = "IS_MANDATORY")
+    private boolean isMandatory;
 }

@@ -38,9 +38,4 @@ public interface ISearchEngineService {
      */
     public void verifyNodes(String jsonData, String authToken) throws Exception;
 
-    /**
-     *
-     * @return Map with user id, email, company id,
-     */
-    public Map<String, Object> getLoggedInUserInformation();
 }
