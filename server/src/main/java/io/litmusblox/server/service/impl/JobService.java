@@ -1664,8 +1664,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         for (Map.Entry<String, List<SearchEngineQuestionsResponseBean>> entry : searchEngineResponseBean.entrySet()) {
             entry.getValue().forEach(object -> {
-                List<String> options = Arrays.asList(object.getOptions());
-                if(!options.contains(IConstant.NO_EXPERIENCE_TECH)){
+                List<String> options = new ArrayList<>(object.getOptions().length+1);
+                options.addAll(Arrays.asList(object.getOptions()));
+                if(!options.stream().anyMatch(option ->option.contains(IConstant.NO_EXPERIENCE_TECH))){
                     options.add(IConstant.NO_EXPERIENCE_TECH);
                 }
                 object.setOptions(options.toArray(new String[options.size()]));
