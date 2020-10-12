@@ -24,4 +24,6 @@ public interface CandidateScreeningQuestionResponseRepository extends JpaReposit
     void deleteByJobCandidateMappingId(Long id);
 
     List<CandidateScreeningQuestionResponse> findByJobCandidateMappingId(Long id);
+
+    List<CandidateScreeningQuestionResponse> findByJobCandidateMappingIdIn(List<Long> id);
 }

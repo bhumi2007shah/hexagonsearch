@@ -554,14 +554,19 @@ public class JobService extends AbstractAccessControl implements IJobService {
         // Calling customQuery executor to get jcmAllDetailsList
         responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndStatus(job, status));
 
-        Map<Long, JCMAllDetails> jcmAllDetailsMap = responseBean.getJcmAllDetailsList().stream().collect(Collectors.toMap(JCMAllDetails::getId, Function.identity()));
-
-        //List of JcmIds
-        List<Long> jcmListFromDb = new ArrayList<>(jcmAllDetailsMap.keySet());
+        List<CandidateScreeningQuestionResponse> candidateScreeningQuestionResponses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingIdIn(
+                //List of JcmIds
+                responseBean
+                        .getJcmAllDetailsList()
+                        .stream()
+                        .map(JCMAllDetails::getId)
+                        .collect(Collectors.toList())
+        );
 
         // add screening question responses to each jcm
-        jcmListFromDb.stream().parallel().forEach(jcmId->{
-            jcmAllDetailsMap.get(jcmId).setScreeningQuestionResponses(candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmId));
+        Map<Long, List<CandidateScreeningQuestionResponse>> candidateResponsesById = candidateScreeningQuestionResponses.stream().parallel().collect(Collectors.groupingBy(CandidateScreeningQuestionResponse::getJobCandidateMappingId));
+        responseBean.getJcmAllDetailsList().stream().parallel().forEach(jcmAllDetails -> {
+            jcmAllDetails.setScreeningQuestionResponses(candidateResponsesById.get(jcmAllDetails.getId()));
         });
 
         log.info("Found {} records.", responseBean.getJcmAllDetailsList().size());
