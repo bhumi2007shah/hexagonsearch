@@ -13,7 +13,6 @@ import io.litmusblox.server.model.*;
 import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
 import io.litmusblox.server.service.impl.SearchRequestBean;
-import io.litmusblox.server.service.impl.IndustryMasterDataRequestBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,12 +92,27 @@ public class NoAuthController {
      * @param candidateResponse the response provided by a candidate against each screening question
      * @throws Exception
      */
-    @PostMapping("/screeningQuestionResponse")
+    @PostMapping("/screeningQuestionResponses")
     @ResponseStatus(HttpStatus.OK)
     void screeningQuestionResponses(@RequestParam("uuid") UUID uuid, @RequestBody Map<Long,List<String>> candidateResponse) throws Exception{
         log.info("Received screening question responses from candidate: " + uuid);
         long startTime = System.currentTimeMillis();
         jobCandidateMappingService.saveScreeningQuestionResponses(uuid, candidateResponse);
+        log.info("Completed saving candidate response to screening questions in {}ms",(System.currentTimeMillis()-startTime));
+    }
+
+    /**
+     * Rest api to capture candidate response to screening questions from chatbot
+     * @param uuid the uuid corresponding to a unique jcm record
+     * @param response Candidates respone for questin id
+     * @throws Exception
+     */
+    @PostMapping("/screeningQuestionResponse")
+    @ResponseStatus(HttpStatus.OK)
+    void screeningQuestionResponse(@RequestParam("uuid") UUID uuid, @RequestBody Map<Long , List<String>>response) throws Exception{
+        log.info("Received screening question responses from candidate: " + uuid);
+        long startTime = System.currentTimeMillis();
+        jobCandidateMappingService.saveScreeningQuestionResponse(uuid, response);
         log.info("Completed saving candidate response to screening questions in {}ms",(System.currentTimeMillis()-startTime));
     }
 

@@ -22,6 +22,7 @@ import io.litmusblox.server.service.MasterDataBean;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang.WordUtils;
+import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -536,6 +537,11 @@ public class Util {
             }
         });
         return screeningQuestions.getCustomizeQuestion();
+    }
+
+    public static String removeHtmlTags(String htmlString){
+        log.info("Remove Html tag's from string");
+        return Jsoup.parse(htmlString).text();
     }
 
 }

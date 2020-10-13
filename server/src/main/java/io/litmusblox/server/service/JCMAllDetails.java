@@ -58,6 +58,10 @@ public class JCMAllDetails {
     Double total_experience;
     String cv_location;
     String cv_file_type;
+    Date updatedOn;
+    String updatedBy;
+    String rejectionReason;
+
 
     @Transient
     @JsonProperty
