@@ -4,11 +4,14 @@
 
 package io.litmusblox.server.utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.litmusblox.server.service.MasterDataBean;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -94,9 +97,9 @@ public class RestClient {
 
         HttpEntity<String> entity;
         if (null != requestObj)
-            entity = new HttpEntity<String>(requestObj, getHttpHeader(authToken, true, headerInformation));
+            entity = new HttpEntity<String>(requestObj, getHttpHeader(authToken, true, headerInformation, false));
         else
-            entity = new HttpEntity<String>(getHttpHeader(authToken, false, headerInformation));
+            entity = new HttpEntity<String>(getHttpHeader(authToken, false, headerInformation, false));
         try {
             long startTime = System.currentTimeMillis();
             UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(apiUrl);
@@ -130,12 +133,43 @@ public class RestClient {
 
     }
 
+
+    public RestClientResponseBean consumeRestApi(String apiUrl, String authToken, HttpMethod requestType, MultiValueMap formData, Optional<Map> headerInformation){
+
+        long startTime = System.currentTimeMillis();
+        HttpEntity<MultiValueMap<String, Object>> requestEntity
+                = new HttpEntity<>(formData, getHttpHeader(authToken, false, headerInformation, true));
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(apiUrl);
+        RestTemplate restTemplate = new RestTemplate();
+        try {
+            ResponseEntity<String> response = restTemplate.exchange( uriBuilder.toUriString(), requestType, requestEntity,String.class);
+            log.info("Time taken to retrieve response from REST api: " + (System.currentTimeMillis() - startTime) + "ms.");
+            log.info("Rest client response code: {}", response.getStatusCodeValue());
+            return new RestClientResponseBean(response.getStatusCodeValue(),response.getBody());
+        } catch(HttpStatusCodeException e ) {
+            List<String> customHeader = e.getResponseHeaders().get("x-app-err-id");
+            String svcErrorMessageID = "";
+            if (customHeader != null) {
+                svcErrorMessageID = customHeader.get(0);
+            }
+            log.error("Error response from REST call: " + svcErrorMessageID + " :: " + e.getResponseBodyAsString());
+            return new RestClientResponseBean(e.getRawStatusCode(), e.getResponseBodyAsString());
+            //throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("Exception while making a REST call: " + e.getMessage());
+            throw e;
+        }
+    }
+
     /**
      * Method to generate HTTP Header to be used by the REST API
      * @param authToken authorization information
      * @return
      */
-    private HttpHeaders getHttpHeader(String authToken, boolean setContentType, Optional<Map> headerInformation) {
+    private HttpHeaders getHttpHeader(String authToken, boolean setContentType, Optional<Map> headerInformation, boolean setFormData) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization",authToken);
 
@@ -144,6 +178,10 @@ public class RestClient {
             headerInformationToSet.forEach((k, v) -> {
                 headers.set(k.toString(), v.toString());
             });
+        }
+
+        if(setFormData){
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         }
 
         if(setContentType) {

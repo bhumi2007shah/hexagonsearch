@@ -209,12 +209,12 @@ public class JobService extends AbstractAccessControl implements IJobService {
             job = setRecruiterArray(job, loggedInUser);
 
         //set hiringManager
-        if(null != job.getHiringManager() && null != job.getHiringManager().getId()){
-            hiringManager =  userRepository.findById(job.getHiringManager().getId()).orElse(null);
-            if(null != hiringManager)
-                job.setHiringManager(hiringManager);
-        }else if(null != company && null == company.getRecruitmentAgencyId())
-            throw new ValidationException("Hiring Manager "+IErrorMessages.NULL_MESSAGE, HttpStatus.UNPROCESSABLE_ENTITY);
+//        if(null != job.getHiringManager() && null != job.getHiringManager().getId()){
+//            hiringManager =  userRepository.findById(job.getHiringManager().getId()).orElse(null);
+//            if(null != hiringManager)
+//                job.setHiringManager(hiringManager);
+//        }else if(null != company && null == company.getRecruitmentAgencyId())
+//            throw new ValidationException("Hiring Manager "+IErrorMessages.NULL_MESSAGE, HttpStatus.UNPROCESSABLE_ENTITY);
 
         switch (IConstant.AddJobPages.valueOf(pageName)) {
             case overview:
@@ -1236,6 +1236,11 @@ public class JobService extends AbstractAccessControl implements IJobService {
         job.setRecruiterList(userRepository.findByIdIn(Arrays.asList(job.getRecruiter()).stream()
                 .mapToLong(Integer::longValue)
                 .boxed().collect(Collectors.toList())));
+        if(job.getHiringManager().length > 0 && job.getHiringManager()[0]!=null) {
+            job.setHiringManagerList(userRepository.findByIdIn(Arrays.asList(job.getHiringManager()).stream()
+                    .mapToLong(Integer::longValue)
+                    .boxed().collect(Collectors.toList())));
+        }
         return job;
     }
 
@@ -1572,9 +1577,11 @@ public class JobService extends AbstractAccessControl implements IJobService {
         if(null == oldJob)
             job = setRecruiterArray(job, loggedInUser);
 
-        //set hiringManager
-        if(null != job.getHiringManager() && null != job.getHiringManager().getId())
-            job.setHiringManager(userRepository.findById(job.getHiringManager().getId()).orElse(null));
+        //Validate Hiring Manager
+        for (Integer hiringManager : job.getHiringManager()) {
+            User user = userRepository.getOne(Long.valueOf(hiringManager));
+            validateHiringManagerCompany(user, job.getCompanyId().getId());
+        }
 
         switch (IConstant.AddJobPages.valueOf(pageName)) {
             case jobDetail:

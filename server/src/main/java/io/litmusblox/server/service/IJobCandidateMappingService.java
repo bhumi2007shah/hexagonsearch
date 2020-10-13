@@ -120,11 +120,10 @@ public interface IJobCandidateMappingService {
     /**
      * Service method to capture hiring manager interest
      *
-     * @param sharingId the uuid corresponding to which the interest needs to be captured
-     * @param interestValue interested true / false response
+     * @param jcmProfileSharingDetails details of hiring manager response like interestValue, comment, rejectionReasonId
      * @throws Exception
      */
-    void updateHiringManagerInterest(UUID sharingId, Boolean interestValue);
+    void updateHiringManagerInterest(JcmProfileSharingDetails jcmProfileSharingDetails);
 
     /**
      * Service method to fetch details of a single candidate for a job
@@ -314,5 +313,13 @@ public interface IJobCandidateMappingService {
      * @return address string set(eg. "Baner, Pune, Maharashtra")
      */
     Set<String> getLiveJobAddressStringSetByCompanyId(String companyShortName);
+
+    /**
+     *Service method to get All future Interviews for a particular company
+     *
+     * @param companyId id of company whose future interview List is to be fetched
+     * @return List of future interviews details for the particular company
+     */
+    List<InterviewsResponseBean> getInterviewsForCompany(Long companyId);
 
 }

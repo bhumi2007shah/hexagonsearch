@@ -2681,3 +2681,21 @@ update master_data set value_to_use = 25 where type = 'questionCategory' and val
 --FOr ticket #656
 ALTER TABLE JOB_KEY_SKILLS
 ADD COLUMN NEIGHBOUR_SKILLS VARCHAR(100)[];
+
+
+--For ticket #638
+INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES ('callOutCome', 'For Hiring Manager');
+alter table jcm_profile_sharing_master add column receiver_id integer not null default 0;
+alter table jcm_profile_sharing_master alter column receiver_name drop not null, alter column receiver_email drop not null;
+alter table jcm_profile_sharing_details add column comments varchar(50), add column rejection_reason_id integer references rejection_reason_master_data(id);
+--Run the Api /api/admin/addHiringManagerAsUser
+ALTER TABLE jcm_profile_sharing_details DROP CONSTRAINT jcm_profile_sharing_details_profile_sharing_master_id_fkey, ADD CONSTRAINT jcm_profile_sharing_details_profile_sharing_master_id_fkey FOREIGN KEY (profile_sharing_master_id) REFERENCES jcm_profile_sharing_master (id) ON DELETE CASCADE;
+delete from jcm_profile_sharing_master where receiver_id = 0;
+alter table jcm_profile_sharing_master add constraint jcm_profile_sharing_master_sender_id FOREIGN KEY (RECEIVER_ID) REFERENCES users(ID);
+
+--For ticket #644
+alter table job drop constraint job_hiring_manager_fkey ;
+alter table job alter column hiring_manager type integer[] using array[hiring_manager]::INTEGER[];
+
+--For ticket #584
+update candidate_company_details set salary = regexp_replace(salary, '[^0-9.]','', 'g');
