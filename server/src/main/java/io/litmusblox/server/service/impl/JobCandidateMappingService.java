@@ -2433,12 +2433,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @return List of future interviews details for the particular company
      */
     public List<InterviewsResponseBean> getInterviewsForCompany(Long companyId){
-        log.info("Inside getInterviewsForCompany method");
+        log.info("Inside getInterviewsForCompany method for company Id: {}", companyId);
         long startTime = System.currentTimeMillis();
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Long validCompanyId = validateCompanyId(loggedInUser, companyId);
         List<InterviewsResponseBean> response =  customQueryExecutor.getInterviewDetailsByCompany(validCompanyId);
-        log.info("Completed execution of getInterviewForCompany in {} ms", System.currentTimeMillis() - startTime);
+        log.info("Completed execution of getInterviewForCompany for companyId {} in {} ms", companyId, System.currentTimeMillis() - startTime);
         return response;
     }
 
