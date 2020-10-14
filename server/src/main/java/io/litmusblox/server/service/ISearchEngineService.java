@@ -4,6 +4,8 @@
 
 package io.litmusblox.server.service;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.Map;
 
 /**
@@ -37,6 +39,17 @@ public interface ISearchEngineService {
      * @throws Exception
      */
     public void verifyNodes(String jsonData, String authToken) throws Exception;
+
+    /**
+     *
+     * @param masterDataFile File to be passed to the search engine
+     * @param companyId the company to which the file data is to be added
+     * @param fileType type of type
+     * @param authToken jwtToken generated
+     * @return
+     * @throws Exception
+     */
+    public String importData(MultipartFile masterDataFile, Long companyId, String fileType, String authToken) throws Exception;
 
     /**
      *

@@ -198,6 +198,10 @@ public class MasterDataService implements IMasterDataService {
             });
         }
 
+        StageStepMaster stageStepMaster = new StageStepMaster();
+        stageStepMaster.setId(3L);
+        MasterDataBean.getInstance().getHiringManagerRejectReasonMap().put(IConstant.Stage.ResumeSubmit.getValue(), rejectionReasonMasterDataRepository.findByStageId(stageStepMaster));
+
         //Load JobIndustry in master data
         industryMasterDataRepository.findAll().forEach(industryMasterData -> {
             MasterDataBean.getInstance().getJobIndustry().put(industryMasterData.getId(), industryMasterData);
@@ -359,6 +363,7 @@ public class MasterDataService implements IMasterDataService {
     private static final String INTERVIEW_CONFIRMATION = "interviewConfirmation";
     private static final String OTP_EXPIRY_MINUTES = "otpExpiryMinutes";
     private static final String CANDIDATE_REJECTION_REASONS = "candidateRejectionReasons";
+    private static final String HIRING_MANAGER_REJECTION_REASONS = "hiringManagerRejectReasons";
     private static final String JOB_INDUSTRY = "jobIndustry";
     private static final String JOB_FUNCTION = "function";
     private static final String JOB_ROLE = "role";
@@ -450,6 +455,8 @@ public class MasterDataService implements IMasterDataService {
             case CANDIDATE_REJECTION_REASONS:
                 master.getCandidateRejectionReasonMap().putAll(MasterDataBean.getInstance().getCandidateRejectionReasonMap());
                 break;
+            case HIRING_MANAGER_REJECTION_REASONS:
+                master.getHiringManagerRejectReasonMap().putAll(MasterDataBean.getInstance().getHiringManagerRejectReasonMap());
             case JOB_INDUSTRY:
                 master.getJobIndustry().putAll(MasterDataBean.getInstance().getJobIndustryMap());
                 break;

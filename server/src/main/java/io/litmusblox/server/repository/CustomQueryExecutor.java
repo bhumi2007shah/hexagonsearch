@@ -6,9 +6,9 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Job;
-import io.litmusblox.server.model.StageStepMaster;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.AnalyticsResponseBean;
+import io.litmusblox.server.service.InterviewsResponseBean;
 import io.litmusblox.server.service.JCMAllDetails;
 import io.litmusblox.server.service.JobAnalytics.*;
 import lombok.extern.log4j.Log4j2;
@@ -212,6 +212,19 @@ public class CustomQueryExecutor {
 
     private static final String totalLiveJobCountSelectQuery = "select count(id) from job where date_published is not null and date_archived is null";
 
+    private static final String futureInterviewDetailsForCompanyQuery = "select ivd.id, concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidate_name, jcm.email, jcm.country_code, jcm.mobile, jcm.chatbot_status as screening_status, jcm.created_by as jcm_created_by, cv.overall_rating as key_skill_strength, CAST(ivd.interview_date as varchar),\n" +
+            "(CASE when (ivd.candidate_confirmation_value is not null and md.value like 'Yes%') then 'Confirmed'\n" +
+            "when (ivd.candidate_confirmation_value is not null and md.value like '%reschedule%') then 'Rescheduled'\n" +
+            "when (ivd.candidate_confirmation_value is not null and md.value like 'No%') or  ivd.cancelled = 't' then 'Cancelled'\n" +
+            "else 'Scheduled'\n" +
+            "END) as interview_status, md.value as candidate_confirmation, array(select id from interviewer_details where interview_id=ivd.id) as interviewers, ivd.created_by as iv_created_by\n" +
+            "from interview_details ivd\n" +
+            "inner join job_candidate_mapping jcm on ivd.job_candidate_mapping_id=jcm.id\n" +
+            "left join master_data md on ivd.candidate_confirmation_value=md.id\n" +
+            "left join cv_rating cv on ivd.job_candidate_mapping_id=cv.job_candidate_mapping_id\n" +
+            "left join job j on jcm.job_id=j.id \n" +
+            "where ivd.interview_date>now() and j.date_archived is null and j.company_id=\n";
+
     @Transactional(readOnly = true)
     public List<AnalyticsResponseBean> analyticsByCompany(String startDate, String endDate, String companyIdList) throws Exception {
         StringBuffer queryString = new StringBuffer(analyticsMainQuery).append(companyIdList).append(") ");
@@ -299,25 +312,6 @@ public class CustomQueryExecutor {
         queryString.append(groupByJobId);
         Query query =  entityManager.createNativeQuery(queryString.toString(), InterviewAnalyticsBean.class);
         return (InterviewAnalyticsBean) query.getSingleResult();
-    }
-
-
-    //single job view for rejected = true
-    public List<JCMAllDetails> findByJobAndRejectedIsTrue(Job job) {
-        Query query = entityManager.createNativeQuery("Select * from job_candidate_mapping_all_details where job_id = " + job.getId() + " and rejected is true;", JCMAllDetails.class);
-        return query.getResultList();
-    }
-
-    //single job view for specified status
-    public List<JCMAllDetails> findByJobAndStatus(Job job, String status){
-        Query query = entityManager.createNativeQuery("Select * from job_candidate_mapping_all_details where job_id = " + job.getId() + " and chatbot_status = 'Complete'", JCMAllDetails.class);
-        return query.getResultList();
-    }
-
-    //single job view for rejected = false
-    public List<JCMAllDetails> findByJobAndStageInAndRejectedIsFalse(Job job, StageStepMaster stageStepMaster) {
-        Query query = entityManager.createNativeQuery("Select * from job_candidate_mapping_all_details where job_id = " + job.getId() + " and stage = " + stageStepMaster.getId() + " and rejected is false;", JCMAllDetails.class);
-        return query.getResultList();
     }
 
     public Map<String, Map<String, Integer>> rejectedAnalyticsByJob(Long jobId, Date startDate, Date endDate) {
@@ -508,6 +502,14 @@ public class CustomQueryExecutor {
 
         queryString.append(" and interview_date\\:\\:text LIKE '").append(selectedDate).append("%'");
         Query query = entityManager.createNativeQuery(queryString.toString(), InterviewDetailBean.class);
+        return query.getResultList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<InterviewsResponseBean> getInterviewDetailsByCompany(Long companyId) {
+        StringBuffer queryString = new StringBuffer();
+        queryString.append(futureInterviewDetailsForCompanyQuery).append(companyId);
+        Query query = entityManager.createNativeQuery(queryString.toString(), InterviewsResponseBean.class);
         return query.getResultList();
     }
 }

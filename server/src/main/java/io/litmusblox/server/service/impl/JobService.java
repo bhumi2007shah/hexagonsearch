@@ -144,7 +144,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     JcmExportQAResponseBeanRepository jcmExportQAResponseBeanRepository;
 
     @Autowired
-    CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
+    JcmAllDetailsRepository jcmAllDetailsRepository;
 
     @Autowired
     ISearchEngineService searchEngineService;
@@ -209,12 +209,12 @@ public class JobService extends AbstractAccessControl implements IJobService {
             job = setRecruiterArray(job, loggedInUser);
 
         //set hiringManager
-        if(null != job.getHiringManager() && null != job.getHiringManager().getId()){
-            hiringManager =  userRepository.findById(job.getHiringManager().getId()).orElse(null);
-            if(null != hiringManager)
-                job.setHiringManager(hiringManager);
-        }else if(null != company && null == company.getRecruitmentAgencyId())
-            throw new ValidationException("Hiring Manager "+IErrorMessages.NULL_MESSAGE, HttpStatus.UNPROCESSABLE_ENTITY);
+//        if(null != job.getHiringManager() && null != job.getHiringManager().getId()){
+//            hiringManager =  userRepository.findById(job.getHiringManager().getId()).orElse(null);
+//            if(null != hiringManager)
+//                job.setHiringManager(hiringManager);
+//        }else if(null != company && null == company.getRecruitmentAgencyId())
+//            throw new ValidationException("Hiring Manager "+IErrorMessages.NULL_MESSAGE, HttpStatus.UNPROCESSABLE_ENTITY);
 
         switch (IConstant.AddJobPages.valueOf(pageName)) {
             case overview:
@@ -448,9 +448,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
         Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
         long viewStartTime = System.currentTimeMillis();
         if(IConstant.Stage.Reject.getValue().equals(stage))
-            responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndRejectedIsTrue(job));
+            responseBean.setJcmAllDetailsList(jcmAllDetailsRepository.findByJobAndRejectedIsTrue(job.getId()));
         else
-            responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage))));
+            responseBean.setJcmAllDetailsList(jcmAllDetailsRepository.findByJobAndStageInAndRejectedIsFalse(job.getId(), MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage)).getId()));
 
         Map<Long, JCMAllDetails> jcmAllDetailsMap = responseBean.getJcmAllDetailsList().stream().collect(Collectors.toMap(JCMAllDetails::getId, Function.identity()));
 
@@ -552,20 +552,25 @@ public class JobService extends AbstractAccessControl implements IJobService {
         SingleJobViewResponseBean responseBean = new SingleJobViewResponseBean();
 
         // Calling customQuery executor to get jcmAllDetailsList
-        responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndStatus(job, status));
+        responseBean.setJcmAllDetailsList(jcmAllDetailsRepository.findAllByJobIdAndChatbotStatus(job.getId(), status));
 
-        Map<Long, JCMAllDetails> jcmAllDetailsMap = responseBean.getJcmAllDetailsList().stream().collect(Collectors.toMap(JCMAllDetails::getId, Function.identity()));
-
-        //List of JcmIds
-        List<Long> jcmListFromDb = new ArrayList<>(jcmAllDetailsMap.keySet());
+        /*List<CandidateScreeningQuestionResponse> candidateScreeningQuestionResponses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingIdIn(
+                //List of JcmIds
+                responseBean
+                        .getJcmAllDetailsList()
+                        .stream()
+                        .map(JCMAllDetails::getId)
+                        .collect(Collectors.toList())
+        );*/
 
         // add screening question responses to each jcm
-        jcmListFromDb.stream().parallel().forEach(jcmId->{
-            jcmAllDetailsMap.get(jcmId).setScreeningQuestionResponses(candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmId));
+        /*Map<Long, List<CandidateScreeningQuestionResponse>> candidateResponsesById = candidateScreeningQuestionResponses.stream().parallel().collect(Collectors.groupingBy(CandidateScreeningQuestionResponse::getJobCandidateMappingId));
+        responseBean.getJcmAllDetailsList().stream().parallel().forEach(jcmAllDetails -> {
+            jcmAllDetails.setScreeningQuestionResponses(candidateResponsesById.get(jcmAllDetails.getId()));
         });
 
         log.info("Found {} records.", responseBean.getJcmAllDetailsList().size());
-        //set candidate count by stage to null as we don't need stage wise count here.
+        //set candidate count by stage to null as we don't need stage wise count here.*/
         responseBean.setCandidateCountByStage(null);
         return responseBean;
     }
@@ -1231,6 +1236,11 @@ public class JobService extends AbstractAccessControl implements IJobService {
         job.setRecruiterList(userRepository.findByIdIn(Arrays.asList(job.getRecruiter()).stream()
                 .mapToLong(Integer::longValue)
                 .boxed().collect(Collectors.toList())));
+        if(job.getHiringManager().length > 0 && job.getHiringManager()[0]!=null) {
+            job.setHiringManagerList(userRepository.findByIdIn(Arrays.asList(job.getHiringManager()).stream()
+                    .mapToLong(Integer::longValue)
+                    .boxed().collect(Collectors.toList())));
+        }
         return job;
     }
 
@@ -1567,9 +1577,11 @@ public class JobService extends AbstractAccessControl implements IJobService {
         if(null == oldJob)
             job = setRecruiterArray(job, loggedInUser);
 
-        //set hiringManager
-        if(null != job.getHiringManager() && null != job.getHiringManager().getId())
-            job.setHiringManager(userRepository.findById(job.getHiringManager().getId()).orElse(null));
+        //Validate Hiring Manager
+        for (Integer hiringManager : job.getHiringManager()) {
+            User user = userRepository.getOne(Long.valueOf(hiringManager));
+            validateHiringManagerCompany(user, job.getCompanyId().getId());
+        }
 
         switch (IConstant.AddJobPages.valueOf(pageName)) {
             case jobDetail:
