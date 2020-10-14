@@ -7,6 +7,7 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.CandidateEducationDetails;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -20,4 +21,8 @@ public interface CandidateEducationDetailsRepository extends JpaRepository<Candi
 
     @Transactional
     void deleteByCandidateId(Long candidateId);
+
+    @Transactional
+    @Query(value = "select * from candidate_education_details where candidate_id=:candidateId", nativeQuery = true)
+    CandidateEducationDetails findByCandidateId(long candidateId);
 }

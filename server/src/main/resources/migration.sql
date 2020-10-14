@@ -2681,3 +2681,7 @@ update master_data set value_to_use = 25 where type = 'questionCategory' and val
 --FOr ticket #656
 ALTER TABLE JOB_KEY_SKILLS
 ADD COLUMN NEIGHBOUR_SKILLS VARCHAR(100)[];
+
+--For ticket #648
+ALTER TABLE SCREENING_QUESTION
+ADD COLUMN IS_MANDATORY BOOL DEFAULT 'f';
