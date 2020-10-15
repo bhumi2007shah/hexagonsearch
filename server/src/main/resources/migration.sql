@@ -2689,3 +2689,6 @@ ADD COLUMN IS_MANDATORY BOOL DEFAULT 'f';
 --For ticket #630
 ALTER TABLE JOB_CANDIDATE_MAPPING
 ADD COLUMN IS_CREATED_ON_SEARCHENGINE BOOL NOT NULL DEFAULT 'f',
+
+--For ticket #651
+update screening_question set question_type=(select id from master_data where type='questionType' and value='Checkbox') where question='Which City are you currently based in?'
