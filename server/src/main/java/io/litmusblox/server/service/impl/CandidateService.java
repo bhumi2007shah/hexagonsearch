@@ -68,6 +68,9 @@ public class CandidateService implements ICandidateService {
     CandidateOnlineProfilesRepository candidateOnlineProfilesRepository;
 
     @Resource
+    JobCandidateMappingRepository jobCandidateMappingRepository;
+
+    @Resource
     CandidateLanguageProficiencyRepository candidateLanguageProficiencyRepository;
 
     @Resource
@@ -384,11 +387,13 @@ public class CandidateService implements ICandidateService {
      * Method to call search engine to add a candidate.
      * @param candidate
      */
-    public void createCandidateOnSearchEngine(Candidate candidate , Job job, String authToken) {
+    public int createCandidateOnSearchEngine(Candidate candidate , Job job, String authToken) {
         log.info("inside create candidate on search engine for candidate {}, in job {}, for company {}.", candidate, job, job.getCompanyName());
         long startTime = System.currentTimeMillis();
 
         CandidateRequestBean candidateRequestBean = getCandidateRequestBean(candidate, job);
+
+        int statusCode = 500;
 
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
@@ -396,7 +401,7 @@ public class CandidateService implements ICandidateService {
 
         log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), job.getId());
         try {
-            RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null, Optional.of(userDetails));
+            statusCode = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null, Optional.of(userDetails)).getStatusCode();
         }
         catch ( JsonProcessingException e ){
             log.error("Failed while converting candidateRequestBean to String. " + e.getMessage());
@@ -406,6 +411,13 @@ public class CandidateService implements ICandidateService {
         }
 
         log.info("Added candidate on search engine in {}ms for candidate {}, in job {}, for company {}.",System.currentTimeMillis()-startTime, candidate, job, job.getCompanyName());
+
+        JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByJobAndCandidate(job, candidate);
+        if(statusCode==200){
+            jobCandidateMapping.setCreatedOnSearchEngine(true);
+            jobCandidateMappingRepository.save(jobCandidateMapping);
+        }
+        return statusCode;
     }
     //Method to truncate the value in the field and send out a sentry message for the same
     //move this truncateField method to Util class because it is use in other place also like CandidateCompanyDetails model

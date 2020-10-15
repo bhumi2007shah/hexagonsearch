@@ -243,7 +243,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 if(null!=candidate.getId()){
                     saveCandidateSupportiveInfo(candidate, loggedInUser);
                     try {
-                        candidateService.createCandidateOnSearchEngine(candidate, job, JwtTokenUtil.getAuthToken());
+                        if(candidateService.createCandidateOnSearchEngine(candidate, job, JwtTokenUtil.getAuthToken())==200){
+                            JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByJobAndCandidate(job, candidate);
+                            jobCandidateMapping.setCreatedOnSearchEngine(true);
+                            jobCandidateMappingRepository.save(jobCandidateMapping);
+                        }
                     }catch (Exception e){
                         log.error("Error while adding candidate : {} in searchEngine for job : {}:: {}", candidate.getId(), job.getId(), e.getMessage());
                     }
@@ -2531,5 +2535,16 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             }
         }
     }
-
+    public void createExistingCandidateOnSearchEngine(){
+        long apiCallStartTime = System.currentTimeMillis();
+        List<JobCandidateMapping> jobCandidateMappingList = jobCandidateMappingRepository.findJobs();
+        jobCandidateMappingList.forEach(jobCandidateMapping -> {
+            log.info("Candidate : {} creating on searchengine", jobCandidateMapping.getCandidate().getId());
+            Candidate candidate = new Candidate(jobCandidateMapping.getCandidateFirstName(), jobCandidateMapping.getCandidateLastName(), jobCandidateMapping.getMobile(),jobCandidateMapping.getEmail(), jobCandidateMapping.getCountryCode(), jobCandidateMapping.getCreatedOn(), jobCandidateMapping.getCreatedBy());
+            Job job = jobCandidateMapping.getJob();
+            if(candidateService.createCandidateOnSearchEngine(candidate, job,JwtTokenUtil.getAuthToken())==200)
+                jobCandidateMappingRepository.save(jobCandidateMapping);
+            });
+        log.info("Time taken to creating existing candidate on searchengine in : {}ms.", apiCallStartTime-System.currentTimeMillis());
+    }
 }

@@ -4,8 +4,14 @@
 
 package io.litmusblox.server.scheduler;
 
+import io.litmusblox.server.model.Candidate;
+import io.litmusblox.server.model.Job;
+import io.litmusblox.server.model.JobCandidateMapping;
+import io.litmusblox.server.repository.JobCandidateMappingRepository;
 import io.litmusblox.server.service.IJobCandidateMappingService;
+import io.litmusblox.server.service.impl.CandidateService;
 import io.litmusblox.server.service.impl.FetchEmailService;
+import io.litmusblox.server.service.impl.JobCandidateMappingService;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +41,12 @@ public class ScheduledTasks {
 
     @Autowired
     IJobCandidateMappingService jobCandidateMappingService;
+
+    @Autowired
+    JobCandidateMappingRepository jobCandidateMappingRepository;
+
+    @Autowired
+    CandidateService candidateService;
 
     @Scheduled(fixedDelay = 300000, initialDelay = 5000)
     public void parseAndProcessCv() {
@@ -76,5 +88,12 @@ public class ScheduledTasks {
         log.info("started convert cv file to cv text. Thread: {}", Thread.currentThread().getId());
         processUploadedCV.cvToCvText();
         log.info("completed convert cv file to cv text. Thread: {}", Thread.currentThread().getId());
+    }
+
+    @Scheduled(cron = "0 0-6 * * *")
+    public void createCandidateOnSearchEngine(Candidate candidate , Job job, String authToken){
+        log.info("started create existing candidate on searchengne. Thread {}", Thread.currentThread().getId());
+        candidateService.createCandidateOnSearchEngine(candidate, job, authToken);
+        log.info("Completed process for create existing candidate on searchengne. Thread {}", Thread.currentThread().getId());
     }
 }

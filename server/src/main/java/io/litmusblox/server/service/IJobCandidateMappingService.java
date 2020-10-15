@@ -315,4 +315,5 @@ public interface IJobCandidateMappingService {
      */
     Set<String> getLiveJobAddressStringSetByCompanyId(String companyShortName);
 
+    public void createExistingCandidateOnSearchEngine();
 }
