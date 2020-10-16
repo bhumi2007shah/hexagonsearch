@@ -697,8 +697,11 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private int handleSkillsFromCvParser(Map<String, List<String>> neighbourSkillMap, Job oldJob) throws Exception {
-        Set<String> skillsSet = neighbourSkillMap.keySet();
+    private int handleSkillsFromCvParser(Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineQuestionMap,Map<String, List<String>> neighbourSkillMap, Job oldJob) throws Exception {
+        Set<String> skillsSet = new HashSet<>();
+        //We are adding both the skill sets. Ref ticket - #661
+        skillsSet.addAll(neighbourSkillMap.keySet());
+        skillsSet.addAll(searchEngineQuestionMap.keySet());
         log.info("Size of skill set : {} for job id ", skillsSet.size());
         List<String> skillList = new ArrayList<>(skillsSet);
         Collections.sort(skillList);
@@ -722,7 +725,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 skillSelected = true;
 
             //add a record in job_key_skills with this skill id
-            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb, skillSelected, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId(), neighbourSkillMap.get(skill).toArray(new String[neighbourSkillMap.get(skill).size()])));
+            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb, skillSelected, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId(), (null != neighbourSkillMap.get(skill))?neighbourSkillMap.get(skill).toArray(new String[neighbourSkillMap.get(skill).size()]):null));
         });
         jobKeySkillsRepository.saveAll(jobKeySkillsToSave);
         return skillsSet.size();
@@ -809,7 +812,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         try {
             log.info("Add Key Skills in job : {}",job.getId());
-            handleSkillsFromCvParser(job.getNeighbourSkillsMap(), job);
+            handleSkillsFromCvParser(job.getSearchEngineSkillQuestionMap(), job.getNeighbourSkillsMap(), job);
         } catch (Exception exception) {
             log.error("Failed to add key skills. " + exception.getMessage());
         }
