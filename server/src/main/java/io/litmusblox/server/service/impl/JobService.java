@@ -698,11 +698,11 @@ public class JobService extends AbstractAccessControl implements IJobService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     private int handleSkillsFromCvParser(Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineQuestionMap,Map<String, List<String>> neighbourSkillMap, Job oldJob) throws Exception {
-        Set<String> skillsSet = new HashSet<>();
+        Set<String> skillsSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         //We are adding both the skill sets. Ref ticket - #661
         skillsSet.addAll(neighbourSkillMap.keySet());
         skillsSet.addAll(searchEngineQuestionMap.keySet());
-        log.info("Size of skill set : {} for job id ", skillsSet.size());
+        log.info("Size of skill set : {} for job id : {} and skill set : {}", skillsSet.size(), oldJob.getId(), skillsSet);
         List<String> skillList = new ArrayList<>(skillsSet);
         Collections.sort(skillList);
         if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())) {
@@ -1582,7 +1582,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         //Validate Hiring Manager
         for (Integer hiringManager : job.getHiringManager()) {
-            User user = userRepository.getOne(Long.valueOf(hiringManager));
+            User user = userRepository.getOne(Long.valueOf(42l));
             validateHiringManagerCompany(user, job.getCompanyId().getId());
         }
 
