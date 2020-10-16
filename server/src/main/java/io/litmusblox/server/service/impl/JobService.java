@@ -1634,7 +1634,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         //Delete all exiting tech screening questions
         jobScreeningQuestionsRepository.deleteByTechScreeningQuestionIdIsNotNullAndJobId(job.getId());
-        techScreeningQuestionRepository.deleteByJobId(job.getId());
+        techScreeningQuestionRepository.deleteByJobIdAndQuestionCategoryNotIn(job.getId(), job.getSelectedKeySkills());
 
         //LoggedIn user
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -1675,6 +1675,10 @@ public class JobService extends AbstractAccessControl implements IJobService {
         log.info("Generate tech questions REST call completed in {}ms", System.currentTimeMillis()-startTime);
 
         for (Map.Entry<String, List<SearchEngineQuestionsResponseBean>> entry : searchEngineResponseBean.entrySet()) {
+
+            if(techScreeningQuestionRepository.existsByJobIdAndQuestionCategory(job.getId(), entry.getKey()))
+                continue;
+
             entry.getValue().forEach(object -> {
                 List<String> options = new ArrayList<>(object.getOptions().length+1);
                 options.addAll(Arrays.asList(object.getOptions()));
@@ -1694,11 +1698,11 @@ public class JobService extends AbstractAccessControl implements IJobService {
                         entry.getKey(),
                         job.getId()
                 );
-                techScreeningQuestionRepository.save(techScreeningQuestion);
+                    techScreeningQuestionRepository.save(techScreeningQuestion);
             });
         }
 
-        return techScreeningQuestionRepository.findByJobId(job.getId());
+            return techScreeningQuestionRepository.findByJobId(job.getId());
     }
 
     /**

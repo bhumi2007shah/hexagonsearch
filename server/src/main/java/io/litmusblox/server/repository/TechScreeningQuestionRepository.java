@@ -24,4 +24,10 @@ public interface TechScreeningQuestionRepository extends JpaRepository<TechScree
 
     @Transactional(readOnly = true)
     List<TechScreeningQuestion> findByJobId(Long jobId);
+
+    @Transactional(readOnly = true)
+    boolean existsByJobIdAndQuestionCategory(Long id, String key);
+
+    @Transactional(readOnly = true)
+    void deleteByJobIdAndQuestionCategoryNotIn(Long id, List<String> selectedKeySkills);
 }
