@@ -144,7 +144,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     JcmExportQAResponseBeanRepository jcmExportQAResponseBeanRepository;
 
     @Autowired
-    CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
+    JcmAllDetailsRepository jcmAllDetailsRepository;
 
     @Autowired
     ISearchEngineService searchEngineService;
@@ -448,9 +448,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
         Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
         long viewStartTime = System.currentTimeMillis();
         if(IConstant.Stage.Reject.getValue().equals(stage))
-            responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndRejectedIsTrue(job));
+            responseBean.setJcmAllDetailsList(jcmAllDetailsRepository.findByJobAndRejectedIsTrue(job.getId()));
         else
-            responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage))));
+            responseBean.setJcmAllDetailsList(jcmAllDetailsRepository.findByJobAndStageInAndRejectedIsFalse(job.getId(), MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage)).getId()));
 
         Map<Long, JCMAllDetails> jcmAllDetailsMap = responseBean.getJcmAllDetailsList().stream().collect(Collectors.toMap(JCMAllDetails::getId, Function.identity()));
 
@@ -552,25 +552,25 @@ public class JobService extends AbstractAccessControl implements IJobService {
         SingleJobViewResponseBean responseBean = new SingleJobViewResponseBean();
 
         // Calling customQuery executor to get jcmAllDetailsList
-        responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndStatus(job, status));
+        responseBean.setJcmAllDetailsList(jcmAllDetailsRepository.findAllByJobIdAndChatbotStatus(job.getId(), status));
 
-        List<CandidateScreeningQuestionResponse> candidateScreeningQuestionResponses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingIdIn(
+        /*List<CandidateScreeningQuestionResponse> candidateScreeningQuestionResponses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingIdIn(
                 //List of JcmIds
                 responseBean
                         .getJcmAllDetailsList()
                         .stream()
                         .map(JCMAllDetails::getId)
                         .collect(Collectors.toList())
-        );
+        );*/
 
         // add screening question responses to each jcm
-        Map<Long, List<CandidateScreeningQuestionResponse>> candidateResponsesById = candidateScreeningQuestionResponses.stream().parallel().collect(Collectors.groupingBy(CandidateScreeningQuestionResponse::getJobCandidateMappingId));
+        /*Map<Long, List<CandidateScreeningQuestionResponse>> candidateResponsesById = candidateScreeningQuestionResponses.stream().parallel().collect(Collectors.groupingBy(CandidateScreeningQuestionResponse::getJobCandidateMappingId));
         responseBean.getJcmAllDetailsList().stream().parallel().forEach(jcmAllDetails -> {
             jcmAllDetails.setScreeningQuestionResponses(candidateResponsesById.get(jcmAllDetails.getId()));
         });
 
         log.info("Found {} records.", responseBean.getJcmAllDetailsList().size());
-        //set candidate count by stage to null as we don't need stage wise count here.
+        //set candidate count by stage to null as we don't need stage wise count here.*/
         responseBean.setCandidateCountByStage(null);
         return responseBean;
     }
@@ -1351,7 +1351,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             jcmExportResponseBean.setChatbotLink(environment.getProperty(IConstant.CHAT_LINK)+jcmExportResponseBean.getChatbotLink());
             jcmExportResponseBean.setJcmExportQAResponseBeans(jcmExportQAResponseBeanRepository.findAllByJcmIdOrderByJsqIdAsc(jcmExportResponseBean.getJcmId()));
             jcmExportResponseBean.getJcmExportQAResponseBeans().stream().forEach(jcmExportQAResponseBean -> {
-               if(jcmExportQAResponseBean.getScreeningQuestion().contains(IConstant.COMPANY_NAME_VARIABLE)){
+               if(null != jcmExportQAResponseBean && jcmExportQAResponseBean.getScreeningQuestion().contains(IConstant.COMPANY_NAME_VARIABLE)){
                    jcmExportQAResponseBean.setScreeningQuestion(jcmExportQAResponseBean.getScreeningQuestion().replace(IConstant.COMPANY_NAME_VARIABLE, finalCompany.getCompanyName()));
                }
             });

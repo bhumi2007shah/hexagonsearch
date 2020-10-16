@@ -2699,3 +2699,7 @@ alter table job alter column hiring_manager type integer[] using array[hiring_ma
 
 --For ticket #584
 update candidate_company_details set salary = regexp_replace(salary, '[^0-9.]','', 'g');
+
+--Increase option size
+ALTER TABLE TECH_SCREENING_QUESTION ALTER COLUMN OPTIONS TYPE CHARACTER VARYING(400)[];
+ALTER TABLE TECH_SCREENING_QUESTION ALTER COLUMN DEFAULT_ANS TYPE CHARACTER VARYING(400)[];
