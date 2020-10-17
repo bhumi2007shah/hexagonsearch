@@ -536,9 +536,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             } else {
                 objFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
             }
+            log.info(objFromDb.getCandidateFirstName()+" "+objFromDb.getCandidateLastName()+" interested "+objFromDb.getJob().getId()+" : "+uuid);
         }
         else{
             objFromDb.setChatbotStatus(IConstant.ChatbotStatus.NOT_INTERESTED.getValue());
+            log.info(objFromDb.getCandidateFirstName()+" "+objFromDb.getCandidateLastName()+" not interested "+objFromDb.getJob().getId()+" : "+uuid);
         }
         objFromDb.setCandidateInterestDate(new Date());
         //set stage = Screening where stage = Source
