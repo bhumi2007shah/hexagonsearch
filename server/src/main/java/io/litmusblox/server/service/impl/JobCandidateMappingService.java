@@ -525,6 +525,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     @Transactional(propagation = Propagation.REQUIRED)
     public void captureCandidateInterest(UUID uuid, boolean interest) throws Exception {
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
+        String candidatChoice="";
         if (null == objFromDb)
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
         objFromDb.setCandidateInterest(interest);
@@ -536,11 +537,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             } else {
                 objFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
             }
-            log.info(objFromDb.getCandidateFirstName()+" "+objFromDb.getCandidateLastName()+" interested "+objFromDb.getJob().getId()+" : "+uuid);
+            candidatChoice = "interested";
         }
         else{
             objFromDb.setChatbotStatus(IConstant.ChatbotStatus.NOT_INTERESTED.getValue());
-            log.info(objFromDb.getCandidateFirstName()+" "+objFromDb.getCandidateLastName()+" not interested "+objFromDb.getJob().getId()+" : "+uuid);
+            candidatChoice = "not interested";
         }
         objFromDb.setCandidateInterestDate(new Date());
         //set stage = Screening where stage = Source
@@ -554,9 +555,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if(!objFromDb.getJob().getHrQuestionAvailable() && !objFromDb.getJob().getScoringEngineJobAvailable()){
             jcmCommunicationDetailsRepository.updateByJcmId(objFromDb.getId());
         }*/
+        log.info(objFromDb.getCandidateFirstName()+" "+objFromDb.getCandidateLastName()+" "+candidatChoice+" "+objFromDb.getJob().getId()+" : "+uuid);
         jobCandidateMappingRepository.save(objFromDb);
         StringBuffer historyMsg = new StringBuffer(objFromDb.getCandidateFirstName());
-        historyMsg.append(" ").append(objFromDb.getCandidateLastName()).append(" is ").append(interest?" interested - ":" not interested - ").append(objFromDb.getJob().getJobTitle()).append(" - ").append(objFromDb.getJob().getId());
+        historyMsg.append(" ").append(objFromDb.getCandidateLastName()).append(" is ").append(candidatChoice).append(objFromDb.getJob().getJobTitle()).append(" - ").append(objFromDb.getJob().getId());
         jcmHistoryRepository.save(new JcmHistory(objFromDb, historyMsg.toString(), new Date(), null, objFromDb.getStage(), true));
     }
 
