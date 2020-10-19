@@ -103,7 +103,7 @@ public class AsyncServicesWrapper implements IAsyncServicesWrapper {
         String fileName = StoreFileUtil.storeFile(multipartFile, loggedInUser.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.Candidates.toString(),null,null);
         log.info("User " + loggedInUser.getDisplayName() + " uploaded " + fileName);
 
-        log.info("Callling async upload service from thread {}", Thread.currentThread().getName());
+        log.info("Calling async upload service from thread {}", Thread.currentThread().getName());
         jobCandidateMappingService.uploadCandidatesFromFile(fileName, jobId, fileFormat, getUser(), candidatesProcessed, multipartFile.getOriginalFilename());
     }
 
