@@ -134,7 +134,7 @@ public class StoreFileUtil {
             if(uploadType.equals(IConstant.ERROR_FILES)){
                 filePath.append(uploadType).append(File.separator);
             }else if(!isZipFile && !uploadType.equals(IConstant.FILE_TYPE.other.toString())){
-                filePath.append(uploadType).append(File.separator).append(id);
+                filePath.append(uploadType).append(File.separator).append(id).append(File.separator).append(jobId);
             }
 
             File file = new File(staticRepoPath + File.separator + filePath);
@@ -149,7 +149,7 @@ public class StoreFileUtil {
             }else if(uploadType.equals(IConstant.ERROR_FILES)){
                filePath.append(fileName);
             }else if(null!=candidateId){
-                filePath.append(File.separator).append(candidateId).append(File.separator).append(jobId).append(".").append(Util.getFileExtension(fileName));
+                filePath.append(File.separator).append(candidateId).append(".").append(Util.getFileExtension(fileName));
             }else{
                 filePath.append(File.separator).append(fileName.substring(0,fileName.indexOf('.'))).append("_").append(Util.formatDate(new Date(), IConstant.DATE_FORMAT_yyyymmdd_hhmm)).append(".").append(Util.getFileExtension(fileName));
             }
