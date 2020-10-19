@@ -12,10 +12,7 @@ import io.litmusblox.server.model.JcmProfileSharingDetails;
 import lombok.Data;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -30,34 +27,35 @@ import java.util.Map;
  */
 @Data
 @Entity
+@Table(name = "JOB_CANDIDATE_MAPPING_ALL_DETAILS")
 public class JCMAllDetails {
     @Id
     Long id;
-    Long job_id;
-    Long candidate_id;
+    Long jobId;
+    Long candidateId;
     String email;
     String mobile;
-    String country_code;
+    String countryCode;
     Long stage;
-    String stage_name;
-    Date created_on;
-    String candidate_first_name;
-    String candidate_last_name;
-    String chatbot_status;
+    String stageName;
+    Date createdOn;
+    String candidateFirstName;
+    String candidateLastName;
+    String chatbotStatus;
     String source;
     Integer score;
     Boolean rejected;
     @Type(type = "hstore")
     @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "hstore")
-    Map<String, String> chatbot_response;
-    Integer overall_rating;
+    Map<String, String> chatbotResponse;
+    Integer overallRating;
     String recruiter;
-    String company_name;
+    String companyName;
     String designation;
-    String notice_period;
-    Double total_experience;
-    String cv_location;
-    String cv_file_type;
+    String noticePeriod;
+    Double totalExperience;
+    String cvLocation;
+    String cvFileType;
     Date updatedOn;
     String updatedBy;
     String rejectionReason;

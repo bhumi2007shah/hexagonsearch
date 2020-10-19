@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -118,18 +119,15 @@ public class NoAuthController {
     /**
      * REST Api to capture hiring manager interest
      *
-     * @param sharingId the uuid corresponding to which the interest needs to be captured
-     * @param interestValue interested true / false response
+     * @param jcmProfileSharingDetails details of hiring manager response like interestValue, comment, rejectionReasonId
      * @throws Exception
      */
-    @PutMapping(value = "/hiringManagerInterest/{sharingId}/{interestValue}")
+    @PutMapping(value = "/hiringManagerInterest")
     @ResponseStatus(value = HttpStatus.OK)
-    public void updateHiringManagerInterest(@PathVariable(value = "sharingId") UUID sharingId, @PathVariable(value = "interestValue") Boolean interestValue) {
+    public void updateHiringManagerInterest(@RequestBody JcmProfileSharingDetails jcmProfileSharingDetails) {
         log.info("Received Hiring Manager Interest information");
         long startTime = System.currentTimeMillis();
-
-        jobCandidateMappingService.updateHiringManagerInterest(sharingId, interestValue);
-
+        jobCandidateMappingService.updateHiringManagerInterest(jcmProfileSharingDetails);
         log.info("Completed processing request for Hiring Manager Interest in {}ms",(System.currentTimeMillis()-startTime));
     }
 
@@ -172,6 +170,7 @@ public class NoAuthController {
                     put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("MasterData", new ArrayList<>(0));
                     put("CompanyAddress", new ArrayList<>(0));
+                    put("JcmHistory", Arrays.asList("id", "jcmId", "stage"));
                 }});
        // log.info("before call to replace:\n {}",response);
         response = response.replaceAll(Pattern.quote("$companyName"),responseObj.getCreatedBy().getCompany().getCompanyName());
@@ -419,3 +418,5 @@ public class NoAuthController {
         return responseEntity;
     }
 }
+
+

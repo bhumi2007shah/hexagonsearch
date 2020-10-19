@@ -85,4 +85,8 @@ public class CandidateCompanyDetails {
     public CandidateCompanyDetails() {
         super();
     }
+
+    public void setSalary(String salary){
+        this.salary = salary.replaceAll("[^0-9.]", "");
+    }
 }

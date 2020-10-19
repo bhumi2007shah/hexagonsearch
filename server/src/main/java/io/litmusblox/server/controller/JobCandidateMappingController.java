@@ -376,4 +376,16 @@ public class JobCandidateMappingController {
         jobCandidateMappingService.markShowNoShow(showNoShowDetails);
     }
 
+    /**
+     *
+     * @param companyId id of company whose future interview List is to be fetched
+     * @return List of future interviews details for the particular company
+     * @throws Exception
+     */
+    @GetMapping(value = "/getInterviewDetails/{companyId}")
+    @ResponseStatus(value = HttpStatus.OK)
+    List<InterviewsResponseBean> getInterviewForCompany(@PathVariable Long companyId) throws Exception {
+        return jobCandidateMappingService.getInterviewsForCompany(companyId);
+    }
+
 }

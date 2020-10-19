@@ -135,9 +135,10 @@ public class Job implements Serializable {
     private MasterData expertise;
 
     //@NotNull(message = "Hiring Manager " + IErrorMessages.NULL_MESSAGE)
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="HIRING_MANAGER")
-    private User hiringManager;
+    @Type(type="int-array")
+    @Column(name = "HIRING_MANAGER", columnDefinition = "Integer[]")
+    @JsonInclude
+    private Integer[] hiringManager;
 
     @Type(type = "int-array")
     @Column(name = "RECRUITER", columnDefinition = "integer[]")
@@ -270,6 +271,10 @@ public class Job implements Serializable {
 
     @Transient
     private List<User> recruiterList;
+
+    @Transient
+    @JsonInclude
+    private List<User> hiringManagerList = new ArrayList<>();
 
     @Transient
     @JsonProperty

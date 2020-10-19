@@ -6,6 +6,10 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.JcmProfileSharingMaster;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * Repository class for JcmProfileSharingMaster
@@ -17,4 +21,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * Project Name : server
  */
 public interface JcmProfileSharingMasterRepository extends JpaRepository<JcmProfileSharingMaster, Long> {
+
+    @Transactional(readOnly = true)
+    List<JcmProfileSharingMaster> findByReceiverEmailContainingIgnoreCase(String domain);
+
 }

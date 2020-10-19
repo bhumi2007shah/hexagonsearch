@@ -52,6 +52,7 @@ public class MasterDataResponse {
     private Map<Long, Map<String, Long>> function = new HashMap<>();
     private Map<Long, Map<String, Long>> role = new HashMap<>();
     private Map<String , Map<String, String>> salaryRange = new HashMap<>();
+    private Map<String, List> hiringManagerRejectReasonMap = new LinkedHashMap<>();
 
     private Map<String, List<RejectionReasonMasterData>> candidateRejectionReasonMap = new LinkedHashMap<>();
     private int otpExpiryMinutes;
