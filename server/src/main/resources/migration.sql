@@ -2703,3 +2703,8 @@ update candidate_company_details set salary = regexp_replace(salary, '[^0-9.]','
 --Increase option size
 ALTER TABLE TECH_SCREENING_QUESTION ALTER COLUMN OPTIONS TYPE CHARACTER VARYING(400)[];
 ALTER TABLE TECH_SCREENING_QUESTION ALTER COLUMN DEFAULT_ANS TYPE CHARACTER VARYING(400)[];
+
+--For ticket 648
+ALTER TABLE SCREENING_QUESTION
+ADD COLUMN IS_MANDATORY BOOL DEFAULT 'f';
+update screening_question set options=array_remove(options,'I wish not to answer') where question in ('Which City are you currently based in?','What is your Total work experience range?','What is the official Notice Period you are required to serve in your current company?','What is your highest level of education?');
