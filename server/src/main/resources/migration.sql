@@ -2708,3 +2708,8 @@ ALTER TABLE TECH_SCREENING_QUESTION ALTER COLUMN DEFAULT_ANS TYPE CHARACTER VARY
 ALTER TABLE SCREENING_QUESTION
 ADD COLUMN IS_MANDATORY BOOL DEFAULT 'f';
 update screening_question set options=array_remove(options,'I wish not to answer') where question in ('Which City are you currently based in?','What is your Total work experience range?','What is the official Notice Period you are required to serve in your current company?','What is your highest level of education?');
+
+
+--For ticket 630
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN IS_CREATED_ON_SEARCHENGINE BOOL NOT NULL DEFAULT 'f',
