@@ -65,6 +65,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     @Resource
     JcmCommunicationDetailsRepository jcmCommunicationDetailsRepository;
 
+    @Resource
+    MasterDataRepository masterDataRepository;
+
+    @Resource
+    ScreeningQuestionsRepository screeningQuestionsRepository;
+
     @Autowired
     IUploadDataProcessService iUploadDataProcessService;
 
@@ -142,9 +148,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
     @Resource
     StageStepMasterRepository stageStepMasterRepository;
-
-    @Resource
-    MasterDataRepository masterDataRepository;
 
     @Resource
     EmployeeReferrerRepository employeeReferrerRepository;
@@ -2456,32 +2459,31 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         log.info("Completed execution of getInterviewForCompany for companyId {} in {} ms", companyId, System.currentTimeMillis() - startTime);
         return response;
     }
-
     public void updateCandidateResponse(JobCandidateMapping jobCandidateMapping, Map<Long, List<String>> candidateResponse) throws Exception{
         CandidateDetails candidateDetails = jobCandidateMapping.getCandidate().getCandidateDetails();
         CandidateCompanyDetails companyDetails = new CandidateCompanyDetails();
         candidateResponse.forEach((key,value) -> {
             JobScreeningQuestions jobScreeningQuestions = jobScreeningQuestionsRepository.findById(key).get();
-            long masterScreeningQuestionId = jobScreeningQuestions.getMasterScreeningQuestionId().getId();
-            MasterData masterData = masterDataRepository.findById(masterScreeningQuestionId).get();
+            ScreeningQuestions screeningQuestions = screeningQuestionsRepository.findById(jobScreeningQuestions.getMasterScreeningQuestionId().getId()).get();
+            MasterData masterData = screeningQuestions.getQuestionCategory();
             String response = value.get(0);
-            if (masterData.getValue() == "Current Company")
-                companyDetails.setCompanyName(masterData.getValue());
-            else if (masterData.getValue() == "Job Title")
-                companyDetails.setCompanyName(masterData.getValue());
-            else if (masterData.getValue() == "Notice Period")
-                companyDetails.setCompanyName(masterData.getValue());
-            else if (masterData.getValue() == "Current Salary")
-                companyDetails.setCompanyName(masterData.getValue());
+            if (masterData.getValue().equals("Current Company"))
+                companyDetails.setCompanyName(response);
+            else if (masterData.getValue().equals("Job Title"))
+                companyDetails.setDesignation(response);
+            else if (masterData.getValue().equals("Notice Period"))
+                companyDetails.setNoticePeriod(response);
+            else if (masterData.getValue().equals("Current Salary"))
+                companyDetails.setSalary(response);
             else if (masterData.getValue().equals("Total Experience"))
-                candidateDetails.setTotalExperience(Double.parseDouble(masterData.getValue()));
-            else if (masterData.getValue().equals("Location")){
-                candidateDetails.setLocation(masterData.getValue());
-            } else if (masterData.getValue().equals("Expected Salary")) {
+                candidateDetails.setTotalExperience(Double.parseDouble(response));
+            else if (masterData.getValue().equals("Location"))
+                candidateDetails.setLocation(response);
+            else if (masterData.getValue().equals("Expected Salary"))
                 jobCandidateMapping.setExpectedCtc(Long.parseLong(response));
-            } else if (masterData.getValue().equals("Education")) {
+            else if (masterData.getValue().equals("Education")) {
                 //Find candidate education detail by degree as well. This code will not handle multiple degrees
-                CandidateEducationDetails candidateEducationDetails = candidateEducationDetailsRepository.findByCandidateIdandDegree(jobCandidateMapping.getCandidate().getId(), response);
+                CandidateEducationDetails candidateEducationDetails = candidateEducationDetailsRepository.findByCandidateIdAndDegree(jobCandidateMapping.getCandidate().getId(), response);
                 if (candidateEducationDetails == null) {
                     CandidateEducationDetails educationDetails = new CandidateEducationDetails();
                     educationDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
@@ -2489,17 +2491,17 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 candidateEducationDetailsRepository.save(candidateEducationDetails);
             }
         });
-
         CandidateCompanyDetails candidateCompanyDetails = candidateCompanyDetailsRepository.findByCandidateIdAndCompanyName(jobCandidateMapping.getCandidate().getId(), companyDetails.getCompanyName());
-        if (candidateCompanyDetails == null) {
+        if (null == candidateCompanyDetails) {
+            companyDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
             candidateCompanyDetailsRepository.save(companyDetails);
         } else {
             candidateCompanyDetails.setCompanyName(companyDetails.getCompanyName());
             candidateCompanyDetails.setDesignation(companyDetails.getDesignation());
             candidateCompanyDetails.setNoticePeriod(companyDetails.getNoticePeriod());
             candidateCompanyDetails.setSalary(companyDetails.getSalary());
+            candidateCompanyDetailsRepository.save(candidateCompanyDetails);
         }
-        candidateCompanyDetailsRepository.save(candidateCompanyDetails);
         candidateDetailsRepository.save(candidateDetails);
         jobCandidateMappingRepository.save(jobCandidateMapping);
     }
@@ -2513,7 +2515,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             Job job = jobCandidateMapping.getJob();
             if(candidateService.createCandidateOnSearchEngine(candidate, job,JwtTokenUtil.getAuthToken())==200)
                 jobCandidateMappingRepository.save(jobCandidateMapping);
-            });
+        });
         log.info("Time taken to creating existing candidate on searchengine in : {}ms.", apiCallStartTime-System.currentTimeMillis());
     }
 }
