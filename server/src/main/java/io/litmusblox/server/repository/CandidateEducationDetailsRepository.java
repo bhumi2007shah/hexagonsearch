@@ -28,5 +28,5 @@ public interface CandidateEducationDetailsRepository extends JpaRepository<Candi
 
     @Transactional
     @Query(value="select * from candidate_education_details where candidate_id=:candidateId and degree=:degree", nativeQuery = true)
-    CandidateEducationDetails findByCandidateIdandDegree(long candidateId, String degree);
+    CandidateEducationDetails findByCandidateIdAndDegree(long candidateId, String degree);
 }
