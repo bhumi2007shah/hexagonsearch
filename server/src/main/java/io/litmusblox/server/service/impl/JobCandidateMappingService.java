@@ -207,7 +207,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
         //verify that the job is live before processing candidates
         Job job = jobRepository.getOne(jobId);
-        if(!isCallFromNoAuth && !createdBy.isPresent()) {
+        if(null!=createdBy && !isCallFromNoAuth && !createdBy.isPresent()) {
             User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             validateLoggedInUser(loggedInUser, job);
         }
@@ -993,7 +993,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         for (Long user:requestBean.getReceiverUserId()) {
 
             User receiverUser = userRepository.getOne(user);
-            validateHiringManagerCompany(receiverUser, jcm.getJob().getCompanyId().getId());
+            validateloggedInUser(receiverUser, jcm.getJob().getCompanyId().getId());
             JcmProfileSharingMaster masterObj = jcmProfileSharingMasterRepository.save(new JcmProfileSharingMaster(loggedInUser.getId(), receiverUser.getId()));
             Set<JcmProfileSharingDetails> detailsSet = new HashSet<>(requestBean.getJcmId().size());
             requestBean.getJcmId().forEach(jcmId ->{

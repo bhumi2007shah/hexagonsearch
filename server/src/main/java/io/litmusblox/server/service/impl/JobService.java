@@ -1561,7 +1561,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
             throw new ValidationException("Can't edit job because job in Archived state", HttpStatus.UNPROCESSABLE_ENTITY);
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        validateLoggedInUser(loggedInUser, job);
 
         log.info("Received request to new add job flow for page " + pageName + " from user: " + loggedInUser.getEmail());
         long startTime = System.currentTimeMillis();
@@ -1581,11 +1580,16 @@ public class JobService extends AbstractAccessControl implements IJobService {
         //set recruiter
         if(null == oldJob)
             job = setRecruiterArray(job, loggedInUser);
+        else
+            //To not allow to remove created by user from list of hiring manager. Ticket Reference #664.
+            job = setRecruiterArray(job, oldJob.getCreatedBy());
+        validateLoggedInUser(loggedInUser, job);
+
 
         //Validate Hiring Manager
         for (Integer hiringManager : job.getHiringManager()) {
-            User user = userRepository.getOne(Long.valueOf(42l));
-            validateHiringManagerCompany(user, job.getCompanyId().getId());
+            User user = userRepository.getOne(Long.valueOf(hiringManager));
+            validateloggedInUser(user, job.getCompanyId().getId());
         }
 
         switch (IConstant.AddJobPages.valueOf(pageName)) {
