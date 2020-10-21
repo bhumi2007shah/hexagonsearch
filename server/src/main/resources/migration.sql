@@ -2704,6 +2704,9 @@ update candidate_company_details set salary = regexp_replace(salary, '[^0-9.]','
 ALTER TABLE TECH_SCREENING_QUESTION ALTER COLUMN OPTIONS TYPE CHARACTER VARYING(400)[];
 ALTER TABLE TECH_SCREENING_QUESTION ALTER COLUMN DEFAULT_ANS TYPE CHARACTER VARYING(400)[];
 
+-- For ticket - https://github.com/hexagonsearch/litmusblox-scheduler/issues/61
+update sms_templates set template_content = '[[${commBean.sendercompany}]] is considering your profile for the [[${commBean.jobtitle}]] position. Please be on the lookout for more communication.' where template_name = 'AutosourceAcknowledgement';
+
 --For ticket 648
 ALTER TABLE SCREENING_QUESTION
 ADD COLUMN IS_MANDATORY BOOL DEFAULT 'f';

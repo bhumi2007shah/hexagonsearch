@@ -10,6 +10,7 @@ import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.ISearchEngineService;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.LoggedInUserInfoUtil;
+import io.litmusblox.server.utils.RestClientResponseBean;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -98,9 +99,13 @@ public class SearchEngineService implements ISearchEngineService {
         if(companyId!= null)
             formData.add("companyId", companyId);
         formData.add("fileType", fileType);
-        String responseData = RestClient.getInstance().consumeRestApi( searchEngineBaseUrl+"data/importData", authToken, HttpMethod.POST, formData, Optional.of(headerInformation)).getResponseBody();
-        log.info("Completed execution of importData method in {} ms", System.currentTimeMillis()-startTime);
-        return responseData;
+        RestClientResponseBean response = RestClient.getInstance().consumeRestApi(searchEngineBaseUrl + "data/importData", authToken, HttpMethod.POST, formData, Optional.of(headerInformation));
+        if(response.getStatusCode() != HttpStatus.OK.value()) {
+            String errorMessage = response.getResponseBody().substring(response.getResponseBody().indexOf("message") + 10).replace("\"", "") ;
+            throw new ValidationException(errorMessage, response.getStatusCode());
+        }
+        log.info("Completed execution of importData method in {} ms", System.currentTimeMillis() - startTime);
+        return response.getResponseBody();
     }
 
     public Map<String, Object> getLoggedInUserInformation(){
