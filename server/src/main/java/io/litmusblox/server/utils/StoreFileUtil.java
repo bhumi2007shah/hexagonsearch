@@ -38,7 +38,7 @@ public class StoreFileUtil {
      * storeFile method to save MultipartFile
      *
      * @param multipartFile which file we upload
-     * @param id it is like userId or CompanyId
+     * @param id it is like userId, jobId or CompanyId
      * @param repoLocation location for save the file
      * @param uploadType which type of file we save
      * @return it return filepath string
@@ -134,7 +134,7 @@ public class StoreFileUtil {
             if(uploadType.equals(IConstant.ERROR_FILES)){
                 filePath.append(uploadType).append(File.separator);
             }else if(!isZipFile && !uploadType.equals(IConstant.FILE_TYPE.other.toString())){
-                filePath.append(uploadType).append(File.separator).append(id).append(File.separator).append(jobId);
+                filePath.append(uploadType).append(File.separator).append(id);
             }
 
             File file = new File(staticRepoPath + File.separator + filePath);
