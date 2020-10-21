@@ -8,10 +8,7 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
-import io.litmusblox.server.repository.CandidateScreeningQuestionResponseRepository;
-import io.litmusblox.server.repository.JobCandidateMappingRepository;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -47,7 +44,6 @@ public class StoreFileUtil {
 
     public static String storeFile(MultipartFile multipartFile, long id, String repoLocation, String uploadType, Candidate candidate, User user) throws Exception {
         String sanitizedContent = null;
-        long jobId = candidate.getCvParsingDetails().getJobCandidateMappingId().getJob().getId();
 
         String extension = Util.getFileExtension(multipartFile.getOriginalFilename()).toLowerCase();
         if(
@@ -64,7 +60,7 @@ public class StoreFileUtil {
                 isZipFile=true;
             }
             is = multipartFile.getInputStream();
-            String filePath = getFileName(multipartFile.getOriginalFilename(), id, jobId, repoLocation, uploadType, (null!=candidate)?candidate.getId():(null!=user)?user.getId():null, isZipFile);
+            String filePath = getFileName(multipartFile.getOriginalFilename(), id, repoLocation, uploadType, (null!=candidate)?candidate.getId():(null!=user)?user.getId():null, isZipFile);
             //Util.storeFile(is, filePath,repoLocation);
             if(Util.isNull(filePath)){
                 StringBuffer info = new StringBuffer(multipartFile.getName()).append(" FilePath is null ");
@@ -113,7 +109,7 @@ public class StoreFileUtil {
         }
     }
 
-    private static String getFileName(String fileName, long id, long jobId, String repoLocation, String uploadType, Long candidateId, Boolean isZipFile) throws Exception {
+    private static String getFileName(String fileName, long id, String repoLocation, String uploadType, Long candidateId, Boolean isZipFile) throws Exception {
 
         try {
             StringBuffer filePath=new StringBuffer();
