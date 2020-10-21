@@ -409,14 +409,15 @@ public class CandidateService implements ICandidateService {
         catch ( Exception e ){
             log.error("Failed to create candidate on search engine. " + e.getMessage());
         }
-
-
+        String logText="Failed to add";
         JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByJobAndCandidate(job, candidate);
         if(statusCode==200){
             jobCandidateMapping.setCreatedOnSearchEngine(true);
             jobCandidateMappingRepository.save(jobCandidateMapping);
-            log.info("Added candidate on search engine in {}ms for candidate {}, in job {}, for company {}.",System.currentTimeMillis()-startTime, candidate, job, job.getCompanyName());
+            logText="Successfully added";
         }
+        log.info(logText+" candidate on search engine in for candidate {}, job {}, for company {}", System.currentTimeMillis() - startTime, candidate, job, job.getCompanyId());
+
         return statusCode;
     }
     //Method to truncate the value in the field and send out a sentry message for the same
