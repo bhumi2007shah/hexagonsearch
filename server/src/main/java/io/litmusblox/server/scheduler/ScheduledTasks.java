@@ -91,9 +91,9 @@ public class ScheduledTasks {
     }
 
     @Scheduled(cron = "0 0-6 * * *")
-    public void createCandidateOnSearchEngine(Candidate candidate , Job job, String authToken){
+    public void createCandidateOnSearchEngine(){
         log.info("started create existing candidate on searchengne. Thread {}", Thread.currentThread().getId());
-        candidateService.createCandidateOnSearchEngine(candidate, job, authToken);
+        jobCandidateMappingService.createExistingCandidateOnSearchEngine();
         log.info("Completed process for create existing candidate on searchengne. Thread {}", Thread.currentThread().getId());
     }
 }

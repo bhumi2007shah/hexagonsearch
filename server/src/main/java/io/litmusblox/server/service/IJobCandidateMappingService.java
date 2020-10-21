@@ -322,4 +322,5 @@ public interface IJobCandidateMappingService {
      */
     List<InterviewsResponseBean> getInterviewsForCompany(Long companyId);
 
+    public void createExistingCandidateOnSearchEngine();
 }
