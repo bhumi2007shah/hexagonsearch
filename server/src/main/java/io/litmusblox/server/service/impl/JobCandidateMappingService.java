@@ -735,7 +735,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         jobCandidateMappingRepository.save(objFromDb);
         long updateCandidateResponseStartTime = System.currentTimeMillis();
         log.info("Updating Candidate Details based on Candidate Chatbot Resposne. Chatbot uuid is {}",uuid);
-        updateCandidateResponse(objFromDb, response);
+        updateCandidateResponse(objFromDb,response);
         log.info("Completed Updating Candidate Details in {} ms.",updateCandidateResponseStartTime-System.currentTimeMillis());
     }
 
