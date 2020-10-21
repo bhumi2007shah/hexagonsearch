@@ -2508,12 +2508,13 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
     public void createExistingCandidateOnSearchEngine(){
         long apiCallStartTime = System.currentTimeMillis();
-        List<JobCandidateMapping> jobCandidateMappingList = jobCandidateMappingRepository.findJobs();
+        List<JobCandidateMapping> jobCandidateMappingList = jobCandidateMappingRepository.findJcmNotInSearchEngine();
         jobCandidateMappingList.forEach(jobCandidateMapping -> {
             log.info("Candidate : {} creating on searchengine", jobCandidateMapping.getCandidate().getId());
             Candidate candidate = new Candidate(jobCandidateMapping.getCandidateFirstName(), jobCandidateMapping.getCandidateLastName(), jobCandidateMapping.getMobile(),jobCandidateMapping.getEmail(), jobCandidateMapping.getCountryCode(), jobCandidateMapping.getCreatedOn(), jobCandidateMapping.getCreatedBy());
             Job job = jobCandidateMapping.getJob();
             if(candidateService.createCandidateOnSearchEngine(candidate, job,JwtTokenUtil.getAuthToken())==200)
+                jobCandidateMapping.setCreatedOnSearchEngine(true);
                 jobCandidateMappingRepository.save(jobCandidateMapping);
         });
         log.info("Time taken to creating existing candidate on searchengine in : {}ms.", apiCallStartTime-System.currentTimeMillis());

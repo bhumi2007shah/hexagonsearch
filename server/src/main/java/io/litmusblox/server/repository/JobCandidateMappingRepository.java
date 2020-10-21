@@ -142,6 +142,6 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     @Transactional
     @Query(value = "select * from job_candidate_mapping where IS_CREATED_ON_SEARCHENGINE='f' order by ID asc limit 100", nativeQuery = true)
-    List<JobCandidateMapping> findJobs();
+        List<JobCandidateMapping> findJcmNotInSearchEngine();
 
 }
