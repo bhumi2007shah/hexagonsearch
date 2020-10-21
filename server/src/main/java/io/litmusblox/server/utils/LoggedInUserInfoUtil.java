@@ -24,10 +24,7 @@ public class LoggedInUserInfoUtil {
         Long startTime = System.currentTimeMillis();
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Inside getLoggedInUserInformation method. Logged in by user {}", loggedInUser.getEmail());
-        Map userDetails = new HashMap(4);
-        userDetails.put("userId", loggedInUser.getId());
-        userDetails.put("userEmail", loggedInUser.getEmail());
-        userDetails.put("userCompanyId", loggedInUser.getCompany().getId());
+        Map userDetails = getLoggedInUserInformation();
         userDetails.put("jobId",jobId);
         log.info("Completed adding loggedInUserInformation in {} ms", System.currentTimeMillis() - startTime);
         return userDetails;
