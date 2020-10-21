@@ -2715,4 +2715,4 @@ update screening_question set options=array_remove(options,'I wish not to answer
 
 --For ticket 630
 ALTER TABLE JOB_CANDIDATE_MAPPING
-ADD COLUMN IS_CREATED_ON_SEARCHENGINE BOOL NOT NULL DEFAULT 'f',
+ADD COLUMN IS_CREATED_ON_SEARCHENGINE BOOL NOT NULL DEFAULT 'f';
