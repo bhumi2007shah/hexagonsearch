@@ -90,7 +90,7 @@ public class ScheduledTasks {
         log.info("completed convert cv file to cv text. Thread: {}", Thread.currentThread().getId());
     }
 
-    @Scheduled(cron = "* 0-6 * * *")
+    @Scheduled(cron = "* * 0-6 * * *")
     public void createCandidateOnSearchEngine(){
         log.info("started create existing candidate on searchengne. Thread {}", Thread.currentThread().getId());
         jobCandidateMappingService.createExistingCandidateOnSearchEngine();
