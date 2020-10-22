@@ -22,8 +22,6 @@ public class LoggedInUserInfoUtil {
 
     public static Map<String, Object> getLoggedInUserJobInformation(long jobId, int schedulerFlag){
         Long startTime = System.currentTimeMillis();
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        log.info("Inside getLoggedInUserInformation method. Logged in by user {}", loggedInUser.getEmail());
         Map userDetails = getLoggedInUserInformation(schedulerFlag);
         userDetails.put("jobId",jobId);
         log.info("Completed adding loggedInUserInformation in {} ms", System.currentTimeMillis() - startTime);
