@@ -655,7 +655,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     private void callJdParser(JdParserRequestBean requestBean, long jobId, Job job) throws Exception {
         log.info("Inside callJdParser method for jobId : {}",jobId);
         String function = MasterDataBean.getInstance().getFunction().get(job.getFunction().getId()).getFunction();
-        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId,0);
+        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId);
         Map breadCrumb = new HashMap<String, String>();
         try {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -1671,7 +1671,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         long startTime = System.currentTimeMillis();
         String searchEngineResponse = null;
         Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineResponseBean = new HashMap<>();
-        Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation(0);
+        Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
         log.info("Calling SearchEngine API to generate tech questions for job: {}", job.getId());
         try {
             searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null, Optional.of(userDetails)).getResponseBody();

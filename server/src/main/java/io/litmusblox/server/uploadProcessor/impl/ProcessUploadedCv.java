@@ -152,7 +152,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         AtomicReference<String> pythonResponse = new AtomicReference<>();
         String fileName = filePath.toString().substring(filePath.toString().lastIndexOf(File.separator) + 1);
         String[] s = fileName.split("_");
-        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(Long.parseLong(s[1]),1);
+        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(Long.parseLong(s[1]));
         cvParsingApiDetailsRepository.findAllByActiveOrderByApiSequenceAsc(true).forEach(cvParsingApiDetails -> {
             switch (cvParsingApiDetails.getColumnToUpdate()) {
                 case PARSING_RESPONSE_JSON:
@@ -375,7 +375,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         Candidate candidateFromPython = null;
         long responseTime = 0L;
         long jobId = (cvParsingDetailsFromDb.getJobCandidateMappingId().getJob().getId());
-        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId,1);
+        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId);
         Map<String, String> queryParameters = new HashMap<>();
         Map<String, String> breadCrumb = new HashMap<>();
         breadCrumb.put("cvParsingDetailsId", cvParsingDetailsFromDb.getId().toString());
@@ -470,7 +470,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
     private Candidate pythonCvParser(String queryString){
         String fileName = queryString.toString().substring(queryString.toString().lastIndexOf(File.separator) + 1);
         String[] s = fileName.split("_");
-        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(Long.parseLong(s[1]),1);
+        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(Long.parseLong(s[1]));
         log.info("Inside pythonCvParser");
         long PythonStartTime = System.currentTimeMillis();
         Candidate candidateFromPython = null;
@@ -494,7 +494,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
         long jobId = jobCandidateMappingRepository.getOne(jcmId).getJob().getId();
-        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId,1);
+        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId);
         long apiCallStartTime = System.currentTimeMillis();
         String cvRatingResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonCvRatingUrl"), HttpMethod.POST, null,null,null,Optional.of(headerInformation)).getResponseBody();
         log.info("Response received from CV Rating Api : {}, JcmId : {}", cvRatingResponse, jcmId);

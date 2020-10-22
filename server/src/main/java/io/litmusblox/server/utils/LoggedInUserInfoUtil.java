@@ -20,20 +20,20 @@ import java.util.Map;
 @Log4j2
 public class LoggedInUserInfoUtil {
 
-    public static Map<String, Object> getLoggedInUserJobInformation(long jobId, int schedulerFlag){
+    public static Map<String, Object> getLoggedInUserJobInformation(long jobId){
         Long startTime = System.currentTimeMillis();
-        Map userDetails = getLoggedInUserInformation(schedulerFlag);
+        Map userDetails = getLoggedInUserInformation();
         userDetails.put("jobId",jobId);
         log.info("Completed adding loggedInUserInformation in {} ms", System.currentTimeMillis() - startTime);
         return userDetails;
 
     }
 
-    public static Map<String, Object> getLoggedInUserInformation(int schedulerFlag) {
+    public static Map<String, Object> getLoggedInUserInformation() {
         Long startTime = System.currentTimeMillis();
         Map<String, Object> userDetails = new HashMap(3);
         String loggedInUserEmail = "admin@litmusblox.io";
-        if (schedulerFlag == 0){
+        if (null != SecurityContextHolder.getContext().getAuthentication()){
             User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             userDetails.put("userId", loggedInUser.getId());
             userDetails.put("userEmail", loggedInUser.getEmail());

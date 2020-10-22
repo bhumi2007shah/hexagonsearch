@@ -831,7 +831,7 @@ public class CompanyService extends AbstractAccessControl implements ICompanySer
         Map queryparams = new HashMap(2);
         queryparams.put("companyId", company.getId());
         queryparams.put("companyName", company.getCompanyName());
-        Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation(0);
+        Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
         try {
             //calling sscoring engine api to add company in neo4j db.
             RestClient.getInstance(). consumeRestApi(null, searchEngineBaseUrl + searchEngineAddCompanyUrlSuffix, HttpMethod.POST, authToken, Optional.of(queryparams), null, Optional.of(userDetails));
