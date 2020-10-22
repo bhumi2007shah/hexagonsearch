@@ -714,7 +714,24 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             objFromDb.setChatbotUpdatedOn(new Date());
 
         });
-
+        if(objFromDb.getJob().getJobScreeningQuestionsList().size() == objFromDb.getCandidateChatbotResponse().size()) {
+            objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
+            List<JobScreeningQuestions> jobScreeningIds = objFromDb.getJob().getJobScreeningQuestionsList();
+            Map<String, String> candidateChatbotResponse = objFromDb.getCandidateChatbotResponse();
+            jobScreeningIds.forEach(id -> {
+                if (!candidateChatbotResponse.containsKey(id.getId().toString()))
+                    objFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
+            });
+            if (objFromDb.getChatbotStatus().equals(IConstant.ChatbotStatus.COMPLETE.getValue())) {
+                long updateCandidateResponseStartTime = System.currentTimeMillis();
+                log.info("Updating Candidate Details based on Candidate Chatbot Resposne. Chatbot uuid is {}", uuid);
+                updateCandidateResponse(objFromDb, candidateChatbotResponse);
+                log.info("Completed Updating Candidate Details in {} ms.", updateCandidateResponseStartTime - System.currentTimeMillis());
+            }
+        }
+        else {
+            objFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
+        }
         //responseMap.put(key.toString(), String.join("~", valuesToSave));
 
 
@@ -733,10 +750,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             jcmCommunicationDetailsRepository.updateByJcmId(objFromDb.getId());
         }*/
         jobCandidateMappingRepository.save(objFromDb);
-        long updateCandidateResponseStartTime = System.currentTimeMillis();
-        log.info("Updating Candidate Details based on Candidate Chatbot Resposne. Chatbot uuid is {}",uuid);
-        updateCandidateResponse(objFromDb,response);
-        log.info("Completed Updating Candidate Details in {} ms.",updateCandidateResponseStartTime-System.currentTimeMillis());
+
     }
 
     /**
@@ -2459,15 +2473,15 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         log.info("Completed execution of getInterviewForCompany for companyId {} in {} ms", companyId, System.currentTimeMillis() - startTime);
         return response;
     }
-    public void updateCandidateResponse(JobCandidateMapping jobCandidateMapping, Map<Long, List<String>> candidateResponse) throws Exception{
+    public void updateCandidateResponse(JobCandidateMapping jobCandidateMapping, Map<String, String> candidateResponse) throws Exception{
         CandidateDetails candidateDetails = jobCandidateMapping.getCandidate().getCandidateDetails();
         CandidateCompanyDetails companyDetails = new CandidateCompanyDetails();
         candidateResponse.forEach((key,value) -> {
-            JobScreeningQuestions jobScreeningQuestions = jobScreeningQuestionsRepository.findById(key).get();
+            JobScreeningQuestions jobScreeningQuestions = jobScreeningQuestionsRepository.findById(Long.parseLong(key)).get();
             if( null != jobScreeningQuestions.getMasterScreeningQuestionId()) {
                 ScreeningQuestions screeningQuestions = screeningQuestionsRepository.findById(jobScreeningQuestions.getMasterScreeningQuestionId().getId()).get();
                 MasterData masterData = screeningQuestions.getQuestionCategory();
-                String response = value.get(0);
+                String response = value;
                 if (masterData.getValue().equals("Current Company"))
                     companyDetails.setCompanyName(response);
                 else if (masterData.getValue().equals("Job Title"))
