@@ -373,7 +373,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         String cvText = null;
         Candidate candidateFromPython = null;
         long responseTime = 0L;
-        long jobId = jobCandidateMappingRepository.getOne(cvParsingDetailsFromDb.getJobCandidateMappingId().getId()).getId();
+        long jobId = (cvParsingDetailsFromDb.getJobCandidateMappingId().getJob().getId());
         Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId);
         Map<String, String> queryParameters = new HashMap<>();
         Map<String, String> breadCrumb = new HashMap<>();

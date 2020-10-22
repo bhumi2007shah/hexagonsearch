@@ -31,14 +31,21 @@ public class LoggedInUserInfoUtil {
 
     }
 
-    public static Map<String, Object> getLoggedInUserInformation(){
+    public static Map<String, Object> getLoggedInUserInformation() {
         Long startTime = System.currentTimeMillis();
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Inside getLoggedInUserInformation method. Logged in by user {}", loggedInUser.getEmail());
         Map<String, Object> userDetails = new HashMap(3);
-        userDetails.put("userId", loggedInUser.getId());
-        userDetails.put("userEmail", loggedInUser.getEmail());
-        userDetails.put("userCompanyId", loggedInUser.getCompany().getId());
+        if (null != loggedInUser){
+            userDetails.put("userId", loggedInUser.getId());
+            userDetails.put("userEmail", loggedInUser.getEmail());
+            userDetails.put("userCompanyId", loggedInUser.getCompany().getId());
+        }
+        else{
+            userDetails.put("userId", 0);
+            userDetails.put("userEmail", "admin@litmusblox.io");
+            userDetails.put("userCompanyId", 0);
+        }
         log.info("Completed adding loggedInUserInformation in {} ms", System.currentTimeMillis() - startTime);
         return userDetails;
     }
