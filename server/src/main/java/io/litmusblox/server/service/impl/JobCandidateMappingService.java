@@ -2501,7 +2501,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             candidateCompanyDetails.setCompanyName(companyDetails.getCompanyName());
             candidateCompanyDetails.setDesignation(companyDetails.getDesignation());
             candidateCompanyDetails.setNoticePeriod(companyDetails.getNoticePeriod());
-            candidateCompanyDetails.setSalary(companyDetails.getSalary());
+            if(null != companyDetails.getSalary())
+                candidateCompanyDetails.setSalary(companyDetails.getSalary());
             candidateCompanyDetailsRepository.save(candidateCompanyDetails);
         }
         candidateDetailsRepository.save(candidateDetails);
