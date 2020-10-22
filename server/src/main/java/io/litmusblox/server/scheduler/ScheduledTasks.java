@@ -91,7 +91,6 @@ public class ScheduledTasks {
     }
 
     //@Scheduled(cron = "* * 0-6 * * *")
-    @Scheduled(cron = "* 0-6 * * *")
     public void createCandidateOnSearchEngine(){
         log.info("started create existing candidate on searchengne. Thread {}", Thread.currentThread().getId());
         jobCandidateMappingService.createExistingCandidateOnSearchEngine();
