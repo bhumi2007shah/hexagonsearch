@@ -2464,31 +2464,33 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         CandidateCompanyDetails companyDetails = new CandidateCompanyDetails();
         candidateResponse.forEach((key,value) -> {
             JobScreeningQuestions jobScreeningQuestions = jobScreeningQuestionsRepository.findById(key).get();
-            ScreeningQuestions screeningQuestions = screeningQuestionsRepository.findById(jobScreeningQuestions.getMasterScreeningQuestionId().getId()).get();
-            MasterData masterData = screeningQuestions.getQuestionCategory();
-            String response = value.get(0);
-            if (masterData.getValue().equals("Current Company"))
-                companyDetails.setCompanyName(response);
-            else if (masterData.getValue().equals("Job Title"))
-                companyDetails.setDesignation(response);
-            else if (masterData.getValue().equals("Notice Period"))
-                companyDetails.setNoticePeriod(response);
-            else if (masterData.getValue().equals("Current Salary"))
-                companyDetails.setSalary(response);
-            else if (masterData.getValue().equals("Total Experience"))
-                candidateDetails.setTotalExperience(Double.parseDouble(response));
-            else if (masterData.getValue().equals("Location"))
-                candidateDetails.setLocation(response);
-            else if (masterData.getValue().equals("Expected Salary"))
-                jobCandidateMapping.setExpectedCtc(Long.parseLong(response));
-            else if (masterData.getValue().equals("Education")) {
-                //Find candidate education detail by degree as well. This code will not handle multiple degrees
-                CandidateEducationDetails candidateEducationDetails = candidateEducationDetailsRepository.findByCandidateIdAndDegree(jobCandidateMapping.getCandidate().getId(), response);
-                if (candidateEducationDetails == null) {
-                    CandidateEducationDetails educationDetails = new CandidateEducationDetails();
-                    educationDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
+            if( null != jobScreeningQuestions.getMasterScreeningQuestionId()) {
+                ScreeningQuestions screeningQuestions = screeningQuestionsRepository.findById(jobScreeningQuestions.getMasterScreeningQuestionId().getId()).get();
+                MasterData masterData = screeningQuestions.getQuestionCategory();
+                String response = value.get(0);
+                if (masterData.getValue().equals("Current Company"))
+                    companyDetails.setCompanyName(response);
+                else if (masterData.getValue().equals("Job Title"))
+                    companyDetails.setDesignation(response);
+                else if (masterData.getValue().equals("Notice Period"))
+                    companyDetails.setNoticePeriod(response);
+                else if (masterData.getValue().equals("Current Salary"))
+                    companyDetails.setSalary(response);
+                else if (masterData.getValue().equals("Total Experience"))
+                    candidateDetails.setTotalExperience(Double.parseDouble(response));
+                else if (masterData.getValue().equals("Location"))
+                    candidateDetails.setLocation(response);
+                else if (masterData.getValue().equals("Expected Salary"))
+                    jobCandidateMapping.setExpectedCtc(Long.parseLong(response));
+                else if (masterData.getValue().equals("Education")) {
+                    //Find candidate education detail by degree as well. This code will not handle multiple degrees
+                    CandidateEducationDetails candidateEducationDetails = candidateEducationDetailsRepository.findByCandidateIdAndDegree(jobCandidateMapping.getCandidate().getId(), response);
+                    if (candidateEducationDetails == null) {
+                        CandidateEducationDetails educationDetails = new CandidateEducationDetails();
+                        educationDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
+                    }
+                    candidateEducationDetailsRepository.save(candidateEducationDetails);
                 }
-                candidateEducationDetailsRepository.save(candidateEducationDetails);
             }
         });
         CandidateCompanyDetails candidateCompanyDetails = candidateCompanyDetailsRepository.findByCandidateIdAndCompanyName(jobCandidateMapping.getCandidate().getId(), companyDetails.getCompanyName());
