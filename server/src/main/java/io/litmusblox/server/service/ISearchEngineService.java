@@ -51,9 +51,4 @@ public interface ISearchEngineService {
      */
     public String importData(MultipartFile masterDataFile, Long companyId, String fileType, String authToken) throws Exception;
 
-    /**
-     *
-     * @return Map with user id, email, company id,
-     */
-    public Map<String, Object> getLoggedInUserInformation();
 }

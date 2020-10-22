@@ -61,7 +61,7 @@ public class FileSanitization {
         }
         if(null!=fileContent) {
             log.info("Creating request object and calling python rest api to sanitize byte array of file {}", multipartFile.getOriginalFilename());
-            Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserInformation();
+            Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserInformation(0);
             headers.add("userId", headerInformation.get("userId").toString());
             headers.add("userEmail", headerInformation.get("userEmail").toString());
             headers.add("userCompanyId", headerInformation.get("userCompanyId").toString());

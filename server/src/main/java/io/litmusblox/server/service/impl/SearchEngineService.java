@@ -45,7 +45,7 @@ public class SearchEngineService implements ISearchEngineService {
     public String candidateSearch(String jsonData, String authToken) throws Exception{
         log.info("Inside candidateSearch method");
         Long startTime = System.currentTimeMillis();
-        Map<String, Object> headerInformation = LoggedInUserInfoUtil.getLoggedInUserInformation();
+        Map<String, Object> headerInformation = LoggedInUserInfoUtil.getLoggedInUserInformation(0);
         if(jsonData == null)
             throw new ValidationException("Invalid request", HttpStatus.BAD_REQUEST);
         String responseData = RestClient.getInstance().consumeRestApi(jsonData, searchEngineBaseUrl+"candidate/search", HttpMethod.POST, authToken, null, null, Optional.of(headerInformation)).getResponseBody();
@@ -56,7 +56,7 @@ public class SearchEngineService implements ISearchEngineService {
     public String getUnverifiedNodes(String authToken) throws Exception{
         log.info("Inside getUnverifiedNodes method");
         Long startTime = System.currentTimeMillis();
-        Map<String, Object> headerInformation = LoggedInUserInfoUtil.getLoggedInUserInformation();
+        Map<String, Object> headerInformation = LoggedInUserInfoUtil.getLoggedInUserInformation(0);
         String responseData = RestClient.getInstance().consumeRestApi(null, searchEngineBaseUrl + "data/getUnverifiedNodes", HttpMethod.GET, JwtTokenUtil.getAuthToken(), null, null, Optional.of(headerInformation)).getResponseBody();
         log.info("Completed execution of getVerifiedNodes method in {} ms", System.currentTimeMillis() - startTime);
         return responseData;
@@ -65,7 +65,7 @@ public class SearchEngineService implements ISearchEngineService {
     public void verifyNodes(String jsonData, String authToken) throws Exception{
         log.info("Inside verifyNodes call");
         Long startTime = System.currentTimeMillis();
-        Map <String, Object> headerInformation = LoggedInUserInfoUtil.getLoggedInUserInformation();
+        Map <String, Object> headerInformation = LoggedInUserInfoUtil.getLoggedInUserInformation(0);
         if(jsonData == null)
             throw new ValidationException("Invalid request", HttpStatus.BAD_REQUEST);
         RestClient.getInstance().consumeRestApi(jsonData, searchEngineBaseUrl+"candidate/search", HttpMethod.POST, authToken, null, null, Optional.of(headerInformation));
@@ -75,7 +75,7 @@ public class SearchEngineService implements ISearchEngineService {
     public String importData(MultipartFile masterDataFile, Long companyId, String fileType, String authToken) throws Exception{
         log.info("Inside importData method");
         Long startTime = System.currentTimeMillis();
-        Map<String, Object> headerInformation = getLoggedInUserInformation();
+        Map<String, Object> headerInformation = LoggedInUserInfoUtil.getLoggedInUserInformation(0);
         MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
         ByteArrayResource fileContent = null;
         try {
@@ -106,18 +106,6 @@ public class SearchEngineService implements ISearchEngineService {
         }
         log.info("Completed execution of importData method in {} ms", System.currentTimeMillis() - startTime);
         return response.getResponseBody();
-    }
-
-    public Map<String, Object> getLoggedInUserInformation(){
-        Long startTime = System.currentTimeMillis();
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        log.info("Inside getLoggedInUserInformation method. Logged in by user {}", loggedInUser.getEmail());
-        Map<String, Object> userDetails = new HashMap(3);
-        userDetails.put("userId", loggedInUser.getId());
-        userDetails.put("userEmail", loggedInUser.getEmail());
-        userDetails.put("userCompanyId", loggedInUser.getCompany().getId());
-        log.info("Completed adding loggedInUserInformation in {} ms", System.currentTimeMillis() - startTime);
-        return userDetails;
     }
 
 }

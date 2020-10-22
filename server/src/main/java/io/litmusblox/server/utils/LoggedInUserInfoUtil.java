@@ -20,32 +20,34 @@ import java.util.Map;
 @Log4j2
 public class LoggedInUserInfoUtil {
 
-    public static Map<String, Object> getLoggedInUserJobInformation(long jobId){
+    public static Map<String, Object> getLoggedInUserJobInformation(long jobId, int schedulerFlag){
         Long startTime = System.currentTimeMillis();
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Inside getLoggedInUserInformation method. Logged in by user {}", loggedInUser.getEmail());
-        Map userDetails = getLoggedInUserInformation();
+        Map userDetails = getLoggedInUserInformation(schedulerFlag);
         userDetails.put("jobId",jobId);
         log.info("Completed adding loggedInUserInformation in {} ms", System.currentTimeMillis() - startTime);
         return userDetails;
 
     }
 
-    public static Map<String, Object> getLoggedInUserInformation() {
+    public static Map<String, Object> getLoggedInUserInformation(int schedulerFlag) {
         Long startTime = System.currentTimeMillis();
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        log.info("Inside getLoggedInUserInformation method. Logged in by user {}", loggedInUser.getEmail());
         Map<String, Object> userDetails = new HashMap(3);
-        if (null != loggedInUser){
+        String loggedInUserEmail = "admin@litmusblox.io";
+        if (schedulerFlag == 0){
+            User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             userDetails.put("userId", loggedInUser.getId());
             userDetails.put("userEmail", loggedInUser.getEmail());
             userDetails.put("userCompanyId", loggedInUser.getCompany().getId());
+            loggedInUserEmail=loggedInUser.getEmail();
         }
         else{
             userDetails.put("userId", 0);
-            userDetails.put("userEmail", "admin@litmusblox.io");
+            userDetails.put("userEmail", loggedInUserEmail);
             userDetails.put("userCompanyId", 0);
         }
+        log.info("Inside getLoggedInUserInformation method. Logged in by user {}", loggedInUserEmail);
         log.info("Completed adding loggedInUserInformation in {} ms", System.currentTimeMillis() - startTime);
         return userDetails;
     }
