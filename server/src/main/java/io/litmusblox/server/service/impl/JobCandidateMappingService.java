@@ -726,7 +726,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 long updateCandidateResponseStartTime = System.currentTimeMillis();
                 log.info("Updating Candidate Details based on Candidate Chatbot Resposne. Chatbot uuid is {}", uuid);
                 updateCandidateResponse(objFromDb, candidateChatbotResponse);
-                log.info("Completed Updating Candidate Details in {} ms.", updateCandidateResponseStartTime - System.currentTimeMillis());
+                log.info("Completed Updating Candidate Details in {} ms.",  System.currentTimeMillis()-updateCandidateResponseStartTime);
             }
         }
         else {
@@ -2474,17 +2474,17 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         log.info("Completed execution of getInterviewForCompany for companyId {} in {} ms", companyId, System.currentTimeMillis() - startTime);
         return response;
     }
-    public void updateCandidateResponse(JobCandidateMapping jobCandidateMapping, Map<String, String> candidateResponse) throws Exception{
-        CandidateDetails candidateDetails = jobCandidateMapping.getCandidate().getCandidateDetails();
+    public void updateCandidateResponse(JobCandidateMapping jobCandidateMapping, Map<String, String> candidateResponse) throws Exception {
+        CandidateDetails candidateDetails = new CandidateDetails();
         CandidateCompanyDetails companyDetails = new CandidateCompanyDetails();
-        candidateResponse.forEach((key,value) -> {
+        candidateResponse.forEach((key, value) -> {
             JobScreeningQuestions jobScreeningQuestions = jobScreeningQuestionsRepository.findById(Long.parseLong(key)).get();
-            try{
-                if( null != jobScreeningQuestions.getMasterScreeningQuestionId()) {
+            try {
+                if (null != jobScreeningQuestions.getMasterScreeningQuestionId()) {
                     ScreeningQuestions screeningQuestions = screeningQuestionsRepository.findById(jobScreeningQuestions.getMasterScreeningQuestionId().getId()).get();
                     MasterData masterData = screeningQuestions.getQuestionCategory();
                     String response = value;
-                    log.info("Candidate Response: {} for Question: {}",response, screeningQuestions.getQuestion());
+                    log.info("Candidate Response: {} for Question: {}", response, screeningQuestions.getQuestion());
                     if (masterData.getValue().equals("Current Company"))
                         companyDetails.setCompanyName(response);
                     else if (masterData.getValue().equals("Job Title"))
@@ -2497,11 +2497,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                         response = response.replaceAll("[^\\d]", " ");
                         response = response.trim();
                         response = response.replaceAll(" +", " ");
-                        response = response.split(" ")[response.split(" ").length-1];
+                        response = response.split(" ")[response.split(" ").length - 1];
                         candidateDetails.setTotalExperience(Double.parseDouble(response));
 
-                    }
-                    else if (masterData.getValue().equals("Location"))
+                    } else if (masterData.getValue().equals("Location"))
                         candidateDetails.setLocation(response);
                     else if (masterData.getValue().equals("Expected Salary"))
                         jobCandidateMapping.setExpectedCtc(Long.parseLong(response));
@@ -2515,24 +2514,34 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                         candidateEducationDetailsRepository.save(candidateEducationDetails);
                     }
                 }
-            }
-            catch (Exception e){
-                log.info("Error while Updating Total Experinence :: {}",e.getMessage());
+            } catch (Exception e) {
+                log.info("Error while Updating Total Experinence :: {}", e.getMessage());
             }
         });
         CandidateCompanyDetails candidateCompanyDetails = candidateCompanyDetailsRepository.findByCandidateIdAndCompanyName(jobCandidateMapping.getCandidate().getId(), companyDetails.getCompanyName());
         if (null == candidateCompanyDetails) {
-            companyDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
-            candidateCompanyDetailsRepository.save(companyDetails);
+            if(Util.isNotNull(companyDetails.getCompanyName())) {
+                companyDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
+                candidateCompanyDetailsRepository.save(companyDetails);
+            }
         } else {
             candidateCompanyDetails.setCompanyName(companyDetails.getCompanyName());
             candidateCompanyDetails.setDesignation(companyDetails.getDesignation());
             candidateCompanyDetails.setNoticePeriod(companyDetails.getNoticePeriod());
-            if(null != companyDetails.getSalary())
+            if (null != companyDetails.getSalary())
                 candidateCompanyDetails.setSalary(companyDetails.getSalary());
             candidateCompanyDetailsRepository.save(candidateCompanyDetails);
         }
-        candidateDetailsRepository.save(candidateDetails);
+        CandidateDetails details = candidateDetailsRepository.findByCandidateId(jobCandidateMapping.getCandidate());
+        if (null == details){
+            candidateDetails.setCandidateId(jobCandidateMapping.getCandidate());
+            candidateDetailsRepository.save(candidateDetails);
+        }
+        else{
+            details.setLocation(candidateDetails.getLocation());
+            details.setTotalExperience(candidateDetails.getTotalExperience());
+            candidateDetailsRepository.save(details);
+        }
         jobCandidateMappingRepository.save(jobCandidateMapping);
     }
 
