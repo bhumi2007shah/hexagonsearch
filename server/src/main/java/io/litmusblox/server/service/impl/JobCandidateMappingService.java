@@ -726,7 +726,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 long updateCandidateResponseStartTime = System.currentTimeMillis();
                 log.info("Updating Candidate Details based on Candidate Chatbot Resposne. Chatbot uuid is {}", uuid);
                 updateCandidateResponse(objFromDb, candidateChatbotResponse);
-                log.info("Completed Updating Candidate Details in {} ms.", updateCandidateResponseStartTime - System.currentTimeMillis());
+                log.info("Completed Updating Candidate Details in {} ms.",  System.currentTimeMillis()-updateCandidateResponseStartTime);
             }
         }
         else {
@@ -2520,8 +2520,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         });
         CandidateCompanyDetails candidateCompanyDetails = candidateCompanyDetailsRepository.findByCandidateIdAndCompanyName(jobCandidateMapping.getCandidate().getId(), companyDetails.getCompanyName());
         if (null == candidateCompanyDetails) {
-            companyDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
-            candidateCompanyDetailsRepository.save(companyDetails);
+            if(Util.isNotNull(companyDetails.getCompanyName())) {
+                companyDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
+                candidateCompanyDetailsRepository.save(companyDetails);
+            }
         } else {
             candidateCompanyDetails.setCompanyName(companyDetails.getCompanyName());
             candidateCompanyDetails.setDesignation(companyDetails.getDesignation());
@@ -2532,7 +2534,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         }
         CandidateDetails details = candidateDetailsRepository.findByCandidateId(jobCandidateMapping.getCandidate());
         if (null == details){
-                candidateDetails.setCandidateId(jobCandidateMapping.getCandidate());
+            candidateDetails.setCandidateId(jobCandidateMapping.getCandidate());
             candidateDetailsRepository.save(candidateDetails);
         }
         else{
