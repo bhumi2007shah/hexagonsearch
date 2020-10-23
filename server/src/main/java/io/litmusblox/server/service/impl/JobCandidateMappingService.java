@@ -2490,8 +2490,13 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     companyDetails.setNoticePeriod(response);
                 else if (masterData.getValue().equals("Current Salary"))
                     companyDetails.setSalary(response);
-                else if (masterData.getValue().equals("Total Experience"))
+                else if (masterData.getValue().equals("Total Experience")) {
+                    response = response.replaceAll("[^\\d]", " ");
+                    response = response.trim();
+                    response = response.replaceAll(" +", " ");
+                    response = response.split(" ")[response.split(" ").length-1];
                     candidateDetails.setTotalExperience(Double.parseDouble(response));
+                }
                 else if (masterData.getValue().equals("Location"))
                     candidateDetails.setLocation(response);
                 else if (masterData.getValue().equals("Expected Salary"))
