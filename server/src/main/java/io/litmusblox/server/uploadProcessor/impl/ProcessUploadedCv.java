@@ -18,7 +18,6 @@ import io.litmusblox.server.service.impl.CvRatingRequestBean;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import io.litmusblox.server.uploadProcessor.RChilliCvProcessor;
 import io.litmusblox.server.utils.*;
-import lombok.extern.java.Log;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +25,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -435,7 +433,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                 queryString.append(environment.getProperty(IConstant.CV_STORAGE_LOCATION)).append(jcmFromDb.getJob().getId()).append(File.separator).append(cvParsingDetailsFromDb.getCandidateId()).append(jcmFromDb.getCvFileType());
 
                 //Call Python parser to parse cv
-                candidateFromPython = pythonCvParser(queryString.toString());
+                candidateFromPython = pythonCvParser(queryString.toString(), jcmFromDb.getJob().getId());
 
                 //Check if existing candidate email not available then set python response email
                 if(null != candidateFromPython && cvParsingDetailsFromDb.getJobCandidateMappingId().getEmail().contains(IConstant.NOT_AVAILABLE_EMAIL) && Util.isNotNull(candidateFromPython.getEmail()) && Util.isValidateEmail(candidateFromPython.getEmail(), Optional.of(candidateFromPython))){
@@ -468,10 +466,8 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         return cvParsingDetailsFromDb;
     }
 
-    private Candidate pythonCvParser(String queryString){
-        String fileName = queryString.toString().substring(queryString.toString().lastIndexOf(File.separator) + 1);
-        String[] s = fileName.split("_");
-        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(Long.parseLong(s[1]));
+    private Candidate pythonCvParser(String queryString, long jobId){
+        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId);
         log.info("Inside pythonCvParser");
         long PythonStartTime = System.currentTimeMillis();
         Candidate candidateFromPython = null;
