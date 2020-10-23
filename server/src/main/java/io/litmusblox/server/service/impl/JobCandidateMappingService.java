@@ -2073,7 +2073,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             jobCandidateMappingRepository.save(jcm);
             cvParsingDetailsRepository.save(new CvParsingDetails(candidateCv.getOriginalFilename(), new Date(), null, jcm.getCandidate().getId(),jcm));
         }catch (Exception ex){
-            log.error("{}, File name : {}, For jcmId : ", IErrorMessages.FAILED_TO_SAVE_FILE, candidateCv.getOriginalFilename(), jcm.getId(), ex.getMessage());
+            log.error("{}, File name : {}, For jcmId : {}, Cause : {}", IErrorMessages.FAILED_TO_SAVE_FILE, candidateCv.getOriginalFilename(), jcm.getId(), ex.getMessage());
             throw new ValidationException(IErrorMessages.FAILED_TO_SAVE_FILE+" "+candidateCv.getOriginalFilename()+ex.getMessage(), HttpStatus.BAD_REQUEST);
         }
 

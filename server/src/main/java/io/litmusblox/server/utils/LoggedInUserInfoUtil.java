@@ -33,7 +33,7 @@ public class LoggedInUserInfoUtil {
         Long startTime = System.currentTimeMillis();
         Map<String, Object> userDetails = new HashMap(3);
         String loggedInUserEmail = "admin@litmusblox.io";
-        if (null != SecurityContextHolder.getContext().getAuthentication()){
+        if (null != SecurityContextHolder.getContext().getAuthentication() && !"anonymousUser".equals(SecurityContextHolder.getContext().getAuthentication().getPrincipal())){
             User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             userDetails.put("userId", loggedInUser.getId());
             userDetails.put("userEmail", loggedInUser.getEmail());
