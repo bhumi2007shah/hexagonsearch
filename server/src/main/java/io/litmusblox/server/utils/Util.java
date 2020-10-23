@@ -462,6 +462,7 @@ public class Util {
     public static String cleanFileName(String fileName){
         log.info("Inside cleanFileName");
         String cleanFileName = fileName.substring(0, fileName.lastIndexOf("."));
+        cleanFileName = cleanFileName.replace(".", "_");
         cleanFileName = cleanFileName.replaceAll("\\W","");
         cleanFileName = cleanFileName + "."+Util.getFileExtension(fileName);
         return cleanFileName;
