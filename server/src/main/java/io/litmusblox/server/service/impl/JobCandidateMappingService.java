@@ -925,7 +925,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             for (JobCandidateMapping jobCandidateMapping : jobCandidateMappingList) {
 
                 if (null == jobObjToUse)
-                    jobObjToUse = jobCandidateMapping.getJob();
+                    jobObjToUse =
+                            jobCandidateMapping.getJob();
 
                 validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
 
@@ -2482,6 +2483,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 ScreeningQuestions screeningQuestions = screeningQuestionsRepository.findById(jobScreeningQuestions.getMasterScreeningQuestionId().getId()).get();
                 MasterData masterData = screeningQuestions.getQuestionCategory();
                 String response = value;
+                log.info("Candidate Response: {} for Question: {}",response, screeningQuestions.getQuestion());
                 if (masterData.getValue().equals("Current Company"))
                     companyDetails.setCompanyName(response);
                 else if (masterData.getValue().equals("Job Title"))
@@ -2495,7 +2497,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     response = response.trim();
                     response = response.replaceAll(" +", " ");
                     response = response.split(" ")[response.split(" ").length-1];
-                    candidateDetails.setTotalExperience(Double.parseDouble(response));
+                    try{
+                        candidateDetails.setTotalExperience(Double.parseDouble(response));
+                    }
+                    catch (Exception e){
+                        log.info("Error while Updating Total Experinence :: {}",e.getMessage());
+                    }
                 }
                 else if (masterData.getValue().equals("Location"))
                     candidateDetails.setLocation(response);
