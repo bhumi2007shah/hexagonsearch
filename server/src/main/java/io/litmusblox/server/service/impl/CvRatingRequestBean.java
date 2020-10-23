@@ -23,6 +23,6 @@ import java.util.Map;
 @AllArgsConstructor
 public class CvRatingRequestBean {
     Map<String, List<String>> jdKeySkillsMap;
-    List<String> resumeContent;
+    List<String> resumeContentSkills;
     String industry;
 }
