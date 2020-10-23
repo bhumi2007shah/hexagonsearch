@@ -326,7 +326,8 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                         log.error("Found no key skills for jobId: {}.  Not making api call to rate CV.", cvToRate.getJobCandidateMappingId().getJob().getId());
                     else {
                         jdKeySkills.forEach(jobKeySkills -> {
-                            neighbourSkillMap.put(jobKeySkills.getSkillId().getSkillName(), (null != jobKeySkills.getNeighbourSkills())?Arrays.asList(jobKeySkills.getNeighbourSkills()):null);
+                            if(null != jobKeySkills.getSkillId())
+                                neighbourSkillMap.put(jobKeySkills.getSkillId().getSkillName(), (null != jobKeySkills.getNeighbourSkills())?Arrays.asList(jobKeySkills.getNeighbourSkills()):new ArrayList<>());
                         });
 
                         try {
