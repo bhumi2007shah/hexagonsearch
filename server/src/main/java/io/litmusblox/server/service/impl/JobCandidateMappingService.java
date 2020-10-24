@@ -252,11 +252,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 if(null!=candidate.getId()){
                     saveCandidateSupportiveInfo(candidate, loggedInUser);
                     try {
-                        if(candidateService.createCandidateOnSearchEngine(candidate, job, JwtTokenUtil.getAuthToken())==200){
+                        //For now we comment create candidate on search engine call because it is not working
+                        /*if(candidateService.createCandidateOnSearchEngine(candidate, job, JwtTokenUtil.getAuthToken())==200){
                             JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByJobAndCandidate(job, candidate);
                             jobCandidateMapping.setCreatedOnSearchEngine(true);
                             jobCandidateMappingRepository.save(jobCandidateMapping);
-                        }
+                        }*/
                     }catch (Exception e){
                         log.error("Error while adding candidate : {} in searchEngine for job : {}:: {}", candidate.getId(), job.getId(), e.getMessage());
                     }

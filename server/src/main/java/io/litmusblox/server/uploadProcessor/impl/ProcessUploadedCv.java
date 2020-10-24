@@ -329,13 +329,16 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                         });
 
                         try {
-                            cvRatingApiProcessingTime = callCvRatingApi(new CvRatingRequestBean(neighbourSkillMap, Arrays.asList(cvToRate.getCandidateSkills()), cvToRate.getJobCandidateMappingId().getJob().getFunction().getFunction()), cvToRate.getJobCandidateMappingId().getId());
+                            if(null != cvToRate.getCandidateSkills())
+                                cvRatingApiProcessingTime = callCvRatingApi(new CvRatingRequestBean(neighbourSkillMap, Arrays.asList(cvToRate.getCandidateSkills()), cvToRate.getJobCandidateMappingId().getJob().getFunction().getFunction()), cvToRate.getJobCandidateMappingId().getId());
+
                         } catch (Exception e) {
-                            log.info("Error while performing CV rating operation " + e.getMessage());
+                            log.info("Error while performing CV rating operation " + Util.getStackTrace(e));
+                            cvToRate.setCvRatingApiCallTRetryCount(cvToRate.getCvRatingApiCallTRetryCount()+1);
                             processingError = true;
                         }
                     }
-                    if (!processingError) {
+                    if (!processingError || cvToRate.getCvRatingApiCallTRetryCount().equals(3)) {
                         cvToRate.setCvRatingApiFlag(true);
                         cvToRate.setCvRatingApiResponseTime(cvRatingApiProcessingTime);
                         cvParsingDetailsRepository.save(cvToRate);
