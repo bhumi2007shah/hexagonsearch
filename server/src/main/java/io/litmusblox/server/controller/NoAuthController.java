@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -167,7 +166,7 @@ public class NoAuthController {
                     put("CandidateCompanyDetails", Arrays.asList("id","candidateId"));
                     put("CandidateSkillDetails", Arrays.asList("id","candidateId"));
                     put("CandidateWorkAuthorization", Arrays.asList("id","candidateId"));
-                    put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("JobScreeningQuestions", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("MasterData", new ArrayList<>(0));
                     put("CompanyAddress", new ArrayList<>(0));
                     put("JcmHistory", Arrays.asList("id", "jcmId", "stage"));
