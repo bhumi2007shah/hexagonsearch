@@ -2494,6 +2494,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                         companyDetails.setNoticePeriod(response);
                     else if (masterData.getValue().equals("Current Salary"))
                         companyDetails.setSalary(response);
+                    /*
+                    TODO : fix total experience update from chatbot response, it is breaking.
                     else if (masterData.getValue().equals("Total Experience")) {
                         response = response.replaceAll("[^\\d]", " ");
                         response = response.trim();
@@ -2501,7 +2503,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                         response = response.split(" ")[response.split(" ").length - 1];
                         candidateDetails.setTotalExperience(Double.parseDouble(response));
 
-                    } else if (masterData.getValue().equals("Location"))
+                    }
+                     */
+                     else if (masterData.getValue().equals("Location"))
                         candidateDetails.setLocation(response);
                     else if (masterData.getValue().equals("Expected Salary"))
                         jobCandidateMapping.setExpectedCtc(Long.parseLong(response));
