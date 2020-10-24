@@ -2509,6 +2509,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                         candidateDetails.setLocation(response);
                     else if (masterData.getValue().equals("Expected Salary"))
                         jobCandidateMapping.setExpectedCtc(Long.parseLong(response));
+                    /*
+                    TODO: fix candidate education details
                     else if (masterData.getValue().equals("Education")) {
                         //Find candidate education detail by degree as well. This code will not handle multiple degrees
                         CandidateEducationDetails candidateEducationDetails = candidateEducationDetailsRepository.findByCandidateIdAndDegree(jobCandidateMapping.getCandidate().getId(), response);
@@ -2517,7 +2519,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                             educationDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
                         }
                         candidateEducationDetailsRepository.save(candidateEducationDetails);
-                    }
+                    }*/
                 }
             } catch (Exception e) {
                 log.info("Error while Updating Total Experinence :: {}", e.getMessage());
