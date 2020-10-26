@@ -2611,6 +2611,14 @@ alter table job_candidate_mapping add column CANDIDATE_CHATBOT_RESPONSE hstore;
 update job_candidate_mapping jcm set candidate_chatbot_response = cr.responseList from (select job_candidate_mapping_id, hstore(array_agg(case when comment is not null then string_to_array(concat(job_screening_question_id,'^*^',concat(response, '~', comment)), '^*^') else string_to_array(concat(job_screening_question_id,'^*^',response), '^*^') end order by id)) as responseList from candidate_screening_question_response group by 1) as cr where jcm.id = cr.job_candidate_mapping_id;
 --Run create view for export data
 
+
+-- For ticket #635
+update screening_question set options = options || '{I wish not to answer}' where question_type in (97, 98, 100);
+
+insert into master_data(type, value, value_to_use) values ('questionType', 'FutureCalendar', 'Future Calendar'),('questionType', 'PastCalendar', 'Past Calendar');
+
+update screening_question set question_type=(select id from master_data where value='FutureCalendar') where question_type=(select id from master_data where value='Calendar');
+
 -- For ticket #643
 Insert into MASTER_DATA (TYPE, VALUE) values
 ('questionCategory','Relocation'),
@@ -2670,3 +2678,48 @@ update master_data set value_to_use = 23 where type = 'questionCategory' and val
 update master_data set value_to_use = 24 where type = 'questionCategory' and value = 'Contract';
 update master_data set value_to_use = 25 where type = 'questionCategory' and value = 'Education';
 
+--FOr ticket #656
+ALTER TABLE JOB_KEY_SKILLS
+ADD COLUMN NEIGHBOUR_SKILLS VARCHAR(100)[];
+
+
+--For ticket #638
+INSERT INTO MASTER_DATA(TYPE, VALUE) VALUES ('callOutCome', 'For Hiring Manager');
+alter table jcm_profile_sharing_master add column receiver_id integer not null default 0;
+alter table jcm_profile_sharing_master alter column receiver_name drop not null, alter column receiver_email drop not null;
+alter table jcm_profile_sharing_details add column comments varchar(50), add column rejection_reason_id integer references rejection_reason_master_data(id);
+--Run the Api /api/admin/addHiringManagerAsUser
+ALTER TABLE jcm_profile_sharing_details DROP CONSTRAINT jcm_profile_sharing_details_profile_sharing_master_id_fkey, ADD CONSTRAINT jcm_profile_sharing_details_profile_sharing_master_id_fkey FOREIGN KEY (profile_sharing_master_id) REFERENCES jcm_profile_sharing_master (id) ON DELETE CASCADE;
+delete from jcm_profile_sharing_master where receiver_id = 0;
+alter table jcm_profile_sharing_master add constraint jcm_profile_sharing_master_sender_id FOREIGN KEY (RECEIVER_ID) REFERENCES users(ID);
+
+--For ticket #644
+alter table job drop constraint job_hiring_manager_fkey ;
+alter table job alter column hiring_manager type integer[] using array[hiring_manager]::INTEGER[];
+
+--For ticket #584
+update candidate_company_details set salary = regexp_replace(salary, '[^0-9.]','', 'g');
+
+--Increase option size
+ALTER TABLE TECH_SCREENING_QUESTION ALTER COLUMN OPTIONS TYPE CHARACTER VARYING(400)[];
+ALTER TABLE TECH_SCREENING_QUESTION ALTER COLUMN DEFAULT_ANS TYPE CHARACTER VARYING(400)[];
+
+-- For ticket - https://github.com/hexagonsearch/litmusblox-scheduler/issues/61
+update sms_templates set template_content = '[[${commBean.sendercompany}]] is considering your profile for the [[${commBean.jobtitle}]] position. Please be on the lookout for more communication.' where template_name = 'AutosourceAcknowledgement';
+
+--For ticket 648
+ALTER TABLE SCREENING_QUESTION
+ADD COLUMN IS_MANDATORY BOOL DEFAULT 'f';
+update screening_question set options=array_remove(options,'I wish not to answer') where question in ('Which City are you currently based in?','What is your Total work experience range?','What is the official Notice Period you are required to serve in your current company?','What is your highest level of education?');
+
+
+--For ticket 630
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN IS_CREATED_ON_SEARCHENGINE BOOL NOT NULL DEFAULT 'f';
+
+ALTER TABLE CV_PARSING_DETAILS
+ADD COLUMN CANDIDATE_SKILLS VARCHAR(100)[];
+
+--For ticket #674
+ALTER TABLE CV_PARSING_DETAILS
+ADD COLUMN CV_RATING_API_CALL_RETRY_COUNT INTEGER DEFAULT 0;

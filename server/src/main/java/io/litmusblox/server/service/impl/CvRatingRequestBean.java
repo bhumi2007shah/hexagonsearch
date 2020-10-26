@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author : Shital Raval
@@ -20,8 +21,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MlCvRatingRequestBean {
-    List<String> jdKeyskills;
-    String resumeContent;
+public class CvRatingRequestBean {
+    Map<String, List<String>> jdKeySkillsMap;
+    List<String> resumeContentSkills;
     String industry;
 }

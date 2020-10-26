@@ -13,7 +13,6 @@ import io.litmusblox.server.model.*;
 import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
 import io.litmusblox.server.service.impl.SearchRequestBean;
-import io.litmusblox.server.service.impl.IndustryMasterDataRequestBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,7 +91,7 @@ public class NoAuthController {
      * @param candidateResponse the response provided by a candidate against each screening question
      * @throws Exception
      */
-    @PostMapping("/screeningQuestionResponse")
+    @PostMapping("/screeningQuestionResponses")
     @ResponseStatus(HttpStatus.OK)
     void screeningQuestionResponses(@RequestParam("uuid") UUID uuid, @RequestBody Map<Long,List<String>> candidateResponse) throws Exception{
         log.info("Received screening question responses from candidate: " + uuid);
@@ -102,20 +101,32 @@ public class NoAuthController {
     }
 
     /**
-     * REST Api to capture hiring manager interest
-     *
-     * @param sharingId the uuid corresponding to which the interest needs to be captured
-     * @param interestValue interested true / false response
+     * Rest api to capture candidate response to screening questions from chatbot
+     * @param uuid the uuid corresponding to a unique jcm record
+     * @param response Candidates respone for questin id
      * @throws Exception
      */
-    @PutMapping(value = "/hiringManagerInterest/{sharingId}/{interestValue}")
+    @PostMapping("/screeningQuestionResponse")
+    @ResponseStatus(HttpStatus.OK)
+    void screeningQuestionResponse(@RequestParam("uuid") UUID uuid, @RequestBody Map<Long , List<String>>response) throws Exception{
+        log.info("Received screening question responses from candidate: " + uuid);
+        long startTime = System.currentTimeMillis();
+        jobCandidateMappingService.saveScreeningQuestionResponse(uuid, response);
+        log.info("Completed saving candidate response to screening questions in {}ms",(System.currentTimeMillis()-startTime));
+    }
+
+    /**
+     * REST Api to capture hiring manager interest
+     *
+     * @param jcmProfileSharingDetails details of hiring manager response like interestValue, comment, rejectionReasonId
+     * @throws Exception
+     */
+    @PutMapping(value = "/hiringManagerInterest")
     @ResponseStatus(value = HttpStatus.OK)
-    public void updateHiringManagerInterest(@PathVariable(value = "sharingId") UUID sharingId, @PathVariable(value = "interestValue") Boolean interestValue) {
+    public void updateHiringManagerInterest(@RequestBody JcmProfileSharingDetails jcmProfileSharingDetails) {
         log.info("Received Hiring Manager Interest information");
         long startTime = System.currentTimeMillis();
-
-        jobCandidateMappingService.updateHiringManagerInterest(sharingId, interestValue);
-
+        jobCandidateMappingService.updateHiringManagerInterest(jcmProfileSharingDetails);
         log.info("Completed processing request for Hiring Manager Interest in {}ms",(System.currentTimeMillis()-startTime));
     }
 
@@ -155,9 +166,10 @@ public class NoAuthController {
                     put("CandidateCompanyDetails", Arrays.asList("id","candidateId"));
                     put("CandidateSkillDetails", Arrays.asList("id","candidateId"));
                     put("CandidateWorkAuthorization", Arrays.asList("id","candidateId"));
-                    put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("JobScreeningQuestions", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("MasterData", new ArrayList<>(0));
                     put("CompanyAddress", new ArrayList<>(0));
+                    put("JcmHistory", Arrays.asList("id", "jcmId", "stage"));
                 }});
        // log.info("before call to replace:\n {}",response);
         response = response.replaceAll(Pattern.quote("$companyName"),responseObj.getCreatedBy().getCompany().getCompanyName());
@@ -405,3 +417,5 @@ public class NoAuthController {
         return responseEntity;
     }
 }
+
+

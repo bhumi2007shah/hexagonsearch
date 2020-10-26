@@ -17,7 +17,7 @@ import io.litmusblox.server.repository.*;
 import io.litmusblox.server.responsebean.export.JcmExportResponseBean;
 import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.*;
-import io.litmusblox.server.service.impl.ml.RolePredictionBean;
+import io.litmusblox.server.utils.LoggedInUserInfoUtil;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.SentryUtil;
 import io.litmusblox.server.utils.Util;
@@ -145,7 +145,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     JcmExportQAResponseBeanRepository jcmExportQAResponseBeanRepository;
 
     @Autowired
-    CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
+    JcmAllDetailsRepository jcmAllDetailsRepository;
 
     @Autowired
     ISearchEngineService searchEngineService;
@@ -210,12 +210,12 @@ public class JobService extends AbstractAccessControl implements IJobService {
             job = setRecruiterArray(job, loggedInUser);
 
         //set hiringManager
-        if(null != job.getHiringManager() && null != job.getHiringManager().getId()){
-            hiringManager =  userRepository.findById(job.getHiringManager().getId()).orElse(null);
-            if(null != hiringManager)
-                job.setHiringManager(hiringManager);
-        }else if(null != company && null == company.getRecruitmentAgencyId())
-            throw new ValidationException("Hiring Manager "+IErrorMessages.NULL_MESSAGE, HttpStatus.UNPROCESSABLE_ENTITY);
+//        if(null != job.getHiringManager() && null != job.getHiringManager().getId()){
+//            hiringManager =  userRepository.findById(job.getHiringManager().getId()).orElse(null);
+//            if(null != hiringManager)
+//                job.setHiringManager(hiringManager);
+//        }else if(null != company && null == company.getRecruitmentAgencyId())
+//            throw new ValidationException("Hiring Manager "+IErrorMessages.NULL_MESSAGE, HttpStatus.UNPROCESSABLE_ENTITY);
 
         switch (IConstant.AddJobPages.valueOf(pageName)) {
             case overview:
@@ -449,9 +449,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
         Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
         long viewStartTime = System.currentTimeMillis();
         if(IConstant.Stage.Reject.getValue().equals(stage))
-            responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndRejectedIsTrue(job));
+            responseBean.setJcmAllDetailsList(jcmAllDetailsRepository.findByJobAndRejectedIsTrue(job.getId()));
         else
-            responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndStageInAndRejectedIsFalse(job, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage))));
+            responseBean.setJcmAllDetailsList(jcmAllDetailsRepository.findByJobAndStageInAndRejectedIsFalse(job.getId(), MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage)).getId()));
 
         Map<Long, JCMAllDetails> jcmAllDetailsMap = responseBean.getJcmAllDetailsList().stream().collect(Collectors.toMap(JCMAllDetails::getId, Function.identity()));
 
@@ -553,20 +553,25 @@ public class JobService extends AbstractAccessControl implements IJobService {
         SingleJobViewResponseBean responseBean = new SingleJobViewResponseBean();
 
         // Calling customQuery executor to get jcmAllDetailsList
-        responseBean.setJcmAllDetailsList(customQueryExecutor.findByJobAndStatus(job, status));
+        responseBean.setJcmAllDetailsList(jcmAllDetailsRepository.findAllByJobIdAndChatbotStatus(job.getId(), status));
 
-        Map<Long, JCMAllDetails> jcmAllDetailsMap = responseBean.getJcmAllDetailsList().stream().collect(Collectors.toMap(JCMAllDetails::getId, Function.identity()));
-
-        //List of JcmIds
-        List<Long> jcmListFromDb = new ArrayList<>(jcmAllDetailsMap.keySet());
+        /*List<CandidateScreeningQuestionResponse> candidateScreeningQuestionResponses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingIdIn(
+                //List of JcmIds
+                responseBean
+                        .getJcmAllDetailsList()
+                        .stream()
+                        .map(JCMAllDetails::getId)
+                        .collect(Collectors.toList())
+        );*/
 
         // add screening question responses to each jcm
-        jcmListFromDb.stream().parallel().forEach(jcmId->{
-            jcmAllDetailsMap.get(jcmId).setScreeningQuestionResponses(candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmId));
+        /*Map<Long, List<CandidateScreeningQuestionResponse>> candidateResponsesById = candidateScreeningQuestionResponses.stream().parallel().collect(Collectors.groupingBy(CandidateScreeningQuestionResponse::getJobCandidateMappingId));
+        responseBean.getJcmAllDetailsList().stream().parallel().forEach(jcmAllDetails -> {
+            jcmAllDetails.setScreeningQuestionResponses(candidateResponsesById.get(jcmAllDetails.getId()));
         });
 
         log.info("Found {} records.", responseBean.getJcmAllDetailsList().size());
-        //set candidate count by stage to null as we don't need stage wise count here.
+        //set candidate count by stage to null as we don't need stage wise count here.*/
         responseBean.setCandidateCountByStage(null);
         return responseBean;
     }
@@ -650,9 +655,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
     private void callJdParser(JdParserRequestBean requestBean, long jobId, Job job) throws Exception {
         log.info("Inside callJdParser method for jobId : {}",jobId);
         String function = MasterDataBean.getInstance().getFunction().get(job.getFunction().getId()).getFunction();
+        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId);
         Map breadCrumb = new HashMap<String, String>();
         try {
-            Map<String, List<SearchEngineQuestionsResponseBean>> skillQuestionMap = new HashMap<>();
             ObjectMapper objectMapper = new ObjectMapper();
 
             //Send function to JdParser request
@@ -663,7 +668,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             log.info("Sending request to JdParser for LB job id : {}",jobId);
             long searchEngineApiStartTime = System.currentTimeMillis();
-            String jdParserResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonJdParserUrl"), HttpMethod.POST, JwtTokenUtil.getAuthToken()).getResponseBody();
+            String jdParserResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonJdParserUrl"), HttpMethod.POST, JwtTokenUtil.getAuthToken(),null,null,Optional.of(headerInformation)).getResponseBody();
             log.info("For jobId : {}, Jd Parser response received: {}", jobId, jdParserResponse);
             log.info("Getting response from JdParser for LB job id : {} in {}ms",jobId,System.currentTimeMillis()-searchEngineApiStartTime);
             long startTime = System.currentTimeMillis();
@@ -672,11 +677,13 @@ public class JobService extends AbstractAccessControl implements IJobService {
             breadCrumb.put("Job Id: ", String.valueOf(jobId));
             breadCrumb.put("Request", requestBean.toString());
             breadCrumb.put("Response", jdParserResponse);
-            skillQuestionMap = objectMapper.readValue(jdParserResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
+            JdParserResponseBean jdParserResponseBean = objectMapper.readValue(jdParserResponse, JdParserResponseBean.class);
             log.info("Time taken to process JD in {}ms ",(System.currentTimeMillis() - startTime) + "ms.");
-            if(skillQuestionMap.size()>0){
-                job.setSearchEngineSkillQuestionMap(skillQuestionMap);
-            }
+            if(jdParserResponseBean.getQuestionMap().size()>0)
+                job.setSearchEngineSkillQuestionMap(jdParserResponseBean.getQuestionMap());
+
+            if(jdParserResponseBean.getNeighbourSkillMap().size()>0)
+                job.setNeighbourSkillsMap(jdParserResponseBean.getNeighbourSkillMap());
 
         }catch(Exception e) {
             log.error("Error While Parse jd : "+Util.getStackTrace(e));
@@ -687,13 +694,17 @@ public class JobService extends AbstractAccessControl implements IJobService {
     /**
      * Method to handle all skills provided by jd parser
      *
-     * @param skillsSet Set of skills obtained from jd parser
+     * @param neighbourSkillMap map of skill and related skills
      * @param oldJob the job for which the skills have to persisted
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private int handleSkillsFromCvParser(Set<String> skillsSet, Job oldJob) throws Exception {
-        log.info("Size of skill set : {} for job id ", skillsSet.size());
+    private int handleSkillsFromCvParser(Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineQuestionMap,Map<String, List<String>> neighbourSkillMap, Job oldJob) throws Exception {
+        Set<String> skillsSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        //We are adding both the skill sets. Ref ticket - #661
+        skillsSet.addAll(neighbourSkillMap.keySet());
+        skillsSet.addAll(searchEngineQuestionMap.keySet());
+        log.info("Size of skill set : {} for job id : {} and skill set : {}", skillsSet.size(), oldJob.getId(), skillsSet);
         List<String> skillList = new ArrayList<>(skillsSet);
         Collections.sort(skillList);
         if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())) {
@@ -716,7 +727,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 skillSelected = true;
 
             //add a record in job_key_skills with this skill id
-            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb, skillSelected, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId()));
+            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb, skillSelected, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId(), (null != neighbourSkillMap.get(skill))?neighbourSkillMap.get(skill).toArray(new String[neighbourSkillMap.get(skill).size()]):null));
         });
         jobKeySkillsRepository.saveAll(jobKeySkillsToSave);
         return skillsSet.size();
@@ -803,7 +814,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         try {
             log.info("Add Key Skills in job : {}",job.getId());
-            handleSkillsFromCvParser(job.getSearchEngineSkillQuestionMap().keySet(), job);
+            handleSkillsFromCvParser(job.getSearchEngineSkillQuestionMap(), job.getNeighbourSkillsMap(), job);
         } catch (Exception exception) {
             log.error("Failed to add key skills. " + exception.getMessage());
         }
@@ -875,7 +886,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                     continue;
                 } else {
                     //no match found in mlProvided skill, add a record
-                    jobKeySkillsRepository.save(new JobKeySkills(skillsMasterMap.get(skillId), true, new Date(), loggedInUser, job.getId()));
+                    //jobKeySkillsRepository.save(new JobKeySkills(skillsMasterMap.get(skillId), true, new Date(), loggedInUser, job.getId()));
                 }
 
             }
@@ -1230,6 +1241,11 @@ public class JobService extends AbstractAccessControl implements IJobService {
         job.setRecruiterList(userRepository.findByIdIn(Arrays.asList(job.getRecruiter()).stream()
                 .mapToLong(Integer::longValue)
                 .boxed().collect(Collectors.toList())));
+        if(job.getHiringManager().length > 0 && job.getHiringManager()[0]!=null) {
+            job.setHiringManagerList(userRepository.findByIdIn(Arrays.asList(job.getHiringManager()).stream()
+                    .mapToLong(Integer::longValue)
+                    .boxed().collect(Collectors.toList())));
+        }
         return job;
     }
 
@@ -1340,7 +1356,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             jcmExportResponseBean.setChatbotLink(environment.getProperty(IConstant.CHAT_LINK)+jcmExportResponseBean.getChatbotLink());
             jcmExportResponseBean.setJcmExportQAResponseBeans(jcmExportQAResponseBeanRepository.findAllByJcmIdOrderByJsqIdAsc(jcmExportResponseBean.getJcmId()));
             jcmExportResponseBean.getJcmExportQAResponseBeans().stream().forEach(jcmExportQAResponseBean -> {
-               if(jcmExportQAResponseBean.getScreeningQuestion().contains(IConstant.COMPANY_NAME_VARIABLE)){
+               if(null != jcmExportQAResponseBean && jcmExportQAResponseBean.getScreeningQuestion().contains(IConstant.COMPANY_NAME_VARIABLE)){
                    jcmExportQAResponseBean.setScreeningQuestion(jcmExportQAResponseBean.getScreeningQuestion().replace(IConstant.COMPANY_NAME_VARIABLE, finalCompany.getCompanyName()));
                }
             });
@@ -1545,7 +1561,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
             throw new ValidationException("Can't edit job because job in Archived state", HttpStatus.UNPROCESSABLE_ENTITY);
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        validateLoggedInUser(loggedInUser, job);
 
         log.info("Received request to new add job flow for page " + pageName + " from user: " + loggedInUser.getEmail());
         long startTime = System.currentTimeMillis();
@@ -1565,10 +1580,17 @@ public class JobService extends AbstractAccessControl implements IJobService {
         //set recruiter
         if(null == oldJob)
             job = setRecruiterArray(job, loggedInUser);
+        else
+            //To not allow to remove created by user from list of hiring manager. Ticket Reference #664.
+            job = setRecruiterArray(job, oldJob.getCreatedBy());
+        validateLoggedInUser(loggedInUser, job);
 
-        //set hiringManager
-        if(null != job.getHiringManager() && null != job.getHiringManager().getId())
-            job.setHiringManager(userRepository.findById(job.getHiringManager().getId()).orElse(null));
+
+        //Validate Hiring Manager
+        for (Integer hiringManager : job.getHiringManager()) {
+            User user = userRepository.getOne(Long.valueOf(hiringManager));
+            validateloggedInUser(user, job.getCompanyId().getId());
+        }
 
         switch (IConstant.AddJobPages.valueOf(pageName)) {
             case jobDetail:
@@ -1621,7 +1643,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         //Delete all exiting tech screening questions
         jobScreeningQuestionsRepository.deleteByTechScreeningQuestionIdIsNotNullAndJobId(job.getId());
-        techScreeningQuestionRepository.deleteByJobId(job.getId());
+        techScreeningQuestionRepository.deleteByJobIdAndQuestionCategoryNotIn(job.getId(), job.getSelectedKeySkills());
 
         //LoggedIn user
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -1649,7 +1671,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         long startTime = System.currentTimeMillis();
         String searchEngineResponse = null;
         Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineResponseBean = new HashMap<>();
-        Map<String, Object> userDetails = searchEngineService.getLoggedInUserInformation();
+        Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
         log.info("Calling SearchEngine API to generate tech questions for job: {}", job.getId());
         try {
             searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null, Optional.of(userDetails)).getResponseBody();
@@ -1662,7 +1684,17 @@ public class JobService extends AbstractAccessControl implements IJobService {
         log.info("Generate tech questions REST call completed in {}ms", System.currentTimeMillis()-startTime);
 
         for (Map.Entry<String, List<SearchEngineQuestionsResponseBean>> entry : searchEngineResponseBean.entrySet()) {
+
+            if(techScreeningQuestionRepository.existsByJobIdAndQuestionCategory(job.getId(), entry.getKey()))
+                continue;
+
             entry.getValue().forEach(object -> {
+                List<String> options = new ArrayList<>(object.getOptions().length+1);
+                options.addAll(Arrays.asList(object.getOptions()));
+                if(!options.stream().anyMatch(option ->option.contains(IConstant.NO_EXPERIENCE_TECH))){
+                    options.add(IConstant.NO_EXPERIENCE_TECH);
+                }
+                object.setOptions(options.toArray(new String[options.size()]));
                 TechScreeningQuestion techScreeningQuestion = new TechScreeningQuestion(
                         object.getQuestionText(),
                         object.getOptions(),
@@ -1675,11 +1707,11 @@ public class JobService extends AbstractAccessControl implements IJobService {
                         entry.getKey(),
                         job.getId()
                 );
-                techScreeningQuestionRepository.save(techScreeningQuestion);
+                    techScreeningQuestionRepository.save(techScreeningQuestion);
             });
         }
 
-        return techScreeningQuestionRepository.findByJobId(job.getId());
+            return techScreeningQuestionRepository.findByJobId(job.getId());
     }
 
     /**

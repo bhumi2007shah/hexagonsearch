@@ -7,12 +7,12 @@ package io.litmusblox.server.utils;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.WebException;
-import io.litmusblox.server.model.Candidate;
-import io.litmusblox.server.model.User;
+import io.litmusblox.server.model.*;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -35,7 +35,7 @@ public class StoreFileUtil {
      * storeFile method to save MultipartFile
      *
      * @param multipartFile which file we upload
-     * @param id it is like userId or CompanyId
+     * @param id it is like userId, jobId or CompanyId
      * @param repoLocation location for save the file
      * @param uploadType which type of file we save
      * @return it return filepath string
@@ -44,6 +44,7 @@ public class StoreFileUtil {
 
     public static String storeFile(MultipartFile multipartFile, long id, String repoLocation, String uploadType, Candidate candidate, User user) throws Exception {
         String sanitizedContent = null;
+
         String extension = Util.getFileExtension(multipartFile.getOriginalFilename()).toLowerCase();
         if(
                 Arrays.asList(IConstant.cvUploadSupportedExtensions).contains(extension) &&

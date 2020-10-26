@@ -15,6 +15,7 @@ import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.CandidateRequestBean;
 import io.litmusblox.server.service.ICandidateService;
 import io.litmusblox.server.service.ISearchEngineService;
+import io.litmusblox.server.utils.LoggedInUserInfoUtil;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
@@ -65,6 +66,9 @@ public class CandidateService implements ICandidateService {
 
     @Resource
     CandidateOnlineProfilesRepository candidateOnlineProfilesRepository;
+
+    @Resource
+    JobCandidateMappingRepository jobCandidateMappingRepository;
 
     @Resource
     CandidateLanguageProficiencyRepository candidateLanguageProficiencyRepository;
@@ -383,19 +387,21 @@ public class CandidateService implements ICandidateService {
      * Method to call search engine to add a candidate.
      * @param candidate
      */
-    public void createCandidateOnSearchEngine(Candidate candidate , Job job, String authToken) {
+    public int createCandidateOnSearchEngine(Candidate candidate , Job job, String authToken) {
         log.info("inside create candidate on search engine for candidate {}, in job {}, for company {}.", candidate, job, job.getCompanyName());
         long startTime = System.currentTimeMillis();
 
         CandidateRequestBean candidateRequestBean = getCandidateRequestBean(candidate, job);
 
+        int statusCode = 500;
+
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, Object> userDetails = searchEngineService.getLoggedInUserInformation();
+        Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
 
         log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), job.getId());
         try {
-            RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null, Optional.of(userDetails));
+            statusCode = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null, Optional.of(userDetails)).getStatusCode();
         }
         catch ( JsonProcessingException e ){
             log.error("Failed while converting candidateRequestBean to String. " + e.getMessage());
@@ -403,8 +409,16 @@ public class CandidateService implements ICandidateService {
         catch ( Exception e ){
             log.error("Failed to create candidate on search engine. " + e.getMessage());
         }
+        String logText="Failed to add";
+        JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByJobAndCandidate(job, candidate);
+        if(statusCode==200){
+            jobCandidateMapping.setCreatedOnSearchEngine(true);
+            jobCandidateMappingRepository.save(jobCandidateMapping);
+            logText="Successfully added";
+        }
+        log.info(logText+" candidate on search engine in for candidate {}, job {}, for company {}", System.currentTimeMillis() - startTime, candidate, job, job.getCompanyId());
 
-        log.info("Added candidate on search engine in {}ms for candidate {}, in job {}, for company {}.",System.currentTimeMillis()-startTime, candidate, job, job.getCompanyName());
+        return statusCode;
     }
     //Method to truncate the value in the field and send out a sentry message for the same
     //move this truncateField method to Util class because it is use in other place also like CandidateCompanyDetails model
@@ -424,7 +438,7 @@ public class CandidateService implements ICandidateService {
 
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, Object> userDetail = searchEngineService.getLoggedInUserInformation();
+        Map<String, Object> userDetail = LoggedInUserInfoUtil.getLoggedInUserInformation();
 
         log.info("Calling SearchEngine API to create candidates of job: {}", job.getId());
         try {

@@ -135,9 +135,10 @@ public class Job implements Serializable {
     private MasterData expertise;
 
     //@NotNull(message = "Hiring Manager " + IErrorMessages.NULL_MESSAGE)
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="HIRING_MANAGER")
-    private User hiringManager;
+    @Type(type="int-array")
+    @Column(name = "HIRING_MANAGER", columnDefinition = "Integer[]")
+    @JsonInclude
+    private Integer[] hiringManager;
 
     @Type(type = "int-array")
     @Column(name = "RECRUITER", columnDefinition = "integer[]")
@@ -272,8 +273,16 @@ public class Job implements Serializable {
     private List<User> recruiterList;
 
     @Transient
+    @JsonInclude
+    private List<User> hiringManagerList = new ArrayList<>();
+
+    @Transient
     @JsonProperty
     private Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineSkillQuestionMap;
+
+    @Transient
+    @JsonProperty
+    private Map<String, List<String>> neighbourSkillsMap;
 
     //Remove minExperience, maxExperience, experienceRange because add masterdata for experience
     //Also add jobdetail model in job
