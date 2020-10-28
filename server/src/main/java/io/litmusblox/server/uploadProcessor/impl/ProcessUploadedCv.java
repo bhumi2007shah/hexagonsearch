@@ -435,8 +435,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                         });
 
                         try {
-                            if(null != cvToRate.getCandidateSkills())
-                                cvRatingApiProcessingTime = callCvRatingApi(cvToRate, new CvRatingRequestBean(neighbourSkillMap, Arrays.asList(cvToRate.getCandidateSkills()), cvToRate.getJobCandidateMappingId().getJob().getFunction().getFunction()));
+                            cvRatingApiProcessingTime = callCvRatingApi(cvToRate, new CvRatingRequestBean(neighbourSkillMap));
 
                         } catch (Exception e) {
                             log.info("Error while performing CV rating operation " + Util.getStackTrace(e));
