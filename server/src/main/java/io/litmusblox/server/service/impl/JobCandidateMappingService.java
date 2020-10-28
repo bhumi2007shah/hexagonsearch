@@ -1010,7 +1010,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
             User receiverUser = userRepository.getOne(user);
             validateloggedInUser(receiverUser, jcm.getJob().getCompanyId().getId());
-            JcmProfileSharingMaster masterObj = jcmProfileSharingMasterRepository.save(new JcmProfileSharingMaster(loggedInUser.getId(), receiverUser.getId()));
+            JcmProfileSharingMaster masterObj = jcmProfileSharingMasterRepository.save(new JcmProfileSharingMaster(loggedInUser.getId(), receiverUser.getId(), receiverUser.getDisplayName()));
             Set<JcmProfileSharingDetails> detailsSet = new HashSet<>(requestBean.getJcmId().size());
             requestBean.getJcmId().forEach(jcmId ->{
                 detailsSet.add(new JcmProfileSharingDetails(masterObj, jcmId));
@@ -1063,6 +1063,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         }
         jcmProfileSharingDetailsRepository.save(jcmProfileSharingDetails);
         jcmHistoryRepository.save(new JcmHistory(jcmObj, jcmHistoryMsg.toString(), new Date(), null, jcmObj.getStage(), true));
+        log.info(jcmHistoryMsg.toString());
     }
 
     /**
