@@ -53,8 +53,9 @@ public class JcmProfileSharingDetails {
     @Column(name = "COMMENTS")
     private String comments;
 
-    @Column(name="REJECTION_REASON_ID")
-    private Long rejectionReasonId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="REJECTION_REASON_ID")
+    private RejectionReasonMasterData rejectionReason;
 
     public JcmProfileSharingDetails(JcmProfileSharingMaster profileSharingMasterId, @NotNull Long jobCandidateMappingId) {
         this.profileSharingMaster = profileSharingMasterId;

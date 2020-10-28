@@ -1054,10 +1054,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if(null != jcmProfileSharingDetails.getComments())
             jcmHistoryMsg.append(", Comments: ").append(jcmProfileSharingDetails.getComments());
         if(!jcmProfileSharingDetails.getHiringManagerInterest()){
-            if(null == jcmProfileSharingDetails.getRejectionReasonId())
+            if(null == jcmProfileSharingDetails.getRejectionReason().getId())
                 throw new ValidationException("Invalid Request", HttpStatus.BAD_REQUEST);
             else{
-                RejectionReasonMasterData rejectionReasonMasterData = rejectionReasonMasterDataRepository.getOne(jcmProfileSharingDetails.getRejectionReasonId());
+                RejectionReasonMasterData rejectionReasonMasterData = rejectionReasonMasterDataRepository.getOne(jcmProfileSharingDetails.getRejectionReason().getId());
                 jcmHistoryMsg.append(", Rejection Reason: ").append(rejectionReasonMasterData.getValue()).append("- ").append(rejectionReasonMasterData.getLabel());
             }
         }
