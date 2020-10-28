@@ -2723,3 +2723,7 @@ ADD COLUMN CANDIDATE_SKILLS VARCHAR(100)[];
 --For ticket #674
 ALTER TABLE CV_PARSING_DETAILS
 ADD COLUMN CV_RATING_API_CALL_RETRY_COUNT INTEGER DEFAULT 0;
+
+--For ticket #679
+update jcm_profile_sharing_master psm SET receiver_name = concat(u.first_name, ' ', u.last_name) from users u where psm.receiver_name is null and psm.receiver_id = u.id;
+alter table jcm_profile_sharing_master drop column receiver_email ;

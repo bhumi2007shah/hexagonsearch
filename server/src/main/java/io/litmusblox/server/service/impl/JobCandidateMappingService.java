@@ -1014,7 +1014,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
             User receiverUser = userRepository.getOne(user);
             validateloggedInUser(receiverUser, jcm.getJob().getCompanyId().getId());
-            JcmProfileSharingMaster masterObj = jcmProfileSharingMasterRepository.save(new JcmProfileSharingMaster(loggedInUser.getId(), receiverUser.getId()));
+            JcmProfileSharingMaster masterObj = jcmProfileSharingMasterRepository.save(new JcmProfileSharingMaster(loggedInUser.getId(), receiverUser.getId(), receiverUser.getDisplayName()));
             Set<JcmProfileSharingDetails> detailsSet = new HashSet<>(requestBean.getJcmId().size());
             requestBean.getJcmId().forEach(jcmId ->{
                 detailsSet.add(new JcmProfileSharingDetails(masterObj, jcmId));
@@ -1058,15 +1058,16 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if(null != jcmProfileSharingDetails.getComments())
             jcmHistoryMsg.append(", Comments: ").append(jcmProfileSharingDetails.getComments());
         if(!jcmProfileSharingDetails.getHiringManagerInterest()){
-            if(null == jcmProfileSharingDetails.getRejectionReasonId())
+            if(null == jcmProfileSharingDetails.getRejectionReason().getId())
                 throw new ValidationException("Invalid Request", HttpStatus.BAD_REQUEST);
             else{
-                RejectionReasonMasterData rejectionReasonMasterData = rejectionReasonMasterDataRepository.getOne(jcmProfileSharingDetails.getRejectionReasonId());
+                RejectionReasonMasterData rejectionReasonMasterData = rejectionReasonMasterDataRepository.getOne(jcmProfileSharingDetails.getRejectionReason().getId());
                 jcmHistoryMsg.append(", Rejection Reason: ").append(rejectionReasonMasterData.getValue()).append("- ").append(rejectionReasonMasterData.getLabel());
             }
         }
         jcmProfileSharingDetailsRepository.save(jcmProfileSharingDetails);
         jcmHistoryRepository.save(new JcmHistory(jcmObj, jcmHistoryMsg.toString(), new Date(), null, jcmObj.getStage(), true));
+        log.info(jcmHistoryMsg.toString());
     }
 
     /**
@@ -2513,6 +2514,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                         candidateDetails.setLocation(response);
                     else if (masterData.getValue().equals("Expected Salary"))
                         jobCandidateMapping.setExpectedCtc(Long.parseLong(response));
+                    /*
+                    TODO: fix candidate education details
                     else if (masterData.getValue().equals("Education")) {
                         //Find candidate education detail by degree as well. This code will not handle multiple degrees
                         CandidateEducationDetails candidateEducationDetails = candidateEducationDetailsRepository.findByCandidateIdAndDegree(jobCandidateMapping.getCandidate().getId(), response);
@@ -2521,7 +2524,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                             educationDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
                         }
                         candidateEducationDetailsRepository.save(candidateEducationDetails);
-                    }
+                    }*/
                 }
             } catch (Exception e) {
                 log.info("Error while Updating Total Experinence :: {}", e.getMessage());
