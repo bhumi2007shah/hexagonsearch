@@ -41,6 +41,8 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -661,9 +663,20 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @param response Map of questionId and response List of responses received from chatbot
      * @throws Exception
      */
-    @Transactional(propagation = Propagation.REQUIRED)
-    public void saveScreeningQuestionResponse(UUID uuid, Map<Long, List<String>> response) throws Exception {
+    public void saveScreeningQuestion(UUID uuid, Map<Long, List<String>> response) throws  Exception {
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
+        saveScreeningQuestionResponse(uuid, response,objFromDb);
+        Map<String, String> candidateChatbotResponse = objFromDb.getCandidateChatbotResponse();
+        if (objFromDb.getChatbotStatus().equals(IConstant.ChatbotStatus.COMPLETE.getValue())) {
+            long updateCandidateResponseStartTime = System.currentTimeMillis();
+            log.info("Updating Candidate Details based on Candidate Chatbot Resposne. Chatbot uuid is {}", uuid);
+            updateCandidateResponse(objFromDb, candidateChatbotResponse);
+            log.info("Completed Updating Candidate Details in {} ms.",  System.currentTimeMillis()-updateCandidateResponseStartTime);
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void saveScreeningQuestionResponse(UUID uuid, Map<Long, List<String>> response, JobCandidateMapping objFromDb) throws Exception {
         log.info("Saving chatbot response for uuid : {}, jobId : {} and jcmId : {}", uuid, objFromDb.getJob().getId(), objFromDb.getId());
         Map<String, String> breadCrumb = new HashMap<>();
         breadCrumb.put("Chatbot uuid", uuid.toString());
@@ -671,7 +684,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         breadCrumb.put("JobId",objFromDb.getJob().getId().toString());
         breadCrumb.put("questionId", (response.keySet().stream().findFirst().orElse(null)).toString());
         breadCrumb.put("Chatbot response", response.toString());
-        JcmCommunicationDetails jcmCommunicationDetailsFromDb = jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId());
         if (null == objFromDb){
             log.error("JcmCommunicationDetails not found for jcmId : {}", objFromDb.getId());
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
@@ -727,12 +739,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 if (!candidateChatbotResponse.containsKey(id.getId().toString()))
                     objFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
             });
-            if (objFromDb.getChatbotStatus().equals(IConstant.ChatbotStatus.COMPLETE.getValue())) {
-                long updateCandidateResponseStartTime = System.currentTimeMillis();
-                log.info("Updating Candidate Details based on Candidate Chatbot Resposne. Chatbot uuid is {}", uuid);
-                updateCandidateResponse(objFromDb, candidateChatbotResponse);
-                log.info("Completed Updating Candidate Details in {} ms.",  System.currentTimeMillis()-updateCandidateResponseStartTime);
-            }
         }
         else {
             objFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
@@ -2480,6 +2486,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         log.info("Completed execution of getInterviewForCompany for companyId {} in {} ms", companyId, System.currentTimeMillis() - startTime);
         return response;
     }
+
+    @Transactional(propagation = Propagation.REQUIRED)
     public void updateCandidateResponse(JobCandidateMapping jobCandidateMapping, Map<String, String> candidateResponse) throws Exception {
         CandidateDetails candidateDetails = new CandidateDetails();
         CandidateCompanyDetails companyDetails = new CandidateCompanyDetails();
@@ -2499,32 +2507,37 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                         companyDetails.setNoticePeriod(response);
                     else if (masterData.getValue().equals("Current Salary"))
                         companyDetails.setSalary(response);
-                    /*
-                    TODO : fix total experience update from chatbot response, it is breaking.
                     else if (masterData.getValue().equals("Total Experience")) {
-                        response = response.replaceAll("[^\\d]", " ");
-                        response = response.trim();
-                        response = response.replaceAll(" +", " ");
-                        response = response.split(" ")[response.split(" ").length - 1];
-                        candidateDetails.setTotalExperience(Double.parseDouble(response));
-
+                        Pattern pattern = Pattern.compile("\\d+");
+                        Matcher match = pattern.matcher(response);
+                        if(match.find())
+                            response = match.group(0);
+                        else
+                            response = "";
+//                        response = response.replaceAll("[^\\d]", " ");
+//                        response = response.trim();
+//                        response = response.replaceAll(" +", " ");
+//                        response = response.split(" ")[response.split(" ").length - 1];
+                        if(Util.isNotNull(response))
+                            candidateDetails.setTotalExperience(Double.parseDouble(response));
                     }
-                     */
-                     else if (masterData.getValue().equals("Location"))
+                    else if (masterData.getValue().equals("Location"))
                         candidateDetails.setLocation(response);
                     else if (masterData.getValue().equals("Expected Salary"))
                         jobCandidateMapping.setExpectedCtc(Long.parseLong(response));
-                    /*
-                    TODO: fix candidate education details
                     else if (masterData.getValue().equals("Education")) {
                         //Find candidate education detail by degree as well. This code will not handle multiple degrees
                         CandidateEducationDetails candidateEducationDetails = candidateEducationDetailsRepository.findByCandidateIdAndDegree(jobCandidateMapping.getCandidate().getId(), response);
                         if (candidateEducationDetails == null) {
                             CandidateEducationDetails educationDetails = new CandidateEducationDetails();
                             educationDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
+                            educationDetails.setDegree(response);
+                            candidateEducationDetailsRepository.save(educationDetails);
+                        } else {
+                            candidateEducationDetails.setDegree(response);
+                            candidateEducationDetailsRepository.save(candidateEducationDetails);
                         }
-                        candidateEducationDetailsRepository.save(candidateEducationDetails);
-                    }*/
+                    }
                 }
             } catch (Exception e) {
                 log.info("Error while Updating Total Experinence :: {}", e.getMessage());
@@ -2540,7 +2553,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             candidateCompanyDetails.setCompanyName(companyDetails.getCompanyName());
             candidateCompanyDetails.setDesignation(companyDetails.getDesignation());
             candidateCompanyDetails.setNoticePeriod(companyDetails.getNoticePeriod());
-            if (null != companyDetails.getSalary())
+            if (Util.isNotNull(companyDetails.getSalary()))
                 candidateCompanyDetails.setSalary(companyDetails.getSalary());
             candidateCompanyDetailsRepository.save(candidateCompanyDetails);
         }
@@ -2551,7 +2564,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         }
         else{
             details.setLocation(candidateDetails.getLocation());
-            details.setTotalExperience(candidateDetails.getTotalExperience());
+            if(null != candidateDetails.getTotalExperience())
+                details.setTotalExperience(candidateDetails.getTotalExperience());
             candidateDetailsRepository.save(details);
         }
         jobCandidateMappingRepository.save(jobCandidateMapping);
