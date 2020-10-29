@@ -207,7 +207,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         try{
             Long jcmId = addCandidate(cvParserResponseBean.get().getCandidate(), cvParsingDetails.get(),  Long.parseLong(s[1]), filePath.toString(), Long.parseLong(s[0]), candidateSource, statusCode.get());
            //Add CV rating for candidate
-            if(jcmId.equals(0) && null != cvParserResponseBean.get()){
+            if(!jcmId.equals(0) && null != cvParserResponseBean.get()){
                 addCvRating(jcmId, cvParserResponseBean.get().getCvRatingResponseWrapper());
             }
         }catch (Exception exception){
