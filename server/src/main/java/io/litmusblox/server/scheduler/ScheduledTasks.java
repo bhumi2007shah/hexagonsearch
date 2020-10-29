@@ -55,12 +55,12 @@ public class ScheduledTasks {
         log.info("completed parse and process cv. Thread: {}", Thread.currentThread().getId());
     }
 
-    @Scheduled(fixedRate = 120000, initialDelay = 5000)
+    /*@Scheduled(fixedRate = 120000, initialDelay = 5000)
     public void rateAndProcessCv() {
         log.info("started rate and process cv. Thread: {}", Thread.currentThread().getId());
         processUploadedCV.rateCv();
         log.info("completed rate and process cv. Thread: {}", Thread.currentThread().getId());
-    }
+    }*/
 
     @Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
     public void processEmailApplications() {
@@ -83,11 +83,18 @@ public class ScheduledTasks {
         log.info("Completed invitin LDEB candidates. Thread {}", Thread.currentThread().getId());
     }
 
-    @Scheduled(fixedDelay = 300000, initialDelay = 5000)
+    /*@Scheduled(fixedDelay = 300000, initialDelay = 5000)
     public void convertCvFileToCvText() {
         log.info("started convert cv file to cv text. Thread: {}", Thread.currentThread().getId());
         processUploadedCV.cvToCvText();
         log.info("completed convert cv file to cv text. Thread: {}", Thread.currentThread().getId());
+    }*/
+
+    @Scheduled(fixedDelay = 300000, initialDelay = 5000)
+    public void updateCvRating() {
+        log.info("started to update cv rating. Thread: {}", Thread.currentThread().getId());
+        processUploadedCV.updateCvRating();
+        log.info("completed to update cv rating. Thread: {}", Thread.currentThread().getId());
     }
 
     //@Scheduled(cron = "* * 0-6 * * *")

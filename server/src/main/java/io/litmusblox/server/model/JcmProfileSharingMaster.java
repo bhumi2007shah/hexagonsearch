@@ -47,9 +47,6 @@ public class JcmProfileSharingMaster {
     @Column(name = "RECEIVER_NAME")
     private String receiverName;
 
-    @Column(name = "RECEIVER_EMAIL")
-    private String receiverEmail;
-
     @Column(name = "EMAIL_SENT_ON")
     @Temporal(TemporalType.TIMESTAMP)
     private Date emailSentOn;
@@ -61,8 +58,9 @@ public class JcmProfileSharingMaster {
     @Transient
     private Set<JcmProfileSharingDetails> jcmProfileSharingDetails = new HashSet<>(0);
 
-    public JcmProfileSharingMaster(@NotNull Long senderId, @NotNull Long receiverId) {
+    public JcmProfileSharingMaster(@NotNull Long senderId, @NotNull Long receiverId, String receiverName) {
         this.senderId = senderId;
         this.receiverId = receiverId;
+        this.receiverName = receiverName;
     }
 }

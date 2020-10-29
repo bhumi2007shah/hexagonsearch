@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +24,10 @@ import java.util.Map;
 @AllArgsConstructor
 public class CvRatingRequestBean {
     Map<String, List<String>> jdKeySkillsMap;
-    List<String> resumeContentSkills;
-    String industry;
+    List<String> resumeContentSkills = new ArrayList<>();
+    String industry = "";
+
+    public CvRatingRequestBean(Map<String, List<String>> neighbourSkillMap) {
+        this.jdKeySkillsMap = neighbourSkillMap;
+    }
 }

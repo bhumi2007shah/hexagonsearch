@@ -22,7 +22,4 @@ import java.util.List;
  */
 public interface JcmProfileSharingMasterRepository extends JpaRepository<JcmProfileSharingMaster, Long> {
 
-    @Transactional(readOnly = true)
-    List<JcmProfileSharingMaster> findByReceiverEmailContainingIgnoreCase(String domain);
-
 }

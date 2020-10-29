@@ -85,6 +85,9 @@ public class CvParsingDetails {
     @Type(type = "com.vladmihalcea.hibernate.type.array.StringArrayType")
     private String[] candidateSkills;
 
+    @Column(name = "CV_RATING_API_CALL_RETRY_COUNT")
+    private Long cvRatingApiCallTRetryCount;
+
     public CvParsingDetails(String cvFileName, Date processedOn, String parsingResponseText, Long candidateId, JobCandidateMapping jobCandidateMappingId) {
         this.cvFileName = cvFileName;
         this.processedOn = processedOn;

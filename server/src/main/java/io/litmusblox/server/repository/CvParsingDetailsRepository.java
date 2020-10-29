@@ -26,7 +26,7 @@ public interface CvParsingDetailsRepository extends JpaRepository<CvParsingDetai
     List<CvParsingDetails> findByRchilliJsonProcessed(boolean rchilliJsonProcessed);
 
     @Transactional
-    @Query(nativeQuery = true, value = "select * from cv_parsing_details where cv_rating_api_flag is false and (processing_status is null or processing_status = 'Success') and  parsing_response_text is not null and length(trim(parsing_response_text))>=:responseTxtLimit order by id desc limit 10")
+    @Query(nativeQuery = true, value = "select * from cv_parsing_details where cv_rating_api_flag is false and (processing_status is null or processing_status = 'Success') and  parsing_response_text is not null and length(trim(parsing_response_text))>=:responseTxtLimit and candidate_skills is not null and CV_RATING_API_CALL_RETRY_COUNT < 4 order by id desc limit 10")
     List<CvParsingDetails> findCvRatingRecordsToProcess(int responseTxtLimit);
 
     @Transactional
@@ -46,4 +46,11 @@ public interface CvParsingDetailsRepository extends JpaRepository<CvParsingDetai
             "and cpd.cv_convert_api_flag = false \n" +
             "and (jcm.cv_file_type is not null and trim(jcm.cv_file_type) != '')", nativeQuery = true)
     List<CvParsingDetails> getDataForConvertCvToCvText();
+
+    @Query(value = "select cpd.* from cv_parsing_details cpd\n" +
+            "inner join job_candidate_mapping jcm on jcm.id = cpd.job_candidate_mapping_id\n" +
+            "where cpd.cv_rating_api_flag = false \n" +
+            "and (cpd.processing_status is null or cpd.processing_status = 'Success')\n" +
+            "and (jcm.cv_file_type is not null and trim(jcm.cv_file_type) != '') order by id desc limit 10", nativeQuery = true)
+    List<CvParsingDetails> getDataForUpdateCvRating();
 }

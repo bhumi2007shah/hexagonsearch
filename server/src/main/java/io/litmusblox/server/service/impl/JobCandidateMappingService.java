@@ -254,11 +254,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 if(null!=candidate.getId()){
                     saveCandidateSupportiveInfo(candidate, loggedInUser);
                     try {
-                        if(candidateService.createCandidateOnSearchEngine(candidate, job, JwtTokenUtil.getAuthToken())==200){
+                        //For now we comment create candidate on search engine call because it is not working
+                        /*if(candidateService.createCandidateOnSearchEngine(candidate, job, JwtTokenUtil.getAuthToken())==200){
                             JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByJobAndCandidate(job, candidate);
                             jobCandidateMapping.setCreatedOnSearchEngine(true);
                             jobCandidateMappingRepository.save(jobCandidateMapping);
-                        }
+                        }*/
                     }catch (Exception e){
                         log.error("Error while adding candidate : {} in searchEngine for job : {}:: {}", candidate.getId(), job.getId(), e.getMessage());
                     }
@@ -514,6 +515,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             //#189: save the text format of CV if available
             if(responseBean.getSuccessfulCandidates().size() > 0) {
                 JobCandidateMapping jcm = jobCandidateMappingRepository.findByJobAndCandidate(getJob(jobId), responseBean.getSuccessfulCandidates().get(0));
+               if(null!=candidateCv){
+                   jcm.setCvFileType("."+Util.getFileExtension(candidateCv.getOriginalFilename()));
+                   jobCandidateMappingRepository.save(jcm);
+               }
                 cvParsingDetailsRepository.save(new CvParsingDetails(null!=candidateCv?candidateCv.getOriginalFilename():null, new Date(), candidate.getCandidateDetails().getTextCv(), responseBean.getSuccessfulCandidates().get(0).getId(),jcm));
             }
         }
@@ -1015,7 +1020,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
             User receiverUser = userRepository.getOne(user);
             validateloggedInUser(receiverUser, jcm.getJob().getCompanyId().getId());
-            JcmProfileSharingMaster masterObj = jcmProfileSharingMasterRepository.save(new JcmProfileSharingMaster(loggedInUser.getId(), receiverUser.getId()));
+            JcmProfileSharingMaster masterObj = jcmProfileSharingMasterRepository.save(new JcmProfileSharingMaster(loggedInUser.getId(), receiverUser.getId(), receiverUser.getDisplayName()));
             Set<JcmProfileSharingDetails> detailsSet = new HashSet<>(requestBean.getJcmId().size());
             requestBean.getJcmId().forEach(jcmId ->{
                 detailsSet.add(new JcmProfileSharingDetails(masterObj, jcmId));
@@ -1059,15 +1064,16 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if(null != jcmProfileSharingDetails.getComments())
             jcmHistoryMsg.append(", Comments: ").append(jcmProfileSharingDetails.getComments());
         if(!jcmProfileSharingDetails.getHiringManagerInterest()){
-            if(null == jcmProfileSharingDetails.getRejectionReasonId())
+            if(null == jcmProfileSharingDetails.getRejectionReason().getId())
                 throw new ValidationException("Invalid Request", HttpStatus.BAD_REQUEST);
             else{
-                RejectionReasonMasterData rejectionReasonMasterData = rejectionReasonMasterDataRepository.getOne(jcmProfileSharingDetails.getRejectionReasonId());
+                RejectionReasonMasterData rejectionReasonMasterData = rejectionReasonMasterDataRepository.getOne(jcmProfileSharingDetails.getRejectionReason().getId());
                 jcmHistoryMsg.append(", Rejection Reason: ").append(rejectionReasonMasterData.getValue()).append("- ").append(rejectionReasonMasterData.getLabel());
             }
         }
         jcmProfileSharingDetailsRepository.save(jcmProfileSharingDetails);
         jcmHistoryRepository.save(new JcmHistory(jcmObj, jcmHistoryMsg.toString(), new Date(), null, jcmObj.getStage(), true));
+        log.info(jcmHistoryMsg.toString());
     }
 
     /**
@@ -2079,7 +2085,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             jobCandidateMappingRepository.save(jcm);
             cvParsingDetailsRepository.save(new CvParsingDetails(candidateCv.getOriginalFilename(), new Date(), null, jcm.getCandidate().getId(),jcm));
         }catch (Exception ex){
-            log.error("{}, File name : {}, For jcmId : ", IErrorMessages.FAILED_TO_SAVE_FILE, candidateCv.getOriginalFilename(), jcm.getId(), ex.getMessage());
+            log.error("{}, File name : {}, For jcmId : {}, Cause : {}", IErrorMessages.FAILED_TO_SAVE_FILE, candidateCv.getOriginalFilename(), jcm.getId(), ex.getMessage());
             throw new ValidationException(IErrorMessages.FAILED_TO_SAVE_FILE+" "+candidateCv.getOriginalFilename()+ex.getMessage(), HttpStatus.BAD_REQUEST);
         }
 
