@@ -2508,16 +2508,16 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     else if (masterData.getValue().equals("Current Salary"))
                         companyDetails.setSalary(response);
                     else if (masterData.getValue().equals("Total Experience")) {
-                        Pattern pattern = Pattern.compile("\\d+");
-                        Matcher match = pattern.matcher(response);
-                        if(match.find())
-                            response = match.group(0);
-                        else
-                            response = "";
-//                        response = response.replaceAll("[^\\d]", " ");
-//                        response = response.trim();
-//                        response = response.replaceAll(" +", " ");
-//                        response = response.split(" ")[response.split(" ").length - 1];
+                        if(response.contains("months"))
+                            response="0.5";
+                        else {
+                            Pattern pattern = Pattern.compile("\\d+");
+                            Matcher match = pattern.matcher(response);
+                            if (match.find())
+                                response = match.group(0);
+                            else
+                                response = "";
+                        }
                         if(Util.isNotNull(response))
                             candidateDetails.setTotalExperience(Double.parseDouble(response));
                     }
@@ -2540,7 +2540,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     }
                 }
             } catch (Exception e) {
-                log.info("Error while Updating Total Experinence :: {}", e.getMessage());
+                log.info("Error while Updating Candidate Response :: {}", e.getMessage());
             }
         });
         CandidateCompanyDetails candidateCompanyDetails = candidateCompanyDetailsRepository.findByCandidateIdAndCompanyName(jobCandidateMapping.getCandidate().getId(), companyDetails.getCompanyName());
