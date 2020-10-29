@@ -4,14 +4,8 @@
 
 package io.litmusblox.server.scheduler;
 
-import io.litmusblox.server.model.Candidate;
-import io.litmusblox.server.model.Job;
-import io.litmusblox.server.model.JobCandidateMapping;
-import io.litmusblox.server.repository.JobCandidateMappingRepository;
 import io.litmusblox.server.service.IJobCandidateMappingService;
-import io.litmusblox.server.service.impl.CandidateService;
 import io.litmusblox.server.service.impl.FetchEmailService;
-import io.litmusblox.server.service.impl.JobCandidateMappingService;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,25 +36,12 @@ public class ScheduledTasks {
     @Autowired
     IJobCandidateMappingService jobCandidateMappingService;
 
-    @Autowired
-    JobCandidateMappingRepository jobCandidateMappingRepository;
-
-    @Autowired
-    CandidateService candidateService;
-
     @Scheduled(fixedDelay = 300000, initialDelay = 5000)
     public void parseAndProcessCv() {
         log.info("started parse and process cv. Thread: {}", Thread.currentThread().getId());
         processUploadedCV.processCv();
         log.info("completed parse and process cv. Thread: {}", Thread.currentThread().getId());
     }
-
-    /*@Scheduled(fixedRate = 120000, initialDelay = 5000)
-    public void rateAndProcessCv() {
-        log.info("started rate and process cv. Thread: {}", Thread.currentThread().getId());
-        processUploadedCV.rateCv();
-        log.info("completed rate and process cv. Thread: {}", Thread.currentThread().getId());
-    }*/
 
     @Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
     public void processEmailApplications() {
@@ -82,13 +63,6 @@ public class ScheduledTasks {
         jobCandidateMappingService.inviteLDEBCandidates();
         log.info("Completed invitin LDEB candidates. Thread {}", Thread.currentThread().getId());
     }
-
-    /*@Scheduled(fixedDelay = 300000, initialDelay = 5000)
-    public void convertCvFileToCvText() {
-        log.info("started convert cv file to cv text. Thread: {}", Thread.currentThread().getId());
-        processUploadedCV.cvToCvText();
-        log.info("completed convert cv file to cv text. Thread: {}", Thread.currentThread().getId());
-    }*/
 
     @Scheduled(fixedDelay = 300000, initialDelay = 5000)
     public void updateCvRating() {

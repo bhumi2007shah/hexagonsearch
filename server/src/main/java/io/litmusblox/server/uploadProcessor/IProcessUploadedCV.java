@@ -20,18 +20,6 @@ public interface IProcessUploadedCV {
     void processCv();
 
     /**
-     * Method that will be called by scheduler
-     * All eligible records of CV will be run against CV rating api and rated
-     */
-    void rateCv();
-
-    /**
-     * Method to convert cv file to cv text
-     * In cv_parsing_detail if parsing_response_text is null then convert cv to text and save
-     */
-    void cvToCvText();
-
-    /**
      * Method to update cv rating for cv
      * In cv_parsing_detail if cv rating flag is false then get cv rating and save
      */
