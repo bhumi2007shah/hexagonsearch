@@ -1061,8 +1061,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         JobCandidateMapping jcmObj = jobCandidateMappingRepository.getOne(jcmProfileSharingDetails.getJobCandidateMappingId());
         User user = userRepository.getOne(jcmProfileSharingDetails.getProfileSharingMaster().getReceiverId());
         StringBuffer jcmHistoryMsg = new StringBuffer("Hiring Manager ").append(user.getDisplayName()).append(" is").append(jcmProfileSharingDetails.getHiringManagerInterest()?" interested ":" not interested ").append("in this Profile");
-        if(null != jcmProfileSharingDetails.getComments())
+        if(null != jcmProfileSharingDetails.getComments()) {
+            jcmProfileSharingDetails.setComments(Util.truncateField(jcmObj.getCandidate(), IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.getValue(), jcmProfileSharingDetails.getComments()));
             jcmHistoryMsg.append(", Comments: ").append(jcmProfileSharingDetails.getComments());
+        }
         if(!jcmProfileSharingDetails.getHiringManagerInterest()){
             if(null == jcmProfileSharingDetails.getRejectionReason().getId())
                 throw new ValidationException("Invalid Request", HttpStatus.BAD_REQUEST);

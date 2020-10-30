@@ -2731,3 +2731,6 @@ alter table jcm_profile_sharing_master drop column receiver_email ;
 -- Issue in chatbot while updating candidate info
 ALTER TABLE CANDIDATE_COMPANY_DETAILS ALTER COLUMN COMPANY_NAME TYPE VARCHAR(300);
 ALTER TABLE CANDIDATE_COMPANY_DETAILS ALTER COLUMN DESIGNATION TYPE VARCHAR(300);
+
+--For ticket #682
+ALTER TABLE jcm_profile_sharing_details ALTER COLUMN comments TYPE varchar(300);
