@@ -2500,11 +2500,15 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     String response = value;
                     log.info("Candidate Response: {} for Question: {}", response, screeningQuestions.getQuestion());
                     if (masterData.getValue().equals("Current Company"))
-                        companyDetails.setCompanyName(response);
+                        companyDetails.setCompanyName(response.trim());
                     else if (masterData.getValue().equals("Job Title"))
-                        companyDetails.setDesignation(response);
-                    else if (masterData.getValue().equals("Notice Period"))
-                        companyDetails.setNoticePeriod(response);
+                        companyDetails.setDesignation(response.trim());
+                    else if (masterData.getValue().equals("Notice Period")) {
+                        MasterData md = MasterDataBean.getInstance().getNoticePeriodMapping().get(response);
+                        if(null == md)
+                            md = MasterDataBean.getInstance().getNoticePeriodMapping().get("Others");
+                        companyDetails.setNoticePeriodInDb(md);
+                    }
                     else if (masterData.getValue().equals("Current Salary"))
                         companyDetails.setSalary(response);
                     else if (masterData.getValue().equals("Total Experience")) {
@@ -2552,7 +2556,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         } else {
             candidateCompanyDetails.setCompanyName(companyDetails.getCompanyName());
             candidateCompanyDetails.setDesignation(companyDetails.getDesignation());
-            candidateCompanyDetails.setNoticePeriod(companyDetails.getNoticePeriod());
+            candidateCompanyDetails.setNoticePeriodInDb(companyDetails.getNoticePeriodInDb());
             if (Util.isNotNull(companyDetails.getSalary()))
                 candidateCompanyDetails.setSalary(companyDetails.getSalary());
             candidateCompanyDetailsRepository.save(candidateCompanyDetails);
