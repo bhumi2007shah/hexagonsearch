@@ -2735,3 +2735,8 @@ ALTER TABLE CANDIDATE_COMPANY_DETAILS ALTER COLUMN DESIGNATION TYPE VARCHAR(300)
 
 --For ticket #682
 ALTER TABLE jcm_profile_sharing_details ALTER COLUMN comments TYPE varchar(300);
+
+-- hiring manager issue script
+COPY jcm_profile_sharing_master(id, receiver_name,sender_id, email_sent_on, receiver_id) FROM '/home/lbprod/UserIdShareCandidateMasterDataUpdate.csv' DELIMITER ',' CSV HEADER;
+--Removing entries from details table
+delete from jcm_profile_sharing_details where id in (select psd.id from jcm_profile_sharing_details psd left join jcm_profile_sharing_master psm on psm.id = psd.profile_sharing_master_id where psm.id is null);
