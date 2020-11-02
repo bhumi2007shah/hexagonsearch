@@ -81,7 +81,7 @@ public class JobController {
                 jobService.newAddJobFlow(job, pageName),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("displayName","id"));
-                    put("ScreeningQuestions", Arrays.asList("question","id"));
+                    put("ScreeningQuestions", Arrays.asList("question","id","isMandatory"));
                     put("JobStageStep", Arrays.asList("id", "stageStepId"));
                 }}),
                 (new HashMap<String, List<String>>(){{
