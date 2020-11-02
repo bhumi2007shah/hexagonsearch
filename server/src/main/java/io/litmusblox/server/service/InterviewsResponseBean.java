@@ -5,12 +5,13 @@
 package io.litmusblox.server.service;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.litmusblox.server.utils.Util;
 import lombok.Data;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
+import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * Date : 07/10/20
@@ -25,6 +26,8 @@ public class InterviewsResponseBean {
 
     @Id
     private Long id;
+    private Long jobId;
+    private String jobTitle;
     private String candidateName;
     private String email;
     @JsonInclude
@@ -36,7 +39,8 @@ public class InterviewsResponseBean {
     private Long jcmCreatedBy;
     @JsonInclude
     private Integer keySkillStrength;
-    private String interviewDate;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date interviewDate;
     private String interviewStatus;
     @JsonInclude
     private String candidateConfirmation;
@@ -44,4 +48,7 @@ public class InterviewsResponseBean {
     @Column(name = "INTERVIEWERS", columnDefinition = "Integer[]")
     private int[] interviewers;
     private Long ivCreatedBy;
+    public String getInterviewDateWithTimeZone(){
+        return (null == this.interviewDate)?null:(Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), this.interviewDate));
+    }
 }

@@ -82,7 +82,7 @@ public interface IJobCandidateMappingService {
      * @param response Map of qId and List of responses received from chatbot
      * @throws Exception
      */
-    void saveScreeningQuestionResponse(UUID uuid, Map<Long, List<String>> response) throws Exception;
+    void saveScreeningQuestion(UUID uuid, Map<Long, List<String>> response) throws Exception;
 
 
     /**

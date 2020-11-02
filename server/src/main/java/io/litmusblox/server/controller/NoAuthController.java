@@ -111,7 +111,7 @@ public class NoAuthController {
     void screeningQuestionResponse(@RequestParam("uuid") UUID uuid, @RequestBody Map<Long , List<String>>response) throws Exception{
         log.info("Received screening question responses from candidate: " + uuid);
         long startTime = System.currentTimeMillis();
-        jobCandidateMappingService.saveScreeningQuestionResponse(uuid, response);
+        jobCandidateMappingService.saveScreeningQuestion(uuid, response);
         log.info("Completed saving candidate response to screening questions in {}ms",(System.currentTimeMillis()-startTime));
     }
 

@@ -353,12 +353,14 @@ public class CandidateService implements ICandidateService {
         log.info("Inside saveUpdateCandidateSkillDetails method");
         //delete existing records
         candidateSkillDetailsRepository.deleteByCandidateId(candidate.getId());
+        List<CandidateSkillDetails> skillList = new ArrayList<CandidateSkillDetails>(candidateSkillDetails.stream().collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(CandidateSkillDetails::getSkill)))));
         //insert new ones
-        candidateSkillDetails.forEach(obj -> {
+        skillList.forEach(obj -> {
             if(!Util.isNull(obj.getSkill()) && obj.getSkill().length() > IConstant.MAX_FIELD_LENGTHS.SKILL.getValue()) {
                 obj.setSkill(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL.name(), IConstant.MAX_FIELD_LENGTHS.SKILL.getValue(), obj.getSkill()));
             }
-            obj.setCandidateId(candidate.getId());candidateSkillDetailsRepository.save(obj);});
+            obj.setCandidateId(candidate.getId());
+            candidateSkillDetailsRepository.save(obj);});
 
     }
 

@@ -212,7 +212,7 @@ public class CustomQueryExecutor {
 
     private static final String totalLiveJobCountSelectQuery = "select count(id) from job where date_published is not null and date_archived is null";
 
-    private static final String futureInterviewDetailsForCompanyQuery = "select ivd.id, concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidate_name, jcm.email, jcm.country_code, jcm.mobile, jcm.chatbot_status as screening_status, jcm.created_by as jcm_created_by, cv.overall_rating as key_skill_strength, CAST(ivd.interview_date as varchar),\n" +
+    private static final String futureInterviewDetailsForCompanyQuery = "select ivd.id, j.id as job_id, j.job_title, concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidate_name, jcm.email, jcm.country_code, jcm.mobile, jcm.chatbot_status as screening_status, jcm.created_by as jcm_created_by, cv.overall_rating as key_skill_strength, ivd.interview_date,\n" +
             "(CASE when (ivd.candidate_confirmation_value is not null and md.value like 'Yes%') then 'Confirmed'\n" +
             "when (ivd.candidate_confirmation_value is not null and md.value like '%reschedule%') then 'Rescheduled'\n" +
             "when (ivd.candidate_confirmation_value is not null and md.value like 'No%') or  ivd.cancelled = 't' then 'Cancelled'\n" +

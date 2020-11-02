@@ -5,6 +5,7 @@
 package io.litmusblox.server.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.litmusblox.server.model.CandidateScreeningQuestionResponse;
 import io.litmusblox.server.model.InterviewDetails;
@@ -28,6 +29,7 @@ import java.util.Map;
 @Data
 @Entity
 @Table(name = "JOB_CANDIDATE_MAPPING_ALL_DETAILS")
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class JCMAllDetails {
     @Id
     Long id;
