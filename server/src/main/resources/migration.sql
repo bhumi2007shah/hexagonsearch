@@ -2711,6 +2711,7 @@ update sms_templates set template_content = '[[${commBean.sendercompany}]] is co
 ALTER TABLE SCREENING_QUESTION
 ADD COLUMN IS_MANDATORY BOOL DEFAULT 'f';
 update screening_question set options=array_remove(options,'I wish not to answer') where question in ('Which City are you currently based in?','What is your Total work experience range?','What is the official Notice Period you are required to serve in your current company?','What is your highest level of education?');
+update screening_question set options[1]=initcap(options[1]),options[2]=initcap(options[2]),options[3]=initcap(options[3]),options[4]=initcap(options[4]), options[5]=initcap(options[5]), options[6]=initcap(options[6]) where question='What is the official Notice Period you are required to serve in your current company?';
 
 
 --For ticket 630
@@ -2731,3 +2732,11 @@ alter table jcm_profile_sharing_master drop column receiver_email ;
 -- Issue in chatbot while updating candidate info
 ALTER TABLE CANDIDATE_COMPANY_DETAILS ALTER COLUMN COMPANY_NAME TYPE VARCHAR(300);
 ALTER TABLE CANDIDATE_COMPANY_DETAILS ALTER COLUMN DESIGNATION TYPE VARCHAR(300);
+
+--For ticket #682
+ALTER TABLE jcm_profile_sharing_details ALTER COLUMN comments TYPE varchar(300);
+
+-- hiring manager issue script
+COPY jcm_profile_sharing_master(id, receiver_name,sender_id, email_sent_on, receiver_id) FROM '/home/lbprod/UserIdShareCandidateMasterDataUpdate.csv' DELIMITER ',' CSV HEADER;
+--Removing entries from details table
+delete from jcm_profile_sharing_details where id in (select psd.id from jcm_profile_sharing_details psd left join jcm_profile_sharing_master psm on psm.id = psd.profile_sharing_master_id where psm.id is null);
