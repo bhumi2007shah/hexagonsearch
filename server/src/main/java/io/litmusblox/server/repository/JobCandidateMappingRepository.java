@@ -117,11 +117,11 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     List<Object[]> getCandidateCountPerStage(Long jobId, String stage) throws Exception;
 
     @Transactional
-    @Query(nativeQuery = true, value = "select * from job_candidate_mapping where chatbot_status is null and job_id in (select id from job where auto_invite = 't') and stage=(select id from stage_step_master where stage='Sourcing')")
+    @Query(nativeQuery = true, value = "select * from job_candidate_mapping where chatbot_status is null and job_id in (select id from job where auto_invite = 't') and stage=(select id from stage_step_master where stage='Sourcing') and (job_candidate_mapping.mobile is not null or job_candidate_mapping.email not like '%notavailable.io')")
     List<JobCandidateMapping> getNewAutoSourcedJcmList();
 
     @Transactional
-    @Query(nativeQuery = true, value="select * from job_candidate_mapping where job_id in (select id from job where company_id in (select id from company where send_communication='f')) and stage=(select id from stage_step_master where stage='Sourcing') and chatbot_status is null")
+    @Query(nativeQuery = true, value="select * from job_candidate_mapping where job_id in (select id from job where company_id in (select id from company where send_communication='f')) and stage=(select id from stage_step_master where stage='Sourcing') and chatbot_status is null and (job_candidate_mapping.mobile is not null or job_candidate_mapping.email not like '%notavailable.io')")
     List<JobCandidateMapping> getLDEBCandidates();
 
     List<JobCandidateMapping> findAllByJobId(Long jobId);
