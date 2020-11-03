@@ -1123,7 +1123,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
             log.info("Reloading apache for subdomain {}.", publishedJob.getCompanyId().getShortName());
             companyService.reloadApache(Arrays.asList(publishedJob.getCompanyId()));
         }
-        if (publishedJob.getJobCapabilityList().size() == 0)
+
+        //Currently, we are not using the scoring engine service
+        /*if (publishedJob.getJobCapabilityList().size() == 0)
             log.info("No capabilities exist for the job: " + job.getId() + " Scoring engine api call will NOT happen");
         else if (jobCapabilitiesRepository.findByJobIdAndSelected(job.getId(), true).size() == 0)
             log.info("No capabilities have been selected for the job: {}. Scoring engine api call will NOT happen", job.getId());
@@ -1136,7 +1138,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             } catch (Exception e) {
                 log.error("Error during create job api call on Scoring engine: " + e.getMessage());
             }
-        }
+        }*/
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
