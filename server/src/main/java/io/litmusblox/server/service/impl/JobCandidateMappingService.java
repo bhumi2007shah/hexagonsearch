@@ -928,7 +928,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     jobObjToUse =
                             jobCandidateMapping.getJob();
 
-                validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
+                //this method call from invite candidate so we remove validation
+                //validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
 
                 //https://github.com/hexagonsearch/litmusblox-backend/issues/527
                 //Check if mobile or email valid then invite candidate if both are invalid then skip to invite candidate
