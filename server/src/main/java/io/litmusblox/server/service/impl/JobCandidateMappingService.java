@@ -727,6 +727,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             }
 
             //update chatbot response and updated date in jcm
+            if(null == objFromDb.getCandidateChatbotResponse())
+                objFromDb.setCandidateChatbotResponse(new HashMap<>());
+            
             objFromDb.getCandidateChatbotResponse().put(savedResponse.getJobScreeningQuestionId().toString(), (savedResponse.getResponse()+(savedResponse.getComment()!=null?savedResponse.getComment():"")));
             objFromDb.setChatbotUpdatedOn(new Date());
 
