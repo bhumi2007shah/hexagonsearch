@@ -795,7 +795,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         InviteCandidateResponseBean inviteCandidateResponseBean = performInvitationAndHistoryUpdation(jcmList, loggedInUser);
         //remove all failed invitations
         jcmList.removeAll(inviteCandidateResponseBean.getFailedJcm().stream().map(JobCandidateMapping::getId).collect(Collectors.toList()));
-        callScoringEngineToAddCandidates(jcmList);
+        //Currently, we are not using the scoring engine service
+        //callScoringEngineToAddCandidates(jcmList);
         if (null != inviteCandidateResponseBean.getFailedJcm() && inviteCandidateResponseBean.getFailedJcm().size() > 0) {
             handleErrorRecords(null, inviteCandidateResponseBean.getFailedJcm(), IConstant.ASYNC_OPERATIONS.InviteCandidates.name(), loggedInUser, inviteCandidateResponseBean.getJobId(), null);
         }
@@ -810,21 +811,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     public void inviteAutoSourcedCandidate()throws Exception{
         log.info("Inside inviteAutoSourcedCandidate");
         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getNewAutoSourcedJcmList();
-        inviteAutoSourcedOrLDEBCandidates(jobCandidateMappings);
-    }
-
-    /**
-     *
-     * Service method to call inviteAutoSourcedOrLDEBCandidates with jcm which are uploaded in job of companies with LDEB subscription and currently in sourcing stage
-     * @throws Exception
-     */
-    public void inviteLDEBCandidates() throws Exception{
-        log.info("Inside inviteLDEBCandidates");
-        List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getLDEBCandidates();
-        inviteAutoSourcedOrLDEBCandidates(jobCandidateMappings);
-    }
-
-    private void inviteAutoSourcedOrLDEBCandidates(List<JobCandidateMapping> jobCandidateMappings) throws Exception{
         if(jobCandidateMappings.size()>0) {
             log.info("Found {} autosourced candidates to be auto invited", jobCandidateMappings.size());
             Map<User, List<Long>> userJcmMap = jobCandidateMappings.stream()
