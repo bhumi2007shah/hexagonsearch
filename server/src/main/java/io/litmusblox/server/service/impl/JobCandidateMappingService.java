@@ -727,6 +727,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             }
 
             //update chatbot response and updated date in jcm
+            if(null == objFromDb.getCandidateChatbotResponse())
+                objFromDb.setCandidateChatbotResponse(new HashMap<>());
+
             objFromDb.getCandidateChatbotResponse().put(savedResponse.getJobScreeningQuestionId().toString(), (savedResponse.getResponse()+(savedResponse.getComment()!=null?savedResponse.getComment():"")));
             objFromDb.setChatbotUpdatedOn(new Date());
 
@@ -792,7 +795,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         InviteCandidateResponseBean inviteCandidateResponseBean = performInvitationAndHistoryUpdation(jcmList, loggedInUser);
         //remove all failed invitations
         jcmList.removeAll(inviteCandidateResponseBean.getFailedJcm().stream().map(JobCandidateMapping::getId).collect(Collectors.toList()));
-        callScoringEngineToAddCandidates(jcmList);
+        //Currently, we are not using the scoring engine service
+        //callScoringEngineToAddCandidates(jcmList);
         if (null != inviteCandidateResponseBean.getFailedJcm() && inviteCandidateResponseBean.getFailedJcm().size() > 0) {
             handleErrorRecords(null, inviteCandidateResponseBean.getFailedJcm(), IConstant.ASYNC_OPERATIONS.InviteCandidates.name(), loggedInUser, inviteCandidateResponseBean.getJobId(), null);
         }
@@ -807,21 +811,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     public void inviteAutoSourcedCandidate()throws Exception{
         log.info("Inside inviteAutoSourcedCandidate");
         List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getNewAutoSourcedJcmList();
-        inviteAutoSourcedOrLDEBCandidates(jobCandidateMappings);
-    }
-
-    /**
-     *
-     * Service method to call inviteAutoSourcedOrLDEBCandidates with jcm which are uploaded in job of companies with LDEB subscription and currently in sourcing stage
-     * @throws Exception
-     */
-    public void inviteLDEBCandidates() throws Exception{
-        log.info("Inside inviteLDEBCandidates");
-        List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.getLDEBCandidates();
-        inviteAutoSourcedOrLDEBCandidates(jobCandidateMappings);
-    }
-
-    private void inviteAutoSourcedOrLDEBCandidates(List<JobCandidateMapping> jobCandidateMappings) throws Exception{
         if(jobCandidateMappings.size()>0) {
             log.info("Found {} autosourced candidates to be auto invited", jobCandidateMappings.size());
             Map<User, List<Long>> userJcmMap = jobCandidateMappings.stream()
@@ -939,7 +928,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     jobObjToUse =
                             jobCandidateMapping.getJob();
 
-                validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
+                //this method call from invite candidate so we remove validation
+                //validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
 
                 //https://github.com/hexagonsearch/litmusblox-backend/issues/527
                 //Check if mobile or email valid then invite candidate if both are invalid then skip to invite candidate
@@ -2485,7 +2475,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         long startTime = System.currentTimeMillis();
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Long validCompanyId = validateCompanyId(loggedInUser, companyId);
-        List<InterviewsResponseBean> response =  customQueryExecutor.getInterviewDetailsByCompany(validCompanyId);
+        List<InterviewsResponseBean> response =  customQueryExecutor.getInterviewDetailsByCompany(validCompanyId, loggedInUser);
         log.info("Completed execution of getInterviewForCompany for companyId {} in {} ms", companyId, System.currentTimeMillis() - startTime);
         return response;
     }
