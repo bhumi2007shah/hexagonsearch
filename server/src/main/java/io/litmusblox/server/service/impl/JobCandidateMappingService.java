@@ -561,9 +561,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         }
         objFromDb.setCandidateInterestDate(new Date());
         //set stage = Screening where stage = Source
-        Map<String, Long> stageIdMap = MasterDataBean.getInstance().getStageStepMasterMap();
-        jobCandidateMappingRepository.updateStageStepId(Arrays.asList(objFromDb.getId()), stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), objFromDb.getCreatedBy().getId(), new Date());
-
         //commented below code to not set flags to true.
         /*if(!objFromDb.getJob().getHrQuestionAvailable()){
             jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(objFromDb.getId());
@@ -671,6 +668,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             long updateCandidateResponseStartTime = System.currentTimeMillis();
             log.info("Updating Candidate Details based on Candidate Chatbot Resposne. Chatbot uuid is {}", uuid);
             updateCandidateResponse(objFromDb, candidateChatbotResponse);
+            Map<String, Long> stageIdMap = MasterDataBean.getInstance().getStageStepMasterMap();
+            jobCandidateMappingRepository.updateStageStepId(Arrays.asList(objFromDb.getId()), stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), objFromDb.getCreatedBy().getId(), new Date());
             log.info("Completed Updating Candidate Details in {} ms.",  System.currentTimeMillis()-updateCandidateResponseStartTime);
         }
     }

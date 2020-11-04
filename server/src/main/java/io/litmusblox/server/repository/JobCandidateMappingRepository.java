@@ -74,7 +74,7 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     @Transactional
     @Modifying
-    @Query(nativeQuery = true, value = "update job_candidate_mapping set stage = :newStageId, rejected = false, updated_by = :updatedBy, updated_on = :updatedOn where stage = :oldStageId and id in :jcmList")
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set stage =:newStageId, rejected = false, updated_by =:updatedBy, updated_on =:updatedOn where stage =:oldStageId and id in :jcmList")
     void updateStageStepId(List<Long> jcmList, Long oldStageId, Long newStageId, Long updatedBy, Date updatedOn);
 
     @Transactional(readOnly = true)
