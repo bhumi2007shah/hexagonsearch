@@ -220,6 +220,12 @@ public class Job implements Serializable {
     @Column(name = "VISIBLE_TO_CAREER_PAGE")
     private boolean visibleToCareerPage;
 
+    @Column(name = "ARCHIVE_STATUS")
+    private String archiveStatus;
+
+    @Column(name = "ARCHIVE_REASON")
+    private String archiveReason;
+
     @Type(type="jsonb")
     @Column(name = "EXPECTED_ANSWER", columnDefinition = "jsonb")
     private JsonNode expectedAnswer;

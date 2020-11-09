@@ -78,7 +78,7 @@ public interface IJobService {
      *
      * @param jobId id of the job to be archived
      */
-    void archiveJob(Long jobId);
+    void archiveJob(Long jobId, String arciveStatus, String archiveReason);
 
     /**
      * Service method to unarchive a job

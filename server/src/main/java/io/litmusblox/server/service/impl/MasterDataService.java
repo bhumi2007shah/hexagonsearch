@@ -368,7 +368,8 @@ public class MasterDataService implements IMasterDataService {
     private static final String JOB_FUNCTION = "function";
     private static final String JOB_ROLE = "role";
     private static final String SALARY_RANGE = "salaryRange";
-
+    private static final String ARCHIVE_STATUS = "archiveStatus";
+    private static final String ARCHIVE_REASON = "archiveReason";
     /**
      * Method to fetch specific master data from cache
      * @param master the response bean to be populated
@@ -468,6 +469,12 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case SALARY_RANGE:
                 master.getSalaryRange().putAll(MasterDataBean.getInstance().getSalaryRange());
+                break;
+            case ARCHIVE_STATUS:
+                master.getArchiveStatus().putAll(IConstant.ArchiveStatus);
+                break;
+            case ARCHIVE_REASON:
+                master.getArchiveReason().putAll(IConstant.ArchiveReason);
                 break;
             default: //for all other properties, use reflection
 

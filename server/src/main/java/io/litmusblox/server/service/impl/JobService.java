@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -1115,7 +1116,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     public void publishJob(Job job) throws Exception {
 
         log.info("Received request to publish job with id: " + job.getId());
-        Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite());
+        Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite(),null,null);
         log.info("Completed publishing job with id: " + job.getId());
         if (null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
             log.info("Subdomain does not exist for company: {}. Creating one.", publishedJob.getCompanyId().getCompanyName());
@@ -1167,9 +1168,16 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @param jobId id of the job to be archived
      */
     @Transactional
-    public void archiveJob(Long jobId) {
+    public void archiveJob(Long jobId, String archiveStatus, String archiveReason) {
         log.info("Received request to archive job with id: " + jobId);
-        changeJobStatus(jobId,IConstant.JobStatus.ARCHIVED.getValue(), null, null);
+        if(Util.isNull(archiveStatus))
+            throw new WebException("Archive Status Null for job with Id " + jobId, HttpStatus.UNPROCESSABLE_ENTITY );
+        if(archiveStatus.equals("No Success") && Util.isNull(archiveReason))
+            throw new WebException("Archive Reason Null for job with Id " + jobId, HttpStatus.UNPROCESSABLE_ENTITY);
+        if(archiveStatus.equals("No Success"))
+            changeJobStatus(jobId, IConstant.JobStatus.ARCHIVED.getValue(), null, null, archiveStatus, archiveReason);
+        else
+            changeJobStatus(jobId, IConstant.JobStatus.ARCHIVED.getValue(), null, null, archiveStatus, null);
         log.info("Completed archiving job with id: " + jobId);
     }
 
@@ -1181,7 +1189,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     @Transactional
     public void unarchiveJob(Long jobId) throws Exception {
         log.info("Received request to unarchive job with id: " + jobId);
-        changeJobStatus(jobId,null, null, null);
+        changeJobStatus(jobId,null, null, null, null, null);
         log.info("Completed unarchiving job with id: " + jobId);
     }
 
@@ -1190,7 +1198,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @param jobId the job on which the operation is to be performed
      * @param status the status to be set. If the job is being unarchived, the status will be sent as null
      */
-    private Job changeJobStatus(Long jobId, String status, Boolean visibleToCareerPage, Boolean autoInvite) {
+    private Job changeJobStatus(Long jobId, String status, Boolean visibleToCareerPage, Boolean autoInvite, String archiveStatus, String archiveReason)  {
         Job job = jobRepository.getOne(jobId);
         if (null == job) {
             throw new WebException("Job with id " + jobId + "does not exist", HttpStatus.UNPROCESSABLE_ENTITY);
@@ -1206,19 +1214,25 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 job.setStatus(IConstant.JobStatus.DRAFT.getValue());
             else
                 job.setStatus(IConstant.JobStatus.PUBLISHED.getValue());
-
-
             job.setDateArchived(null);
         }
-        else  {
-            if (status.equals(IConstant.JobStatus.ARCHIVED.getValue()))
+        else {
+            if (status.equals(IConstant.JobStatus.ARCHIVED.getValue())) {
                 job.setDateArchived(new Date());
+                if(IConstant.ArchiveStatus.containsValue(archiveStatus))
+                    job.setArchiveStatus(archiveStatus);
+                if(archiveStatus.equals("No Success")){
+                    if(IConstant.ArchiveReason.containsValue(archiveReason))
+                        job.setArchiveReason(archiveReason);
+                    else
+                        job.setArchiveReason(IConstant.ArchiveReason.get("Other"));
+                }
+            }
             else{
                 job.setAutoInvite(autoInvite);
                 job.setVisibleToCareerPage(visibleToCareerPage);
                 job.setDatePublished(new Date());
             }
-
             job.setStatus(status);
         }
 

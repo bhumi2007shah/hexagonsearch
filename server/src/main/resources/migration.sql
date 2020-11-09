@@ -2743,3 +2743,9 @@ delete from jcm_profile_sharing_details where id in (select psd.id from jcm_prof
 
 --For ticket #690
 update screening_question set question_type=(select id from master_data where type='questionType' and value='Radio button') where question='Which City are you currently based in?';
+
+--For ticket #649
+alter table job
+add column archive_status char(20),
+add column archive_reason char(20);
+
