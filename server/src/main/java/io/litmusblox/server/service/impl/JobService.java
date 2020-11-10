@@ -1169,15 +1169,12 @@ public class JobService extends AbstractAccessControl implements IJobService {
      */
     @Transactional
     public void archiveJob(Long jobId, String archiveStatus, String archiveReason) {
-        log.info("Received request to archive job with id: " + jobId);
-        if(Util.isNull(archiveStatus))
+        log.info("Received request to archive job with id: " + jobId + "with archive status" + archiveStatus + "and archive Reason" + archiveReason);
+        if(Util.isNull(archiveStatus) || !IConstant.ArchiveStatus.containsValue(archiveStatus))
             throw new WebException("Archive Status Null for job with Id " + jobId, HttpStatus.UNPROCESSABLE_ENTITY );
-        if(archiveStatus.equals("No Success") && Util.isNull(archiveReason))
+        if(archiveStatus.equals("No Success") && (Util.isNull(archiveReason) || !IConstant.ArchiveReason.containsValue(archiveReason)))
             throw new WebException("Archive Reason Null for job with Id " + jobId, HttpStatus.UNPROCESSABLE_ENTITY);
-        if(archiveStatus.equals("No Success"))
-            changeJobStatus(jobId, IConstant.JobStatus.ARCHIVED.getValue(), null, null, archiveStatus, archiveReason);
-        else
-            changeJobStatus(jobId, IConstant.JobStatus.ARCHIVED.getValue(), null, null, archiveStatus, null);
+        changeJobStatus(jobId, IConstant.JobStatus.ARCHIVED.getValue(), null, null, archiveStatus, archiveReason);
         log.info("Completed archiving job with id: " + jobId);
     }
 
@@ -1219,13 +1216,11 @@ public class JobService extends AbstractAccessControl implements IJobService {
         else {
             if (status.equals(IConstant.JobStatus.ARCHIVED.getValue())) {
                 job.setDateArchived(new Date());
-                if(IConstant.ArchiveStatus.containsValue(archiveStatus))
-                    job.setArchiveStatus(archiveStatus);
-                if(archiveStatus.equals("No Success")){
-                    if(IConstant.ArchiveReason.containsValue(archiveReason))
-                        job.setArchiveReason(archiveReason);
-                    else
-                        job.setArchiveReason(IConstant.ArchiveReason.get("Other"));
+                job.setArchiveStatus(archiveStatus);
+                saveJobHistory(jobId, "Archive Status changed to "+archiveStatus,loggedInUser);
+                if(Util.isNotNull(archiveReason)) {
+                    saveJobHistory(jobId, "Archive Reason changed to "+archiveReason,loggedInUser);
+                    job.setArchiveReason(archiveReason);
                 }
             }
             else{
