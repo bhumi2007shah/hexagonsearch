@@ -51,6 +51,6 @@ public interface CvParsingDetailsRepository extends JpaRepository<CvParsingDetai
             "inner join job_candidate_mapping jcm on jcm.id = cpd.job_candidate_mapping_id\n" +
             "where cpd.cv_rating_api_flag = false \n" +
             "and (cpd.processing_status is null or cpd.processing_status = 'Success')\n" +
-            "and (jcm.cv_file_type is not null and trim(jcm.cv_file_type) != '') order by id desc limit 10", nativeQuery = true)
+            "and (jcm.cv_file_type is not null and trim(jcm.cv_file_type) != '') order by cpd.id desc limit 10", nativeQuery = true)
     List<CvParsingDetails> getDataForUpdateCvRating();
 }
