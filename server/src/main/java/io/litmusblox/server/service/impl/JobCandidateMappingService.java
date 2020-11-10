@@ -927,7 +927,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     jobObjToUse =
                             jobCandidateMapping.getJob();
 
-                //this method call from invite candidate so we remove validation
+                //This method call from invite candidate which is a scheduled task so we remove validation
                 //validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
 
                 //https://github.com/hexagonsearch/litmusblox-backend/issues/527
