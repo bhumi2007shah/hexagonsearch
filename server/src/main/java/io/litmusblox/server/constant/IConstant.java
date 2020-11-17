@@ -309,6 +309,21 @@ public interface IConstant {
         }
     }
 
+    Map<String,String> ArchiveStatus = Collections.unmodifiableMap(new HashMap<>(){{
+        put("Success – We hired candidates for all positions in this job","Success");
+        put("Partial Success – We hired candidates for some positions in this job","Partial Success");
+        put("No Success – We did not hire candidates for any positions in this job","No Success");
+    }});
+
+    Map<String,String> ArchiveReason = Collections.unmodifiableMap(new HashMap<>(){{
+        put("Business Approval - not received","Business Approval");
+        put("Business Change - requirements changed","Business Change");
+        put("Hiring Manager - requirements changed","Hiring Manager");
+        put("Candidate Backout - identified candidate backed out","Candidate Backout");
+        put("Recruitment - not able to find the right candidates.","Recruitment");
+        put("Other","Other");
+    }});
+
     //constants for create candidate if firstName, lastName.
     String NOT_FIRST_NAME = "Not";
     String NOT_LAST_NAME = "Available";

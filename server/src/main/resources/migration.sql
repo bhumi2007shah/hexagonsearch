@@ -2712,7 +2712,7 @@ ALTER TABLE SCREENING_QUESTION
 ADD COLUMN IS_MANDATORY BOOL DEFAULT 'f';
 update screening_question set options=array_remove(options,'I wish not to answer') where question in ('Which City are you currently based in?','What is your Total work experience range?','What is the official Notice Period you are required to serve in your current company?','What is your highest level of education?');
 update screening_question set options[1]=initcap(options[1]),options[2]=initcap(options[2]),options[3]=initcap(options[3]),options[4]=initcap(options[4]), options[5]=initcap(options[5]), options[6]=initcap(options[6]) where question='What is the official Notice Period you are required to serve in your current company?';
-
+update screening_question SET is_mandatory ='t' where question in ('Which Company are you currently working for?','What is your Job Title?','What is your Total work experience range?','What is the official Notice Period you are required to serve in your current company?','Which City are you currently based in?','What is your Current Annual Salary?','What is your expected annual salary requirement?','What is your highest level of education?');
 
 --For ticket 630
 ALTER TABLE JOB_CANDIDATE_MAPPING
@@ -2743,3 +2743,10 @@ delete from jcm_profile_sharing_details where id in (select psd.id from jcm_prof
 
 --For ticket #690
 update screening_question set question_type=(select id from master_data where type='questionType' and value='Radio button') where question='Which City are you currently based in?';
+
+--For ticket #649
+alter table job
+add column archive_status char(20),
+add column archive_reason char(20);
+
+

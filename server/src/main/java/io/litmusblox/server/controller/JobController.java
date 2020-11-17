@@ -219,8 +219,9 @@ public class JobController {
      */
     @PutMapping(value = "/archiveJob/{jobId}")
     @ResponseStatus(HttpStatus.OK)
-    void archiveJob(@PathVariable("jobId") Long jobId) throws Exception {
-        jobService.archiveJob(jobId);
+    void archiveJob(@PathVariable("jobId") Long jobId, @RequestParam("archiveStatus") String archiveStatus, @RequestParam("archiveReason") Optional<String> archiveReason) throws Exception {
+        String archiveReasons = (archiveReason.isPresent())?archiveReason.get():null;
+        jobService.archiveJob(jobId,archiveStatus,archiveReasons);
     }
 
     /**
