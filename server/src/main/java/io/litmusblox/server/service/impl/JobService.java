@@ -1644,7 +1644,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         log.info("Inside generateAndAddTechScreeningQuestions for jobId : {}",job.getId());
 
         //Delete all exiting tech screening questions
-        jobScreeningQuestionsRepository.deleteByTechScreeningQuestionIdIsNotNullAndJobId(job.getId());
+        jobScreeningQuestionsRepository.deleteJobScreeningQuestions(job.getId(), job.getSelectedKeySkills());
         techScreeningQuestionRepository.deleteByJobIdAndQuestionCategoryNotIn(job.getId(), job.getSelectedKeySkills());
 
         //LoggedIn user
