@@ -6,6 +6,7 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.JobScreeningQuestions;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,8 @@ public interface JobScreeningQuestionsRepository extends JpaRepository<JobScreen
 
     void deleteByTechScreeningQuestionIdIsNotNullAndJobId(Long jobId);
 
-    @Query(value = "delete from job_screening_question where tech_screening_question_id in (select id from tech_screening_question where question_category not in :questionCategory and job_id =:jobId)", nativeQuery = true)
+    @Modifying
+    @Transactional
+    @Query(value = "delete from job_screening_questions where tech_screening_question_id in (select id from tech_screening_question where question_category not in :questionCategory and job_id =:jobId)", nativeQuery = true)
     void deleteJobScreeningQuestions(Long jobId, List<String> questionCategory);
 }
