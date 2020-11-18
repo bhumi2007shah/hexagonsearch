@@ -79,10 +79,10 @@ public interface IJobCandidateMappingService {
     /**
      * Service method to capture candidate response to screening questions from chatbot
      * @param uuid the uuid corresponding to a unique jcm record
-     * @param response Map of qId and List of responses received from chatbot
+     * @param screeningQuestionRequestBean Candidate chatbot response object
      * @throws Exception
      */
-    void saveScreeningQuestion(UUID uuid, Map<Long, List<String>> response) throws Exception;
+    void saveScreeningQuestion(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean) throws Exception;
 
 
     /**
@@ -313,5 +313,7 @@ public interface IJobCandidateMappingService {
      */
     List<InterviewsResponseBean> getInterviewsForCompany(Long companyId);
 
-    public void createExistingCandidateOnSearchEngine();
+    void createExistingCandidateOnSearchEngine();
+
+
 }

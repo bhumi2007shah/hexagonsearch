@@ -80,7 +80,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     TempSkillsRepository tempSkillsRepository;
 
     @Resource
-    JobKeySkillsRepository jobKeySkillsRepository;
+    JobSkillsAttributesRepository jobSkillsAttributesRepository;
 
     @Resource
     JobCapabilitiesRepository jobCapabilitiesRepository;
@@ -96,6 +96,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
     @Resource
     JobHiringTeamRepository jobHiringTeamRepository;
+
+    @Resource
+    JobRoleRepository jobRoleRepository;
 
     @Resource
     JcmCommunicationDetailsRepository jcmCommunicationDetailsRepository;
@@ -259,14 +262,14 @@ public class JobService extends AbstractAccessControl implements IJobService {
         if (currentPageIndex != -1) {
             if(MasterDataBean.getInstance().getJobPageNamesInOrder().get(currentPageIndex).equals(IConstant.AddJobPages.overview.name())) {
                 log.info("Setting jobkeyskills in job object");
-                job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
+                job.setJobSkillsAttributesList(jobSkillsAttributesRepository.findByJobId(job.getId()));
                 log.info("Setting capabilities in job object");
                 job.setJobCapabilityList(jobCapabilitiesRepository.findByJobId(job.getId()));
             }
             switch (IConstant.AddJobPages.valueOf(MasterDataBean.getInstance().getJobPageNamesInOrder().get(currentPageIndex+1))) {
                 case keySkills:
                     //populate key skills for the job
-                    job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
+                    job.setJobSkillsAttributesList(jobSkillsAttributesRepository.findByJobId(job.getId()));
                     break;
                 case capabilities:
                     //populate the capabilities for the job
@@ -655,15 +658,16 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
     private void callJdParser(JdParserRequestBean requestBean, long jobId, Job job) throws Exception {
         log.info("Inside callJdParser method for jobId : {}",jobId);
-        String function = MasterDataBean.getInstance().getFunction().get(job.getFunction().getId()).getFunction();
+        //Currently we are not using function in jd parser so for now we can remove that
+       // String function = MasterDataBean.getInstance().getFunction().get(job.getFunction().getId()).getFunction();
         Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId);
         Map breadCrumb = new HashMap<String, String>();
         try {
             ObjectMapper objectMapper = new ObjectMapper();
 
             //Send function to JdParser request
-            if(null != function)
-                requestBean.setFunction(function);
+            /*if(null != function)
+                requestBean.setFunction(function);*/
 
             objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -700,22 +704,26 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private int handleSkillsFromCvParser(Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineQuestionMap,Map<String, List<String>> neighbourSkillMap, Job oldJob) throws Exception {
+    private Job handleSkillsFromCvParser(Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineQuestionMap,Map<String, List<String>> neighbourSkillMap, Job job, Job oldJob) throws Exception {
         Set<String> skillsSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         //We are adding both the skill sets. Ref ticket - #661
-        skillsSet.addAll(neighbourSkillMap.keySet());
-        skillsSet.addAll(searchEngineQuestionMap.keySet());
-        log.info("Size of skill set : {} for job id : {} and skill set : {}", skillsSet.size(), oldJob.getId(), skillsSet);
+        if(null != neighbourSkillMap)
+            skillsSet.addAll(neighbourSkillMap.keySet());
+
+        if(null != searchEngineQuestionMap)
+            skillsSet.addAll(searchEngineQuestionMap.keySet());
+
+        log.info("Size of skill set : {} for job id : {} and skill set : {}", skillsSet.size(), job.getId(), skillsSet);
         List<String> skillList = new ArrayList<>(skillsSet);
         Collections.sort(skillList);
-        if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())) {
+        if(!IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus())) {
             //remove all data from job_key_skills
-            jobKeySkillsRepository.deleteByJobId(oldJob.getId());
-            jobKeySkillsRepository.flush();
+            jobSkillsAttributesRepository.deleteByJobId(job.getId());
+            jobSkillsAttributesRepository.flush();
         }
-        List<JobKeySkills> jobKeySkillsToSave = new ArrayList<>(skillsSet.size());
+        List<JobSkillsAttributes> jobSkillsAttributesToSave = new ArrayList<>(skillsSet.size());
+        //Add Skill
         skillList.forEach(skill-> {
-            boolean skillSelected = false;
             //find a skill from the master table for the skill name provided
             SkillsMaster skillFromDb = skillMasterRepository.findBySkillNameIgnoreCase(skill);
             //if none if found, add a skill
@@ -723,15 +731,21 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 skillFromDb = new SkillsMaster(skill);
                 skillMasterRepository.save(skillFromDb);
             }
-            //Check user select skill or not
-            if(oldJob.getSelectedKeySkills().contains(skill))
-                skillSelected = true;
 
             //add a record in job_key_skills with this skill id
-            jobKeySkillsToSave.add(new JobKeySkills(skillFromDb, skillSelected, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId(), (null != neighbourSkillMap.get(skill))?neighbourSkillMap.get(skill).toArray(new String[neighbourSkillMap.get(skill).size()]):null));
+            jobSkillsAttributesToSave.add(new JobSkillsAttributes(skillFromDb, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId(), (null!=neighbourSkillMap && null != neighbourSkillMap.get(skill))?neighbourSkillMap.get(skill).toArray(new String[neighbourSkillMap.get(skill).size()]):null));
         });
-        jobKeySkillsRepository.saveAll(jobKeySkillsToSave);
-        return skillsSet.size();
+        job.getSelectedAttribute().forEach(attribute-> {
+            //find a attribute from the master data for the attribute id provided
+            AttributesMasterData attributeFromDb = MasterDataBean.getInstance().getAttribute().get(Long.valueOf(attribute));
+            if(null !=attributeFromDb){
+                //add a record in job_skills_attribute with this skill id
+                jobSkillsAttributesToSave.add(new JobSkillsAttributes(attributeFromDb, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId()));
+            }else{
+                log.error("In job : {} attribute is null for id : {}", oldJob.getId(), attribute);
+            }});
+        oldJob.setJobSkillsAttributesList(jobSkillsAttributesRepository.saveAll(jobSkillsAttributesToSave));
+        return oldJob;
     }
 
     /**
@@ -772,9 +786,26 @@ public class JobService extends AbstractAccessControl implements IJobService {
             throw new ValidationException(IErrorMessages.SCREENING_QUESTIONS_VALIDATION_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
         }
         */
+
         if(null != oldJob && IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())){
             return;
         }
+
+        if(job.isQuickQuestion()){
+            //set statement block
+            oldJob.setStatementBlock(job.getStatementBlock());
+            oldJob.setQuickQuestion(true);
+        }
+
+        //Update JobIndustry
+        addIndustry(job, oldJob);
+
+        //Validate jobRole and create entry
+        validateRole(job, oldJob);
+
+        //validate function
+        validateFunction(job, oldJob);
+
         String historyMsg = "Added";
         AtomicBoolean masterQuestions = new AtomicBoolean(false);
         AtomicBoolean techQuestions = new AtomicBoolean(false);
@@ -815,42 +846,79 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         try {
             log.info("Add Key Skills in job : {}",job.getId());
-            handleSkillsFromCvParser(job.getSearchEngineSkillQuestionMap(), job.getNeighbourSkillsMap(), job);
+            oldJob = handleSkillsFromCvParser(job.getSearchEngineSkillQuestionMap(), job.getNeighbourSkillsMap(), job, oldJob);
         } catch (Exception exception) {
             log.error("Failed to add key skills. " + exception.getMessage());
         }
 
-        oldJob.setRole(job.getRole());
         jobRepository.save(oldJob);
         saveJobHistory(job.getId(), historyMsg + " screening questions", loggedInUser);
 
         //populate key skills for the job
-        job.setJobKeySkillsList(jobKeySkillsRepository.findByJobId(job.getId()));
+        job.setJobSkillsAttributesList(jobSkillsAttributesRepository.findByJobId(job.getId()));
+    }
+
+    private void addIndustry(Job job, Job oldJob){
+        if (null == job.getJobIndustry() || null == MasterDataBean.getInstance().getJobIndustry().get(job.getJobIndustry().getId())) {
+            //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
+            log.error("In JobId : {}, jobIndustry {}",job.getId(),IErrorMessages.NULL_MESSAGE);
+        }else{
+            oldJob.setJobIndustry(job.getJobIndustry());
+        }
+    }
+
+    private void validateRole(Job job, Job oldJob){
+        if(null == job.getSelectedRole() || job.getSelectedRole().size()==0){
+            log.error("In JobId : {}, role {}", oldJob.getId(), IErrorMessages.NULL_MESSAGE);
+            throw new ValidationException("Role should not be null for job : "+oldJob.getId(), HttpStatus.BAD_REQUEST);
+        }
+        List<JobRole> jobRoles = new ArrayList<>();
+        //Delete job roles
+        jobRoleRepository.deleteByJob(oldJob);
+        //Create jobRole
+        job.getSelectedRole().forEach(selectedRole ->{
+            if(null != MasterDataBean.getInstance().getRole().get(Long.valueOf(selectedRole))){
+                jobRoles.add(new JobRole(MasterDataBean.getInstance().getRole().get(Long.valueOf(selectedRole)), oldJob));
+            }else{
+                log.error("JobRole not present for id : {}, in job : {}",selectedRole, oldJob.getId());
+            }
+        });
+        jobRoleRepository.saveAll(jobRoles);
+    }
+
+    private void validateFunction(Job job, Job oldJob){
+        if(null == job.getFunction() || job.getFunction().length==0){
+            log.error("In JobId : {}, function {}", oldJob.getId(), IErrorMessages.NULL_MESSAGE);
+            throw new ValidationException("Function should not be null for job : "+oldJob.getId(), HttpStatus.BAD_REQUEST);
+        }
+        List<Integer> functions = new ArrayList<>();
+        Arrays.stream(job.getFunction()).forEach(function ->{
+            if(null == MasterDataBean.getInstance().getFunction().get(Long.valueOf(function))){
+                log.error("Function not present for id : {}, in job : {}",function, oldJob.getId());
+            }else{
+                functions.add(function);
+            }
+        });
+        oldJob.setFunction(functions.stream().toArray(Integer[]::new));
     }
 
     private void addJobKeySkills(Job job, Job oldJob, User loggedInUser) throws Exception { //update and add new key skill
         if(null != oldJob && IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus()))
             return;
 
-        List<JobKeySkills> jobKeySkillsFromDb = jobKeySkillsRepository.findByJobId(oldJob.getId());
+        List<JobSkillsAttributes> jobSkillsAttributesFromDb = jobSkillsAttributesRepository.findByJobId(oldJob.getId());
 
         //if there were key skills suggested by ML, and the request for add job - key skills has a 0 length array, throw an error, otherwise, proceed
-        if (jobKeySkillsFromDb.size() > 0 && null != job.getJobKeySkillsList() && job.getJobKeySkillsList().isEmpty()) {
+        if (jobSkillsAttributesFromDb.size() > 0 && null != job.getJobSkillsAttributesList() && job.getJobSkillsAttributesList().isEmpty()) {
             throw new ValidationException("Job key skills " + IErrorMessages.EMPTY_AND_NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
         }
 
         //For each keyskill in the request (will have only the mlProvided true ones), update the values for selected
-        Map<Long, JobKeySkills> newSkillValues = new HashMap();
-        job.getJobKeySkillsList().stream().forEach(jobKeySkill -> newSkillValues.put(jobKeySkill.getSkillId().getId(), jobKeySkill));
+        Map<Long, JobSkillsAttributes> newSkillValues = new HashMap();
+        job.getJobSkillsAttributesList().stream().forEach(jobKeySkill -> newSkillValues.put(jobKeySkill.getSkillId().getId(), jobKeySkill));
 
-        oldJob.getJobKeySkillsList().forEach(oldKeySkill -> {
-            JobKeySkills newValue = newSkillValues.get(oldKeySkill.getSkillId().getId());
-            if(null != newValue) {
-                oldKeySkill.setSelected(newValue.getSelected());
-                log.info("ML provided skill {} not returned in the api call", oldKeySkill.getSkillId().getSkillName());
-            }
-            else
-                oldKeySkill.setSelected(false);
+        oldJob.getJobSkillsAttributesList().forEach(oldKeySkill -> {
+            JobSkillsAttributes newValue = newSkillValues.get(oldKeySkill.getSkillId().getId());
             oldKeySkill.setUpdatedOn(new Date());
             oldKeySkill.setUpdatedBy(loggedInUser);
         });
@@ -894,13 +962,13 @@ public class JobService extends AbstractAccessControl implements IJobService {
             //check if the user entered skill exists in the temp skills table
             else if (tempSkillsMapByName.keySet().contains(userSkills)) {
                 Long tempSkillId = tempSkillsMapByName.get(userSkills);
-                jobKeySkillsRepository.save(new JobKeySkills(tempSkillsMap.get(tempSkillId), true, new Date(), loggedInUser, job.getId()));
+                jobSkillsAttributesRepository.save(new JobSkillsAttributes(tempSkillsMap.get(tempSkillId), new Date(), loggedInUser, job.getId()));
 
             }
             //this is a new skill, add to temp skills and refer to jobkeyskills table
             else {
                 TempSkills tempSkills = tempSkillsRepository.save(new TempSkills(userSkills, false));
-                jobKeySkillsRepository.save(new JobKeySkills(tempSkills, true, new Date(), loggedInUser, job.getId()));
+                jobSkillsAttributesRepository.save(new JobSkillsAttributes(tempSkills, new Date(), loggedInUser, job.getId()));
             }
         }
         saveJobHistory(job.getId(), "Added key skills", loggedInUser);
@@ -969,30 +1037,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         oldJob.setCompanyJobId(job.getCompanyJobId());
         oldJob.setNoOfPositions(job.getNoOfPositions());
-
-        //Update JobIndustry
-        if(isNewAddJobFlow && !IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus())){
-            if (null == job.getJobIndustry() || null == masterDataBean.getJobIndustry().get(job.getJobIndustry().getId())) {
-                //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
-                log.error("In JobId : {}, jobIndustry {}",job.getId(),IErrorMessages.NULL_MESSAGE);
-            }else{
-                oldJob.setJobIndustry(job.getJobIndustry());
-            }
-        }
-
-        if(!IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus())) {
-            //Update Function
-            if (null == masterDataBean.getFunction().get(job.getFunction().getId())) {
-                //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
-                log.error("In JobId : {}, function {}", job.getId(), IErrorMessages.NULL_MESSAGE);
-            } else {
-                oldJob.setFunction(job.getFunction());
-            }
-
-            //Update Role
-            if (isNewAddJobFlow && null != job.getRole() && null != masterDataBean.getRole().get(job.getRole().getId()))
-                oldJob.setRole(job.getRole());
-        }
 
         //Update Currency
         if (null == job.getCurrency())
@@ -1617,9 +1661,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
         }
 
         Map<Long, String> roles = new HashMap<>();
-        oldJob.setFunction(MasterDataBean.getInstance().getFunction().get(oldJob.getFunction().getId()));
-        oldJob.setJobIndustry(MasterDataBean.getInstance().getJobIndustry().get(oldJob.getJobIndustry().getId()));
-        roleMasterDataRepository.findByFunction(job.getFunction()).forEach(roleMasterData -> roles.put(roleMasterData.getId(), roleMasterData.getRole()));
+        if(null != oldJob.getJobIndustry() && null != oldJob.getJobIndustry().getId())
+            oldJob.setJobIndustry(MasterDataBean.getInstance().getJobIndustry().get(oldJob.getJobIndustry().getId()));
+
         job.setRoles(roles);
         log.info("Completed processing request to new add job flow in " + (System.currentTimeMillis() - startTime) + "ms");
         return job;
@@ -1664,15 +1708,22 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         //Create request for generate tech question API from search engine
         TechQuestionsRequestBean techQueRequestBean = new TechQuestionsRequestBean();
-        TechQuestionsRequestBean.SelectedRole selectedRole = new TechQuestionsRequestBean.SelectedRole();
-        TechQuestionsRequestBean.Function function = new TechQuestionsRequestBean.Function();
+        TechQuestionsRequestBean.SelectedRoles selectedRoles = new TechQuestionsRequestBean.SelectedRoles();
+        TechQuestionsRequestBean.Functions functions = new TechQuestionsRequestBean.Functions();
         TechQuestionsRequestBean.Industry industry = new TechQuestionsRequestBean.Industry();
-        if(null != job.getRole())
-            selectedRole.setRoleName(job.getRole().getRole());
+        if(null != job.getJobRoleList()){
+            job.getJobRoleList().stream().forEach(jobRole -> {
+                selectedRoles.getRoleNames().add(jobRole.getRole().getRole());
+            });
+        }
+        if(null != job.getFunction()){
+            Arrays.stream(job.getFunction()).forEach(function -> {
+                functions.getFunctionNames().add(MasterDataBean.getInstance().getFunction().get(function).getFunction());
+            });
+        }
         industry.setIndustryName(job.getJobIndustry().getIndustry());
-        function.setFunctionName(job.getFunction().getFunction());
-        techQueRequestBean.setSelectedRole(selectedRole);
-        techQueRequestBean.setFunction(function);
+        techQueRequestBean.setSelectedRoles(selectedRoles);
+        techQueRequestBean.setFunctions(functions);
         techQueRequestBean.setCompanyId(job.getCompanyId().getId());
         techQueRequestBean.setIndustry(industry);
         techQueRequestBean.setSkills(job.getSelectedKeySkills());

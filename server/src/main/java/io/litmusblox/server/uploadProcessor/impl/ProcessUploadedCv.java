@@ -13,16 +13,12 @@ import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.CvParserResponseBean;
 import io.litmusblox.server.service.IJobCandidateMappingService;
-import io.litmusblox.server.service.MasterDataBean;
 import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.service.impl.CvRatingRequestBean;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
-import io.litmusblox.server.uploadProcessor.RChilliCvProcessor;
 import io.litmusblox.server.utils.*;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -61,7 +57,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
     CvParsingDetailsRepository cvParsingDetailsRepository;
 
     @Resource
-    JobKeySkillsRepository jobKeySkillsRepository;
+    JobSkillsAttributesRepository jobSkillsAttributesRepository;
 
     @Resource
     CvRatingRepository cvRatingRepository;
@@ -163,13 +159,13 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     queryString.append("?file=");
                     queryString.append(environment.getProperty(IConstant.FILE_STORAGE_URL)+tempFolderName+"/"+ fileName);
                     try {
-                        List<JobKeySkills> jdKeySkills = jobKeySkillsRepository.findByJobId(Long.parseLong(s[1]));
+                        List<JobSkillsAttributes> jdKeySkills = jobSkillsAttributesRepository.findByJobId(Long.parseLong(s[1]));
                         if (jdKeySkills.size() == 0)
                             log.error("Found no key skills for jobId: {}.  Not making api call to rate CV.", Long.parseLong(s[1]));
                         else {
-                            jdKeySkills.forEach(jobKeySkills -> {
-                                if (null != jobKeySkills.getSkillId())
-                                    neighbourSkillMap.put(jobKeySkills.getSkillId().getSkillName(), (null != jobKeySkills.getNeighbourSkills()) ? Arrays.asList(jobKeySkills.getNeighbourSkills()) : new ArrayList<>());
+                            jdKeySkills.forEach(jobSkillsAttributes -> {
+                                if (null != jobSkillsAttributes.getSkillId())
+                                    neighbourSkillMap.put(jobSkillsAttributes.getSkillId().getSkillName(), (null != jobSkillsAttributes.getNeighbourSkills()) ? Arrays.asList(jobSkillsAttributes.getNeighbourSkills()) : new ArrayList<>());
                             });
                         }
                         CvRatingRequestBean cvRatingRequestBean = new CvRatingRequestBean(neighbourSkillMap);
@@ -353,13 +349,13 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     Map<String, List<String>> neighbourSkillMap = new HashMap<>();
                     //call rest api with the text part of cv
                     log.info("Processing CV for job id: " + cvToRate.getJobCandidateMappingId().getJob().getId() + " and candidate id: " + cvToRate.getJobCandidateMappingId().getCandidate().getId());
-                    List<JobKeySkills> jdKeySkills = jobKeySkillsRepository.findByJobId(cvToRate.getJobCandidateMappingId().getJob().getId());
+                    List<JobSkillsAttributes> jdKeySkills = jobSkillsAttributesRepository.findByJobId(cvToRate.getJobCandidateMappingId().getJob().getId());
                     if (jdKeySkills.size() == 0)
                         log.error("Found no key skills for jobId: {}.  Not making api call to rate CV.", cvToRate.getJobCandidateMappingId().getJob().getId());
                     else {
-                        jdKeySkills.forEach(jobKeySkills -> {
-                            if(null != jobKeySkills.getSkillId())
-                                neighbourSkillMap.put(jobKeySkills.getSkillId().getSkillName(), (null != jobKeySkills.getNeighbourSkills())?Arrays.asList(jobKeySkills.getNeighbourSkills()):new ArrayList<>());
+                        jdKeySkills.forEach(jobSkillsAttributes -> {
+                            if(null != jobSkillsAttributes.getSkillId())
+                                neighbourSkillMap.put(jobSkillsAttributes.getSkillId().getSkillName(), (null != jobSkillsAttributes.getNeighbourSkills())?Arrays.asList(jobSkillsAttributes.getNeighbourSkills()):new ArrayList<>());
                         });
 
                         try {

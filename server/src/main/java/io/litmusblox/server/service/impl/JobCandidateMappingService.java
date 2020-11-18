@@ -657,12 +657,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     /**
      * Service method to capture candidate response to screening questions from chatbot
      * @param uuid the uuid corresponding to a unique jcm record
-     * @param response Map of questionId and response List of responses received from chatbot
+     * @param screeningQuestionRequestBean Map of questionId and response List of responses received from chatbot and map of quick question response
      * @throws Exception
      */
-    public void saveScreeningQuestion(UUID uuid, Map<Long, List<String>> response) throws  Exception {
+    public void saveScreeningQuestion(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean) throws  Exception {
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
-        saveScreeningQuestionResponse(uuid, response,objFromDb);
+        saveScreeningQuestionResponse(uuid, screeningQuestionRequestBean,objFromDb);
         Map<String, String> candidateChatbotResponse = objFromDb.getCandidateChatbotResponse();
         if (objFromDb.getChatbotStatus().equals(IConstant.ChatbotStatus.COMPLETE.getValue())) {
             long updateCandidateResponseStartTime = System.currentTimeMillis();
@@ -675,9 +675,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void saveScreeningQuestionResponse(UUID uuid, Map<Long, List<String>> response, JobCandidateMapping objFromDb) throws Exception {
+    public void saveScreeningQuestionResponse(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean, JobCandidateMapping objFromDb) throws Exception {
         log.info("Saving chatbot response for uuid : {}, jobId : {} and jcmId : {}", uuid, objFromDb.getJob().getId(), objFromDb.getId());
         Map<String, String> breadCrumb = new HashMap<>();
+        Map<Long, List<String>> response = screeningQuestionRequestBean.getScreeningQuestionResponseMap();
         breadCrumb.put("Chatbot uuid", uuid.toString());
         breadCrumb.put("JcmId",objFromDb.getId().toString());
         breadCrumb.put("JobId",objFromDb.getJob().getId().toString());
@@ -688,8 +689,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
+        //Update quick question response
+        if(objFromDb.getJob().isQuickQuestion())
+            objFromDb.setCandidateQuickQuestionResponse(String.valueOf(screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap()));
+
         long startTime = System.currentTimeMillis();
-        //Map <String, String> responseMap = new HashMap<>();
 
         response.entrySet().forEach(longListEntry -> {
             String[] valuesToSave = new String[longListEntry.getValue().size()];
@@ -722,7 +726,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
             if(totalResponses == objFromDb.getJob().getJobScreeningQuestionsList().size()) {
                 jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(objFromDb.getId());
-                objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
+                if(objFromDb.getJob().isQuickQuestion() && null == objFromDb.getCandidateQuickQuestionResponse())
+                    objFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
+                else
+                    objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
+
             }
 
             //update chatbot response and updated date in jcm

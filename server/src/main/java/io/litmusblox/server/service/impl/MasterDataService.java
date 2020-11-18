@@ -83,6 +83,12 @@ public class MasterDataService implements IMasterDataService {
     @Resource
     RoleMasterDataRepository roleMasterDataRepository;
 
+    @Resource
+    StatementsBlockMasterDataRepository statementsBlockMasterDataRepository;
+
+    @Resource
+    AttributesMasterDataRepository attributesMasterDataRepository;
+
     @Autowired
     Environment environment;
 
@@ -235,6 +241,19 @@ public class MasterDataService implements IMasterDataService {
             MasterDataBean.getInstance().getRoleMap().put(function.getKey(), tempRoleMap);
         });
 
+        //Load JobAttribute in master data
+        attributesMasterDataRepository.findAll().forEach(attributeMasterData ->
+                MasterDataBean.getInstance().getAttribute().put(attributeMasterData.getId(), attributeMasterData));
+        MasterDataBean.getInstance().getFunction().entrySet().forEach(function ->{
+            Map<String, Long> tempAttributeMap = new HashMap<>();
+            attributesMasterDataRepository.findByFunction(function.getValue()).forEach(attributeMasterData1 ->
+                    tempAttributeMap.put(attributeMasterData1.getJobAttribute(), attributeMasterData1.getId()));
+            MasterDataBean.getInstance().getAttributeMap().put(function.getKey(), tempAttributeMap);
+        });
+
+        //Load statement block data
+        MasterDataBean.getInstance().getStatementBlocks().addAll(statementsBlockMasterDataRepository.findAll());
+
     }
 
     private List<RejectionReasonMasterData> setRejectionReasonList(List<RejectionReasonMasterData> rejectionReasons, List<RejectionReasonMasterData> rejectionsPerStage, String stage){
@@ -370,6 +389,9 @@ public class MasterDataService implements IMasterDataService {
     private static final String SALARY_RANGE = "salaryRange";
     private static final String ARCHIVE_STATUS = "archiveStatus";
     private static final String ARCHIVE_REASON = "archiveReason";
+    private static final String STATEMENT_BLOCKS = "statementBlocks";
+    private static final String JOB_ATTRIBUTE = "attribute";
+
     /**
      * Method to fetch specific master data from cache
      * @param master the response bean to be populated
@@ -475,6 +497,12 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case ARCHIVE_REASON:
                 master.getArchiveReason().putAll(IConstant.ArchiveReason);
+                break;
+            case STATEMENT_BLOCKS:
+                master.getStatementBlocks().addAll(MasterDataBean.getInstance().getStatementBlocks());
+                break;
+            case JOB_ATTRIBUTE:
+                master.getAttributeMap().putAll(MasterDataBean.getInstance().getAttributeMap());
                 break;
             default: //for all other properties, use reflection
 
