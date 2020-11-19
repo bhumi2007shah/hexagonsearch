@@ -177,21 +177,6 @@ public interface IJobCandidateMappingService {
      */
     void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue) throws Exception;
 
-    /**
-     * Service to return error list for drag and drop CV's for a job
-     *
-     * @param jobId job id for which files with error wil be returned
-     * @return List of RChilliErrorResponseBean which have file name, processed date, status, jcmId, candidate name if available
-     * @throws Exception
-     */
-    List<ResponseBean> getRchilliError(Long jobId) throws Exception;
-
-    /**
-     * Service to retrieve candidate history based on jcmId
-     *
-     * @param jcmId
-     * @return list of jcm
-     */
     List<JcmHistory> retrieveCandidateHistory(Long jcmId);
 
     /**
