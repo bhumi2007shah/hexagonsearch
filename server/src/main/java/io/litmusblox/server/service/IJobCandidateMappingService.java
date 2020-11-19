@@ -118,30 +118,13 @@ public interface IJobCandidateMappingService {
     void shareCandidateProfiles(ShareCandidateProfileRequestBean requestBean);
 
     /**
-     * Service method to capture hiring manager interest
-     *
-     * @param jcmProfileSharingDetails details of hiring manager response like interestValue, comment, rejectionReasonId
-     * @throws Exception
-     */
-    void updateHiringManagerInterest(JcmProfileSharingDetails jcmProfileSharingDetails);
-
-    /**
      * Service method to fetch details of a single candidate for a job
      *
      * @param jobCandidateMappingId
      * @return candidate object with required details
      * @throws Exception
      */
-    JobCandidateMapping getCandidateProfile(Long jobCandidateMappingId, Date hiringManagerInterestDate, boolean isCallFromNoAuth) throws Exception;
-
-    /**
-     * Service method to fetch details of a single candidate for a job
-     *
-     * @param profileSharingUuid uuid corresponding to the profile shared with hiring manager
-     * @return candidate object with required details
-     * @throws Exception
-     */
-    JobCandidateMapping getCandidateProfile(UUID profileSharingUuid) throws Exception;
+    JobCandidateMapping getCandidateProfile(Long jobCandidateMappingId, boolean isCallForHiringManager) throws Exception;
 
     /**
      * Service method to upload candidates by means of drag and drop cv

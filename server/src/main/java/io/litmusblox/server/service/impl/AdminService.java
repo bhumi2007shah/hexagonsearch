@@ -54,9 +54,6 @@ public class AdminService implements IAdminService {
     UserRepository userRepository;
 
     @Resource
-    JcmProfileSharingMasterRepository jcmProfileSharingMasterRepository;
-
-    @Resource
     JcmProfileSharingDetailsRepository jcmProfileSharingDetailsRepository;
 
     /**

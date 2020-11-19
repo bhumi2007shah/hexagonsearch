@@ -133,6 +133,10 @@ public class User implements Serializable, UserDetails {
     @JsonProperty
     private String confirmPassword;
 
+    @Transient
+    @JsonProperty
+    private String   otp;
+
     public String getDisplayName() {
         return firstName + " " + lastName;
     }

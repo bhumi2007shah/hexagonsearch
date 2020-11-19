@@ -857,3 +857,12 @@ LABEL VARCHAR (100) NOT NULL,
 TYPE VARCHAR(20) DEFAULT NULL,
 STAGE INTEGER REFERENCES STAGE_STEP_MASTER(ID) NOT NULL
 );
+
+DROP TABLE IF EXISTS hiring_manager_workspace;
+CREATE TABLE hiring_manager_workspace (
+ID serial PRIMARY KEY NOT NULL,
+jcm_id INTEGER NOT NULL REFERENCES JOB_CANDIDATE_MAPPING(id),
+user_id INTEGER NOT NULL REFERENCES USERS(id),
+share_profile_id INTEGER REFERENCES jcm_profile_sharing_details,
+share_interview_id INTEGER REFERENCES interviewer_details(id)
+);

@@ -73,6 +73,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     @Resource
     ScreeningQuestionsRepository screeningQuestionsRepository;
 
+    @Resource
+    HiringManagerWorkspaceRepository hiringManagerWorkspaceRepository;
+
     @Autowired
     IUploadDataProcessService iUploadDataProcessService;
 
@@ -108,9 +111,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
     @Resource
     JcmProfileSharingDetailsRepository jcmProfileSharingDetailsRepository;
-
-    @Resource
-    JcmProfileSharingMasterRepository jcmProfileSharingMasterRepository;
 
     @Resource
     JcmHistoryRepository jcmHistoryRepository;
@@ -1019,12 +1019,18 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
             User receiverUser = userRepository.getOne(user);
             validateloggedInUser(receiverUser, jcm.getJob().getCompanyId().getId());
-            JcmProfileSharingMaster masterObj = jcmProfileSharingMasterRepository.save(new JcmProfileSharingMaster(loggedInUser.getId(), receiverUser.getId(), receiverUser.getDisplayName()));
             Set<JcmProfileSharingDetails> detailsSet = new HashSet<>(requestBean.getJcmId().size());
-            requestBean.getJcmId().forEach(jcmId ->{
-                detailsSet.add(new JcmProfileSharingDetails(masterObj, jcmId));
+                requestBean.getJcmId().forEach(jcmId ->{
+                JcmProfileSharingDetails jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.save(new JcmProfileSharingDetails(jcmId, loggedInUser.getId(), receiverUser.getId(), receiverUser.getDisplayName()));
+                HiringManagerWorkspace hiringManagerWorkspace = hiringManagerWorkspaceRepository.findByJcmIdAndUserId(jcmId, receiverUser.getId());
+                if(null == hiringManagerWorkspace)
+                    hiringManagerWorkspaceRepository.save(new HiringManagerWorkspace(jcmId, receiverUser.getId(), jcmProfileSharingDetails.getId()));
+                else if (hiringManagerWorkspace.getShareProfileId() == null)
+                    hiringManagerWorkspaceRepository.updateProfileShareId(jcmProfileSharingDetails.getId(), hiringManagerWorkspace.getId());
+                else
+                    log.info("Profile already shared for Jcm id {} with hiring manager {}", jcmId, receiverUser.getEmail());
+
             });
-            jcmProfileSharingDetailsRepository.saveAll(detailsSet);
             receiverEmails.add(receiverUser.getEmail());
         }
 
@@ -1043,42 +1049,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     }
 
     /**
-     * Service method to capture hiring manager interest
-     *
-     * @param jcmProfileSharingDetails details of hiring manager response like interestValue, comment, rejectionReasonId
-     * @throws Exception
-     */
-    @Transactional(propagation = Propagation.REQUIRED)
-    public void updateHiringManagerInterest(JcmProfileSharingDetails jcmProfileSharingDetails) {
-        //TODO: For the uuid,
-        //1. fetch record from JCM_PROFILE_SHARING_DETAILS table
-        //2. update the record by setting the HIRING_MANAGER_INTEREST = interest value and HIRING_MANAGER_INTEREST_DATE as current date
-        JcmProfileSharingDetails existingJcmProfileSharingDetails = jcmProfileSharingDetailsRepository.findById(jcmProfileSharingDetails.getId());
-        jcmProfileSharingDetails.setHiringManagerInterestDate(new Date());
-        jcmProfileSharingDetails.setJobCandidateMappingId(existingJcmProfileSharingDetails.getJobCandidateMappingId());
-        jcmProfileSharingDetails.setProfileSharingMaster(existingJcmProfileSharingDetails.getProfileSharingMaster());
-        JobCandidateMapping jcmObj = jobCandidateMappingRepository.getOne(jcmProfileSharingDetails.getJobCandidateMappingId());
-        User user = userRepository.getOne(jcmProfileSharingDetails.getProfileSharingMaster().getReceiverId());
-        StringBuffer jcmHistoryMsg = new StringBuffer("Hiring Manager ").append(user.getDisplayName()).append(" is").append(jcmProfileSharingDetails.getHiringManagerInterest()?" interested ":" not interested ").append("in this Profile");
-        if(null != jcmProfileSharingDetails.getComments()) {
-            if (jcmProfileSharingDetails.getComments().length() > IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.getValue())
-                jcmProfileSharingDetails.setComments(Util.truncateField(jcmObj.getCandidate(), IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.getValue(), jcmProfileSharingDetails.getComments()));
-            jcmHistoryMsg.append(", Comments: ").append(jcmProfileSharingDetails.getComments());
-        }
-        if(!jcmProfileSharingDetails.getHiringManagerInterest()){
-            if(null == jcmProfileSharingDetails.getRejectionReason().getId())
-                throw new ValidationException("Invalid Request", HttpStatus.BAD_REQUEST);
-            else{
-                RejectionReasonMasterData rejectionReasonMasterData = rejectionReasonMasterDataRepository.getOne(jcmProfileSharingDetails.getRejectionReason().getId());
-                jcmHistoryMsg.append(", Rejection Reason: ").append(rejectionReasonMasterData.getValue()).append("- ").append(rejectionReasonMasterData.getLabel());
-            }
-        }
-        jcmProfileSharingDetailsRepository.save(jcmProfileSharingDetails);
-        jcmHistoryRepository.save(new JcmHistory(jcmObj, jcmHistoryMsg.toString(), new Date(), null, jcmObj.getStage(), true));
-        log.info(jcmHistoryMsg.toString());
-    }
-
-    /**
      * Service method to fetch details of a single candidate for a job
      *
      * @param jobCandidateMappingId
@@ -1086,12 +1056,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @throws Exception
      */
     @Transactional
-    public JobCandidateMapping getCandidateProfile(Long jobCandidateMappingId, Date hiringManagerInterestDate, boolean isCallFromNoAuth) throws Exception {
+    public JobCandidateMapping getCandidateProfile(Long jobCandidateMappingId, boolean isCallForHiringManager) throws Exception {
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findById(jobCandidateMappingId).orElse(null);
         if(null == objFromDb)
             throw new ValidationException("No job candidate mapping found for id: " + jobCandidateMappingId, HttpStatus.UNPROCESSABLE_ENTITY);
 
-        if(!isCallFromNoAuth) {
+        if(!isCallForHiringManager) {
             User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             validateLoggedInUser(loggedInUser, objFromDb.getJob());
         }else {
@@ -1139,30 +1109,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             objFromDb.setCandidateSkillsByRating(cvSkillsByRating);
         }
 
-        if(null != hiringManagerInterestDate)
-            objFromDb.setHiringManagerInterestDate(hiringManagerInterestDate);
-
         List<CandidateInteractionHistory> candidateInteractionHistoryList = jobCandidateMappingRepository.getCandidateInteractionHistoryByCandidateId(objFromDb.getCandidate().getId(), objFromDb.getJob().getCompanyId().getId());
         if(!candidateInteractionHistoryList.isEmpty()){
             objFromDb.getCandidate().setCandidateInteractionHistoryList(candidateInteractionHistoryList);
         }
         return objFromDb;
-    }
-
-    /**
-     * Service method to fetch details of a single candidate for a job
-     *
-     * @param profileSharingUuid uuid corresponding to the profile shared with hiring manager
-     * @return candidate object with required details
-     * @throws Exception
-     */
-    @Transactional(propagation = Propagation.REQUIRED)
-    public JobCandidateMapping getCandidateProfile(UUID profileSharingUuid) throws Exception {
-        JcmProfileSharingDetails details = jcmProfileSharingDetailsRepository.findById(profileSharingUuid);
-        if(null == details)
-            throw new WebException("Profile not found", HttpStatus.UNPROCESSABLE_ENTITY);
-
-        return getCandidateProfile(details.getJobCandidateMappingId(), details.getHiringManagerInterestDate(), true);
     }
 
     /**
@@ -2274,7 +2225,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             log.error("Interview date : {}  should be future date, Current date : {}", interviewDetailsFromReq.getInterviewDate(), new Date());
             throw new ValidationException("Interview date : " + Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), interviewDetailsFromReq.getInterviewDate()) + " should be future date, Current date : " + Util.getDateWithTimezone(TimeZone.getTimeZone("IST"), new Date()), HttpStatus.BAD_REQUEST);
         }
-
         AtomicReference<Long> interviewDetailsFromDb = new AtomicReference<>();
         interviewDetailsFromReq.getJobCandidateMappingList().forEach(jobCandidateMapping -> {
 
@@ -2288,7 +2238,13 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             interviewDetailsFromDb.set(interviewDetailsRepository.save(new InterviewDetails(jobCandidateMapping.getId(), interviewDetailsFromReq.getInterviewType(), interviewDetailsFromReq.getInterviewMode(), interviewDetailsFromReq.getInterviewLocation(),
                     interviewDetailsFromReq.getInterviewDate(), interviewDetailsFromReq.getInterviewInstruction(), interviewDetailsFromReq.isSendJobDescription(), interviewDetailsFromReq.getComments(), UUID.randomUUID(), new Date(), loggedInUser)).getId());
             interviewDetailsFromReq.getInterviewerDetails().forEach(interviewerDetailsFromReq -> {
-                interviewerDetailsRepository.save(new InterviewerDetails(interviewDetailsFromDb.get(), new Date(), loggedInUser, interviewerDetailsFromReq.getInterviewer()));
+                InterviewerDetails interviewerDetails = interviewerDetailsRepository.save(new InterviewerDetails(interviewDetailsFromDb.get(), new Date(), loggedInUser, interviewerDetailsFromReq.getInterviewer()));
+                HiringManagerWorkspace hiringManagerWorkspace = hiringManagerWorkspaceRepository.findByJcmIdAndUserId(jobCandidateMapping.getId(), interviewerDetailsFromReq.getInterviewer().getId());
+                if(null == hiringManagerWorkspace)
+                    hiringManagerWorkspaceRepository.save(new HiringManagerWorkspace(jobCandidateMapping.getId(), interviewerDetailsFromReq.getInterviewer().getId(), interviewerDetails.getId()));
+                else
+                    hiringManagerWorkspaceRepository.updateInterviewShareId(interviewerDetails.getId(), hiringManagerWorkspace.getId());
+
             });
 
             interviewDetailsFromReq.getInterviewIdList().add(interviewDetailsFromDb.get());

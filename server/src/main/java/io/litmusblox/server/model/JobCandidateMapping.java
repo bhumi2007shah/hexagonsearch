@@ -200,7 +200,11 @@ public class JobCandidateMapping implements Serializable {
 
     @Transient
     @JsonProperty
-    private Date hiringManagerInterestDate;
+    private Boolean collectInterest = false;
+
+    @Transient
+    @JsonProperty
+    private Long shareProfileId;
 
     @Transient
     @JsonProperty

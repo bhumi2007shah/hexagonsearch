@@ -9,8 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.sound.midi.Receiver;
 import java.util.List;
-import java.util.UUID;
+import java.util.Optional;
 
 /**
  * @author : Sumit
@@ -20,8 +21,6 @@ import java.util.UUID;
  * Project Name : server
  */
 public interface JcmProfileSharingDetailsRepository extends JpaRepository<JcmProfileSharingDetails, Long> {
-
-    JcmProfileSharingDetails findById(UUID id);
 
     List<JcmProfileSharingDetails> findByJobCandidateMappingId(Long jcmId);
 

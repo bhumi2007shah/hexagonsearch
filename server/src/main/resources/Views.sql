@@ -161,3 +161,37 @@ left join
 on candidateCompany.candidate_id = job_candidate_mapping.candidate_id
 where users.id = job_candidate_mapping.created_by
 order by job_candidate_mapping.created_on desc, job_candidate_mapping.candidate_first_name asc, job_candidate_mapping.candidate_last_name asc;
+
+drop view if exists hiring_manager_workspace_details;
+create view hiring_manager_workspace_details
+as select
+hiring_manager_workspace.id, hiring_manager_workspace.jcm_id, hiring_manager_workspace.user_id, job_candidate_mapping.job_id, job.job_title, job_candidate_mapping.candidate_id, job_candidate_mapping.email,
+job_candidate_mapping.mobile, job_candidate_mapping.country_code, job_candidate_mapping.stage,
+(select stage from stage_step_master where id = job_candidate_mapping.stage) as stage_name,
+job_candidate_mapping.created_on, job_candidate_mapping.candidate_first_name, job_candidate_mapping.candidate_last_name,
+job_candidate_mapping.chatbot_status, job_candidate_mapping.score,job_candidate_mapping.rejected,
+job_candidate_mapping.candidate_chatbot_response, job_candidate_mapping.candidate_source as source,
+job_candidate_mapping.candidate_rejection_value as rejection_reason, job_candidate_mapping.updated_on, (select concat(first_name, ' ', last_name) from users where id=job_candidate_mapping.updated_by) as updated_by,
+cv_rating.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name,
+candidateCompany.designation, candidateCompany.notice_period, candidate_details.total_experience,
+(CASE WHEN (job_candidate_mapping.cv_file_type!='') THEN
+(CONCAT('CandidateCv/',job_candidate_mapping.job_id, '/', job_candidate_mapping.candidate_id, job_candidate_mapping.cv_file_type))
+else null
+END) as cv_location,
+job_candidate_mapping.cv_file_type as cv_file_type
+from users,job_candidate_mapping
+inner join hiring_manager_workspace on job_candidate_mapping.id = hiring_manager_workspace.jcm_id
+inner join job on job_candidate_mapping.job_id = job.id
+left join cv_rating on job_candidate_mapping.id = cv_rating.job_candidate_mapping_id
+left join candidate_details on candidate_details.candidate_id = job_candidate_mapping.candidate_id
+left join
+	(select ccd.company_name, ccd.designation, ccd.candidate_id, master_data.value as notice_period
+	from candidate_company_details ccd
+	join (select min(id) as id, candidate_id from candidate_company_details group by candidate_id) singleRow
+	on ccd.candidate_id = singleRow.candidate_id and ccd.id = singleRow.id
+	left join master_data
+    on master_data.id = ccd.notice_period
+	) as candidateCompany
+on candidateCompany.candidate_id = job_candidate_mapping.candidate_id
+where users.id = job_candidate_mapping.created_by
+order by job_candidate_mapping.created_on desc, job_candidate_mapping.candidate_first_name asc, job_candidate_mapping.candidate_last_name asc;

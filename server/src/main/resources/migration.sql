@@ -2740,3 +2740,26 @@ ALTER TABLE jcm_profile_sharing_details ALTER COLUMN comments TYPE varchar(300);
 COPY jcm_profile_sharing_master(id, receiver_name,sender_id, email_sent_on, receiver_id) FROM '/home/lbprod/UserIdShareCandidateMasterDataUpdate.csv' DELIMITER ',' CSV HEADER;
 --Removing entries from details table
 delete from jcm_profile_sharing_details where id in (select psd.id from jcm_profile_sharing_details psd left join jcm_profile_sharing_master psm on psm.id = psd.profile_sharing_master_id where psm.id is null);
+
+
+--For ticket 676
+alter table users add column workspace_uuid UUID NOT NULL DEFAULT uuid_generate_v1();
+--Migrating to profile sharing details table and deleting the profile sharing master table
+alter table jcm_profile_sharing_details add column receiver_name varchar(45), add column receiver_id integer references users(id), add column sender_id integer references users(id), add column email_sent_on timestamp without time zone;
+update jcm_profile_sharing_details psd set receiver_name = psm.receiver_name, email_sent_on = psm.email_sent_on, receiver_id = psm.receiver_id, sender_id = psm.sender_id from jcm_profile_sharing_master psm where psm.id = psd.profile_sharing_master_id;
+alter table jcm_profile_sharing_details drop column id, drop column profile_sharing_master_id;
+drop table jcm_profile_sharing_master ;
+alter table jcm_profile_sharing_details add column id serial PRIMARY KEY;
+--deleting rows with same jcm_id and user_id
+delete from jcm_profile_sharing_details psd1 using jcm_profile_sharing_details psd2 where psd1.ctid < psd2.ctid and psd1.job_candidate_mapping_id = psd2.job_candidate_mapping_id and psd1.receiver_id = psd2.receiver_id;
+alter table interviewer_details add column email_sent_on timestamp without time zone;
+
+--CREATE TABLE hiring_manager_workspace
+--CREATE VIEW hiring_manager_workspace_details
+
+--To insert existing share profile details in hiring manager workspace.
+insert into hiring_manager_workspace (jcm_id, user_id, share_profile_id) select job_candidate_mapping_id, receiver_id, id from jcm_profile_sharing_details;
+--To update the hiring manager workspace with user_id and jcm_id combination existing because of jcm_profile_sharing migration
+update hiring_manager_workspace hmwo set share_interview_id = temp.id from (select distinct on (ivd.job_candidate_mapping_id, ivrd.interviewer) ivd.job_candidate_mapping_id, ivrd.interviewer, ivrd.id from interviewer_details ivrd inner join interview_details ivd on ivrd.interview_id = ivd.id inner join hiring_manager_workspace hmw on ivd.job_candidate_mapping_id = hmw.jcm_id order by ivrd.interviewer, ivd.job_candidate_mapping_id, ivd.id desc) as temp where temp.job_candidate_mapping_id = hmwo.jcm_id and temp.interviewer= hmwo.user_id;
+-- To insert all remaining interviews with user_id and jcm_id combination as unique
+insert into hiring_manager_workspace (jcm_id, user_id, share_interview_id) select distinct on (ivd.job_candidate_mapping_id, ivrd.interviewer) ivd.job_candidate_mapping_id, ivrd.interviewer, ivrd.id from interviewer_details ivrd inner join interview_details ivd on ivrd.interview_id = ivd.id left join hiring_manager_workspace hmw on ivd.job_candidate_mapping_id = hmw.jcm_id and ivrd.interviewer = hmw.user_id where hmw.id is null order by ivrd.interviewer, ivd.job_candidate_mapping_id, ivd.id desc;

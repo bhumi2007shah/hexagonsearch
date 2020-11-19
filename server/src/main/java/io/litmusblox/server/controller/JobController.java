@@ -244,7 +244,7 @@ public class JobController {
     @ResponseBody
     String getJobDetails(@PathVariable("jobId") Long jobId) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
-                jobService.getJobDetails(jobId),
+                jobService.getJobDetails(jobId, false),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id","displayName"));
                     put("CompanyAddress", Arrays.asList("id", "address"));

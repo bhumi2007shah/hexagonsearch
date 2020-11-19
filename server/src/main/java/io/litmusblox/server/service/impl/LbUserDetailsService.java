@@ -80,6 +80,9 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
     @Autowired
     CompanyService companyService;
 
+    @Autowired
+    ProcessOtpService processOtpService;
+
     private static Pattern USER_DESIGNATION_PATTERN = Pattern.compile(IConstant.REGEX_FOR_USER_DESIGNATION);
 
     /**
@@ -92,7 +95,7 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
      * @throws Exception
      */
     @Transactional
-    public LoginResponseBean login(User user) throws Exception {
+    public LoginResponseBean login(User user, boolean isOtpAvailable) throws Exception {
         log.info("Received login request from " + user.getEmail());
         long startTime = System.currentTimeMillis();
         final User userDetails = (User)loadUserByUsername(user.getEmail());
@@ -108,7 +111,21 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
             throw new WebException("Your account has been blocked. Please contact your admin to get access to Litmusblox.", HttpStatus.FORBIDDEN);
         }
 
-        authenticate(user.getEmail(), user.getPassword());
+        if(!isOtpAvailable)
+            authenticate(user.getEmail(), user.getPassword());
+        else{
+            boolean isOtpVerify = false;
+            if (null != user.getOtp() && user.getOtp().length() == 4 && user.getOtp().matches("[0-9]+")) {
+                    log.info("Verifying Otp: {} against email: {}", user.getOtp(), user.getEmail());
+                   if(!processOtpService.verifyOtp(user.getEmail(), Integer.parseInt(user.getOtp()))){
+                       log.error("OTP verification failed for {}", user.getEmail());
+                       throw new WebException("OTP verification failed", HttpStatus.UNAUTHORIZED);
+                   }
+            }
+            else {
+                throw new ValidationException("Invalid OTP : " + user.getOtp(), HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+        }
 
         final String token = jwtTokenUtil.generateToken(userDetails, userDetails.getId(), userDetails.getCompany().getId());
 
@@ -116,7 +133,6 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
 
         return new LoginResponseBean(userDetails.getId(), token, userDetails.getDisplayName(), userDetails.getCompany(),jobCandidateMappingRepository.getUploadedCandidateCount(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()), userDetails), userDetails.getRole());
     }
-
 
     @Override
     public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {

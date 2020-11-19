@@ -31,15 +31,10 @@ public class JcmProfileSharingDetails {
     private static final long serialVersionUID = 6868521896546285046L;
 
     @Id
-    @Column(name = "ID", unique = true)
-    @GeneratedValue(generator="system-uuid")
-    private UUID id;
+    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="PROFILE_SHARING_MASTER_ID")
-    private JcmProfileSharingMaster profileSharingMaster;
-
-    @NotNull
     @Column(name="JOB_CANDIDATE_MAPPING_ID")
     private Long jobCandidateMappingId;
 
@@ -57,8 +52,23 @@ public class JcmProfileSharingDetails {
     @JoinColumn(name="REJECTION_REASON_ID")
     private RejectionReasonMasterData rejectionReason;
 
-    public JcmProfileSharingDetails(JcmProfileSharingMaster profileSharingMasterId, @NotNull Long jobCandidateMappingId) {
-        this.profileSharingMaster = profileSharingMasterId;
+    @Column(name = "RECEIVER_NAME")
+    private String receiverName;
+
+    @Column(name = "RECEIVER_ID")
+    private Long receiverId;
+
+    @Column(name = "SENDER_ID")
+    private Long senderId;
+
+    @Column(name = "EMAIL_SENT_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date emailSentOn;
+
+    public JcmProfileSharingDetails(@NotNull Long jobCandidateMappingId, Long senderId, Long receiverId, String receiverName) {
         this.jobCandidateMappingId = jobCandidateMappingId;
+        this.receiverName = receiverName;
+        this.receiverId = receiverId;
+        this.senderId = senderId;
     }
 }
