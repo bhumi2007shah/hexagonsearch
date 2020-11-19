@@ -119,9 +119,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
     JobCapabilityStarRatingMappingRepository jobCapabilityStarRatingMappingRepository;
 
     @Resource
-    CvRatingRepository cvRatingRepository;
-
-    @Resource
     ExportFormatMasterRepository exportFormatMasterRepository;
 
     @Resource
@@ -1261,11 +1258,12 @@ public class JobService extends AbstractAccessControl implements IJobService {
             if (status.equals(IConstant.JobStatus.ARCHIVED.getValue())) {
                 job.setDateArchived(new Date());
                 job.setArchiveStatus(archiveStatus);
-                saveJobHistory(jobId, "Archive Status changed to "+archiveStatus,loggedInUser);
+                String historyMsg = "";
                 if(Util.isNotNull(archiveReason)) {
-                    saveJobHistory(jobId, "Archive Reason changed to "+archiveReason,loggedInUser);
+                    historyMsg = " and reason: "+archiveReason;
                     job.setArchiveReason(archiveReason);
                 }
+                saveJobHistory(jobId, "Archived with status: "+archiveStatus + historyMsg,loggedInUser);
             }
             else{
                 job.setAutoInvite(autoInvite);

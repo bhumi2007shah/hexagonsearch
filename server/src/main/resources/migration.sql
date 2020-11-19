@@ -2846,3 +2846,7 @@ insert into ATTRIBUTES_MASTER_DATA(JOB_ATTRIBUTE, FUNCTION) values
 ('Structural Design', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
 ('Vendor & Contractor Selection', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
 ('CAD / CAE experience', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing')));
+
+--For ticket #687
+alter table job_candidate_mapping add column cv_skill_rating_json text;
+alter table job_candidate_mapping add column overall_rating smallint;

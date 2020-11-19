@@ -119,12 +119,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     CvParsingDetailsRepository cvParsingDetailsRepository;
 
     @Resource
-    CvRatingRepository cvRatingRepository;
-
-    @Resource
-    CvRatingSkillKeywordDetailsRepository cvRatingSkillKeywordDetailsRepository;
-
-    @Resource
     CandidateEducationDetailsRepository candidateEducationDetailsRepository;
 
     @Resource
@@ -1122,20 +1116,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
         returnObj.setEmail(objFromDb.getEmail());
         returnObj.setMobile(objFromDb.getMobile());
-        objFromDb.setCvRating(cvRatingRepository.findByJobCandidateMappingId(objFromDb.getId()));
-        if(null != objFromDb.getCvRating()) {
-            List<CvRatingSkillKeywordDetails> cvRatingSkillKeywordDetails = cvRatingSkillKeywordDetailsRepository.findByCvRatingId(objFromDb.getCvRating().getId());
-            Map<Integer, List<CvRatingSkillKeywordDetails>> tempMap = cvRatingSkillKeywordDetails.stream().collect(Collectors.groupingBy(CvRatingSkillKeywordDetails::getRating));
-            Map<Integer, Map<String, Integer>> cvSkillsByRating = new HashMap<>(tempMap.size());
-            tempMap.forEach((key, value) -> {
-                Map<String, Integer> skills = new HashMap<>(value.size());
-                value.stream().forEach(skillKeywordDetail -> {
-                    skills.put(skillKeywordDetail.getSkillName(), skillKeywordDetail.getOccurrence());
-                });
-                cvSkillsByRating.put(key, skills);
-            });
-            objFromDb.setCandidateSkillsByRating(cvSkillsByRating);
-        }
 
         if(null != hiringManagerInterestDate)
             objFromDb.setHiringManagerInterestDate(hiringManagerInterestDate);
@@ -1822,7 +1802,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         jcmCommunicationDetailsRepository.deleteByJcmId(jcmFromDb.getId());
         asyncOperationsErrorRecordsRepository.deleteByJobCandidateMappingId(jcmFromDb);
         cvParsingDetailsRepository.deleteByJobCandidateMappingId(jcmFromDb);
-        cvRatingRepository.deleteByJobCandidateMappingId(jcmFromDb.getId());
         candidateScreeningQuestionResponseRepository.deleteByJobCandidateMappingId(jcmFromDb.getId());
         jcmHistoryRepository.deleteByJcmId(jcmFromDb);
         jcmCandidateSourceHistoryRepository.deleteByJobCandidateMappingId(jcmFromDb.getId());
@@ -1961,32 +1940,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if(jobCandidateMappingRepository.countDistinctStageForJcmList(jcmList) != 1)
             return false;
         return true;
-    }
-
-    /**
-     * Service to return error list for drag and drop CV's for a job
-     *
-     * @param jobId job id for which files with error wil be returned
-     * @return List of RChilliErrorResponseBean which have file name, processed date, status, jcmId, candidate name if available
-     * @throws Exception
-     */
-    public List<ResponseBean> getRchilliError(Long jobId) throws Exception{
-        List<ResponseBean> rChilliErrorResponseBeanList = new ArrayList<>();
-
-        //fetch records with error from cv parsing details table using jobId
-        List<CvParsingDetails> cvParsingDetailsList = cvParsingDetailsRepository.getRchilliErrorResponseBeanList(jobId);
-
-        //for each cv parsing record create rchilliResponseBean and push to rChilliResponseBeanList
-        cvParsingDetailsList.forEach(cvParsingDetails -> {
-            ResponseBean rChilliErrorResponseBean = new ResponseBean();
-            //Replace job id and user id from file name to return clean file name as uploaded by user.
-            rChilliErrorResponseBean.setFileName(cvParsingDetails.getCvFileName().replaceAll("\\d+_\\d+_",""));
-            rChilliErrorResponseBean.setProcessedOn(cvParsingDetails.getProcessedOn());
-            rChilliErrorResponseBean.setStatus(cvParsingDetails.getProcessingStatus());
-            rChilliErrorResponseBean.setErrorMessage(cvParsingDetails.getErrorMessage());
-            rChilliErrorResponseBeanList.add(rChilliErrorResponseBean);
-        });
-        return rChilliErrorResponseBeanList;
     }
 
     /**

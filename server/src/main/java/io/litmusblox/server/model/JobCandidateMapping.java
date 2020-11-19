@@ -166,6 +166,12 @@ public class JobCandidateMapping implements Serializable {
     @Column(name = "IS_CREATED_ON_SEARCHENGINE")
     private boolean isCreatedOnSearchEngine;
 
+    @Column(name="cv_skill_rating_json")
+    private String cvSkillRatingJson;
+
+    @Column(name="overall_rating")
+    private Integer overallRating;
+
     @Column(name = "CANDIDATE_QUICK_QUESTION_RESPONSE")
     private String candidateQuickQuestionResponse;
 
@@ -188,10 +194,6 @@ public class JobCandidateMapping implements Serializable {
     @Transient
     @JsonProperty
     private JcmCommunicationDetails jcmCommunicationDetails;
-
-    @Transient
-    @JsonProperty
-    CvRating cvRating;
 
     @Transient
     @JsonProperty
