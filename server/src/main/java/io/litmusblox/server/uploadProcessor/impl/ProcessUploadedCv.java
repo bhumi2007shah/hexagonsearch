@@ -144,13 +144,13 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         queryString.append("?file=");
         queryString.append(environment.getProperty(IConstant.FILE_STORAGE_URL)+tempFolderName+"/"+ fileName);
         try {
-            List<JobKeySkills> jdKeySkills = jobKeySkillsRepository.findByJobId(Long.parseLong(s[1]));
+            List<JobSkillsAttributes> jdKeySkills = jobSkillsAttributesRepository.findByJobId(Long.parseLong(s[1]));
             if (jdKeySkills.size() == 0)
                 log.error("Found no key skills for jobId: {}.  Not making api call to rate CV.", Long.parseLong(s[1]));
             else {
-                jdKeySkills.forEach(jobKeySkills -> {
-                    if (null != jobKeySkills.getSkillId())
-                        neighbourSkillMap.put(jobKeySkills.getSkillId().getSkillName(), (null != jobKeySkills.getNeighbourSkills()) ? Arrays.asList(jobKeySkills.getNeighbourSkills()) : new ArrayList<>());
+                jdKeySkills.forEach(jobSkillsAttributes -> {
+                    if (null != jobSkillsAttributes.getSkillId())
+                        neighbourSkillMap.put(jobSkillsAttributes.getSkillId().getSkillName(), (null != jobSkillsAttributes.getNeighbourSkills()) ? Arrays.asList(jobSkillsAttributes.getNeighbourSkills()) : new ArrayList<>());
                 });
             }
             CvRatingRequestBean cvRatingRequestBean = new CvRatingRequestBean(neighbourSkillMap);
