@@ -116,9 +116,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
     JobCapabilityStarRatingMappingRepository jobCapabilityStarRatingMappingRepository;
 
     @Resource
-    CvRatingRepository cvRatingRepository;
-
-    @Resource
     ExportFormatMasterRepository exportFormatMasterRepository;
 
     @Resource

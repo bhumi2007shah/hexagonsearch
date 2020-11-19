@@ -2749,4 +2749,6 @@ alter table job
 add column archive_status char(20),
 add column archive_reason char(20);
 
-
+--For ticket #687
+alter table job_candidate_mapping add column cv_skill_rating_json text;q
+alter table job_candidate_mapping add column overall_rating smallint;
