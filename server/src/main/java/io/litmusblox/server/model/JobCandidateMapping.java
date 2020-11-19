@@ -172,6 +172,9 @@ public class JobCandidateMapping implements Serializable {
     @Column(name="overall_rating")
     private Integer overallRating;
 
+    @Column(name = "CANDIDATE_QUICK_QUESTION_RESPONSE")
+    private String candidateQuickQuestionResponse;
+
     @Type(type = "hstore")
     @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "hstore")
     private Map<String, String> candidateChatbotResponse = new HashMap<>();

@@ -87,6 +87,9 @@ public class MasterDataBean {
     private Map<String, MasterData> questionTypeMap = new HashMap<>();
     private Map<String , Map<String, String>> salaryRange = new HashMap<>();
     private Map<String, List> hiringManagerRejectReasonMap = new LinkedHashMap<>();
+    private Map<Long, AttributesMasterData> attribute = new HashMap<>();
+    private Map<Long, Map<String, Long>> attributeMap = new HashMap<>();
+    private List<StatementsBlockMasterData> statementBlocks = new ArrayList<>();
 
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;

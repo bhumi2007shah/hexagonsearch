@@ -25,9 +25,9 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "JOB_KEY_SKILLS")
+@Table(name = "JOB_SKILLS_ATTRIBUTES")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class JobKeySkills implements Serializable {
+public class JobSkillsAttributes implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
 
@@ -43,10 +43,6 @@ public class JobKeySkills implements Serializable {
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "SKILL_ID_FROM_TEMP")
     private TempSkills skillIdFromTemp;
-
-    @NotNull
-    @Column(name = "SELECTED")
-    private Boolean selected;
 
     @NotNull
     @Column(name = "CREATED_ON")
@@ -77,20 +73,30 @@ public class JobKeySkills implements Serializable {
     @Type(type = "com.vladmihalcea.hibernate.type.array.StringArrayType")
     private String[] neighbourSkills;
 
-    public JobKeySkills(SkillsMaster skillId, @NotNull Boolean selected, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId, String[] neighbourSkills) {
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "ATTRIBUTE")
+    private AttributesMasterData attribute;
+
+    public JobSkillsAttributes(SkillsMaster skillId, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId, String[] neighbourSkills) {
         this.skillId = skillId;
-        this.selected = selected;
         this.createdOn = createdOn;
         this.createdBy = createdBy;
         this.jobId = jobId;
         this.neighbourSkills = neighbourSkills;
     }
 
-    public JobKeySkills(TempSkills skillIdFromTemp, @NotNull Boolean selected, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId) {
+    public JobSkillsAttributes(TempSkills skillIdFromTemp, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId) {
         this.skillIdFromTemp = skillIdFromTemp;
-        this.selected = selected;
         this.createdOn = createdOn;
         this.createdBy = createdBy;
         this.jobId = jobId;
     }
+
+    public JobSkillsAttributes(AttributesMasterData attribute, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId) {
+        this.attribute = attribute;
+        this.createdOn = createdOn;
+        this.createdBy = createdBy;
+        this.jobId = jobId;
+    }
+
 }

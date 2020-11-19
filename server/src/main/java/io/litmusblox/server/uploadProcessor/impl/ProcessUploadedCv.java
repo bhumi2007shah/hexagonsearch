@@ -57,7 +57,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
     CvParsingDetailsRepository cvParsingDetailsRepository;
 
     @Resource
-    JobKeySkillsRepository jobKeySkillsRepository;
+    JobSkillsAttributesRepository jobSkillsAttributesRepository;
 
     @Resource
     JobCandidateMappingRepository jobCandidateMappingRepository;
@@ -298,13 +298,13 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     Map<String, List<String>> neighbourSkillMap = new HashMap<>();
                     //call rest api with the text part of cv
                     log.info("Processing CV for job id: " + cvToRate.getJobCandidateMappingId().getJob().getId() + " and candidate id: " + cvToRate.getJobCandidateMappingId().getCandidate().getId());
-                    List<JobKeySkills> jdKeySkills = jobKeySkillsRepository.findByJobId(cvToRate.getJobCandidateMappingId().getJob().getId());
+                    List<JobSkillsAttributes> jdKeySkills = jobSkillsAttributesRepository.findByJobId(cvToRate.getJobCandidateMappingId().getJob().getId());
                     if (jdKeySkills.size() == 0)
                         log.error("Found no key skills for jobId: {}.  Not making api call to rate CV.", cvToRate.getJobCandidateMappingId().getJob().getId());
                     else {
-                        jdKeySkills.forEach(jobKeySkills -> {
-                            if(null != jobKeySkills.getSkillId())
-                                neighbourSkillMap.put(jobKeySkills.getSkillId().getSkillName(), (null != jobKeySkills.getNeighbourSkills())?Arrays.asList(jobKeySkills.getNeighbourSkills()):new ArrayList<>());
+                        jdKeySkills.forEach(jobSkillsAttributes -> {
+                            if(null != jobSkillsAttributes.getSkillId())
+                                neighbourSkillMap.put(jobSkillsAttributes.getSkillId().getSkillName(), (null != jobSkillsAttributes.getNeighbourSkills())?Arrays.asList(jobSkillsAttributes.getNeighbourSkills()):new ArrayList<>());
                         });
                     }
                     if (cvToRate.getCvRatingApiCallTRetryCount().equals(3)) {

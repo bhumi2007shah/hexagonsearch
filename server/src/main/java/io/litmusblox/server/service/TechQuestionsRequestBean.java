@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -22,14 +23,14 @@ import java.util.List;
 @NoArgsConstructor
 public class TechQuestionsRequestBean {
     private Long companyId;
-    private SelectedRole selectedRole;
+    private SelectedRoles selectedRoles;
     private Industry industry;
-    private Function function;
+    private Functions functions;
     private List<String> skills;
 
     @Data
-    public static class SelectedRole {
-        private String roleName;
+    public static class SelectedRoles {
+        private List<String> roleNames = new ArrayList<>();
     }
 
     @Data
@@ -38,8 +39,8 @@ public class TechQuestionsRequestBean {
     }
 
     @Data
-    public static class Function {
-        private String functionName;
+    public static class Functions {
+        private List<String> functionNames = new ArrayList<>();
     }
 
 }

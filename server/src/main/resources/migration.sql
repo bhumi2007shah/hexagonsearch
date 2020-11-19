@@ -2749,6 +2749,104 @@ alter table job
 add column archive_status char(20),
 add column archive_reason char(20);
 
+CREATE TABLE ATTRIBUTES_MASTER_DATA(
+ID serial PRIMARY KEY NOT NULL,
+JOB_ATTRIBUTE VARCHAR (100) NOT NULL,
+FUNCTION INTEGER REFERENCES FUNCTION_MASTER_DATA(ID) NOT NULL,
+CONSTRAINT UNIQUE_JOB_ATTRIBUTE_MASTER_DATA UNIQUE (JOB_ATTRIBUTE, FUNCTION)
+);
+
+CREATE TABLE STATEMENTS_BLOCK_MASTER_DATA(
+ID SERIAL PRIMARY KEY,
+STATEMENT_BLOCK VARCHAR(25) NOT NULL,
+QUESTION VARCHAR(100) NOT NULL,
+OPTIONS VARCHAR(400)[]
+);
+
+CREATE TABLE JOB_ROLE(
+ID SERIAL PRIMARY KEY,
+ROLE INTEGER REFERENCES ROLE_MASTER_DATA(ID) NOT NULL,
+JOB INTEGER REFERENCES JOB(ID) NOT NULL,
+CONSTRAINT UNIQUE_JOB_ROLE UNIQUE (ROLE, JOB)
+);
+
+ALTER TABLE job DROP CONSTRAINT job_function_fkey1;
+alter table job alter function type integer[] using array[function]::INTEGER[];
+insert into job_role(job, role) select id, role from job where role is not null;
+alter table job drop column role;
+ALTER TABLE JOB ADD COLUMN STATEMENT_BLOCK INTEGER REFERENCES STATEMENTS_BLOCK_MASTER_DATA(ID);
+alter table job add column is_quick_question bool default 'f';
+alter table job_candidate_mapping add column candidate_quick_question_response text;
+alter table job_key_skills drop column selected;
+ALTER TABLE job_key_skills RENAME TO job_skills_attributes;
+ALTER TABLE job_key_skills_id_seq RENAME TO job_skills_attributes_id_seq;
+ALTER TABLE job_skills_attributes ADD COLUMN ATTRIBUTE INTEGER REFERENCES ATTRIBUTES_MASTER_DATA(ID);
+
+insert into STATEMENTS_BLOCK_MASTER_DATA(STATEMENT_BLOCK, QUESTION, OPTIONS) values
+('Expertise Level', 'What is your expertise level on this?', '{"No Experience", "Trained but not used in practice", "Hands on practice; need some help for complex job", "Hands on; Totally independent at work", "Expert / Guru who train who trains others"}'),
+('Skill Usage', 'What is your skill level on this?', '{"Not aware", "Trained but not used", "Used this in he past", "Moderately used in present job", "Extensively used in present job"}'),
+('Experience Band', 'How many years of hands on experience do you have on this skill?', '{"Not experience", "Upto 1 year", "2 to 3 years", "4 to 8 years", "Above 8 years"}'),
+('Skill Rating', 'How do you rate yourself on this skill(1 is Lowest, 5 is Highest)?', '{"1", "2", "3", "4", "5"}');
+
+INSERT INTO FUNCTION_MASTER_DATA(FUNCTION, INDUSTRY) VALUES
+('Production', (select id from industry_master_data where industry = 'Manufacturing')),
+('Vendor Development /Procurement', (select id from industry_master_data where industry = 'Manufacturing')),
+('Process Design & Manufacturing Engg', (select id from industry_master_data where industry = 'Manufacturing')),
+('Plant Engineering', (select id from industry_master_data where industry = 'Manufacturing'));
+
+insert into ATTRIBUTES_MASTER_DATA(JOB_ATTRIBUTE, FUNCTION) values
+('Production Planning', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Resource Planning', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Inventory Planning', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Preventive Maintenance', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Spares Planning', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Breakdown Maintenance', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Tool Tryouts', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Machine Tryouts', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Outsourcing', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Customer / Field Quality', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Plant & Machinery Installation', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Environment & Safety Compliance', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Process Design', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('New Product Development', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing')));
+
+insert into ATTRIBUTES_MASTER_DATA(JOB_ATTRIBUTE, FUNCTION) values
+('Stores', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Dispatch', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('FMEA', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Capital Goods Purchase', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Service Contracts', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Labour Contracts', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Commercials, Duties & Taxation', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Goods Return, Rejections, Damages & Scrap', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Inventory Management', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Warranty Claims', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Penalty settlements', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Insurance Claims', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing')));
+('Service Contracts', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Labour Contracts', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Supply Chain', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Stores', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Tools Purchase', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Process Validation', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Tool Design', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Tool Tryouts', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Machine Tryouts', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Design of Experiments', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Process & Operation Costing', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Time & Motion Study', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Motion / Method Study', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Shop / Machine Layout', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Work Station Design', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Reliability Assessment / Testing', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Design of Material Handling Systems', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Design of Piping & Fluid Control systems', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Electrical Design', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Electronics & Instrumentation Design', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Structural Design', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Vendor & Contractor Selection', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('CAD / CAE experience', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing')));
+
 --For ticket #687
 alter table job_candidate_mapping add column cv_skill_rating_json text;q
 alter table job_candidate_mapping add column overall_rating smallint;
