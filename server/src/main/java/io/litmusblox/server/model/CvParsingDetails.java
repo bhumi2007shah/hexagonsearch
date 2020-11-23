@@ -44,14 +44,23 @@ public class CvParsingDetails {
     @Column(name="PROCESSING_STATUS")
     private String processingStatus;
 
+    @Column(name = "PARSING_RESPONSE_JSON")
+    private String parsingResponseJson;
+
     @Column(name = "PARSING_RESPONSE_TEXT")
     private String parsingResponseText;
+
+    @Column(name = "PARSING_RESPONSE_HTML")
+    private String parsingResponseHtml;
 
     @Column(name = "ERROR_MESSAGE")
     private String errorMessage;
 
     @Column(name = "CANDIDATE_ID")
     private Long candidateId;
+
+    @Column(name = "RCHILLI_JSON_PROCESSED")
+    private Boolean rchilliJsonProcessed;
 
     @OneToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "JOB_CANDIDATE_MAPPING_ID")
@@ -63,8 +72,18 @@ public class CvParsingDetails {
     @Column(name="CV_RATING_API_RESPONSE_TIME")
     private Long cvRatingApiResponseTime;
 
+    @Column(name = "CV_CONVERT_API_FLAG")
+    private boolean cvConvertApiFlag = false;
+
+    @Column(name = "PARSING_RESPONSE_ML")
+    private String parsingResponseMl;
+
     @Column(name = "PARSING_RESPONSE_PYTHON")
     private String parsingResponsePython;
+
+    @Column(name = "CANDIDATE_SKILLS", columnDefinition = "varchar[]")
+    @Type(type = "com.vladmihalcea.hibernate.type.array.StringArrayType")
+    private String[] candidateSkills;
 
     @Column(name = "CV_RATING_API_CALL_RETRY_COUNT")
     private Long cvRatingApiCallTRetryCount = 1L;
