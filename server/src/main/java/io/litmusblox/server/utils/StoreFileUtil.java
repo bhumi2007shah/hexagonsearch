@@ -145,9 +145,9 @@ public class StoreFileUtil {
             }else if(uploadType.equals(IConstant.ERROR_FILES)){
                filePath.append(fileName);
             }else if(null!=candidateId){
-                filePath.append(File.separator).append(candidateId).append(".").append(Util.getFileExtension(fileName));
+                filePath.append(File.separator).append(candidateId).append(".").append(Util.getFileExtension(fileName).toLowerCase());
             }else{
-                filePath.append(File.separator).append(fileName.substring(0,fileName.indexOf('.'))).append("_").append(Util.formatDate(new Date(), IConstant.DATE_FORMAT_yyyymmdd_hhmm)).append(".").append(Util.getFileExtension(fileName));
+                filePath.append(File.separator).append(fileName.substring(0,fileName.indexOf('.'))).append("_").append(Util.formatDate(new Date(), IConstant.DATE_FORMAT_yyyymmdd_hhmm)).append(".").append(Util.getFileExtension(fileName).toLowerCase());
             }
 
             log.info("Saved file: "+filePath);
