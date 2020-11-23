@@ -256,7 +256,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     if(null != responseFromPython.getCvRatingResponseWrapper()) {
                         jobCandidateMapping.setOverallRating(responseFromPython.getCvRatingResponseWrapper().overallRating);
                        if (null != (responseFromPython.getCvRatingResponseWrapper().cvRatingResponse))
-                            jobCandidateMapping.setCvSkillRatingJson(responseFromPython.getCvRatingResponseWrapper().cvRatingResponse.toString());
+                           jobCandidateMapping.setCvSkillRatingJson(responseFromPython.getCvRatingResponseWrapper().cvRatingResponse);
                     }
                     jobCandidateMappingRepository.save(jobCandidateMapping);
                     cvParsingDetails.setProcessingStatus(IConstant.UPLOAD_STATUS.Success.name());

@@ -166,8 +166,9 @@ public class JobCandidateMapping implements Serializable {
     @Column(name = "IS_CREATED_ON_SEARCHENGINE")
     private boolean isCreatedOnSearchEngine;
 
-    @Column(name="cv_skill_rating_json")
-    private String cvSkillRatingJson;
+    @Type(type = "jsonb")
+    @Column(columnDefinition = "jsonb")
+    private Map<String,Map<String,String>> cvSkillRatingJson;
 
     @Column(name="overall_rating")
     private Integer overallRating;

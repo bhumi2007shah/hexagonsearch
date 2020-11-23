@@ -6,7 +6,7 @@ package io.litmusblox.server.uploadProcessor.impl;
 
 import lombok.Data;
 
-import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author : Shital Raval
@@ -19,6 +19,6 @@ import java.util.HashMap;
 @Data
 public class CvRatingResponseWrapper {
     int overallRating;
-    HashMap<String, HashMap<String, String>> cvRatingResponse;
+    Map<String, Map<String, String>> cvRatingResponse;
 }
 
