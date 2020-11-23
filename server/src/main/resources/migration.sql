@@ -2743,3 +2743,4 @@ delete from jcm_profile_sharing_details where id in (select psd.id from jcm_prof
 
 -- for ticket #697
 ALTER TABLE cv_parsing_details ALTER COLUMN cv_rating_api_call_retry_count SET DEFAULT 1;
+update cv_parsing_details set cv_rating_api_call_retry_count = 1 where cv_rating_api_call_retry_count is null;
