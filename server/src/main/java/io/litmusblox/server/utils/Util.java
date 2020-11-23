@@ -464,7 +464,7 @@ public class Util {
         String cleanFileName = fileName.substring(0, fileName.lastIndexOf("."));
         cleanFileName = cleanFileName.replace(".", "_");
         cleanFileName = cleanFileName.replaceAll("\\W","");
-        cleanFileName = cleanFileName + "."+Util.getFileExtension(fileName);
+        cleanFileName = cleanFileName + "."+Util.getFileExtension(fileName).toLowerCase();
         return cleanFileName;
     }
 
