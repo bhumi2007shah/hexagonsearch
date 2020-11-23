@@ -2741,6 +2741,9 @@ COPY jcm_profile_sharing_master(id, receiver_name,sender_id, email_sent_on, rece
 --Removing entries from details table
 delete from jcm_profile_sharing_details where id in (select psd.id from jcm_profile_sharing_details psd left join jcm_profile_sharing_master psm on psm.id = psd.profile_sharing_master_id where psm.id is null);
 
+-- for ticket #697
+ALTER TABLE cv_parsing_details ALTER COLUMN cv_rating_api_call_retry_count SET DEFAULT 1;
+
 --For ticket #690
 update screening_question set question_type=(select id from master_data where type='questionType' and value='Radio button') where question='Which City are you currently based in?';
 

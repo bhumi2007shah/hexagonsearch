@@ -67,7 +67,7 @@ public class CvParsingDetails {
     private String parsingResponsePython;
 
     @Column(name = "CV_RATING_API_CALL_RETRY_COUNT")
-    private Long cvRatingApiCallTRetryCount = 0l;
+    private Long cvRatingApiCallTRetryCount = 1L;
 
     public CvParsingDetails(String cvFileName, Date processedOn, String parsingResponseText, Long candidateId, JobCandidateMapping jobCandidateMappingId) {
         this.cvFileName = cvFileName;
