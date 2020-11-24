@@ -18,6 +18,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+/**
+ * @author : Arpan R
+ * Date : 24/11/2020
+ * Time : 08:00 AM
+ * Class Name : BackendDataService
+ * Project Name : server
+ */
+
 @Service
 @Log4j2
 public class BackendDataService implements IBackendDataService {
@@ -31,12 +40,16 @@ public class BackendDataService implements IBackendDataService {
     @Resource
     JobCandidateMappingRepository jobCandidateMappingRepository;
 
+    /**
+     * Service method to migrate candidates Cv Rating Data
+     *
+     * @throws Exception
+     */
     @Override
     public void migrateCvRatingData() throws Exception{
         Long startTime = System.currentTimeMillis();
         log.info("Received Request to migrate cv rating data");
         List<CvRating> cvRatingsList = cvRatingRepository.findAll();
-        //CvRating cvRating = cvRatingRepository.findByJobCandidateMappingId(Long.parseLong("311806"));
         cvRatingsList.forEach(cvRating->{
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findById(cvRating.getJobCandidateMappingId()).orElse(null);
             if(objFromDb != null) {
@@ -56,7 +69,6 @@ public class BackendDataService implements IBackendDataService {
                 cv_skill_json.put("1", missingSkills);
                 cv_skill_json.put("2", weakSkills);
                 cv_skill_json.put("3", strongSkills);
-                log.info(cv_skill_json.toString());
                 objFromDb.setOverallRating(cvRating.getOverallRating());
                 objFromDb.setCvSkillRatingJson(cv_skill_json);
                 jobCandidateMappingRepository.save(objFromDb);

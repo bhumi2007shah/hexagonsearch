@@ -12,7 +12,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-
+/**
+ * Controller for Backend Data Migrations
+ *
+ * @author : Arpan R
+ * Date : 24/11/2020
+ * Time : 08:00 AM
+ * Class Name : BackendDataController
+ * Project Name : server
+ */
 @CrossOrigin(origins = "*", methods = {RequestMethod.POST, RequestMethod.GET, RequestMethod.OPTIONS, RequestMethod.PUT}, allowedHeaders = {"Content-Type", "Authorization","X-Requested-With", "accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers", "Access-Control-Allow-Origin"}, exposedHeaders = {"Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"})
 @RestController
 @RequestMapping("/api/backend/")
@@ -22,6 +30,11 @@ public class BackendDataController {
     @Autowired
     IBackendDataService backendDataService;
 
+    /**
+     * REST Api to migrate Cv Rating Data
+     *
+     * @throws Exception
+     */
     @GetMapping(value = "/migrateCvRating")
     @ResponseBody
     @ResponseStatus(value = HttpStatus.OK)
