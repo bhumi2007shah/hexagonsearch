@@ -1709,14 +1709,14 @@ public class JobService extends AbstractAccessControl implements IJobService {
         TechQuestionsRequestBean.SelectedRoles selectedRoles = new TechQuestionsRequestBean.SelectedRoles();
         TechQuestionsRequestBean.Functions functions = new TechQuestionsRequestBean.Functions();
         TechQuestionsRequestBean.Industry industry = new TechQuestionsRequestBean.Industry();
-        if(null != job.getJobRoleList()){
-            job.getJobRoleList().stream().forEach(jobRole -> {
-                selectedRoles.getRoleNames().add(jobRole.getRole().getRole());
+        if(null != job.getSelectedRole()){
+            job.getSelectedRole().stream().forEach(jobRole -> {
+                selectedRoles.getRoleNames().add(MasterDataBean.getInstance().getRole().get(Long.valueOf(jobRole)).getRole());
             });
         }
         if(null != job.getFunction()){
             Arrays.stream(job.getFunction()).forEach(function -> {
-                functions.getFunctionNames().add(MasterDataBean.getInstance().getFunction().get(function).getFunction());
+                functions.getFunctionNames().add(MasterDataBean.getInstance().getFunction().get(Long.valueOf(function)).getFunction());
             });
         }
         industry.setIndustryName(job.getJobIndustry().getIndustry());
