@@ -871,7 +871,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         }
         List<JobRole> jobRoles = new ArrayList<>();
         //Delete job roles
-        jobRoleRepository.deleteByJob(oldJob);
+        jobRoleRepository.deleteByJob(oldJob.getId());
         //Create jobRole
         job.getSelectedRole().forEach(selectedRole ->{
             if(null != MasterDataBean.getInstance().getRole().get(Long.valueOf(selectedRole))){
@@ -1709,14 +1709,14 @@ public class JobService extends AbstractAccessControl implements IJobService {
         TechQuestionsRequestBean.SelectedRoles selectedRoles = new TechQuestionsRequestBean.SelectedRoles();
         TechQuestionsRequestBean.Functions functions = new TechQuestionsRequestBean.Functions();
         TechQuestionsRequestBean.Industry industry = new TechQuestionsRequestBean.Industry();
-        if(null != job.getJobRoleList()){
-            job.getJobRoleList().stream().forEach(jobRole -> {
-                selectedRoles.getRoleNames().add(jobRole.getRole().getRole());
+        if(null != job.getSelectedRole()){
+            job.getSelectedRole().stream().forEach(jobRole -> {
+                selectedRoles.getRoleNames().add(MasterDataBean.getInstance().getRole().get(Long.valueOf(jobRole)).getRole());
             });
         }
         if(null != job.getFunction()){
             Arrays.stream(job.getFunction()).forEach(function -> {
-                functions.getFunctionNames().add(MasterDataBean.getInstance().getFunction().get(function).getFunction());
+                functions.getFunctionNames().add(MasterDataBean.getInstance().getFunction().get(Long.valueOf(function)).getFunction());
             });
         }
         industry.setIndustryName(job.getJobIndustry().getIndustry());
@@ -1732,7 +1732,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         String searchEngineResponse = null;
         Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineResponseBean = new HashMap<>();
         Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
-        log.info("Calling SearchEngine API to generate tech questions for job: {}", job.getId());
+        log.info("Calling SearchEngine API to generate tech questions for job: {}, request : {}", job.getId(), techQueRequestBean.toString());
         try {
             searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null, Optional.of(userDetails)).getResponseBody();
             searchEngineResponseBean = mapper.readValue(searchEngineResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
