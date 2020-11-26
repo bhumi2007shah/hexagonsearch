@@ -78,10 +78,10 @@ public class NoAuthController {
      */
     @PutMapping("/candidateInterest")
     @ResponseStatus(HttpStatus.OK)
-    void captureCandidateInterest(@RequestParam("uuid") UUID uuid, @RequestParam("interest") boolean interest) throws Exception {
+        void captureCandidateInterest(@RequestParam("uuid") UUID uuid, @RequestParam("interest") boolean interest, @RequestParam("candidateNotInterestReasonId") Optional<Long> candidateNotInterestedReasonId ) throws Exception {
         log.info("Received candidate interest capture request: " + uuid);
         long startTime = System.currentTimeMillis();
-        jobCandidateMappingService.captureCandidateInterest(uuid, interest);
+        jobCandidateMappingService.captureCandidateInterest(uuid, interest, (candidateNotInterestedReasonId.isPresent())?candidateNotInterestedReasonId.get():null);
         log.info("Completed capturing candidate request in {}ms",(System.currentTimeMillis()-startTime));
     }
 

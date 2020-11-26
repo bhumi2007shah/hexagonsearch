@@ -90,7 +90,7 @@ public class MasterDataBean {
     private Map<Long, AttributesMasterData> attribute = new HashMap<>();
     private Map<Long, Map<String, Long>> attributeMap = new HashMap<>();
     private List<StatementsBlockMasterData> statementBlocks = new ArrayList<>();
-
+    private Map<Long, String> candidateNotInterestedReason = new HashMap<>();
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;
 

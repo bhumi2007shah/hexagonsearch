@@ -58,5 +58,6 @@ public class MasterDataResponse {
     private Map<Long, Map<String, Long>> attributeMap = new HashMap<>();
     private List<StatementsBlockMasterData> statementBlocks = new ArrayList<>();
     private Map<String, List<RejectionReasonMasterData>> candidateRejectionReasonMap = new LinkedHashMap<>();
+    private Map<Long, String> candidateNotInterestedReason = new HashMap<>();
     private int otpExpiryMinutes;
 }

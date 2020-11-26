@@ -533,9 +533,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public void captureCandidateInterest(UUID uuid, boolean interest) throws Exception {
+    public void captureCandidateInterest(UUID uuid, boolean interest, Long candidateNotInterestedReasonId) throws Exception {
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
-        String candidatChoice="";
+        String candidateChoice="";
         if (null == objFromDb)
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
         objFromDb.setCandidateInterest(interest);
@@ -547,11 +547,15 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             } else {
                 objFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
             }
-            candidatChoice = "interested";
+            candidateChoice = "interested";
         }
         else{
+            if(null == candidateNotInterestedReasonId)
+                    throw new WebException("Candidate Not Interested Reason is null for uuid " + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
             objFromDb.setChatbotStatus(IConstant.ChatbotStatus.NOT_INTERESTED.getValue());
-            candidatChoice = "not interested";
+            MasterData masterData = masterDataRepository.findById(candidateNotInterestedReasonId).get();
+            objFromDb.setCandidateNotInterestedReason(masterData.getValue());
+            candidateChoice = "not interested and reason is "+objFromDb.getCandidateNotInterestedReason();
         }
         objFromDb.setCandidateInterestDate(new Date());
         //set stage = Screening where stage = Source
@@ -562,10 +566,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if(!objFromDb.getJob().getHrQuestionAvailable() && !objFromDb.getJob().getScoringEngineJobAvailable()){
             jcmCommunicationDetailsRepository.updateByJcmId(objFromDb.getId());
         }*/
-        log.info(objFromDb.getCandidateFirstName()+" "+objFromDb.getCandidateLastName()+" "+candidatChoice+" "+objFromDb.getJob().getId()+" : "+uuid);
+        log.info(objFromDb.getCandidateFirstName()+" "+objFromDb.getCandidateLastName()+" "+candidateChoice+" "+objFromDb.getJob().getId()+" : "+uuid);
         jobCandidateMappingRepository.save(objFromDb);
         StringBuffer historyMsg = new StringBuffer(objFromDb.getCandidateFirstName());
-        historyMsg.append(" ").append(objFromDb.getCandidateLastName()).append(" is ").append(candidatChoice).append(objFromDb.getJob().getJobTitle()).append(" - ").append(objFromDb.getJob().getId());
+        historyMsg.append(" ").append(objFromDb.getCandidateLastName()).append(" is ").append(candidateChoice).append(objFromDb.getJob().getJobTitle()).append(" - ").append(objFromDb.getJob().getId());
         jcmHistoryRepository.save(new JcmHistory(objFromDb, historyMsg.toString(), new Date(), null, objFromDb.getStage(), true));
     }
 

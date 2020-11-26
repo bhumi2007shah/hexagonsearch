@@ -391,6 +391,7 @@ public class MasterDataService implements IMasterDataService {
     private static final String ARCHIVE_REASON = "archiveReason";
     private static final String STATEMENT_BLOCKS = "statementBlocks";
     private static final String JOB_ATTRIBUTE = "attribute";
+    private static final String CANDIDATE_NOT_INTERESTED_REASON = "candidateNotInterestedReason";
 
     /**
      * Method to fetch specific master data from cache
@@ -503,6 +504,9 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case JOB_ATTRIBUTE:
                 master.getAttributeMap().putAll(MasterDataBean.getInstance().getAttributeMap());
+                break;
+            case CANDIDATE_NOT_INTERESTED_REASON:
+                master.getCandidateNotInterestedReason().putAll(MasterDataBean.getInstance().getCandidateNotInterestedReason());
                 break;
             default: //for all other properties, use reflection
 

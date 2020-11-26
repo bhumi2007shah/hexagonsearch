@@ -2854,3 +2854,11 @@ insert into ATTRIBUTES_MASTER_DATA(JOB_ATTRIBUTE, FUNCTION) values
 --For ticket #687
 alter table job_candidate_mapping add column cv_skill_rating_json jsonb;
 alter table job_candidate_mapping add column overall_rating smallint;
+
+--For ticket #698
+alter table job_candidate_mapping add column candidate_not_interested_reason varchar(50);
+insert into master_data (type,value) values
+('candidateNotInterestedReason','The role is not relevant for me'),
+('candidateNotInterestedReason','Just took up another job. Not looking any more'),
+('candidateNotInterestedReason','Not willing to relocate'),
+('candidateNotInterestedReason','Had a poor experience with this company earlier');

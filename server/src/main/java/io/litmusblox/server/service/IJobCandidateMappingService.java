@@ -66,7 +66,7 @@ public interface IJobCandidateMappingService {
      * @param interest boolean to capture candidate consent
      * @throws Exception
      */
-    void captureCandidateInterest(UUID uuid, boolean interest) throws Exception;
+    void captureCandidateInterest(UUID uuid, boolean interest, Long candidateNotInterestedReasonId) throws Exception;
 
     /**
      * Service method to capture candidate response to screening questions from chatbot
