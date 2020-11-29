@@ -2462,7 +2462,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                         companyDetails.setDesignation(response.trim());
                     else if (masterData.getValue().equals("Notice Period")) {
                         MasterData md = MasterDataBean.getInstance().getNoticePeriodMapping().get(response);
-                        if(response.equals("I can join immediately"))
+                        if(response.contains("immediately"))
                             md = MasterDataBean.getInstance().getNoticePeriodMapping().get("0 Days");
                         if(null == md)
                             md = MasterDataBean.getInstance().getNoticePeriodMapping().get("Others");
