@@ -53,8 +53,8 @@ public class MasterDataResponse {
     private Map<Long, Map<String, Long>> role = new HashMap<>();
     private Map<String , Map<String, String>> salaryRange = new HashMap<>();
     private Map<String, List> hiringManagerRejectReasonMap = new LinkedHashMap<>();
-    private Map<String,String> archiveStatus = new HashMap<>();
-    private Map<String,String> archiveReason = new HashMap<>();
+    private Map<String,String> archiveStatus = new LinkedHashMap<>();
+    private Map<String,String> archiveReason = new LinkedHashMap<>();
     private Map<Long, Map<String, Long>> attributeMap = new HashMap<>();
     private List<StatementsBlockMasterData> statementBlocks = new ArrayList<>();
     private Map<String, List<RejectionReasonMasterData>> candidateRejectionReasonMap = new LinkedHashMap<>();
