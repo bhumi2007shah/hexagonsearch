@@ -554,6 +554,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     throw new WebException("Candidate Not Interested Reason is null for uuid " + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
             objFromDb.setChatbotStatus(IConstant.ChatbotStatus.NOT_INTERESTED.getValue());
             MasterData masterData = masterDataRepository.findById(candidateNotInterestedReasonId).get();
+            if(!masterData.getType().equals("candidateNotInterestedReason"))
+                throw new WebException("Invalid Id for Candidate Not Interested Reason " + candidateNotInterestedReasonId, HttpStatus.UNPROCESSABLE_ENTITY);
             objFromDb.setCandidateNotInterestedReason(masterData.getValue());
             candidateChoice = "not interested and reason is "+objFromDb.getCandidateNotInterestedReason();
         }
