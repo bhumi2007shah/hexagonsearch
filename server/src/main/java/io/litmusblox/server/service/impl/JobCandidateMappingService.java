@@ -2473,8 +2473,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     else if (masterData.getValue().equals("Current Salary"))
                         companyDetails.setSalary(response);
                     else if (masterData.getValue().equals("Total Experience")) {
+                        //As all the other experience options are in years only two options are in months so in-order to store the candidate experience in months 0.5 is used
                         if(response.contains("months"))
                             response="0.5";
+                        //For any other options finding for the first digit or digits and saving it two db (the lowest range will be saved to db eg: 1-3 years 1 will be saved
                         else {
                             Pattern pattern = Pattern.compile("\\d+");
                             Matcher match = pattern.matcher(response);
