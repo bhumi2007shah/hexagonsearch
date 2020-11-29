@@ -223,6 +223,14 @@ public class JobCandidateMappingController {
         jobCandidateMappingService.editCandidate(jobCandidateMapping);
     }
 
+    /**
+     * REST API to set a specific stage like Interview, Offer etc
+     *
+     * @param jcmList The list of candidates for the job that need to be moved to the specified stage
+     * @param stage the new stage
+     * @param candidateRejectionValue which is id of rejection master data
+     * @throws Exception
+     */
     @PutMapping("/setStage/{stage}")
     @ResponseBody
     @ResponseStatus(value = HttpStatus.OK)
