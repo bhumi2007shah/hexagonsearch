@@ -144,6 +144,8 @@ public class MasterDataService implements IMasterDataService {
                 MasterDataBean.getInstance().getQuestionCategory().put(data.getValue(), data);
             else if(data.getType().equalsIgnoreCase("callOutCome"))
                 MasterDataBean.getInstance().getCallOutCome().add(data.getValue());
+            else if(data.getType().equalsIgnoreCase("location"))
+                MasterDataBean.getInstance().getLocation().add(data.getValue());
             else if(data.getType().equalsIgnoreCase("interviewConfirmation"))
                 MasterDataBean.getInstance().getInterviewConfirmation().put(data.getValue(), data);
             else if(data.getType().equalsIgnoreCase("questionType")){
@@ -389,6 +391,7 @@ public class MasterDataService implements IMasterDataService {
     private static final String SALARY_RANGE = "salaryRange";
     private static final String ARCHIVE_STATUS = "archiveStatus";
     private static final String ARCHIVE_REASON = "archiveReason";
+    private static final String LOCATION = "location";
     private static final String STATEMENT_BLOCKS = "statementBlocks";
     private static final String JOB_ATTRIBUTE = "attribute";
     private static final String CANDIDATE_NOT_INTERESTED_REASON = "candidateNotInterestedReason";
@@ -501,6 +504,9 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case STATEMENT_BLOCKS:
                 master.getStatementBlocks().addAll(MasterDataBean.getInstance().getStatementBlocks());
+                break;
+            case LOCATION:
+                master.getLocation().addAll(MasterDataBean.getInstance().getLocation());
                 break;
             case JOB_ATTRIBUTE:
                 master.getAttributeMap().putAll(MasterDataBean.getInstance().getAttributeMap());

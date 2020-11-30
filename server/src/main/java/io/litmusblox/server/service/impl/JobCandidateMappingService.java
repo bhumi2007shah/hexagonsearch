@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import static java.util.stream.Collectors.groupingBy;
 import javax.annotation.Resource;
 import java.io.File;
 import java.math.BigInteger;
@@ -174,6 +175,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
     @Resource
     RejectionReasonMasterDataRepository rejectionReasonMasterDataRepository;
+
+    @Resource
+    TechScreeningQuestionRepository techScreeningQuestionRepository;
 
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
@@ -2199,17 +2203,21 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
 
         ChatbotResponseBean chatbotResponseBean = new ChatbotResponseBean();
-        chatbotResponseBean.setJobCandidateMapping(objFromDb);
 
         objFromDb.setJcmCommunicationDetails(jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId()));
 
         if(objFromDb.getJob().isCustomizedChatbot()){
             CustomizedChatbotPageContent customizedChatbotPageContent = customizedChatbotPageContentRepository.findByCompanyId(objFromDb.getJob().getCompanyId());
             //check customize chatbot flag true then send customized page data
+            List<TechScreeningQuestion> techScreeningQuestions = techScreeningQuestionRepository.findByJobId(objFromDb.getJob().getId());
+            Map<String, List<TechScreeningQuestion>> techScreeningQuestionsByCategory = techScreeningQuestions.stream().collect(groupingBy(TechScreeningQuestion::getQuestionCategory));
+            objFromDb.setTechScreeningQuestions(techScreeningQuestionsByCategory);
+            objFromDb.setUserScreeningQuestions(jobScreeningQuestionsRepository.findByUserScreeningQuestionIdIsNotNullAndJobId(objFromDb.getJob().getId()));
             if(null != customizedChatbotPageContent && !customizedChatbotPageContent.getPageInfo().isEmpty())
                 chatbotResponseBean.getChatbotContent().putAll(customizedChatbotPageContent.getPageInfo());
-
         }
+        chatbotResponseBean.setJobCandidateMapping(objFromDb);
+
         return chatbotResponseBean;
     }
 

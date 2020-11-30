@@ -218,6 +218,12 @@ public class JobCandidateMapping implements Serializable {
     @Transient
     private String inviteErrorMessage;
 
+    @Transient
+    private List userScreeningQuestions;
+
+    @Transient
+    private Map<String,List<TechScreeningQuestion>> techScreeningQuestions;
+
     @JsonInclude
     @Transient
     private List<JcmHistory> candidateHistoryForHiringManager;
