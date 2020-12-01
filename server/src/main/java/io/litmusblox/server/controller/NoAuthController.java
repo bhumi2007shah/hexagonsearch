@@ -324,6 +324,7 @@ public class NoAuthController {
                     put("CandidateCompanyDetails", new ArrayList<>(0));
                     put("JobStageStep", new ArrayList<>(0));
                     put("Candidate",new ArrayList<>(0));
+                    put("JobRole", Arrays.asList("role"));
                 }}),
                 new HashMap<String, List<String>>() {{
                     put("Job",Arrays.asList("jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy","companyJobId","noOfPositions","mlDataAvailable","status","createdOn","createdBy","userEnteredKeySkill"));
