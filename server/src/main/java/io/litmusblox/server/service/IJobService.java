@@ -24,12 +24,6 @@ import java.util.UUID;
  * Project Name : server
  */
 public interface IJobService {
-    /**
-     * Add a new job
-     * @return Response bean with jobId, and optionally list of skills and capabilities from ML
-     * @throws Exception
-     */
-    Job addJob(Job job, String pageName) throws Exception;
 
     /**
      * Find all jobs for logged in user
@@ -172,7 +166,7 @@ public interface IJobService {
      * @return Response bean with jobId, and optionally list of skills from ML
      * @throws Exception
      */
-    Job newAddJobFlow(Job job, String pageName) throws Exception;
+    Job addJobFlow(Job job, String pageName) throws Exception;
 
     /**
      * API to get and add tech questions from search engine

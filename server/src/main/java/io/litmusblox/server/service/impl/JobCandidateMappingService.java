@@ -180,15 +180,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         return jobRepository.findById(jobId).get();
     }
 
-    @Transactional(readOnly = true)
-    User getUser(){return (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();}
-
-    @Value("${scoringEngineBaseUrl}")
-    private String scoringEngineBaseUrl;
-
-    @Value("${scoringEngineAddCandidateUrlSuffix}")
-    private String scoringEngineAddCandidateUrlSuffix;
-
     /**
      * Service method to add a individually added candidates to a job
      *
@@ -721,7 +712,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         //remove all failed invitations
         jcmList.removeAll(inviteCandidateResponseBean.getFailedJcm().stream().map(JobCandidateMapping::getId).collect(Collectors.toList()));
         //Currently, we are not using the scoring engine service
-        //callScoringEngineToAddCandidates(jcmList);
         if (null != inviteCandidateResponseBean.getFailedJcm() && inviteCandidateResponseBean.getFailedJcm().size() > 0) {
             handleErrorRecords(null, inviteCandidateResponseBean.getFailedJcm(), IConstant.ASYNC_OPERATIONS.InviteCandidates.name(), loggedInUser, inviteCandidateResponseBean.getJobId(), null);
         }
@@ -753,69 +743,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         else{
             log.info("Found 0 candidates to be auto invited");
         }
-    }
-
-    @Transactional(readOnly = true)
-    private void callScoringEngineToAddCandidates(List<Long> jcmList) {
-        //make an api call to scoring engine for each of the jcm
-        jcmList.stream().forEach(jcmId->{
-            log.info("Calling scoring engine - add candidate api for : " + jcmId);
-            JobCandidateMapping jcm = jobCandidateMappingRepository.getOne(jcmId);
-            if (null == jcm) {
-                log.error(IErrorMessages.JCM_NOT_FOUND + jcmId);
-            }
-            else {
-                if(jcm.getJob().getScoringEngineJobAvailable()) {
-                    try {
-                        Map queryParams = new HashMap(3);
-                        queryParams.put("lbJobId", jcm.getJob().getId());
-                        queryParams.put("candidateId", jcm.getCandidate().getId());
-                        queryParams.put("candidateUuid", jcm.getChatbotUuid());
-                        log.info("Calling Scoring Engine api to add candidate to job");
-                        String scoringEngineResponse = RestClient.getInstance().consumeRestApi(null, scoringEngineBaseUrl + scoringEngineAddCandidateUrlSuffix, HttpMethod.PUT, null, Optional.of(queryParams), null, null).getResponseBody();
-                        log.info(scoringEngineResponse);
-
-                        try {
-                            ObjectMapper objectMapper = new ObjectMapper();
-                            TechChatbotRequestBean techChatbotRequestBean = objectMapper.readValue(scoringEngineResponse, TechChatbotRequestBean.class);
-                            jcm.setChatbotUpdatedOn(techChatbotRequestBean.getChatbotUpdatedOn());
-                            if (techChatbotRequestBean.getTechResponseJson() != null && !techChatbotRequestBean.getTechResponseJson().isEmpty()) {
-                                jcm.getTechResponseData().setTechResponse(techChatbotRequestBean.getTechResponseJson());
-                            }
-                            if (techChatbotRequestBean.getScore() > 0) {
-                                jcm.setScore(techChatbotRequestBean.getScore());
-                            }
-                            if (techChatbotRequestBean.getChatbotUpdatedOn() != null) {
-                                jcm.setChatbotUpdatedOn(techChatbotRequestBean.getChatbotUpdatedOn());
-                            }
-
-                            //Candidate has already completed the tech chatbot
-                            if (IConstant.ChatbotStatus.COMPLETE.getValue().equalsIgnoreCase(techChatbotRequestBean.getChatbotStatus())) {
-                                log.info("Found complete status from scoring engine: " + jcm.getEmail() + " ~ " + jcm.getId());
-                                //Set chatCompleteFlag = true
-                                JcmCommunicationDetails jcmCommunicationDetails = jcmCommunicationDetailsRepository.findByJcmId(jcm.getId());
-                                jcmCommunicationDetails.setTechChatCompleteFlag(true);
-                                jcmCommunicationDetailsRepository.save(jcmCommunicationDetails);
-
-                                //If hr chat flag is also complete, set chatstatus = complete
-                                if (!jcm.getJob().getHrQuestionAvailable() || jcmCommunicationDetails.isHrChatCompleteFlag()) {
-                                    log.info("Found complete status for hr chat: " + jcm.getEmail() + " ~ " + jcm.getId());
-                                    jcm.setChatbotStatus(techChatbotRequestBean.getChatbotStatus());
-                                }
-                            }
-                            jobCandidateMappingRepository.save(jcm);
-                        } catch (Exception e) {
-                            log.error("Error in response received from scoring engine " + e.getMessage());
-                        }
-                    } catch (Exception e) {
-                        log.error("Error while adding candidate on Scoring Engine: " + e.getMessage());
-                    }
-                }
-                else {
-                    log.info("Job has not been added to Scoring engine. Cannot call create candidate api. " + jcm.getJob().getId());
-                }
-            }
-        });
     }
 
     @Transactional(propagation = Propagation.REQUIRED)

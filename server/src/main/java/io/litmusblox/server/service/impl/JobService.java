@@ -77,9 +77,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
     JobCandidateMappingRepository jobCandidateMappingRepository;
 
     @Resource
-    TempSkillsRepository tempSkillsRepository;
-
-    @Resource
     JobSkillsAttributesRepository jobSkillsAttributesRepository;
 
     @Resource
@@ -95,28 +92,13 @@ public class JobService extends AbstractAccessControl implements IJobService {
     CompanyBuRepository companyBuRepository;
 
     @Resource
-    JobHiringTeamRepository jobHiringTeamRepository;
-
-    @Resource
     JobRoleRepository jobRoleRepository;
-
-    @Resource
-    JcmCommunicationDetailsRepository jcmCommunicationDetailsRepository;
-
-    @Resource
-    WeightageCutoffByCompanyMappingRepository weightageCutoffByCompanyMappingRepository;
-
-    @Resource
-    WeightageCutoffMappingRepository weightageCutoffMappingRepository;
 
     @Resource
     JcmProfileSharingDetailsRepository jcmProfileSharingDetailsRepository;
 
     @Resource
     JobHistoryRepository jobHistoryRepository;
-
-    @Resource
-    JobCapabilityStarRatingMappingRepository jobCapabilityStarRatingMappingRepository;
 
     @Resource
     ExportFormatMasterRepository exportFormatMasterRepository;
@@ -129,9 +111,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
     @Resource
     InterviewDetailsRepository interviewDetailsRepository;
-
-    @Resource
-    RoleMasterDataRepository roleMasterDataRepository;
 
     @Resource
     TechScreeningQuestionRepository techScreeningQuestionRepository;
@@ -149,138 +128,16 @@ public class JobService extends AbstractAccessControl implements IJobService {
     JcmAllDetailsRepository jcmAllDetailsRepository;
 
     @Autowired
-    ISearchEngineService searchEngineService;
-
-    @PersistenceContext
-    EntityManager em;
-
-    @Autowired
     CustomQueryExecutor customQueryExecutor;
 
     @Autowired
     Environment environment;
-
-    @Value("${scoringEngineBaseUrl}")
-    private String scoringEngineBaseUrl;
-
-    @Value("${scoringEngineAddJobUrlSuffix}")
-    private String scoringEngineAddJobUrlSuffix;
 
     @Value("${searchEngineGenerateTechQuestionSuffix}")
     String searchEngineGenerateTechQuestionSuffix;
 
     @Value("${searchEngineBaseUrl}")
     String searchEngineBaseUrl;
-
-    @Transactional
-    public Job addJob(Job job, String pageName) throws Exception {//add job with respective pageName
-
-        if(null != job.getStatus() && IConstant.JobStatus.ARCHIVED.equals(job.getStatus()))
-            throw new ValidationException("Can't edit job because job in Archived state", HttpStatus.UNPROCESSABLE_ENTITY);
-
-        User recruiter = null;
-        User hiringManager = null;
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-        log.info("Received request to add job for page " + pageName + " from user: " + loggedInUser.getEmail());
-        long startTime = System.currentTimeMillis();
-
-        if (IConstant.AddJobPages.capabilities.name().equalsIgnoreCase(pageName)) {
-            //delete all existing records in the job_capability_star_rating_mapping table for the current job
-            jobCapabilityStarRatingMappingRepository.deleteByJobId(job.getId());
-            jobCapabilityStarRatingMappingRepository.flush();
-        }
-        Job oldJob = null;
-
-        Company company = companyRepository.findById(job.getCompanyId().getId()).orElse(null);
-
-        if (null != job.getId()) {
-            //get handle to existing job object
-            oldJob = jobRepository.findById(job.getId()).orElse(null);
-            // oldJob = tempJobObj.isPresent() ? tempJobObj.get() : null;
-        } else  {//Is a new job
-            if(IConstant.CompanySubscription.LDEB.toString().equalsIgnoreCase(loggedInUser.getCompany().getSubscription())) {
-                //If LDEB client, set customized chatbot flag & resubmit hr flag = true
-                job.setCustomizedChatbot(true);
-                job.setResubmitHrChatbot(true);
-            }
-        }
-
-        //set recruiter
-        if(null == oldJob)
-            job = setRecruiterArray(job, loggedInUser);
-
-        //set hiringManager
-//        if(null != job.getHiringManager() && null != job.getHiringManager().getId()){
-//            hiringManager =  userRepository.findById(job.getHiringManager().getId()).orElse(null);
-//            if(null != hiringManager)
-//                job.setHiringManager(hiringManager);
-//        }else if(null != company && null == company.getRecruitmentAgencyId())
-//            throw new ValidationException("Hiring Manager "+IErrorMessages.NULL_MESSAGE, HttpStatus.UNPROCESSABLE_ENTITY);
-
-        switch (IConstant.AddJobPages.valueOf(pageName)) {
-            case overview:
-                addJobOverview(job, oldJob, loggedInUser, false);
-                break;
-            case screeningQuestions:
-                addJobScreeningQuestions(job, oldJob, loggedInUser, false);
-                break;
-            case keySkills:
-                addJobKeySkills(job, oldJob, loggedInUser);
-                break;
-            case capabilities:
-                addJobCapabilities(job, oldJob, loggedInUser);
-                break;
-            case jobDetail:
-                addJobDetail(job, oldJob, loggedInUser, false);
-                break;
-            case hiringTeam:
-                addJobHiringTeam(job, oldJob, loggedInUser);
-                job.setJobHiringTeamList(jobHiringTeamRepository.findByJobId(job.getId()));
-                break;
-            case expertise:
-                addJobExpertise(job, oldJob);
-                break;
-            default:
-                throw new OperationNotSupportedException("Unknown page: " + pageName);
-        }
-
-        if(null != oldJob && null != oldJob.getJobHiringTeamList() && !IConstant.AddJobPages.hiringTeam.name().equals(pageName))
-            job.setJobHiringTeamList(oldJob.getJobHiringTeamList());
-
-        populateDataForNextPage(job, pageName);
-
-        log.info("Completed processing request to add job in " + (System.currentTimeMillis() - startTime) + "ms");
-        return job;
-    }
-
-    private void populateDataForNextPage(Job job, String pageName) throws Exception {
-        int currentPageIndex = MasterDataBean.getInstance().getJobPageNamesInOrder().indexOf(pageName);
-        if (currentPageIndex != -1) {
-            if(MasterDataBean.getInstance().getJobPageNamesInOrder().get(currentPageIndex).equals(IConstant.AddJobPages.overview.name())) {
-                log.info("Setting jobkeyskills in job object");
-                job.setJobSkillsAttributesList(jobSkillsAttributesRepository.findByJobId(job.getId()));
-                log.info("Setting capabilities in job object");
-                job.setJobCapabilityList(jobCapabilitiesRepository.findByJobId(job.getId()));
-            }
-            switch (IConstant.AddJobPages.valueOf(MasterDataBean.getInstance().getJobPageNamesInOrder().get(currentPageIndex+1))) {
-                case keySkills:
-                    //populate key skills for the job
-                    job.setJobSkillsAttributesList(jobSkillsAttributesRepository.findByJobId(job.getId()));
-                    break;
-                case capabilities:
-                    //populate the capabilities for the job
-                    job.setJobCapabilityList(jobCapabilitiesRepository.findByJobId(job.getId()));
-                    break;
-                /*case hiringTeam:
-                    job.setJobHiringTeamList(jobHiringTeamRepository.findByJobId(job.getId()));
-                    break;*/
-                default:
-                    break;
-            }
-        }
-    }
-
 
     /**
      * Fetch details of currently logged in user and
@@ -745,36 +602,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
         return oldJob;
     }
 
-    /**
-     * Method to handle all capabilities provided by ML
-     *
-     * @param capabilitiesList
-     * @param jobId
-     * @param selectedByDefault
-     * @param uniqueCapabilityIds
-     * @throws Exception
-     */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private void handleCapabilitiesFromMl(List<Capabilities> capabilitiesList, long jobId, boolean selectedByDefault, Set<Integer> uniqueCapabilityIds) throws Exception {
-        log.info("Size of capabilities list to process: " + capabilitiesList.size());
-        List<JobCapabilities> jobCapabilitiesToSave = new ArrayList<>(capabilitiesList.size());
-        capabilitiesList.forEach(capability->{
-            if (capability.getCapCode() !=0 && !uniqueCapabilityIds.contains(capability.getCapCode())) {
-                jobCapabilitiesToSave.add(new JobCapabilities(Long.valueOf(capability.getCapCode()), capability.getCapability(), selectedByDefault, mapWeightage(capability.getCapabilityWeight()), new Date(), (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal(), jobId));
-                uniqueCapabilityIds.add(capability.getCapCode());
-            }
-        });
-        jobCapabilitiesRepository.saveAll(jobCapabilitiesToSave);
-    }
-
-    private int mapWeightage(int capabilityWeight) {
-        if(capabilityWeight <= 2)
-            return 2;
-        else if (capabilityWeight <=6)
-            return 6;
-        return 10;
-    }
-
     private void addJobScreeningQuestions(Job job, Job oldJob, User loggedInUser, boolean isNewAddJobFlow) throws Exception { //method for add screening questions
 
         //commented out the check as per ticket #146
@@ -899,135 +726,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
         oldJob.setFunction(functions.stream().toArray(Integer[]::new));
     }
 
-    private void addJobKeySkills(Job job, Job oldJob, User loggedInUser) throws Exception { //update and add new key skill
-        if(null != oldJob && IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus()))
-            return;
-
-        List<JobSkillsAttributes> jobSkillsAttributesFromDb = jobSkillsAttributesRepository.findByJobId(oldJob.getId());
-
-        //if there were key skills suggested by ML, and the request for add job - key skills has a 0 length array, throw an error, otherwise, proceed
-        if (jobSkillsAttributesFromDb.size() > 0 && null != job.getJobSkillsAttributesList() && job.getJobSkillsAttributesList().isEmpty()) {
-            throw new ValidationException("Job key skills " + IErrorMessages.EMPTY_AND_NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
-        }
-
-        //For each keyskill in the request (will have only the mlProvided true ones), update the values for selected
-        Map<Long, JobSkillsAttributes> newSkillValues = new HashMap();
-        job.getJobSkillsAttributesList().stream().forEach(jobKeySkill -> newSkillValues.put(jobKeySkill.getSkillId().getId(), jobKeySkill));
-
-        oldJob.getJobSkillsAttributesList().forEach(oldKeySkill -> {
-            JobSkillsAttributes newValue = newSkillValues.get(oldKeySkill.getSkillId().getId());
-            oldKeySkill.setUpdatedOn(new Date());
-            oldKeySkill.setUpdatedBy(loggedInUser);
-        });
-
-        //get all skillMaster and tempskills master data
-        Map<String, Long> skillsMasterMapByName = new HashMap<>();
-        Map<Long, SkillsMaster> skillsMasterMap = new HashMap<>();
-        List<SkillsMaster> skillsMasterList = skillMasterRepository.findAll();
-        skillsMasterList.forEach(skillsMaster -> {
-            skillsMasterMapByName.put(skillsMaster.getSkillName(), skillsMaster.getId());
-            skillsMasterMap.put(skillsMaster.getId(), skillsMaster);
-        });
-
-        Map<String, Long> tempSkillsMapByName = new HashMap<>();
-        Map<Long, TempSkills> tempSkillsMap = new HashMap<>();
-        tempSkillsRepository.findAll().forEach(tempSkill -> {
-            tempSkillsMapByName.put(tempSkill.getSkillName(), tempSkill.getId());
-            tempSkillsMap.put(tempSkill.getId(), tempSkill);
-        });
-
-        //For each user entered key skill, do the following:
-        //(i) check if the skill is already present in the ml key skill list for the job. If yes, skip this skill
-        //(ii) if not, check if the skill is present in the skills master table. If yes, use that skill id to insert a record in the db
-        //(iii) if not, check if the skill is present in the temp key skills table. If yes, use that id and insert a record in the db with temp key skill id column populated
-        //(iv) if not, enter a record in the temp key skills table and use the id of the newly inserted record to insert a record in job key skill table with the temp key skill id column populated
-
-        for (String userSkills : job.getUserEnteredKeySkill()) {
-
-            if (skillsMasterMapByName.keySet().contains(userSkills)) {
-                Long skillId = skillsMasterMapByName.get(userSkills);
-                //does the skill match one of the those provided by ML?
-                if (null != newSkillValues.get(skillId)) {
-                    //found a match, skip this skill
-                    continue;
-                } else {
-                    //no match found in mlProvided skill, add a record
-                    //jobKeySkillsRepository.save(new JobKeySkills(skillsMasterMap.get(skillId), true, new Date(), loggedInUser, job.getId()));
-                }
-
-            }
-            //check if the user entered skill exists in the temp skills table
-            else if (tempSkillsMapByName.keySet().contains(userSkills)) {
-                Long tempSkillId = tempSkillsMapByName.get(userSkills);
-                jobSkillsAttributesRepository.save(new JobSkillsAttributes(tempSkillsMap.get(tempSkillId), new Date(), loggedInUser, job.getId()));
-
-            }
-            //this is a new skill, add to temp skills and refer to jobkeyskills table
-            else {
-                TempSkills tempSkills = tempSkillsRepository.save(new TempSkills(userSkills, false));
-                jobSkillsAttributesRepository.save(new JobSkillsAttributes(tempSkills, new Date(), loggedInUser, job.getId()));
-            }
-        }
-        saveJobHistory(job.getId(), "Added key skills", loggedInUser);
-        //populate the capabilities for the job
-        job.setJobCapabilityList(jobCapabilitiesRepository.findByJobId(job.getId()));
-    }
-
-
-    private void addJobCapabilities(Job job, Job oldJob, User loggedInUser) { //add job capabilities
-
-        if(null != oldJob && IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus()))
-            return;
-
-        //if there are capabilities that were returned from ML, and the request for add job - capabilities has a 0 length array, throw an error, otherwise, proceed
-        if (oldJob.getJobCapabilityList().size() > 0 && null != job.getJobCapabilityList() && job.getJobCapabilityList().isEmpty()) {
-            throw new ValidationException("Job Capabilities " + IErrorMessages.EMPTY_AND_NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
-        }
-
-        int selectedCapabilityCount = job.getJobCapabilityList().stream().filter(capability->capability.getSelected()).collect(Collectors.toList()).size();
-
-        if(selectedCapabilityCount>MasterDataBean.getInstance().getConfigSettings().getMaxCapabilities())
-            throw new ValidationException("Job Capabilities more than max capabilities limit for jobId : "+ job.getId(), HttpStatus.BAD_REQUEST);
-
-        //For each capability in the request, update the values for selected and importance_level
-        Map<Long, JobCapabilities> newCapabilityValues = new HashMap();
-        job.getJobCapabilityList().stream().forEach(jobCapability -> newCapabilityValues.put(jobCapability.getId(), jobCapability));
-
-        log.info("Capability count: Old Job: " + oldJob.getJobCapabilityList().size() + " new capability list size: " + newCapabilityValues.size());
-
-        oldJob.getJobCapabilityList().forEach(oldCapability -> {
-            JobCapabilities newValue = newCapabilityValues.get(oldCapability.getId());
-            if(newValue.getSelected()) {
-                List<WeightageCutoffByCompanyMapping> wtgCompanyMappings = weightageCutoffByCompanyMappingRepository.findByCompanyIdAndWeightage(oldJob.getCompanyId().getId(), newValue.getWeightage());
-                if (null != wtgCompanyMappings && wtgCompanyMappings.size() > 0) {
-                    wtgCompanyMappings.stream().forEach(starRatingMapping -> oldCapability.getJobCapabilityStarRatingMappingList().add(new JobCapabilityStarRatingMapping(newValue.getId(), oldJob.getId(), newValue.getWeightage(), starRatingMapping.getCutoff(), starRatingMapping.getPercentage(), starRatingMapping.getStarRating())));
-
-                } else {
-                    List<WeightageCutoffMapping> weightageCutoffMappings = weightageCutoffMappingRepository.findByWeightage(newValue.getWeightage());
-                    if (null != weightageCutoffMappings && weightageCutoffMappings.size() > 0) {
-                        weightageCutoffMappings.stream().forEach(starRatingMapping -> oldCapability.getJobCapabilityStarRatingMappingList().add(new JobCapabilityStarRatingMapping(newValue.getId(), oldJob.getId(), newValue.getWeightage(), starRatingMapping.getCutoff(), starRatingMapping.getPercentage(), starRatingMapping.getStarRating())));
-                    }
-                }
-            }
-            oldCapability.setWeightage(newValue.getWeightage());
-            oldCapability.setSelected(newValue.getSelected());
-            if(newValue.getSelected())
-                oldCapability.setWeightage(newValue.getWeightage());
-            oldCapability.setUpdatedOn(new Date());
-            oldCapability.setUpdatedBy(loggedInUser);
-        });
-
-
-        //29th July: Do not auto-publish the job. The job should be explicitly published by means of an API call
-        //oldJob.setStatus(IConstant.JobStatus.PUBLISHED.getValue());
-        //oldJob.setDatePublished(new Date());
-        jobRepository.save(oldJob);
-        saveJobHistory(job.getId(), "Added capabilities", loggedInUser);
-
-        job.getJobCapabilityList().clear();
-        job.getJobCapabilityList().addAll(oldJob.getJobCapabilityList());
-    }
-
     private void addJobDetail(Job job, Job oldJob, User loggedInUser, boolean isNewAddJobFlow) {//add job details
 
         MasterDataBean masterDataBean = MasterDataBean.getInstance();
@@ -1118,27 +816,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
         job.getUsersForCompany().addAll(userList);
     }
 
-    private void addJobHiringTeam(Job job, Job oldJob, User loggedInUser) throws Exception {
-        log.info("inside addJobHiringTeam");
-        if(null != oldJob){
-            jobHiringTeamRepository.deleteByJobId(oldJob.getId());
-            jobHiringTeamRepository.flush();
-        }
-        AtomicLong i = new AtomicLong();
-        Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
-        if(null != job.getHiringTeamStepMapping() && job.getHiringTeamStepMapping().size()>0) {
-            List<JobHiringTeam> jobHiringTeamList = new ArrayList<>(job.getJobHiringTeamList().size());
-            job.getHiringTeamStepMapping().forEach(stageStep -> {
-                jobHiringTeamList.add(new JobHiringTeam(oldJob.getId(), stageStepMasterMap.get(stageStep.get(0)), User.builder().id(stageStep.get(1)).build(), i.longValue(), new Date(), loggedInUser));
-                i.getAndIncrement();
-            });
-            jobHiringTeamRepository.saveAll(jobHiringTeamList);
-            oldJob.setJobHiringTeamList(jobHiringTeamList);
-            jobHiringTeamRepository.flush();
-        }
-        jobRepository.save(oldJob);
-    }
-
     private void addJobExpertise(Job job, Job oldJob){
         MasterDataBean masterDataBean = MasterDataBean.getInstance();
         if(null == masterDataBean.getExpertise().get(job.getExpertise().getId())){
@@ -1165,42 +842,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
             log.info("Reloading apache for subdomain {}.", publishedJob.getCompanyId().getShortName());
             companyService.reloadApache(Arrays.asList(publishedJob.getCompanyId()));
         }
-
-        //Currently, we are not using the scoring engine service
-        /*if (publishedJob.getJobCapabilityList().size() == 0)
-            log.info("No capabilities exist for the job: " + job.getId() + " Scoring engine api call will NOT happen");
-        else if (jobCapabilitiesRepository.findByJobIdAndSelected(job.getId(), true).size() == 0)
-            log.info("No capabilities have been selected for the job: {}. Scoring engine api call will NOT happen", job.getId());
-        else {
-            log.info("Calling Scoring Engine Api to create a job");
-            try {
-                String scoringEngineResponse = RestClient.getInstance().consumeRestApi(convertJobToRequestPayload(job.getId(), publishedJob), scoringEngineBaseUrl + scoringEngineAddJobUrlSuffix, HttpMethod.POST, null).getResponseBody();
-                publishedJob.setScoringEngineJobAvailable(true);
-                jobRepository.save(publishedJob);
-            } catch (Exception e) {
-                log.error("Error during create job api call on Scoring engine: " + e.getMessage());
-            }
-        }*/
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private String convertJobToRequestPayload(Long jobId, Job publishedJob) throws Exception {
-        List<JobCapabilities> jobCapabilities = jobCapabilitiesRepository.findByJobIdAndSelected(jobId,true);
-        MasterData expertise = null;
-        if(null != publishedJob.getExpertise())
-            expertise = MasterDataBean.getInstance().getExpertise().get(publishedJob.getExpertise().getId());
-
-        List<Capability> capabilityList = new ArrayList<>(jobCapabilities.size());
-        jobCapabilities.stream().forEach(jobCapability -> {
-            capabilityList.add(new Capability(jobCapability.getCapabilityId(), jobCapability.getWeightage(), jobCapability.getJobCapabilityStarRatingMappingList()));
-        });
-        ScoringEngineJobBean jobRequestBean;
-        if(null != expertise)
-            jobRequestBean = new ScoringEngineJobBean(jobId, Long.parseLong(expertise.getValueToUSe()), capabilityList);
-        else
-            jobRequestBean = new ScoringEngineJobBean(jobId, null, capabilityList);
-
-        return (new ObjectMapper()).writeValueAsString(jobRequestBean);
     }
 
     /**
@@ -1608,14 +1249,14 @@ public class JobService extends AbstractAccessControl implements IJobService {
     }
 
     @Transactional
-    public Job newAddJobFlow(Job job, String pageName) throws Exception {
-        log.info("Inside newAddJobFlow");
+    public Job addJobFlow(Job job, String pageName) throws Exception {
+        log.info("Inside addJobFlow");
         if (null != job.getStatus() && IConstant.JobStatus.ARCHIVED.equals(job.getStatus()))
             throw new ValidationException("Can't edit job because job in Archived state", HttpStatus.UNPROCESSABLE_ENTITY);
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        log.info("Received request to new add job flow for page " + pageName + " from user: " + loggedInUser.getEmail());
+        log.info("Received request to add job flow for page " + pageName + " from user: " + loggedInUser.getEmail());
         long startTime = System.currentTimeMillis();
         Job oldJob = null;
 
@@ -1663,7 +1304,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             oldJob.setJobIndustry(MasterDataBean.getInstance().getJobIndustry().get(oldJob.getJobIndustry().getId()));
 
         job.setRoles(roles);
-        log.info("Completed processing request to new add job flow in " + (System.currentTimeMillis() - startTime) + "ms");
+        log.info("Completed processing request to add job flow in " + (System.currentTimeMillis() - startTime) + "ms");
         return job;
     }
 
@@ -1697,12 +1338,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
         //Delete all exiting tech screening questions
         jobScreeningQuestionsRepository.deleteJobScreeningQuestions(job.getId(), job.getSelectedKeySkills());
         techScreeningQuestionRepository.deleteByJobIdAndQuestionCategoryNotIn(job.getId(), job.getSelectedKeySkills());
-
-        //LoggedIn user
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-        //find old job
-        Job oldJob = jobRepository.getOne(job.getId());
 
         //Create request for generate tech question API from search engine
         TechQuestionsRequestBean techQueRequestBean = new TechQuestionsRequestBean();
