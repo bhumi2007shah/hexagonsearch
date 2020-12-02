@@ -1341,12 +1341,18 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         //Create request for generate tech question API from search engine
         TechQuestionsRequestBean techQueRequestBean = new TechQuestionsRequestBean();
-        TechQuestionsRequestBean.SelectedRoles selectedRoles = new TechQuestionsRequestBean.SelectedRoles();
+        TechQuestionsRequestBean.Roles roles = new TechQuestionsRequestBean.Roles();
+        TechQuestionsRequestBean.Attributes attributes = new TechQuestionsRequestBean.Attributes();
         TechQuestionsRequestBean.Functions functions = new TechQuestionsRequestBean.Functions();
         TechQuestionsRequestBean.Industry industry = new TechQuestionsRequestBean.Industry();
         if(null != job.getSelectedRole()){
             job.getSelectedRole().stream().forEach(jobRole -> {
-                selectedRoles.getRoleNames().add(MasterDataBean.getInstance().getRole().get(Long.valueOf(jobRole)).getRole());
+                roles.getRoleNames().add(MasterDataBean.getInstance().getRole().get(Long.valueOf(jobRole)).getRole());
+            });
+        }
+        if(null != job.getSelectedAttribute()){
+            job.getSelectedAttribute().stream().forEach(jobAttribute -> {
+                attributes.getAttributeNames().add(MasterDataBean.getInstance().getAttribute().get(Long.valueOf(jobAttribute)).getJobAttribute());
             });
         }
         if(null != job.getFunction()){
@@ -1355,7 +1361,8 @@ public class JobService extends AbstractAccessControl implements IJobService {
             });
         }
         industry.setIndustryName(job.getJobIndustry().getIndustry());
-        techQueRequestBean.setSelectedRoles(selectedRoles);
+        techQueRequestBean.setRoles(roles);
+        techQueRequestBean.setAttributes(attributes);
         techQueRequestBean.setFunctions(functions);
         techQueRequestBean.setCompanyId(job.getCompanyId().getId());
         techQueRequestBean.setIndustry(industry);
