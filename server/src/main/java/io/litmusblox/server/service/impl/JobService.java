@@ -857,30 +857,30 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
     private void addIndustry(Job job, Job oldJob){
         if (null == job.getJobIndustry() || null == MasterDataBean.getInstance().getJobIndustry().get(job.getJobIndustry().getId())) {
-            //throw new ValidationException("In Job, function " + IErrorMessages.NULL_MESSAGE + job.getId(), HttpStatus.BAD_REQUEST);
             log.error("In JobId : {}, jobIndustry {}",job.getId(),IErrorMessages.NULL_MESSAGE);
-        }else{
-            oldJob.setJobIndustry(job.getJobIndustry());
+            throw new ValidationException("In Job, Industry " + IErrorMessages.NULL_MESSAGE +" JobId : "+ job.getId(), HttpStatus.BAD_REQUEST);
         }
+        oldJob.setJobIndustry(job.getJobIndustry());
     }
 
     private void validateRole(Job job, Job oldJob){
-        if(null == job.getSelectedRole() || job.getSelectedRole().size()==0){
-            log.error("In JobId : {}, role {}", oldJob.getId(), IErrorMessages.NULL_MESSAGE);
-            throw new ValidationException("Role should not be null for job : "+oldJob.getId(), HttpStatus.BAD_REQUEST);
+        if(null == job.getSelectedRole() || job.getSelectedRole().size()==0)
+            log.error("For JobId : {}, role is null", oldJob.getId());
+        else{
+            List<JobRole> jobRoles = new ArrayList<>();
+            //Delete job roles
+            jobRoleRepository.deleteByJob(oldJob.getId());
+            //Create jobRole
+            job.getSelectedRole().forEach(selectedRole ->{
+                if(null != MasterDataBean.getInstance().getRole().get(Long.valueOf(selectedRole))){
+                    jobRoles.add(new JobRole(MasterDataBean.getInstance().getRole().get(Long.valueOf(selectedRole)), oldJob.getId()));
+                }else{
+                    log.error("JobRole not present for id : {}, in job : {}",selectedRole, oldJob.getId());
+                    throw new ValidationException("Role : "+selectedRole+" should not be null for job : "+oldJob.getId(), HttpStatus.BAD_REQUEST);
+                }
+            });
+            jobRoleRepository.saveAll(jobRoles);
         }
-        List<JobRole> jobRoles = new ArrayList<>();
-        //Delete job roles
-        jobRoleRepository.deleteByJob(oldJob.getId());
-        //Create jobRole
-        job.getSelectedRole().forEach(selectedRole ->{
-            if(null != MasterDataBean.getInstance().getRole().get(Long.valueOf(selectedRole))){
-                jobRoles.add(new JobRole(MasterDataBean.getInstance().getRole().get(Long.valueOf(selectedRole)), oldJob));
-            }else{
-                log.error("JobRole not present for id : {}, in job : {}",selectedRole, oldJob.getId());
-            }
-        });
-        jobRoleRepository.saveAll(jobRoles);
     }
 
     private void validateFunction(Job job, Job oldJob){
@@ -892,9 +892,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
         Arrays.stream(job.getFunction()).forEach(function ->{
             if(null == MasterDataBean.getInstance().getFunction().get(Long.valueOf(function))){
                 log.error("Function not present for id : {}, in job : {}",function, oldJob.getId());
-            }else{
-                functions.add(function);
+                throw new ValidationException("Function  "+function+" should not be null for job : "+oldJob.getId(), HttpStatus.BAD_REQUEST);
             }
+            functions.add(function);
         });
         oldJob.setFunction(functions.stream().toArray(Integer[]::new));
     }

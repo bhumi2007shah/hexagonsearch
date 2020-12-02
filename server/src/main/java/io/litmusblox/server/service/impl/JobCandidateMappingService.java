@@ -577,181 +577,99 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
     /**
      * Service method to capture candidate response to screening questions from chatbot
-     *
-     * @param uuid              the uuid corresponding to a unique jcm record
-     * @param candidateResponse the response provided by a candidate against each screening question
-     * @throws Exception
-     */
-    @Transactional(propagation = Propagation.REQUIRED)
-    public void saveScreeningQuestionResponses(UUID uuid, Map<Long, List<String>> candidateResponse) throws Exception {
-        JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
-        log.info("Saving chatbot response for uuid : {}, jobId : {} and jcmId : {}", uuid, objFromDb.getJob().getId(), objFromDb.getId());
-        Map<String, String> breadCrumb = new HashMap<>();
-        breadCrumb.put("Chatbot uuid", uuid.toString());
-        breadCrumb.put("JcmId",objFromDb.getId().toString());
-        breadCrumb.put("JobId",objFromDb.getJob().getId().toString());
-        breadCrumb.put("Chatbot response", candidateResponse.toString());
-        JcmCommunicationDetails jcmCommunicationDetailsFromDb = jcmCommunicationDetailsRepository.findByJcmId(objFromDb.getId());
-        if (null == objFromDb){
-            log.error("JcmCommunicationDetails not found for jcmId : {}", objFromDb.getId());
-            throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
-        }
-
-        if(objFromDb.getJob().getJobScreeningQuestionsList().size() != candidateResponse.size()){
-            log.error("Job screening question count : {} and candidate screening question responses count : {} both are mismatch", objFromDb.getJob().getJobScreeningQuestionsList().size(), candidateResponse.size());
-            breadCrumb.put("Total job screening question's",String.valueOf(objFromDb.getJob().getJobScreeningQuestionsList().size()));
-            breadCrumb.put("Total candidate question responses",String.valueOf(candidateResponse.size()));
-            SentryUtil.logWithStaticAPI(null, "Job screening question count and candidate screening question responses count both are mismatched", breadCrumb);
-        }
-
-        //delete existing response for chatbot for the jcm
-        long startTime = System.currentTimeMillis();
-        candidateScreeningQuestionResponseRepository.deleteByJobCandidateMappingId(objFromDb.getId());
-        Map <String, String> responseMap = new HashMap<>();
-
-        candidateResponse.forEach((key,value) -> {
-            String[] valuesToSave = new String[value.size()];
-            for(int i=0;i<value.size();i++) {
-                valuesToSave[i] = value.get(i);
-                if(i==0 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH) {
-                    log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH, value);
-                    valuesToSave[i] = valuesToSave[i].substring(0,IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH);
-                }
-                if(i==1 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH){
-                    log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH, value);
-                    valuesToSave[i] = valuesToSave[i].substring(0,IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH);
-                }
-            }
-            candidateScreeningQuestionResponseRepository.save(new CandidateScreeningQuestionResponse(objFromDb.getId(),key, valuesToSave[0], (valuesToSave.length > 1)?valuesToSave[1]:null));
-            responseMap.put(key.toString(), String.join("~", valuesToSave));
-
-        });
-        log.info("Completed looping through map in {}ms", (System.currentTimeMillis()-startTime));
-        //updating hr_chat_complete_flag
-        startTime = System.currentTimeMillis();
-        objFromDb.setCandidateChatbotResponse(responseMap);
-        log.info("Completed adding response to db in {}ms",(System.currentTimeMillis()-startTime));
-
-        jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(objFromDb.getId());
-
-        //update chatbot updated date
-        objFromDb.setChatbotUpdatedOn(new Date());
-
-        //set chatbot status to complete if scoring engine does not have job or tech chatbot is complete.
-        if((!objFromDb.getJob().getScoringEngineJobAvailable() || jcmCommunicationDetailsFromDb.isTechChatCompleteFlag()) && objFromDb.getJob().getJobScreeningQuestionsList().size() == candidateResponse.size()){
-            objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
-            log.info("Chatbot completed for uuid : {}, jobId : {} and jcmId : {}", uuid, objFromDb.getJob().getId(), objFromDb.getId());
-        }else
-            log.info("Chatbot inCompleted for uuid : {}, jobId : {} and jcmId : {}", uuid, objFromDb.getJob().getId(), objFromDb.getId());
-
-
-        //Commented below code as we are not setting flag to true as per discussion on 10-01-2020
-        //updating chat_complete_flag if corresponding job is not available on scoring engine due to lack of ML data,
-        // or candidate already filled all the capabilities in some other job and we already have candidate responses for technical chatbot.
-        /*if(!objFromDb.getJob().getScoringEngineJobAvailable() || (objFromDb.getChatbotStatus()!=null && objFromDb.getChatbotStatus().equals("Complete"))){
-            jcmCommunicationDetailsRepository.updateByJcmId(objFromDb.getId());
-        }*/
-        jobCandidateMappingRepository.save(objFromDb);
-    }
-
-    /**
-     * Service method to capture candidate response to screening questions from chatbot
      * @param uuid the uuid corresponding to a unique jcm record
      * @param screeningQuestionRequestBean Map of questionId and response List of responses received from chatbot and map of quick question response
      * @throws Exception
      */
     public void saveScreeningQuestion(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean) throws  Exception {
-        JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
-        saveScreeningQuestionResponse(uuid, screeningQuestionRequestBean,objFromDb);
-        Map<String, String> candidateChatbotResponse = objFromDb.getCandidateChatbotResponse();
-        if (objFromDb.getChatbotStatus().equals(IConstant.ChatbotStatus.COMPLETE.getValue())) {
+        JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
+        if (null == jcmFromDb){
+            log.error("Job candidate mapping not found for uuid : {}", uuid);
+            throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        saveScreeningQuestionResponse(uuid, screeningQuestionRequestBean,jcmFromDb);
+        Map<String, String> candidateChatbotResponse = jcmFromDb.getCandidateChatbotResponse();
+        if (jcmFromDb.getChatbotStatus().equals(IConstant.ChatbotStatus.COMPLETE.getValue())) {
             long updateCandidateResponseStartTime = System.currentTimeMillis();
             log.info("Updating Candidate Details based on Candidate Chatbot Resposne. Chatbot uuid is {}", uuid);
-            updateCandidateResponse(objFromDb, candidateChatbotResponse);
+            updateCandidateResponse(jcmFromDb, candidateChatbotResponse);
             Map<String, Long> stageIdMap = MasterDataBean.getInstance().getStageStepMasterMap();
-            jobCandidateMappingRepository.updateStageStepId(Arrays.asList(objFromDb.getId()), stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), objFromDb.getCreatedBy().getId(), new Date());
+            jobCandidateMappingRepository.updateStageStepId(Arrays.asList(jcmFromDb.getId()), stageIdMap.get(IConstant.Stage.Source.getValue()), stageIdMap.get(IConstant.Stage.Screen.getValue()), jcmFromDb.getCreatedBy().getId(), new Date());
             log.info("Completed Updating Candidate Details in {} ms.",  System.currentTimeMillis()-updateCandidateResponseStartTime);
         }
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void saveScreeningQuestionResponse(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean, JobCandidateMapping objFromDb) throws Exception {
-        log.info("Saving chatbot response for uuid : {}, jobId : {} and jcmId : {}", uuid, objFromDb.getJob().getId(), objFromDb.getId());
+    public void saveScreeningQuestionResponse(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean, JobCandidateMapping jcmFromDb) throws Exception {
+        log.info("Saving chatbot response for uuid : {}, jobId : {} and jcmId : {}", uuid, jcmFromDb.getJob().getId(), jcmFromDb.getId());
         Map<String, String> breadCrumb = new HashMap<>();
-        Map<Long, List<String>> response = screeningQuestionRequestBean.getScreeningQuestionResponseMap();
+        Map<Long, List<String>> response = screeningQuestionRequestBean.getDeepScreeningQuestionResponseMap();
         breadCrumb.put("Chatbot uuid", uuid.toString());
-        breadCrumb.put("JcmId",objFromDb.getId().toString());
-        breadCrumb.put("JobId",objFromDb.getJob().getId().toString());
+        breadCrumb.put("JcmId",jcmFromDb.getId().toString());
+        breadCrumb.put("JobId",jcmFromDb.getJob().getId().toString());
         breadCrumb.put("questionId", (response.keySet().stream().findFirst().orElse(null)).toString());
         breadCrumb.put("Chatbot response", response.toString());
-        if (null == objFromDb){
-            log.error("JcmCommunicationDetails not found for jcmId : {}", objFromDb.getId());
-            throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
-        }
-
-        //Update quick question response
-        if(objFromDb.getJob().isQuickQuestion())
-            objFromDb.setCandidateQuickQuestionResponse(String.valueOf(screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap()));
 
         long startTime = System.currentTimeMillis();
 
-        response.entrySet().forEach(longListEntry -> {
-            String[] valuesToSave = new String[longListEntry.getValue().size()];
-            for(int i=0;i<longListEntry.getValue().size();i++) {
-                valuesToSave[i] = longListEntry.getValue().get(i);
-                if(i==0 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH) {
-                    log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH, longListEntry.getValue());
-                    valuesToSave[i] = valuesToSave[i].substring(0,IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH);
-                }
-                if(i==1 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH){
-                    log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH, longListEntry.getValue());
-                    valuesToSave[i] = valuesToSave[i].substring(0,IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH);
-                }
+        //Update quick question response
+        if(jcmFromDb.getJob().isQuickQuestion() && null != screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap()){
+            ObjectMapper objectMapper = new ObjectMapper();
+            if(null != jcmFromDb.getCandidateQuickQuestionResponse()){
+                Map<String, String> quickScreeningResponse = objectMapper.readValue(objectMapper.writeValueAsString(jcmFromDb.getCandidateQuickQuestionResponse()), HashMap.class);
+                quickScreeningResponse.putAll(screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap());
+                jcmFromDb.setCandidateQuickQuestionResponse(objectMapper.writeValueAsString(quickScreeningResponse));
             }
+            jcmFromDb.setCandidateQuickQuestionResponse(objectMapper.writeValueAsString(screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap()));
+            jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
+            log.info("Candidate quick question response saved for jcm Id : {}", jcmFromDb.getId());
+        }else{
+            //Update tech screening question
+            response.entrySet().forEach(longListEntry -> {
+                String[] valuesToSave = new String[longListEntry.getValue().size()];
+                for(int i=0;i<longListEntry.getValue().size();i++) {
+                    valuesToSave[i] = longListEntry.getValue().get(i);
+                    if(i==0 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH) {
+                        log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH, longListEntry.getValue());
+                        valuesToSave[i] = valuesToSave[i].substring(0,IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH);
+                    }
+                    if(i==1 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH){
+                        log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH, longListEntry.getValue());
+                        valuesToSave[i] = valuesToSave[i].substring(0,IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH);
+                    }
+                }
 
-            CandidateScreeningQuestionResponse savedResponse = candidateScreeningQuestionResponseRepository.save(
-                    new CandidateScreeningQuestionResponse(
-                            objFromDb.getId(),
-                            longListEntry.getKey(),
-                            valuesToSave[0],
-                            (valuesToSave.length > 1)?valuesToSave[1]:null
-                    )
-            );
-            candidateScreeningQuestionResponseRepository.flush();
+                //Save candidate screening question response
+                CandidateScreeningQuestionResponse savedResponse = candidateScreeningQuestionResponseRepository.save(
+                        new CandidateScreeningQuestionResponse(
+                                jcmFromDb.getId(),
+                                longListEntry.getKey(),
+                                valuesToSave[0],
+                                (valuesToSave.length > 1)?valuesToSave[1]:null
+                        )
+                );
+                candidateScreeningQuestionResponseRepository.flush();
 
-            //updating hr_chat_complete_flag
-            log.info("Completed adding response to db in {}ms",(System.currentTimeMillis()-startTime));
+                //updating hr_chat_complete_flag
+                log.info("Completed adding response to db in {}ms",(System.currentTimeMillis()-startTime));
 
-            int totalResponses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(objFromDb.getId()).size();
+                int totalResponses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmFromDb.getId()).size();
 
-            if(totalResponses == objFromDb.getJob().getJobScreeningQuestionsList().size()) {
-                jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(objFromDb.getId());
-                if(objFromDb.getJob().isQuickQuestion() && null == objFromDb.getCandidateQuickQuestionResponse())
-                    objFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
-                else
-                    objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
+                //update chatbot response and updated date in jcm
+                if(null == jcmFromDb.getCandidateChatbotResponse())
+                    jcmFromDb.setCandidateChatbotResponse(new HashMap<>());
 
-            }
+                //Set Candidate chatbot response
+                jcmFromDb.getCandidateChatbotResponse().put(savedResponse.getJobScreeningQuestionId().toString(), (savedResponse.getResponse()+(savedResponse.getComment()!=null?savedResponse.getComment():"")));
+                jcmFromDb.setChatbotUpdatedOn(new Date());
 
-            //update chatbot response and updated date in jcm
-            if(null == objFromDb.getCandidateChatbotResponse())
-                objFromDb.setCandidateChatbotResponse(new HashMap<>());
-
-            objFromDb.getCandidateChatbotResponse().put(savedResponse.getJobScreeningQuestionId().toString(), (savedResponse.getResponse()+(savedResponse.getComment()!=null?savedResponse.getComment():"")));
-            objFromDb.setChatbotUpdatedOn(new Date());
-
-        });
-        if(objFromDb.getJob().getJobScreeningQuestionsList().size() == objFromDb.getCandidateChatbotResponse().size()) {
-            objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
-            List<JobScreeningQuestions> jobScreeningIds = objFromDb.getJob().getJobScreeningQuestionsList();
-            Map<String, String> candidateChatbotResponse = objFromDb.getCandidateChatbotResponse();
-            jobScreeningIds.forEach(id -> {
-                if (!candidateChatbotResponse.containsKey(id.getId().toString()))
-                    objFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
+                //If total responses equal to job screening question list then update hr chatbot flag and chatbot status
+                if(totalResponses == jcmFromDb.getJob().getJobScreeningQuestionsList().size()) {
+                    jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(jcmFromDb.getId());
+                    jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
+                }else
+                    jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
             });
-        }
-        else {
-            objFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
         }
         //responseMap.put(key.toString(), String.join("~", valuesToSave));
 
@@ -770,7 +688,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         /*if(!objFromDb.getJob().getScoringEngineJobAvailable() || (objFromDb.getChatbotStatus()!=null && objFromDb.getChatbotStatus().equals("Complete"))){
             jcmCommunicationDetailsRepository.updateByJcmId(objFromDb.getId());
         }*/
-        jobCandidateMappingRepository.save(objFromDb);
+        jobCandidateMappingRepository.save(jcmFromDb);
 
     }
 

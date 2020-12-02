@@ -71,14 +71,6 @@ public interface IJobCandidateMappingService {
     /**
      * Service method to capture candidate response to screening questions from chatbot
      * @param uuid the uuid corresponding to a unique jcm record
-     * @param candidateResponse the response provided by a candidate against each screening question
-     * @throws Exception
-     */
-    void saveScreeningQuestionResponses(UUID uuid, Map<Long, List<String>> candidateResponse) throws Exception;
-
-    /**
-     * Service method to capture candidate response to screening questions from chatbot
-     * @param uuid the uuid corresponding to a unique jcm record
      * @param screeningQuestionRequestBean Candidate chatbot response object
      * @throws Exception
      */

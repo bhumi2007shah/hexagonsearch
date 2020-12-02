@@ -12,6 +12,6 @@ import java.util.Map;
 
 @Data
 public class ScreeningQuestionRequestBean {
-    private Map<Long, List<String>> screeningQuestionResponseMap = new HashMap<>();
+    private Map<Long, List<String>> deepScreeningQuestionResponseMap = new HashMap<>();
     private Map<String, String> quickScreeningQuestionResponseMap = new HashMap<>();
 }

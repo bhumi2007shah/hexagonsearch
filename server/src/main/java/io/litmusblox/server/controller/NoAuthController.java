@@ -88,21 +88,6 @@ public class NoAuthController {
     /**
      * Rest api to capture candidate response to screening questions from chatbot
      * @param uuid the uuid corresponding to a unique jcm record
-     * @param candidateResponse the response provided by a candidate against each screening question
-     * @throws Exception
-     */
-    @PostMapping("/screeningQuestionResponses")
-    @ResponseStatus(HttpStatus.OK)
-    void screeningQuestionResponses(@RequestParam("uuid") UUID uuid, @RequestBody Map<Long,List<String>> candidateResponse) throws Exception{
-        log.info("Received screening question responses from candidate: " + uuid);
-        long startTime = System.currentTimeMillis();
-        jobCandidateMappingService.saveScreeningQuestionResponses(uuid, candidateResponse);
-        log.info("Completed saving candidate response to screening questions in {}ms",(System.currentTimeMillis()-startTime));
-    }
-
-    /**
-     * Rest api to capture candidate response to screening questions from chatbot
-     * @param uuid the uuid corresponding to a unique jcm record
      * @param screeningQuestionRequestBean Candidates response for question id
      * @throws Exception
      */
