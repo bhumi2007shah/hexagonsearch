@@ -33,4 +33,7 @@ public interface JobScreeningQuestionsRepository extends JpaRepository<JobScreen
     @Transactional
     @Query(value = "delete from job_screening_questions where tech_screening_question_id in (select id from tech_screening_question where question_category not in :questionCategory and job_id =:jobId)", nativeQuery = true)
     void deleteJobScreeningQuestions(Long jobId, List<String> questionCategory);
+
+    @Transactional
+    List findByUserScreeningQuestionIdIsNotNullAndJobId(Long jobId);
 }
