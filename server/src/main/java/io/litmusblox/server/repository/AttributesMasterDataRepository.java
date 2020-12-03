@@ -15,4 +15,6 @@ import java.util.List;
 @Repository
 public interface AttributesMasterDataRepository extends JpaRepository<AttributesMasterData, Long> {
     List<AttributesMasterData> findByFunction(FunctionMasterData function);
+
+    AttributesMasterData findByJobAttributeAndFunction(String attribute, FunctionMasterData functionMasterData);
 }
