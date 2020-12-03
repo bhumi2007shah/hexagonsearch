@@ -27,7 +27,7 @@ public class TechQuestionsRequestBean {
     private Industry industry;
     private Functions functions;
     private Attributes attributes;
-    private List<String> skills;
+    private List<String> skills = new ArrayList<>();
 
     @Data
     public static class Roles {
