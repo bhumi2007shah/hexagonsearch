@@ -34,12 +34,11 @@ public class JobRole {
     @JoinColumn(name = "ROLE")
     private RoleMasterData role;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "JOB")
-    private Job job;
+    @Column(name = "JOB")
+    private Long jobId;
 
-    public JobRole(RoleMasterData role, Job oldJob) {
+    public JobRole(RoleMasterData role, Long oldJobId) {
         this.role = role;
-        this.job = oldJob;
+        this.jobId = oldJobId;
     }
 }

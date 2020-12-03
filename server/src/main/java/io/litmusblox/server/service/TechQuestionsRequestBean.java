@@ -23,15 +23,22 @@ import java.util.List;
 @NoArgsConstructor
 public class TechQuestionsRequestBean {
     private Long companyId;
-    private SelectedRoles selectedRoles;
+    private Roles roles;
     private Industry industry;
     private Functions functions;
+    private Attributes attributes;
     private List<String> skills;
 
     @Data
-    public static class SelectedRoles {
+    public static class Roles {
         private List<String> roleNames = new ArrayList<>();
     }
+
+    @Data
+    public static class Attributes {
+        private List<String> attributeNames = new ArrayList<>();
+    }
+
 
     @Data
     public static class Industry {
