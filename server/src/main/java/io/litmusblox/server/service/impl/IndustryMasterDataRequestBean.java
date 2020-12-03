@@ -9,7 +9,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author : Sumit
@@ -31,12 +33,6 @@ public class IndustryMasterDataRequestBean {
 @NoArgsConstructor
 class IndustryFunction {
     private String functionName;
-    private List<IndustryRole> roles = new ArrayList<>();
-}
-
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-class IndustryRole {
-    private String roleName;
+    private Set<String> roles = new HashSet<>();
+    private Set<String> attributes = new HashSet<>();
 }
