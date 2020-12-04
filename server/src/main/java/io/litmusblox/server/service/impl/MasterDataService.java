@@ -531,6 +531,7 @@ public class MasterDataService implements IMasterDataService {
     public void addIndustryMasterData(List<IndustryMasterDataRequestBean> industryMasterDataRequestBeanList){
         log.info("Received request to add Industry Master Data with data: {}", industryMasterDataRequestBeanList);
         for(IndustryMasterDataRequestBean industryMasterDataRequestBean:industryMasterDataRequestBeanList) {
+            //Add Industry data
             IndustryMasterData industryMasterData = null;
             String industry = industryMasterDataRequestBean.getIndustryName();
             industryMasterData = industryMasterDataRepository.findByIndustry(industry);
@@ -539,6 +540,8 @@ public class MasterDataService implements IMasterDataService {
                 industryMasterData.setIndustry(industry);
                 industryMasterData = industryMasterDataRepository.save(industryMasterData);
             }
+
+            //Add Function data
             List<IndustryFunction> industryFunctionsList = industryMasterDataRequestBean.getFunctions();
             if(!industryFunctionsList.isEmpty()){
                 for(IndustryFunction industryFunction:industryMasterDataRequestBean.getFunctions()){
@@ -551,18 +554,26 @@ public class MasterDataService implements IMasterDataService {
                         functionMasterData.setIndustry(industryMasterData);
                         functionMasterData = functionMasterDataRepository.save(functionMasterData);
                     }
-                    List<IndustryRole> industryRolesList = industryFunction.getRoles();
-                    if(!industryRolesList.isEmpty()){
-                        for(IndustryRole industryRole:industryRolesList){
-                            String role = industryRole.getRoleName();
-                            RoleMasterData roleMasterData = null;
-                            roleMasterData = roleMasterDataRepository.findByRoleAndFunction(role, functionMasterData);
-                            if(null == roleMasterData){
-                                roleMasterData = new RoleMasterData();
-                                roleMasterData.setRole(role);
-                                roleMasterData.setFunction(functionMasterData);
-                                roleMasterDataRepository.save(roleMasterData);
-                            }
+                    //Add Role master data
+                    for(String role:industryFunction.getRoles()){
+                        RoleMasterData roleMasterData = null;
+                        roleMasterData = roleMasterDataRepository.findByRoleAndFunction(role, functionMasterData);
+                        if(null == roleMasterData){
+                            roleMasterData = new RoleMasterData();
+                            roleMasterData.setRole(role);
+                            roleMasterData.setFunction(functionMasterData);
+                            roleMasterDataRepository.save(roleMasterData);
+                        }
+                    }
+                    //Add attribute master data
+                    for(String attribute:industryFunction.getAttributes()){
+                        AttributesMasterData attributeMasterData = null;
+                        attributeMasterData = attributesMasterDataRepository.findByJobAttributeAndFunction(attribute, functionMasterData);
+                        if(null == attributeMasterData){
+                            attributeMasterData = new AttributesMasterData();
+                            attributeMasterData.setJobAttribute(attribute);
+                            attributeMasterData.setFunction(functionMasterData);
+                            attributesMasterDataRepository.save(attributeMasterData);
                         }
                     }
                 }

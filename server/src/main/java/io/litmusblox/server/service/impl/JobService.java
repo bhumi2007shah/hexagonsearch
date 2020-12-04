@@ -1380,6 +1380,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         techQueRequestBean.setCompanyId(job.getCompanyId().getId());
         techQueRequestBean.setIndustry(industry);
         techQueRequestBean.setSkills(job.getSelectedKeySkills());
+        techQueRequestBean.getSkills().addAll(job.getUserEnteredKeySkill());
         log.info("Tech Question Request : {}",techQueRequestBean);
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
