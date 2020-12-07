@@ -53,6 +53,7 @@ public class ZipFileProcessUtil {
                         responseBean.getCvUploadMessage().put(fileName, IErrorMessages.UNSUPPORTED_FILE_TYPE +" "+fileExtension);
                     }else{
                         StringBuilder file=new StringBuilder();
+                        fileName = Util.cleanFileName(fileName.split("/")[fileName.split("/").length-1]);
                         fileName=file.append(loginUserId).append("_").append(jobId).append("_").append(fileName).toString();
                         newFile = new File(tempRepoLocation + File.separator + fileName);
                         log.info("Zip file unzip : "+ newFile.getAbsoluteFile());
