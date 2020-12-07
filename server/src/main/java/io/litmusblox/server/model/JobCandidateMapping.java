@@ -173,6 +173,12 @@ public class JobCandidateMapping implements Serializable {
     @Column(name="overall_rating")
     private Integer overallRating;
 
+    @Column(name="interest_access_by_device")
+    private  String interestAccessByDevice;
+
+    @Column(name="chatbot_completed_by_device")
+    private  String chatbotCompletedByDevice;
+
     @Column(name = "CANDIDATE_QUICK_QUESTION_RESPONSE")
     private String candidateQuickQuestionResponse;
 
