@@ -613,10 +613,13 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             if(null != jcmFromDb.getCandidateQuickQuestionResponse()){
                 Map<String, String> quickScreeningResponse = objectMapper.readValue(objectMapper.writeValueAsString(jcmFromDb.getCandidateQuickQuestionResponse()), HashMap.class);
                 quickScreeningResponse.putAll(screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap());
+                if(jcmFromDb.getJob().getJobSkillsAttributesList().size() == quickScreeningResponse.size())
+                    jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
                 jcmFromDb.setCandidateQuickQuestionResponse(objectMapper.writeValueAsString(quickScreeningResponse));
+            }else{
+                jcmFromDb.setCandidateQuickQuestionResponse(objectMapper.writeValueAsString(screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap()));
+                jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
             }
-            jcmFromDb.setCandidateQuickQuestionResponse(objectMapper.writeValueAsString(screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap()));
-            jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
             log.info("Candidate quick question response saved for jcm Id : {}", jcmFromDb.getId());
         }else{
             //Update tech screening question
@@ -659,7 +662,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 jcmFromDb.setChatbotUpdatedOn(new Date());
 
                 //If total responses equal to job screening question list then update hr chatbot flag and chatbot status
-                if(totalResponses == jcmFromDb.getJob().getJobScreeningQuestionsList().size()) {
+                if(totalResponses == jcmFromDb.getJob().getJobScreeningQuestionsList().size() && !jcmFromDb.getJob().isQuickQuestion()) {
                     jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(jcmFromDb.getId());
                     jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
                 }else
