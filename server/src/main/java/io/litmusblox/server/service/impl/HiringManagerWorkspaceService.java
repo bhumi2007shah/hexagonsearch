@@ -157,11 +157,6 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
         existingJcmProfileSharingDetails.setHiringManagerInterest(jcmProfileSharingDetails.getHiringManagerInterest());
         JobCandidateMapping jcmObj = jobCandidateMappingRepository.getOne(existingJcmProfileSharingDetails.getJobCandidateMappingId());
         StringBuffer jcmHistoryMsg = new StringBuffer("Hiring Manager ").append(loggedInUser.getDisplayName()).append(" is").append(jcmProfileSharingDetails.getHiringManagerInterest()?" interested ":" not interested ").append("in this Profile");
-        if(null != jcmProfileSharingDetails.getComments()) {
-            if (jcmProfileSharingDetails.getComments().length() > IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.getValue())
-                existingJcmProfileSharingDetails.setComments(Util.truncateField(jcmObj.getCandidate(), IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.getValue(), jcmProfileSharingDetails.getComments()));
-            jcmHistoryMsg.append(", Comments: ").append(existingJcmProfileSharingDetails.getComments());
-        }
         if(!jcmProfileSharingDetails.getHiringManagerInterest()){
             if(null == jcmProfileSharingDetails.getRejectionReason().getId())
                 throw new ValidationException("Invalid Request", HttpStatus.BAD_REQUEST);
@@ -170,6 +165,11 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
                 RejectionReasonMasterData rejectionReasonMasterData = rejectionReasonMasterDataRepository.getOne(jcmProfileSharingDetails.getRejectionReason().getId());
                 jcmHistoryMsg.append(", Rejection Reason: ").append(rejectionReasonMasterData.getValue()).append("- ").append(rejectionReasonMasterData.getLabel());
             }
+        }
+        if(null != jcmProfileSharingDetails.getComments()) {
+            if (jcmProfileSharingDetails.getComments().length() > IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.getValue())
+                existingJcmProfileSharingDetails.setComments(Util.truncateField(jcmObj.getCandidate(), IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.getValue(), jcmProfileSharingDetails.getComments()));
+            jcmHistoryMsg.append(", Comments: ").append(existingJcmProfileSharingDetails.getComments());
         }
         jcmProfileSharingDetailsRepository.save(existingJcmProfileSharingDetails);
         jcmHistoryRepository.save(new JcmHistory(jcmObj, jcmHistoryMsg.toString(), new Date(), null, jcmObj.getStage(), true));
