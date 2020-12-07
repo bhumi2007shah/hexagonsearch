@@ -228,8 +228,8 @@ public class Job implements Serializable {
     @JoinColumn(name = "STATEMENT_BLOCK")
     private StatementsBlockMasterData statementBlock;
 
-    @Column(name = "IS_QUICK_QUESTION")
-    private boolean isQuickQuestion;
+    @Column(name = "QUICK_QUESTION")
+    private boolean quickQuestion;
 
     @Transient
     @JsonInclude
