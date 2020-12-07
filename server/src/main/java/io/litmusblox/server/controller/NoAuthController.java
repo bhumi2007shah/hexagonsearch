@@ -81,7 +81,7 @@ public class NoAuthController {
     void captureCandidateInterest(@RequestParam("uuid") UUID uuid, @RequestParam("interest") boolean interest, @RequestParam("candidateNotInterestReasonId") Optional<Long> candidateNotInterestedReasonId ) throws Exception {
         log.info("Received candidate interest capture request: " + uuid);
         long startTime = System.currentTimeMillis();
-        jobCandidateMappingService.captureCandidateInterest(uuid, interest, (candidateNotInterestedReasonId.isPresent())?candidateNotInterestedReasonId.get():null);
+        jobCandidateMappingService.captureCandidateInterest(uuid, interest, (candidateNotInterestedReasonId.isPresent())?candidateNotInterestedReasonId.get():null, servletRequest.getHeader("User-Agent"));
         log.info("Completed capturing candidate request in {}ms",(System.currentTimeMillis()-startTime));
     }
 
@@ -96,7 +96,7 @@ public class NoAuthController {
     void screeningQuestionResponse(@RequestParam("uuid") UUID uuid, @RequestBody ScreeningQuestionRequestBean screeningQuestionRequestBean) throws Exception{
         log.info("Received screening question responses from candidate: " + uuid);
         long startTime = System.currentTimeMillis();
-        jobCandidateMappingService.saveScreeningQuestion(uuid, screeningQuestionRequestBean);
+        jobCandidateMappingService.saveScreeningQuestion(uuid, screeningQuestionRequestBean, servletRequest.getHeader("User-Agent"));
         log.info("Completed saving candidate response to screening questions in {}ms",(System.currentTimeMillis()-startTime));
     }
 

@@ -66,7 +66,7 @@ public interface IJobCandidateMappingService {
      * @param interest boolean to capture candidate consent
      * @throws Exception
      */
-    void captureCandidateInterest(UUID uuid, boolean interest, Long candidateNotInterestedReasonId) throws Exception;
+    void captureCandidateInterest(UUID uuid, boolean interest, Long candidateNotInterestedReasonId, String userAgent) throws Exception;
 
     /**
      * Service method to capture candidate response to screening questions from chatbot
@@ -74,7 +74,7 @@ public interface IJobCandidateMappingService {
      * @param screeningQuestionRequestBean Candidate chatbot response object
      * @throws Exception
      */
-    void saveScreeningQuestion(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean) throws Exception;
+    void saveScreeningQuestion(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean, String userAgent) throws Exception;
 
 
     /**

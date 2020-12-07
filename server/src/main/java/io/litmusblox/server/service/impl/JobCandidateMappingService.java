@@ -528,7 +528,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public void captureCandidateInterest(UUID uuid, boolean interest, Long candidateNotInterestedReasonId) throws Exception {
+    public void captureCandidateInterest(UUID uuid, boolean interest, Long candidateNotInterestedReasonId, String userAgent) throws Exception {
         JobCandidateMapping objFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
         String candidateChoice="";
         if (null == objFromDb)
@@ -555,6 +555,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             candidateChoice = "not interested and reason is "+objFromDb.getCandidateNotInterestedReason();
         }
         objFromDb.setCandidateInterestDate(new Date());
+        objFromDb.setInterestAccessByDevice(userAgent);
         //set stage = Screening where stage = Source
         //commented below code to not set flags to true.
         /*if(!objFromDb.getJob().getHrQuestionAvailable()){
@@ -576,13 +577,13 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @param screeningQuestionRequestBean Map of questionId and response List of responses received from chatbot and map of quick question response
      * @throws Exception
      */
-    public void saveScreeningQuestion(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean) throws  Exception {
+    public void saveScreeningQuestion(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean, String userAgent) throws  Exception {
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findByChatbotUuid(uuid);
         if (null == jcmFromDb){
             log.error("Job candidate mapping not found for uuid : {}", uuid);
             throw new WebException(IErrorMessages.UUID_NOT_FOUND + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
         }
-        saveScreeningQuestionResponse(uuid, screeningQuestionRequestBean,jcmFromDb);
+        saveScreeningQuestionResponse(uuid, screeningQuestionRequestBean,jcmFromDb, userAgent);
         Map<String, String> candidateChatbotResponse = jcmFromDb.getCandidateChatbotResponse();
         if (jcmFromDb.getChatbotStatus().equals(IConstant.ChatbotStatus.COMPLETE.getValue())) {
             long updateCandidateResponseStartTime = System.currentTimeMillis();
@@ -595,7 +596,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void saveScreeningQuestionResponse(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean, JobCandidateMapping jcmFromDb) throws Exception {
+    public void saveScreeningQuestionResponse(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean, JobCandidateMapping jcmFromDb, String userAgent) throws Exception {
         log.info("Saving chatbot response for uuid : {}, jobId : {} and jcmId : {}", uuid, jcmFromDb.getJob().getId(), jcmFromDb.getId());
         Map<String, String> breadCrumb = new HashMap<>();
         Map<Long, List<String>> response = screeningQuestionRequestBean.getDeepScreeningQuestionResponseMap();
@@ -665,6 +666,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 if(totalResponses == jcmFromDb.getJob().getJobScreeningQuestionsList().size() && !jcmFromDb.getJob().isQuickQuestion()) {
                     jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(jcmFromDb.getId());
                     jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
+                    jcmFromDb.setChatbotCompletedByDevice(userAgent);
                 }else
                     jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
             });
