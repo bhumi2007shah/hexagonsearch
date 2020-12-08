@@ -614,7 +614,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if(jcmFromDb.getJob().isQuickQuestion() && null != screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap()){
             ObjectMapper objectMapper = new ObjectMapper();
             if(null != jcmFromDb.getCandidateQuickQuestionResponse()){
-                Map<String, String> quickScreeningResponse = objectMapper.readValue(objectMapper.writeValueAsString(jcmFromDb.getCandidateQuickQuestionResponse()), HashMap.class);
+                Map<String, String> quickScreeningResponse = objectMapper.readValue(jcmFromDb.getCandidateQuickQuestionResponse(), HashMap.class);
                 quickScreeningResponse.putAll(screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap());
                 if(jcmFromDb.getJob().getJobSkillsAttributesList().size() == quickScreeningResponse.size())
                     jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
