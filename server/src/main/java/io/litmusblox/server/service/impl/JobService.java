@@ -575,6 +575,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         Collections.sort(skillList);
         if (!IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus())) {
             //remove all data from job_key_skills
+            List<JobSkillsAttributes> aa = jobSkillsAttributesRepository.findByJobId(job.getId());
             jobSkillsAttributesRepository.deleteByJobId(job.getId());
             jobSkillsAttributesRepository.flush();
         }
@@ -588,9 +589,10 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 skillFromDb = new SkillsMaster(skill);
                 skillMasterRepository.save(skillFromDb);
             }
+            log.info(job.getSelectedKeySkills());
 
             //add a record in job_key_skills with this skill id
-            jobSkillsAttributesToSave.add(new JobSkillsAttributes(skillFromDb, new Date(), (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId(), (null != neighbourSkillMap && null != neighbourSkillMap.get(skill)) ? neighbourSkillMap.get(skill).toArray(new String[neighbourSkillMap.get(skill).size()]) : null));
+            jobSkillsAttributesToSave.add(new JobSkillsAttributes(skillFromDb, new Date(), (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId(), (null != neighbourSkillMap && null != neighbourSkillMap.get(skill)) ? neighbourSkillMap.get(skill).toArray(new String[neighbourSkillMap.get(skill).size()]) : null,job.getSelectedKeySkills().contains(skill)?true:false));
         });
         if (job.getSelectedAttribute() != null)
             job.getSelectedAttribute().forEach(attribute -> {
