@@ -564,23 +564,23 @@ public class JobService extends AbstractAccessControl implements IJobService {
     private Job handleSkillsFromCvParser(Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineQuestionMap,Map<String, List<String>> neighbourSkillMap, Job job, Job oldJob) throws Exception {
         Set<String> skillsSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         //We are adding both the skill sets. Ref ticket - #661
-        if(null != neighbourSkillMap)
+        if (null != neighbourSkillMap)
             skillsSet.addAll(neighbourSkillMap.keySet());
 
-        if(null != searchEngineQuestionMap)
+        if (null != searchEngineQuestionMap)
             skillsSet.addAll(searchEngineQuestionMap.keySet());
 
         log.info("Size of skill set : {} for job id : {} and skill set : {}", skillsSet.size(), job.getId(), skillsSet);
         List<String> skillList = new ArrayList<>(skillsSet);
         Collections.sort(skillList);
-        if(!IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus())) {
+        if (!IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus())) {
             //remove all data from job_key_skills
             jobSkillsAttributesRepository.deleteByJobId(job.getId());
             jobSkillsAttributesRepository.flush();
         }
         List<JobSkillsAttributes> jobSkillsAttributesToSave = new ArrayList<>(skillsSet.size());
         //Add Skill
-        skillList.forEach(skill-> {
+        skillList.forEach(skill -> {
             //find a skill from the master table for the skill name provided
             SkillsMaster skillFromDb = skillMasterRepository.findBySkillNameIgnoreCase(skill);
             //if none if found, add a skill
@@ -590,17 +590,19 @@ public class JobService extends AbstractAccessControl implements IJobService {
             }
 
             //add a record in job_key_skills with this skill id
-            jobSkillsAttributesToSave.add(new JobSkillsAttributes(skillFromDb, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId(), (null!=neighbourSkillMap && null != neighbourSkillMap.get(skill))?neighbourSkillMap.get(skill).toArray(new String[neighbourSkillMap.get(skill).size()]):null));
+            jobSkillsAttributesToSave.add(new JobSkillsAttributes(skillFromDb, new Date(), (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId(), (null != neighbourSkillMap && null != neighbourSkillMap.get(skill)) ? neighbourSkillMap.get(skill).toArray(new String[neighbourSkillMap.get(skill).size()]) : null));
         });
-        job.getSelectedAttribute().forEach(attribute-> {
-            //find a attribute from the master data for the attribute id provided
-            AttributesMasterData attributeFromDb = MasterDataBean.getInstance().getAttribute().get(Long.valueOf(attribute));
-            if(null !=attributeFromDb){
-                //add a record in job_skills_attribute with this skill id
-                jobSkillsAttributesToSave.add(new JobSkillsAttributes(attributeFromDb, new Date(), (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId()));
-            }else{
-                log.error("In job : {} attribute is null for id : {}", oldJob.getId(), attribute);
-            }});
+        if (job.getSelectedAttribute() != null)
+            job.getSelectedAttribute().forEach(attribute -> {
+                //find a attribute from the master data for the attribute id provided
+                AttributesMasterData attributeFromDb = MasterDataBean.getInstance().getAttribute().get(Long.valueOf(attribute));
+                if (null != attributeFromDb) {
+                    //add a record in job_skills_attribute with this skill id
+                    jobSkillsAttributesToSave.add(new JobSkillsAttributes(attributeFromDb, new Date(), (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId()));
+                } else {
+                    log.error("In job : {} attribute is null for id : {}", oldJob.getId(), attribute);
+                }
+            });
         oldJob.setJobSkillsAttributesList(jobSkillsAttributesRepository.saveAll(jobSkillsAttributesToSave));
         return oldJob;
     }
