@@ -1084,7 +1084,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
                 if(IConstant.FILE_TYPE.zip.toString().equals(fileType) || IConstant.FILE_TYPE.rar.toString().equals(fileType)){
                     successCount--;
-                    countArray=ZipFileProcessUtil.extractZipFile(filePath, location.toString(), loggedInUser.getId(),jobId, responseBean, failureCount,successCount);
+                    countArray=ZipFileProcessUtil.extractZipFile(filePath, location.toString(), loggedInUser, jobId, responseBean, failureCount, successCount);
                     failureCount=countArray[0];
                     successCount=countArray[1];
                 }
