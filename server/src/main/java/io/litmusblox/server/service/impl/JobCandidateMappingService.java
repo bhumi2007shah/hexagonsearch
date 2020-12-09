@@ -603,81 +603,82 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         breadCrumb.put("Chatbot uuid", uuid.toString());
         breadCrumb.put("JcmId",jcmFromDb.getId().toString());
         breadCrumb.put("JobId",jcmFromDb.getJob().getId().toString());
-        breadCrumb.put("questionId", (response.keySet().stream().findFirst().orElse(null)).toString());
-        breadCrumb.put("Chatbot response", response.toString());
+        if(null != response && response.size()>0){
+            breadCrumb.put("questionId", (response.keySet().stream().findFirst().orElse(null)).toString());
+            breadCrumb.put("Chatbot response", response.toString());
+        }
 
+        Map<String, String> quickScreeningResponse = new HashMap<>();
         long startTime = System.currentTimeMillis();
 
         //Update quick question response
         if(jcmFromDb.getJob().isQuickQuestion() && null != screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap()){
             ObjectMapper objectMapper = new ObjectMapper();
             if(null != jcmFromDb.getCandidateQuickQuestionResponse()){
-                Map<String, String> quickScreeningResponse = objectMapper.readValue(objectMapper.writeValueAsString(jcmFromDb.getCandidateQuickQuestionResponse()), HashMap.class);
+                quickScreeningResponse = objectMapper.readValue(jcmFromDb.getCandidateQuickQuestionResponse(), HashMap.class);
                 quickScreeningResponse.putAll(screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap());
                 jcmFromDb.setCandidateQuickQuestionResponse(objectMapper.writeValueAsString(quickScreeningResponse));
-            }
-            jcmFromDb.setCandidateQuickQuestionResponse(objectMapper.writeValueAsString(screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap()));
-            jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
+            }else
+                jcmFromDb.setCandidateQuickQuestionResponse(objectMapper.writeValueAsString(screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap()));
+
             log.info("Candidate quick question response saved for jcm Id : {}", jcmFromDb.getId());
         }else{
-            //Update tech screening question
-            response.entrySet().forEach(longListEntry -> {
-                String[] valuesToSave = new String[longListEntry.getValue().size()];
-                for(int i=0;i<longListEntry.getValue().size();i++) {
-                    valuesToSave[i] = longListEntry.getValue().get(i);
-                    if(i==0 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH) {
-                        log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH, longListEntry.getValue());
-                        valuesToSave[i] = valuesToSave[i].substring(0,IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH);
+            if(null != response && response.size()>0){
+                //Update tech screening question
+                response.entrySet().forEach(longListEntry -> {
+                    String[] valuesToSave = new String[longListEntry.getValue().size()];
+                    for (int i = 0; i < longListEntry.getValue().size(); i++) {
+                        valuesToSave[i] = longListEntry.getValue().get(i);
+                        if (i == 0 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH) {
+                            log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH, longListEntry.getValue());
+                            valuesToSave[i] = valuesToSave[i].substring(0, IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH);
+                        }
+                        if (i == 1 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH) {
+                            log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH, longListEntry.getValue());
+                            valuesToSave[i] = valuesToSave[i].substring(0, IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH);
+                        }
                     }
-                    if(i==1 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH){
-                        log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH, longListEntry.getValue());
-                        valuesToSave[i] = valuesToSave[i].substring(0,IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH);
-                    }
-                }
 
-                //Save candidate screening question response
-                CandidateScreeningQuestionResponse savedResponse = candidateScreeningQuestionResponseRepository.save(
-                        new CandidateScreeningQuestionResponse(
+                    //Save candidate screening question response
+                    CandidateScreeningQuestionResponse candidateResponse = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingIdAndJobScreeningQuestionId(jcmFromDb.getId(), longListEntry.getKey());
+                    if (null == candidateResponse) {
+                        candidateResponse = new CandidateScreeningQuestionResponse(
                                 jcmFromDb.getId(),
                                 longListEntry.getKey(),
                                 valuesToSave[0],
-                                (valuesToSave.length > 1)?valuesToSave[1]:null
-                        )
-                );
-                candidateScreeningQuestionResponseRepository.flush();
+                                (valuesToSave.length > 1) ? valuesToSave[1] : null);
+                    } else {
+                        candidateResponse.setResponse(valuesToSave[0]);
+                        candidateResponse.setComment((valuesToSave.length > 1) ? valuesToSave[1] : null);
+                    }
+                    candidateResponse = candidateScreeningQuestionResponseRepository.save(candidateResponse);
+                    candidateScreeningQuestionResponseRepository.flush();
 
-                //updating hr_chat_complete_flag
-                log.info("Completed adding response to db in {}ms",(System.currentTimeMillis()-startTime));
+                    //updating hr_chat_complete_flag
+                    log.info("Completed adding response to db in {}ms", (System.currentTimeMillis() - startTime));
 
-                int totalResponses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmFromDb.getId()).size();
+                    //update chatbot response and updated date in jcm
+                    if (null == jcmFromDb.getCandidateChatbotResponse())
+                        jcmFromDb.setCandidateChatbotResponse(new HashMap<>());
 
-                //update chatbot response and updated date in jcm
-                if(null == jcmFromDb.getCandidateChatbotResponse())
-                    jcmFromDb.setCandidateChatbotResponse(new HashMap<>());
-
-                //Set Candidate chatbot response
-                jcmFromDb.getCandidateChatbotResponse().put(savedResponse.getJobScreeningQuestionId().toString(), (savedResponse.getResponse()+(savedResponse.getComment()!=null?savedResponse.getComment():"")));
-                jcmFromDb.setChatbotUpdatedOn(new Date());
-
-                //If total responses equal to job screening question list then update hr chatbot flag and chatbot status
-                if(totalResponses == jcmFromDb.getJob().getJobScreeningQuestionsList().size()) {
-                    jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(jcmFromDb.getId());
-                    jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
-                    jcmFromDb.setChatbotCompletedByDevice(userAgent);
-                }else
-                    jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
-            });
+                    //Set Candidate chatbot response
+                    jcmFromDb.getCandidateChatbotResponse().put(candidateResponse.getJobScreeningQuestionId().toString(), (candidateResponse.getResponse() + (candidateResponse.getComment() != null ? candidateResponse.getComment() : "")));
+                    jcmFromDb.setChatbotUpdatedOn(new Date());
+                });
+            }
         }
-        //responseMap.put(key.toString(), String.join("~", valuesToSave));
 
+        int totalResponses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmFromDb.getId()).size();
 
-        //set chatbot status to complete if scoring engine does not have job or tech chatbot is complete.
-        //if((!objFromDb.getJob().getScoringEngineJobAvailable() || jcmCommunicationDetailsFromDb.isTechChatCompleteFlag()) && objFromDb.getJob().getJobScreeningQuestionsList().size() == response.size()){
-        //    objFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
-        //    log.info("Chatbot completed for uuid : {}, jobId : {} and jcmId : {}", uuid, objFromDb.getJob().getId(), objFromDb.getId());
-        //}else
-        //    log.info("Chatbot inCompleted for uuid : {}, jobId : {} and jcmId : {}", uuid, objFromDb.getJob().getId(), objFromDb.getId());
-
+        //Update chatbot status
+        if((jcmFromDb.getJob().isQuickQuestion() && jcmFromDb.getJob().getJobSkillsAttributesList().size() == quickScreeningResponse.size())
+                || (totalResponses == jcmFromDb.getJob().getJobScreeningQuestionsList().size() && !jcmFromDb.getJob().isQuickQuestion())){
+             jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
+             jcmFromDb.setChatbotCompletedByDevice(userAgent);
+             if(!jcmFromDb.getJob().isQuickQuestion())
+                 jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(jcmFromDb.getId());
+        }else
+            jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
 
         //Commented below code as we are not setting flag to true as per discussion on 10-01-2020
         //updating chat_complete_flag if corresponding job is not available on scoring engine due to lack of ML data,

@@ -2874,3 +2874,6 @@ ALTER TABLE JOB RENAME COLUMN IS_QUICK_QUESTION TO QUICK_QUESTION;
 
 --For ticket #703
 alter table job_candidate_mapping add column interest_access_by_device varchar(50), add column chatbot_completed_by_device varchar(50);
+
+-- For ticket #708
+ALTER TABLE candidate_screening_question_response ADD CONSTRAINT unique_candidate_screening_question_response UNIQUE (JOB_CANDIDATE_MAPPING_ID, JOB_SCREENING_QUESTION_ID);
