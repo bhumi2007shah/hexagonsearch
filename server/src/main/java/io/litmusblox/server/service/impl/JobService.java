@@ -590,7 +590,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             }
 
             //add a record in job_key_skills with this skill id
-            jobSkillsAttributesToSave.add(new JobSkillsAttributes(skillFromDb, new Date(), (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId(), (null != neighbourSkillMap && null != neighbourSkillMap.get(skill)) ? neighbourSkillMap.get(skill).toArray(new String[neighbourSkillMap.get(skill).size()]) : null));
+            jobSkillsAttributesToSave.add(new JobSkillsAttributes(skillFromDb, new Date(), (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal(), oldJob.getId(), (null != neighbourSkillMap && null != neighbourSkillMap.get(skill)) ? neighbourSkillMap.get(skill).toArray(new String[neighbourSkillMap.get(skill).size()]) : null,job.getSelectedKeySkills().contains(skill)?true:false));
         });
         if (job.getSelectedAttribute() != null)
             job.getSelectedAttribute().forEach(attribute -> {

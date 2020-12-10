@@ -77,12 +77,16 @@ public class JobSkillsAttributes implements Serializable {
     @JoinColumn(name = "ATTRIBUTE")
     private AttributesMasterData attribute;
 
-    public JobSkillsAttributes(SkillsMaster skillId, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId, String[] neighbourSkills) {
+    @Column(name = "selected")
+    private boolean selected;
+
+    public JobSkillsAttributes(SkillsMaster skillId, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId, String[] neighbourSkills, boolean selected) {
         this.skillId = skillId;
         this.createdOn = createdOn;
         this.createdBy = createdBy;
         this.jobId = jobId;
         this.neighbourSkills = neighbourSkills;
+        this.selected = selected;
     }
 
     public JobSkillsAttributes(TempSkills skillIdFromTemp, @NotNull Date createdOn, @NotNull User createdBy, @NotNull Long jobId) {

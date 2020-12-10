@@ -150,7 +150,8 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             else {
                 jdKeySkills.forEach(jobSkillsAttributes -> {
                     if (null != jobSkillsAttributes.getSkillId())
-                        neighbourSkillMap.put(jobSkillsAttributes.getSkillId().getSkillName(), (null != jobSkillsAttributes.getNeighbourSkills()) ? Arrays.asList(jobSkillsAttributes.getNeighbourSkills()) : new ArrayList<>());
+                        if(jobSkillsAttributes.isSelected())
+                            neighbourSkillMap.put(jobSkillsAttributes.getSkillId().getSkillName(), (null != jobSkillsAttributes.getNeighbourSkills()) ? Arrays.asList(jobSkillsAttributes.getNeighbourSkills()) : new ArrayList<>());
                 });
             }
             CvRatingRequestBean cvRatingRequestBean = new CvRatingRequestBean(neighbourSkillMap);
