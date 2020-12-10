@@ -671,7 +671,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         int totalResponses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmFromDb.getId()).size();
 
         //Update chatbot status
-        if((jcmFromDb.getJob().isQuickQuestion() && jcmFromDb.getJob().getJobSkillsAttributesList().size() == quickScreeningResponse.size())
+        if((jcmFromDb.getJob().isQuickQuestion() && jcmFromDb.getJob().getJobSkillsAttributesList().size() == quickScreeningResponse.size() && totalResponses == jcmFromDb.getJob().getJobScreeningQuestionsList().size())
                 || (totalResponses == jcmFromDb.getJob().getJobScreeningQuestionsList().size() && !jcmFromDb.getJob().isQuickQuestion())){
              jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
              jcmFromDb.setChatbotCompletedByDevice(userAgent);
