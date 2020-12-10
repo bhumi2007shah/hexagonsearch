@@ -622,50 +622,50 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 jcmFromDb.setCandidateQuickQuestionResponse(objectMapper.writeValueAsString(screeningQuestionRequestBean.getQuickScreeningQuestionResponseMap()));
 
             log.info("Candidate quick question response saved for jcm Id : {}", jcmFromDb.getId());
-        }else{
-            if(null != response && response.size()>0){
-                //Update tech screening question
-                response.entrySet().forEach(longListEntry -> {
-                    String[] valuesToSave = new String[longListEntry.getValue().size()];
-                    for (int i = 0; i < longListEntry.getValue().size(); i++) {
-                        valuesToSave[i] = longListEntry.getValue().get(i);
-                        if (i == 0 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH) {
-                            log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH, longListEntry.getValue());
-                            valuesToSave[i] = valuesToSave[i].substring(0, IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH);
-                        }
-                        if (i == 1 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH) {
-                            log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH, longListEntry.getValue());
-                            valuesToSave[i] = valuesToSave[i].substring(0, IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH);
-                        }
+        }
+        //saves HR questions, Custom Questions and Deep Screening Questions
+        if(null != response && response.size()>0){
+            //Update tech screening question
+            response.entrySet().forEach(longListEntry -> {
+                String[] valuesToSave = new String[longListEntry.getValue().size()];
+                for (int i = 0; i < longListEntry.getValue().size(); i++) {
+                    valuesToSave[i] = longListEntry.getValue().get(i);
+                    if (i == 0 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH) {
+                        log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH, longListEntry.getValue());
+                        valuesToSave[i] = valuesToSave[i].substring(0, IConstant.SCREENING_QUESTION_RESPONSE_MAX_LENGTH);
                     }
-
-                    //Save candidate screening question response
-                    CandidateScreeningQuestionResponse candidateResponse = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingIdAndJobScreeningQuestionId(jcmFromDb.getId(), longListEntry.getKey());
-                    if (null == candidateResponse) {
-                        candidateResponse = new CandidateScreeningQuestionResponse(
-                                jcmFromDb.getId(),
-                                longListEntry.getKey(),
-                                valuesToSave[0],
-                                (valuesToSave.length > 1) ? valuesToSave[1] : null);
-                    } else {
-                        candidateResponse.setResponse(valuesToSave[0]);
-                        candidateResponse.setComment((valuesToSave.length > 1) ? valuesToSave[1] : null);
+                    if (i == 1 && valuesToSave[i].length() > IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH) {
+                        log.error("Length of user response is greater than {} : {} ", IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH, longListEntry.getValue());
+                        valuesToSave[i] = valuesToSave[i].substring(0, IConstant.SCREENING_QUESTION_COMMENT_MAX_LENGTH);
                     }
-                    candidateResponse = candidateScreeningQuestionResponseRepository.save(candidateResponse);
-                    candidateScreeningQuestionResponseRepository.flush();
+                }
 
-                    //updating hr_chat_complete_flag
-                    log.info("Completed adding response to db in {}ms", (System.currentTimeMillis() - startTime));
+                //Save candidate screening question response
+                CandidateScreeningQuestionResponse candidateResponse = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingIdAndJobScreeningQuestionId(jcmFromDb.getId(), longListEntry.getKey());
+                if (null == candidateResponse) {
+                    candidateResponse = new CandidateScreeningQuestionResponse(
+                            jcmFromDb.getId(),
+                            longListEntry.getKey(),
+                            valuesToSave[0],
+                            (valuesToSave.length > 1) ? valuesToSave[1] : null);
+                } else {
+                    candidateResponse.setResponse(valuesToSave[0]);
+                    candidateResponse.setComment((valuesToSave.length > 1) ? valuesToSave[1] : null);
+                }
+                candidateResponse = candidateScreeningQuestionResponseRepository.save(candidateResponse);
+                candidateScreeningQuestionResponseRepository.flush();
 
-                    //update chatbot response and updated date in jcm
-                    if (null == jcmFromDb.getCandidateChatbotResponse())
-                        jcmFromDb.setCandidateChatbotResponse(new HashMap<>());
+                //updating hr_chat_complete_flag
+                log.info("Completed adding response to db in {}ms", (System.currentTimeMillis() - startTime));
 
-                    //Set Candidate chatbot response
-                    jcmFromDb.getCandidateChatbotResponse().put(candidateResponse.getJobScreeningQuestionId().toString(), (candidateResponse.getResponse() + (candidateResponse.getComment() != null ? candidateResponse.getComment() : "")));
-                    jcmFromDb.setChatbotUpdatedOn(new Date());
-                });
-            }
+                //update chatbot response and updated date in jcm
+                if (null == jcmFromDb.getCandidateChatbotResponse())
+                    jcmFromDb.setCandidateChatbotResponse(new HashMap<>());
+
+                //Set Candidate chatbot response
+                jcmFromDb.getCandidateChatbotResponse().put(candidateResponse.getJobScreeningQuestionId().toString(), (candidateResponse.getResponse() + (candidateResponse.getComment() != null ? candidateResponse.getComment() : "")));
+                jcmFromDb.setChatbotUpdatedOn(new Date());
+            });
         }
 
         int totalResponses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmFromDb.getId()).size();
