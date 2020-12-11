@@ -53,10 +53,16 @@ public class ZipFileProcessUtil {
                 while(ze!=null){
                     String fileName = ze.getName();
                     String fileExtension=Util.getFileExtension(fileName);
+                    if(fileExtension.equals(fileName)) {
+                        ze = zis.getNextEntry();
+                        continue;
+                    }
+                    //if its a folder then it shouldn't be taken into count
                     if(!Arrays.asList(IConstant.cvUploadSupportedExtensions).contains(fileExtension)) {
                         failureCount++;
                         responseBean.getCvUploadMessage().put(fileName, IErrorMessages.UNSUPPORTED_FILE_TYPE +" "+fileExtension);
                     }else{
+                        //to remove the folder name from the file name and clean the filename
                         fileName = Util.cleanFileName(fileName.split("/")[fileName.split("/").length-1]);
                         newFile = new File(tempRepoLocation + File.separator + fileName);
                         log.info("Zip file unzip : "+ newFile.getAbsoluteFile());
