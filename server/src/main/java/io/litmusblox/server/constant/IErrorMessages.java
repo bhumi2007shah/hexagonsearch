@@ -78,4 +78,6 @@ public interface IErrorMessages {
     String OTP_VERIFICATION_FAILED = "OTP verification failed";
     String INVALID_COMPANY_SHORT_NAME = "Company short name contain only alpha numeric value start with character";
     String INVALID_DATE_OF_BIRTH_FORMAT = "The Date of Birth format is invalid or not handled";
+    String JOB_NOT_FOUND = "Job does not exist ";
+
 }
