@@ -53,11 +53,11 @@ public class ZipFileProcessUtil {
                 while(ze!=null){
                     String fileName = ze.getName();
                     String fileExtension=Util.getFileExtension(fileName);
+                    //if its a folder then it shouldn't be taken into count
                     if(fileExtension.equals(fileName)) {
                         ze = zis.getNextEntry();
                         continue;
                     }
-                    //if its a folder then it shouldn't be taken into count
                     if(!Arrays.asList(IConstant.cvUploadSupportedExtensions).contains(fileExtension)) {
                         failureCount++;
                         responseBean.getCvUploadMessage().put(fileName, IErrorMessages.UNSUPPORTED_FILE_TYPE +" "+fileExtension);
