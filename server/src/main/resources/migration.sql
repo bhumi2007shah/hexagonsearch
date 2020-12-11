@@ -2877,3 +2877,6 @@ alter table job_candidate_mapping add column interest_access_by_device varchar(5
 
 -- For ticket #708
 ALTER TABLE candidate_screening_question_response ADD CONSTRAINT unique_candidate_screening_question_response UNIQUE (JOB_CANDIDATE_MAPPING_ID, JOB_SCREENING_QUESTION_ID);
+
+-- For ticket 710
+alter table job_skills_attributes add column selected boolean not null default false;
