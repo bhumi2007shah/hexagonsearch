@@ -1294,15 +1294,13 @@ public class JobService extends AbstractAccessControl implements IJobService {
             job = setRecruiterArray(job, oldJob.getCreatedBy());
         validateLoggedInUser(loggedInUser, job);
 
-        Company companyFromDb = companyRepository.getOne(job.getCompanyId().getId());
-
         //Validate Hiring Manager
         if(null != job.getHiringManager()){
             for (Integer hiringManager : job.getHiringManager()) {
                 User user = userRepository.getOne(Long.valueOf(hiringManager));
                 validateloggedInUser(user, job.getCompanyId().getId());
             }
-        }else if(IConstant.CompanyType.INDIVIDUAL.getValue().equals(companyFromDb.getCompanyType())){
+        }else if(IConstant.CompanyType.INDIVIDUAL.getValue().equals(loggedInUser.getCompany().getCompanyType())){
             log.error("Hiring manager {}",IErrorMessages.NULL_MESSAGE);
             throw new ValidationException("Hiring manager "+IErrorMessages.NULL_MESSAGE, HttpStatus.UNPROCESSABLE_ENTITY);
         }
