@@ -61,6 +61,7 @@ public class JCMAllDetails {
     Date updatedOn;
     String updatedBy;
     String rejectionReason;
+    String candidateQuickQuestionResponse;
 
 
     @Transient

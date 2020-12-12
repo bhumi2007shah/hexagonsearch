@@ -142,6 +142,7 @@ job_candidate_mapping.candidate_chatbot_response, job_candidate_mapping.candidat
 job_candidate_mapping.candidate_rejection_value as rejection_reason, job_candidate_mapping.updated_on, (select concat(first_name, ' ', last_name) from users where id=job_candidate_mapping.updated_by) as updated_by,
 job_candidate_mapping.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name,
 candidateCompany.designation, candidateCompany.notice_period, candidate_details.total_experience,
+job_candidate_mapping.candidate_quick_question_response,
 (CASE WHEN (job_candidate_mapping.cv_file_type!='') THEN
 (CONCAT('CandidateCv/',job_candidate_mapping.job_id, '/', job_candidate_mapping.candidate_id, job_candidate_mapping.cv_file_type))
 else null
