@@ -101,6 +101,7 @@ public class JobSkillsAttributes implements Serializable {
         this.createdOn = createdOn;
         this.createdBy = createdBy;
         this.jobId = jobId;
+        this.selected = true;
     }
 
 }
