@@ -2064,6 +2064,14 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             if(null != customizedChatbotPageContent && !customizedChatbotPageContent.getPageInfo().isEmpty())
                 chatbotResponseBean.getChatbotContent().putAll(customizedChatbotPageContent.getPageInfo());
         }
+        List<JobSkillsAttributes> jobSkillsAttributeList = new ArrayList<>();
+        if(null != objFromDb.getJob().getJobSkillsAttributesList()){
+            objFromDb.getJob().getJobSkillsAttributesList().forEach(jobSkillsAttributes -> {
+                if(null != jobSkillsAttributes.getAttribute() || (null != jobSkillsAttributes.getSkillId() && jobSkillsAttributes.isSelected()))
+                    jobSkillsAttributeList.add(jobSkillsAttributes);
+            });
+        }
+        objFromDb.getJob().setJobSkillsAttributesList(jobSkillsAttributeList);
         chatbotResponseBean.setJobCandidateMapping(objFromDb);
 
         return chatbotResponseBean;
