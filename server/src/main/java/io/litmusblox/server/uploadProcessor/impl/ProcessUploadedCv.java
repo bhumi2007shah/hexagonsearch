@@ -285,7 +285,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     jobCandidateMapping.setCvFileType("." + Util.getFileExtension(fileName));
                     if(null != responseFromPython.getCvRatingResponseWrapper()) {
                         jobCandidateMapping.setOverallRating(responseFromPython.getCvRatingResponseWrapper().overallRating);
-                       if (null != (responseFromPython.getCvRatingResponseWrapper().cvRatingResponse))
+                        if (null != (responseFromPython.getCvRatingResponseWrapper().cvRatingResponse))
                            jobCandidateMapping.setCvSkillRatingJson(responseFromPython.getCvRatingResponseWrapper().cvRatingResponse);
                     }
                     jobCandidateMappingRepository.save(jobCandidateMapping);
@@ -323,6 +323,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         List<CvParsingDetails> cvToRateList = cvParsingDetailsRepository.getDataForUpdateCvRating();
         cvToRateList.stream().forEach(cvToRate -> {
             try {
+                boolean processingError = false;
                 long cvRatingApiProcessingTime = -1;
                 if(null != cvToRate.getJobCandidateMappingId()) {
                     Map<String, List<String>> neighbourSkillMap = new HashMap<>();
@@ -336,8 +337,16 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                             if(null != jobSkillsAttributes.getSkillId())
                                 neighbourSkillMap.put(jobSkillsAttributes.getSkillId().getSkillName(), (null != jobSkillsAttributes.getNeighbourSkills())?Arrays.asList(jobSkillsAttributes.getNeighbourSkills()):new ArrayList<>());
                         });
+                        try {
+                            cvRatingApiProcessingTime = callCvRatingApi(cvToRate, new CvRatingRequestBean(neighbourSkillMap));
+
+                        } catch (Exception e) {
+                            log.info("Error while performing CV rating operation " + Util.getStackTrace(e));
+                            cvToRate.setCvRatingApiCallTRetryCount(cvToRate.getCvRatingApiCallTRetryCount()+1);
+                            processingError = true;
+                        }
                     }
-                    if (cvToRate.getCvRatingApiCallTRetryCount().equals(3)) {
+                    if (!processingError || cvToRate.getCvRatingApiCallTRetryCount().equals(3)) {
                         cvToRate.setCvRatingApiFlag(true);
                         cvToRate.setCvRatingApiResponseTime(cvRatingApiProcessingTime);
                         cvParsingDetailsRepository.save(cvToRate);
@@ -351,6 +360,36 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             }
         });
     }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    private long callCvRatingApi(CvParsingDetails cvParsingDetails, CvRatingRequestBean requestBean) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+        long jobId = cvParsingDetails.getJobCandidateMappingId().getJob().getId();
+        long jcmId = cvParsingDetails.getJobCandidateMappingId().getId();
+        Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId);
+        StringBuffer queryString = new StringBuffer(environment.getProperty("parserBaseUrl")+environment.getProperty("pythonParseCv"));
+        queryString.append("?file=");
+        queryString.append(environment.getProperty(IConstant.CV_STORAGE_LOCATION)).append(cvParsingDetails.getJobCandidateMappingId().getJob().getId()).append("/").append(cvParsingDetails.getCandidateId()).append(cvParsingDetails.getJobCandidateMappingId().getCvFileType());
+        long apiCallStartTime = System.currentTimeMillis();
+        String cvRatingResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), queryString.toString(), HttpMethod.POST, null,null,java.util.Optional.of(IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT),Optional.of(headerInformation)).getResponseBody();
+        log.info("Response received from CV Rating Api : {}, JcmId : {}", cvRatingResponse, jcmId);
+        long apiCallEndTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
+        CvParserResponseBean responseBean = objectMapper.readValue(cvRatingResponse, CvParserResponseBean.class);
+        Candidate candidate = responseBean.getCandidate();
+        CvRatingResponseWrapper cvRatingResponseWrapper = responseBean.getCvRatingResponseWrapper();
+        JobCandidateMapping jcmObj = jobCandidateMappingRepository.findById(jcmId).orElse(null);
+        log.info("Update cv_rating for jcm id : "+jcmId);
+        log.info("Old cv_rating : "+jcmObj.getOverallRating()+", New Rating : "+cvRatingResponseWrapper.getOverallRating());
+        jcmObj.setOverallRating(cvRatingResponseWrapper.getOverallRating());
+        jobCandidateMappingRepository.save(jcmObj);
+        log.info("Time taken to update cv rating data " + (System.currentTimeMillis() - startTime) + "ms.");
+        updateCandidateInfo(cvParsingDetails, candidate);
+        return (apiCallEndTime - apiCallStartTime);
+    }
+
 
     private void updateCandidateInfo(CvParsingDetails cvParsingDetailsFromDb, Candidate candidateFromPython){
         long startTime = System.currentTimeMillis();
