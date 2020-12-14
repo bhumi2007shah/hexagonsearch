@@ -8,6 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 /**
  * @author : Sumit
  * Date : 02/09/20
@@ -23,7 +25,7 @@ public class JdParserRequestBean {
     private String jdString;
     private boolean skillFlag;
     private boolean capabilityFlag;
-    private String function;
+    private List<String> function;
     private Long companyId;
 
     public JdParserRequestBean(String jdString, boolean skillFlag, boolean capabilityFlag, Long companyId) {

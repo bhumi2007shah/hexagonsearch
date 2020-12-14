@@ -6,7 +6,7 @@ package io.litmusblox.server.uploadProcessor.impl;
 
 import lombok.Data;
 
-import java.util.List;
+import java.util.Map;
 
 /**
  * @author : Shital Raval
@@ -18,25 +18,7 @@ import java.util.List;
 
 @Data
 public class CvRatingResponseWrapper {
-    CvRatingResponse cvRatingResponse;
-}
-
-@Data
-class CvRatingResponse {
     int overallRating;
-    List<Keyword> keywords;
+    Map<String, Map<String, String>> cvRatingResponse;
 }
 
-@Data
-class Keyword {
-    List<SupportingKeyword> supportingKeywords;
-    String name;
-    int rating;
-    int occurrence;
-}
-
-@Data
-class SupportingKeyword {
-    String name;
-    int occurrence;
-}

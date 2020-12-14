@@ -27,12 +27,7 @@ import java.util.UUID;
  */
 public interface JobCandidateMappingRepository extends JpaRepository<JobCandidateMapping, Long> {
 
-    //find by job and stage id
-    @Transactional (readOnly = true)
-    List<JobCandidateMapping> findByJobAndStageInAndRejectedIsFalse(Job job, StageStepMaster stage) throws Exception;
-
-    //find all rejected candidates
-    List<JobCandidateMapping> findByJobAndRejectedIsTrue(Job job) throws Exception;
+    //Both the methods used not found so I have removed.
 
     //find count of candidates per stage
     @Transactional(readOnly = true)
@@ -74,7 +69,7 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     @Transactional
     @Modifying
-    @Query(nativeQuery = true, value = "update job_candidate_mapping set stage = :newStageId, rejected = false, updated_by = :updatedBy, updated_on = :updatedOn where stage = :oldStageId and id in :jcmList")
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set stage =:newStageId, rejected = false, updated_by =:updatedBy, updated_on =:updatedOn where stage =:oldStageId and id in :jcmList")
     void updateStageStepId(List<Long> jcmList, Long oldStageId, Long newStageId, Long updatedBy, Date updatedOn);
 
     @Transactional(readOnly = true)
@@ -117,12 +112,8 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     List<Object[]> getCandidateCountPerStage(Long jobId, String stage) throws Exception;
 
     @Transactional
-    @Query(nativeQuery = true, value = "select * from job_candidate_mapping where chatbot_status is null and job_id in (select id from job where auto_invite = 't') and stage=(select id from stage_step_master where stage='Sourcing')")
+    @Query(nativeQuery = true, value = "select * from job_candidate_mapping where chatbot_status is null and job_id in (select id from job where auto_invite = 't') and stage=(select id from stage_step_master where stage='Sourcing') and (job_candidate_mapping.mobile is not null or job_candidate_mapping.email not like '%notavailable.io')")
     List<JobCandidateMapping> getNewAutoSourcedJcmList();
-
-    @Transactional
-    @Query(nativeQuery = true, value="select * from job_candidate_mapping where job_id in (select id from job where company_id in (select id from company where send_communication='f')) and stage=(select id from stage_step_master where stage='Sourcing') and chatbot_status is null")
-    List<JobCandidateMapping> getLDEBCandidates();
 
     List<JobCandidateMapping> findAllByJobId(Long jobId);
 

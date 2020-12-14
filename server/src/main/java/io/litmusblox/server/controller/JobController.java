@@ -49,39 +49,10 @@ public class JobController {
         Job job = mapper.readValue(jobStr, Job.class);
 
         return Util.stripExtraInfoFromResponseBean(
-                jobService.addJob(job, pageName),
+                jobService.addJobFlow(job, pageName),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("displayName","id"));
-                    put("ScreeningQuestions", Arrays.asList("question","id"));
-                    put("JobStageStep", Arrays.asList("id", "stageStepId"));
-                }}),
-                (new HashMap<String, List<String>>(){{
-                    put("Job",Arrays.asList("createdOn","createdBy", "updatedOn", "updatedBy"));
-                    put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
-                    put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
-                    put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
-                    put("JobCapabilities", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
-                    put("MasterData", new ArrayList<>(0));
-                    put("CompanyAddress", new ArrayList<>(0));
-                    put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
-                    put("StageMaster",new ArrayList<>(0));
-                }})
-        );
-    }
-
-    @PostMapping(value = "/newCreateJob/{pageName}")
-    String newAddJob(@RequestBody String jobStr, @PathVariable ("pageName") String pageName) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, true);
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
-        Job job = mapper.readValue(jobStr, Job.class);
-
-        return Util.stripExtraInfoFromResponseBean(
-                jobService.newAddJobFlow(job, pageName),
-                (new HashMap<String, List<String>>(){{
-                    put("User",Arrays.asList("displayName","id"));
-                    put("ScreeningQuestions", Arrays.asList("question","id"));
+                    put("ScreeningQuestions", Arrays.asList("question","id","isMandatory"));
                     put("JobStageStep", Arrays.asList("id", "stageStepId"));
                 }}),
                 (new HashMap<String, List<String>>(){{
@@ -113,6 +84,7 @@ public class JobController {
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id", "displayName"));
                     put("CompanyAddress", Arrays.asList("address"));
+                    put("JobRole", Arrays.asList("role"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList","jobHiringTeamList","jobDetail", "expertise", "education", "noticePeriod", "function", "experienceRange", "userEnteredKeySkill", "updatedOn", "updatedBy"));
@@ -145,6 +117,7 @@ public class JobController {
                     put("CandidateEducationDetails", Arrays.asList("degree"));
                     put("JobStageStep", Arrays.asList("stageName"));
                     put("CompanyAddress", Arrays.asList("address"));
+                    put("JobRole", Arrays.asList("role"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy"));
@@ -182,6 +155,7 @@ public class JobController {
                     put("CandidateEducationDetails", Arrays.asList("degree"));
                     put("JobStageStep", Arrays.asList("stageName"));
                     put("CompanyAddress", Arrays.asList("address"));
+                    put("JobRole", Arrays.asList("role"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy"));
@@ -219,8 +193,8 @@ public class JobController {
      */
     @PutMapping(value = "/archiveJob/{jobId}")
     @ResponseStatus(HttpStatus.OK)
-    void archiveJob(@PathVariable("jobId") Long jobId) throws Exception {
-        jobService.archiveJob(jobId);
+    void archiveJob(@PathVariable("jobId") Long jobId, @RequestParam("archiveStatus") String archiveStatus, @RequestParam("archiveReason") Optional<String> archiveReason) throws Exception {
+        jobService.archiveJob(jobId,archiveStatus,(archiveReason.isPresent())?archiveReason.get():null);
     }
 
     /**
@@ -248,6 +222,7 @@ public class JobController {
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id","displayName"));
                     put("CompanyAddress", Arrays.asList("id", "address"));
+                    put("JobRole", Arrays.asList("role"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",new ArrayList<>(0));
@@ -272,6 +247,7 @@ public class JobController {
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("displayName"));
                     put("CompanyAddress", Arrays.asList("address"));
+                    put("JobRole", Arrays.asList("role"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",new ArrayList<>(0));

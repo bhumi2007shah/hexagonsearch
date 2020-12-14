@@ -2712,7 +2712,7 @@ ALTER TABLE SCREENING_QUESTION
 ADD COLUMN IS_MANDATORY BOOL DEFAULT 'f';
 update screening_question set options=array_remove(options,'I wish not to answer') where question in ('Which City are you currently based in?','What is your Total work experience range?','What is the official Notice Period you are required to serve in your current company?','What is your highest level of education?');
 update screening_question set options[1]=initcap(options[1]),options[2]=initcap(options[2]),options[3]=initcap(options[3]),options[4]=initcap(options[4]), options[5]=initcap(options[5]), options[6]=initcap(options[6]) where question='What is the official Notice Period you are required to serve in your current company?';
-
+update screening_question SET is_mandatory ='t' where question in ('Which Company are you currently working for?','What is your Job Title?','What is your Total work experience range?','What is the official Notice Period you are required to serve in your current company?','Which City are you currently based in?','What is your Current Annual Salary?','What is your expected annual salary requirement?','What is your highest level of education?');
 
 --For ticket 630
 ALTER TABLE JOB_CANDIDATE_MAPPING
@@ -2740,3 +2740,142 @@ ALTER TABLE jcm_profile_sharing_details ALTER COLUMN comments TYPE varchar(300);
 COPY jcm_profile_sharing_master(id, receiver_name,sender_id, email_sent_on, receiver_id) FROM '/home/lbprod/UserIdShareCandidateMasterDataUpdate.csv' DELIMITER ',' CSV HEADER;
 --Removing entries from details table
 delete from jcm_profile_sharing_details where id in (select psd.id from jcm_profile_sharing_details psd left join jcm_profile_sharing_master psm on psm.id = psd.profile_sharing_master_id where psm.id is null);
+
+-- for ticket #697
+ALTER TABLE cv_parsing_details ALTER COLUMN cv_rating_api_call_retry_count SET DEFAULT 1;
+update cv_parsing_details set cv_rating_api_call_retry_count = 1 where cv_rating_api_call_retry_count is null;
+
+--For ticket #690
+update screening_question set question_type=(select id from master_data where type='questionType' and value='Radio button') where question='Which City are you currently based in?';
+
+--For ticket #649
+alter table job
+add column archive_status char(20),
+add column archive_reason char(20);
+
+CREATE TABLE ATTRIBUTES_MASTER_DATA(
+ID serial PRIMARY KEY NOT NULL,
+JOB_ATTRIBUTE VARCHAR (100) NOT NULL,
+FUNCTION INTEGER REFERENCES FUNCTION_MASTER_DATA(ID) NOT NULL,
+CONSTRAINT UNIQUE_JOB_ATTRIBUTE_MASTER_DATA UNIQUE (JOB_ATTRIBUTE, FUNCTION)
+);
+
+CREATE TABLE STATEMENTS_BLOCK_MASTER_DATA(
+ID SERIAL PRIMARY KEY,
+STATEMENT_BLOCK VARCHAR(25) NOT NULL,
+QUESTION VARCHAR(100) NOT NULL,
+OPTIONS VARCHAR(400)[]
+);
+
+CREATE TABLE JOB_ROLE(
+ID SERIAL PRIMARY KEY,
+ROLE INTEGER REFERENCES ROLE_MASTER_DATA(ID) NOT NULL,
+JOB INTEGER REFERENCES JOB(ID) NOT NULL,
+CONSTRAINT UNIQUE_JOB_ROLE UNIQUE (ROLE, JOB)
+);
+
+ALTER TABLE job DROP CONSTRAINT job_function_fkey1;
+alter table job alter function type integer[] using array[function]::INTEGER[];
+insert into job_role(job, role) select id, role from job where role is not null;
+alter table job drop column role;
+ALTER TABLE JOB ADD COLUMN STATEMENT_BLOCK INTEGER REFERENCES STATEMENTS_BLOCK_MASTER_DATA(ID);
+alter table job add column is_quick_question bool default 'f';
+alter table job_candidate_mapping add column candidate_quick_question_response text;
+alter table job_key_skills drop column selected;
+ALTER TABLE job_key_skills RENAME TO job_skills_attributes;
+ALTER TABLE job_key_skills_id_seq RENAME TO job_skills_attributes_id_seq;
+ALTER TABLE job_skills_attributes ADD COLUMN ATTRIBUTE INTEGER REFERENCES ATTRIBUTES_MASTER_DATA(ID);
+
+insert into STATEMENTS_BLOCK_MASTER_DATA(STATEMENT_BLOCK, QUESTION, OPTIONS) values
+('Expertise Level', 'What is your expertise level on this?', '{"No Experience", "Trained but not used in practice", "Hands on practice; need some help for complex job", "Hands on; Totally independent at work", "Expert / Guru who train who trains others"}'),
+('Skill Usage', 'What is your skill level on this?', '{"Not aware", "Trained but not used", "Used this in the past", "Moderately used in present job", "Extensively used in present job"}'),
+('Experience Band', 'How many years of hands on experience do you have on this skill?', '{"Not experience", "Upto 1 year", "2 to 3 years", "4 to 8 years", "Above 8 years"}'),
+('Skill Rating', 'How do you rate yourself on this skill(1 is Lowest, 5 is Highest)?', '{"1", "2", "3", "4", "5"}');
+
+INSERT INTO FUNCTION_MASTER_DATA(FUNCTION, INDUSTRY) VALUES
+('Production', (select id from industry_master_data where industry = 'Manufacturing')),
+('Vendor Development /Procurement', (select id from industry_master_data where industry = 'Manufacturing')),
+('Process Design & Manufacturing Engg', (select id from industry_master_data where industry = 'Manufacturing')),
+('Plant Engineering', (select id from industry_master_data where industry = 'Manufacturing'));
+
+insert into ATTRIBUTES_MASTER_DATA(JOB_ATTRIBUTE, FUNCTION) values
+('Production Planning', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Resource Planning', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Inventory Planning', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Preventive Maintenance', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Spares Planning', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Breakdown Maintenance', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Tool Tryouts', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Machine Tryouts', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Outsourcing', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Customer / Field Quality', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Plant & Machinery Installation', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Environment & Safety Compliance', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Process Design', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('New Product Development', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing')));
+
+insert into ATTRIBUTES_MASTER_DATA(JOB_ATTRIBUTE, FUNCTION) values
+('Stores', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Dispatch', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('FMEA', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Capital Goods Purchase', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Service Contracts', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Labour Contracts', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Commercials, Duties & Taxation', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Goods Return, Rejections, Damages & Scrap', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Inventory Management', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Warranty Claims', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Penalty settlements', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Insurance Claims', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Supply Chain', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Stores', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Tools Purchase', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Process Validation', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Tool Design', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Tool Tryouts', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Machine Tryouts', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Design of Experiments', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Process & Operation Costing', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Time & Motion Study', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Motion / Method Study', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Shop / Machine Layout', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Work Station Design', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Reliability Assessment / Testing', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Design of Material Handling Systems', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Design of Piping & Fluid Control systems', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Electrical Design', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Electronics & Instrumentation Design', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Structural Design', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Vendor & Contractor Selection', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('CAD / CAE experience', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing')));
+
+--For ticket #687
+alter table job_candidate_mapping add column cv_skill_rating_json jsonb;
+alter table job_candidate_mapping add column overall_rating smallint;
+
+--For ticket #698
+alter table job_candidate_mapping add column candidate_not_interested_reason varchar(50);
+insert into master_data (type,value) values
+('candidateNotInterestedReason','The role is not relevant for me'),
+('candidateNotInterestedReason','Just took up another job. Not looking any more'),
+('candidateNotInterestedReason','Not willing to relocate'),
+('candidateNotInterestedReason','Had a poor experience with this company earlier');
+
+--For ticket #699
+update screening_question set question_type=(select id from master_data where type='questionType' and value='InputBox') where question='Which City are you currently based in?';
+update screening_question SET options ='{}' where question='Which City are you currently based in?';
+update screening_question SET customize_question='location' where question='Which City are you currently based in?';
+insert into master_data (value,type) values
+('Delhi','location'),('Mumbai','location'),('Kolkata','location'),('Bangalore','location'),('Chennai','location'),('Hyderabad','location'),('Pune','location'),('Ahmadabad','location'),('Surat','location'),('Lucknow','location'),('Jaipur','location'),('Cawnpore','location'),('Mirzapur','location'),('Nagpur','location'),('Ghaziabad','location'),('Indore','location'),('Vadodara','location'),('Vishakhapatnam','location'),('Bhopal','location'),('Chinchvad','location'),('Patna','location'),('Ludhiana','location'),('Agra','location'),('Kalyan','location'),('Madurai','location'),('Jamshedpur','location'),('Nasik','location'),('Faridabad','location'),('Aurangabad','location'),('Rajkot','location'),('Meerut','location'),('Jabalpur','location'),('Thane','location'),('Dhanbad','location'),('Allahabad','location'),('Varanasi','location'),('Srinagar','location'),('Amritsar','location'),('Aligarh','location'),('Bhiwandi','location'),('Gwalior','location'),('Bhilai','location'),('Haora','location'),('Ranchi','location'),('Bezwada','location'),('Chandigarh','location'),('Mysore','location'),('Raipur','location'),('Kota','location'),('Bareilly','location'),('Jodhpur','location'),('Coimbatore','location'),('Dispur','location'),('Guwahati','location'),('Solapur','location'),('Trichinopoly','location'),('Hubli','location'),('Jalandhar','location'),('Bhubaneshwar','location'),('Bhayandar','location'),('Moradabad','location'),('Kolhapur','location'),('Thiruvananthapuram','location'),('Saharanpur','location'),('Warangal','location'),('Salem','location'),('Malegaon','location'),('Kochi','location'),('Gorakhpur','location'),('Shimoga','location'),('Tiruppur','location'),('Guntur','location'),('Raurkela','location'),('Mangalore','location'),('Nanded','location'),('Cuttack','location'),('Chanda','location'),('Dehra Dun','location'),('Durgapur','location'),('Asansol','location'),('Bhavnagar','location'),('Amravati','location'),('Nellore','location'),('Ajmer','location'),('Tinnevelly','location'),('Bikaner','location'),('Agartala','location'),('Ujjain','location'),('Jhansi','location'),('Ulhasnagar','location'),('Davangere','location'),('Jammu','location'),('Belgaum','location'),('Gulbarga','location'),('Jamnagar','location'),('Dhulia','location'),('Gaya','location'),('Jalgaon','location'),('Kurnool','location'),('Udaipur','location'),('Bellary','location'),('Sangli','location'),('Tuticorin','location'),('Calicut','location'),('Akola','location'),('Bhagalpur','location'),('Sikar','location'),('Tumkur','location'),('Quilon','location'),('Muzaffarnagar','location'),('Bhilwara','location'),('Nizamabad','location'),('Bhatpara','location'),('Kakinada','location'),('Parbhani','location'),('Panihati','location'),('Latur','location'),('Rohtak','location'),('Rajapalaiyam','location'),('Ahmadnagar','location'),('Cuddapah','location'),('Rajahmundry','location'),('Alwar','location'),('Muzaffarpur','location'),('Bilaspur','location'),('Mathura','location'),('Kamarhati','location'),('Patiala','location'),('Saugor','location'),('Bijapur','location'),('Brahmapur','location'),('Shahjanpur','location'),('Trichur','location'),('Barddhaman','location'),('Kulti','location'),('Sambalpur','location'),('Purnea','location'),('Hisar','location'),('Firozabad','location'),('Bidar','location'),('Rampur','location'),('Shiliguri','location'),('Bali','location'),('Panipat','location'),('Karimnagar','location'),('Bhuj','location'),('Ichalkaranji','location'),('Tirupati','location'),('Hospet','location'),('Aizawl','location'),('Sannai','location'),('Barasat','location'),('Ratlam','location'),('Handwara','location'),('Drug','location'),('Imphal','location'),('Anantapur','location'),('Etawah','location'),('Raichur','location'),('Ongole','location'),('Bharatpur','location'),('Begusarai','location'),('Sonipat','location'),('Ramgundam','location'),('Hapur','location'),('Uluberiya','location'),('Porbandar','location'),('Pali','location'),('Vizianagaram','location'),('Puducherry','location'),('Karnal','location'),('Nagercoil','location'),('Tanjore','location'),('Sambhal','location'),('Shimla','location'),('Ghandinagar','location'),('Shillong','location'),('New Delhi','location'),('Port Blair','location'),('Gangtok','location'),('Kohima','location'),('Itanagar','location'),('Panaji','location'),('Daman','location'),('Kavaratti','location'),('Panchkula','location'),('Kagaznagar','location'),('Other','location');
+
+ALTER TABLE JOB RENAME COLUMN IS_QUICK_QUESTION TO QUICK_QUESTION;
+
+--For ticket #703
+alter table job_candidate_mapping add column interest_access_by_device varchar(50), add column chatbot_completed_by_device varchar(50);
+alter table job_candidate_mapping alter column interest_access_by_device type text, alter column chatbot_completed_by_device type text;
+
+-- For ticket #708
+ALTER TABLE candidate_screening_question_response ADD CONSTRAINT unique_candidate_screening_question_response UNIQUE (JOB_CANDIDATE_MAPPING_ID, JOB_SCREENING_QUESTION_ID);
+
+-- For ticket 710
+alter table job_skills_attributes add column selected boolean not null default false;
