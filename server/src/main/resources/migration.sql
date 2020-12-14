@@ -2788,7 +2788,7 @@ ALTER TABLE job_skills_attributes ADD COLUMN ATTRIBUTE INTEGER REFERENCES ATTRIB
 
 insert into STATEMENTS_BLOCK_MASTER_DATA(STATEMENT_BLOCK, QUESTION, OPTIONS) values
 ('Expertise Level', 'What is your expertise level on this?', '{"No Experience", "Trained but not used in practice", "Hands on practice; need some help for complex job", "Hands on; Totally independent at work", "Expert / Guru who train who trains others"}'),
-('Skill Usage', 'What is your skill level on this?', '{"Not aware", "Trained but not used", "Used this in he past", "Moderately used in present job", "Extensively used in present job"}'),
+('Skill Usage', 'What is your skill level on this?', '{"Not aware", "Trained but not used", "Used this in the past", "Moderately used in present job", "Extensively used in present job"}'),
 ('Experience Band', 'How many years of hands on experience do you have on this skill?', '{"Not experience", "Upto 1 year", "2 to 3 years", "4 to 8 years", "Above 8 years"}'),
 ('Skill Rating', 'How do you rate yourself on this skill(1 is Lowest, 5 is Highest)?', '{"1", "2", "3", "4", "5"}');
 
@@ -2826,9 +2826,7 @@ insert into ATTRIBUTES_MASTER_DATA(JOB_ATTRIBUTE, FUNCTION) values
 ('Inventory Management', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
 ('Warranty Claims', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
 ('Penalty settlements', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
-('Insurance Claims', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing')));
-('Service Contracts', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
-('Labour Contracts', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Insurance Claims', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
 ('Supply Chain', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
 ('Stores', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
 ('Tools Purchase', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
@@ -2874,6 +2872,7 @@ ALTER TABLE JOB RENAME COLUMN IS_QUICK_QUESTION TO QUICK_QUESTION;
 
 --For ticket #703
 alter table job_candidate_mapping add column interest_access_by_device varchar(50), add column chatbot_completed_by_device varchar(50);
+alter table job_candidate_mapping alter column interest_access_by_device type text, alter column chatbot_completed_by_device type text;
 
 -- For ticket #708
 ALTER TABLE candidate_screening_question_response ADD CONSTRAINT unique_candidate_screening_question_response UNIQUE (JOB_CANDIDATE_MAPPING_ID, JOB_SCREENING_QUESTION_ID);
