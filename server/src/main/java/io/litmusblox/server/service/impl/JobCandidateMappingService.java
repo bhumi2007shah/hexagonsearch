@@ -670,8 +670,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
         int totalResponses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcmFromDb.getId()).size();
 
+        int jobSkillsAttributesListSize = jcmFromDb.getJob().getJobSkillsAttributesList().stream().filter(jobSkillsAttributes -> jobSkillsAttributes.isSelected()).collect(Collectors.toList()).size();
+
         //Update chatbot status
-        if((jcmFromDb.getJob().isQuickQuestion() && jcmFromDb.getJob().getJobSkillsAttributesList().size() == quickScreeningResponse.size() && totalResponses == jcmFromDb.getJob().getJobScreeningQuestionsList().size())
+        if((jcmFromDb.getJob().isQuickQuestion() && jobSkillsAttributesListSize == quickScreeningResponse.size() && totalResponses == jcmFromDb.getJob().getJobScreeningQuestionsList().size())
                 || (totalResponses == jcmFromDb.getJob().getJobScreeningQuestionsList().size() && !jcmFromDb.getJob().isQuickQuestion())){
              jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
              jcmFromDb.setChatbotCompletedByDevice(userAgent);
@@ -2064,6 +2066,14 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             if(null != customizedChatbotPageContent && !customizedChatbotPageContent.getPageInfo().isEmpty())
                 chatbotResponseBean.getChatbotContent().putAll(customizedChatbotPageContent.getPageInfo());
         }
+        List<JobSkillsAttributes> jobSkillsAttributeList = new ArrayList<>();
+        if(null != objFromDb.getJob().getJobSkillsAttributesList()){
+            objFromDb.getJob().getJobSkillsAttributesList().forEach(jobSkillsAttributes -> {
+                if(null != jobSkillsAttributes.getAttribute() || (null != jobSkillsAttributes.getSkillId() && jobSkillsAttributes.isSelected()))
+                    jobSkillsAttributeList.add(jobSkillsAttributes);
+            });
+        }
+        objFromDb.getJob().setJobSkillsAttributesList(jobSkillsAttributeList);
         chatbotResponseBean.setJobCandidateMapping(objFromDb);
 
         return chatbotResponseBean;
