@@ -31,11 +31,10 @@ public interface CvParsingDetailsRepository extends JpaRepository<CvParsingDetai
     @Transactional
     void deleteByJobCandidateMappingId(JobCandidateMapping jobCandidateMapping);
 
-    @Query(value = "select cpd.* from cv_parsing_details cpd\n" +
-            "inner join job_candidate_mapping jcm on jcm.id = cpd.job_candidate_mapping_id\n" +
-            "inner join job_skills_attributes jsa on jsa.job_id = jcm.job_id"+
-            "where cpd.cv_rating_api_flag = false \n" +
-            "and (cpd.processing_status is null or cpd.processing_status = 'Success')\n" +
-            "and (jcm.cv_file_type is not null and trim(jcm.cv_file_type) != '') and jsa.selected = 't' order by cpd.id desc limit 10", nativeQuery = true)
+    @Query(value = "select cpd.* from cv_parsing_details cpd " +
+            "inner join job_candidate_mapping jcm on jcm.id = cpd.job_candidate_mapping_id " +
+            "inner join (select max(job_id) as jobId from job_skills_attributes where selected = 't' group by job_id) as jsa on jsa.jobId = jcm.job_id " +
+            "where jcm.overall_rating is null and (jcm.cv_file_type is not null and trim(jcm.cv_file_type) != '') and cpd.cv_rating_api_flag = false " +
+            "order by cpd.id desc limit 10;\n", nativeQuery = true)
     List<CvParsingDetails> getDataForUpdateCvRating();
 }

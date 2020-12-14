@@ -348,9 +348,9 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                     }
                     if (!processingError || cvToRate.getCvRatingApiCallTRetryCount().equals(3)) {
                         cvToRate.setCvRatingApiFlag(true);
-                        cvToRate.setCvRatingApiResponseTime(cvRatingApiProcessingTime);
-                        cvParsingDetailsRepository.save(cvToRate);
                     }
+                    cvToRate.setCvRatingApiResponseTime(cvRatingApiProcessingTime);
+                    cvParsingDetailsRepository.save(cvToRate);  
                 }
                 else {
                     log.error("JCM Id not set for CV Parsing details record with id: " + cvToRate.getId());
