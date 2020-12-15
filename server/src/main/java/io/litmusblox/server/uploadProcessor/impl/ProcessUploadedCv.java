@@ -183,6 +183,10 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             log.info("Python parser response : {}",pythonResponse.get());
             if(HttpStatus.OK.value() != statusCode.get()){
                 asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(jobIdFromFileName, null, null, null, null, pythonResponse.get(), IConstant.ASYNC_OPERATIONS.DragDrop.name(), user, new Date(), fileName));
+                CvParsingDetails obj = new CvParsingDetails(fileName,new Date(),pythonResponse.get(), null, null );
+                obj.setCvRatingApiCallTRetryCount(Long.parseLong("3"));
+                obj.setCvRatingApiFlag(true);
+                cvParsingDetailsRepository.save(obj);
                 moveFile(jobIdFromFileName, user, filePath, "");
             }
             if(null == cvParsingDetails.get()){
@@ -371,7 +375,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId);
         StringBuffer queryString = new StringBuffer(environment.getProperty("parserBaseUrl")+environment.getProperty("pythonParseCv"));
         queryString.append("?file=");
-        queryString.append(environment.getProperty(IConstant.CV_STORAGE_LOCATION)).append(cvParsingDetails.getJobCandidateMappingId().getJob().getId()).append("/").append(cvParsingDetails.getCandidateId()).append(cvParsingDetails.getJobCandidateMappingId().getCvFileType());
+        queryString/*.append(environment.getProperty(IConstant.CV_STORAGE_LOCATION))*/.append(cvParsingDetails.getJobCandidateMappingId().getJob().getId()).append("/").append(cvParsingDetails.getCandidateId()).append(cvParsingDetails.getJobCandidateMappingId().getCvFileType());
         long apiCallStartTime = System.currentTimeMillis();
         String cvRatingResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), queryString.toString(), HttpMethod.POST, null,null,java.util.Optional.of(IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT),Optional.of(headerInformation)).getResponseBody();
         log.info("Response received from CV Rating Api : {}, JcmId : {}", cvRatingResponse, jcmId);
