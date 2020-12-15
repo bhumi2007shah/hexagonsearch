@@ -382,8 +382,9 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         CvRatingResponseWrapper cvRatingResponseWrapper = responseBean.getCvRatingResponseWrapper();
         JobCandidateMapping jcmObj = jobCandidateMappingRepository.findById(jcmId).orElse(null);
         log.info("Update cv_rating for jcm id : "+jcmId);
-        log.info("Old cv_rating : "+jcmObj.getOverallRating()+", New Rating : "+cvRatingResponseWrapper.getOverallRating());
-        jcmObj.setOverallRating(cvRatingResponseWrapper.getOverallRating());
+        log.info("Old cv_rating : "+jcmObj.getOverallRating()+", New Rating : "+cvRatingResponseWrapper.overallRating);
+        jcmObj.setOverallRating(cvRatingResponseWrapper.overallRating);
+        jcmObj.setCvSkillRatingJson(cvRatingResponseWrapper.cvRatingResponse);
         jobCandidateMappingRepository.save(jcmObj);
         log.info("Time taken to update cv rating data " + (System.currentTimeMillis() - startTime) + "ms.");
         updateCandidateInfo(cvParsingDetails, candidate);
