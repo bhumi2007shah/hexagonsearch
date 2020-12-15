@@ -183,10 +183,6 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             log.info("Python parser response : {}",pythonResponse.get());
             if(HttpStatus.OK.value() != statusCode.get()){
                 asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(jobIdFromFileName, null, null, null, null, pythonResponse.get(), IConstant.ASYNC_OPERATIONS.DragDrop.name(), user, new Date(), fileName));
-                CvParsingDetails obj = new CvParsingDetails(fileName,new Date(),pythonResponse.get(), null, null );
-                obj.setCvRatingApiCallTRetryCount(Long.parseLong("3"));
-                obj.setCvRatingApiFlag(true);
-                cvParsingDetailsRepository.save(obj);
                 moveFile(jobIdFromFileName, user, filePath, "");
             }
             if(null == cvParsingDetails.get()){
