@@ -338,7 +338,41 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                                 neighbourSkillMap.put(jobSkillsAttributes.getSkillId().getSkillName(), (null != jobSkillsAttributes.getNeighbourSkills())?Arrays.asList(jobSkillsAttributes.getNeighbourSkills()):new ArrayList<>());
                         });
                         try {
-                            cvRatingApiProcessingTime = callCvRatingApi(cvToRate, new CvRatingRequestBean(neighbourSkillMap));
+                            AtomicInteger statusCode = new AtomicInteger();
+                            ObjectMapper objectMapper = new ObjectMapper();
+                            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                            objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+                            long jobId = cvToRate.getJobCandidateMappingId().getJob().getId();
+                            long jcmId = cvToRate.getJobCandidateMappingId().getId();
+                            Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobId);
+                            StringBuffer queryString = new StringBuffer(environment.getProperty("parserBaseUrl")+environment.getProperty("pythonParseCv"));
+                            queryString.append("?file=");
+                            queryString.append(environment.getProperty(IConstant.CV_STORAGE_LOCATION)).append(cvToRate.getJobCandidateMappingId().getJob().getId()).append("/").append(cvToRate.getCandidateId()).append(cvToRate.getJobCandidateMappingId().getCvFileType());
+                            long apiCallStartTime = System.currentTimeMillis();
+                            RestClientResponseBean restResponseBean = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(new CvRatingRequestBean(neighbourSkillMap)), queryString.toString(), HttpMethod.POST, null,null,java.util.Optional.of(IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT),Optional.of(headerInformation));
+                            statusCode.set(restResponseBean.getStatusCode());
+                            if(HttpStatus.OK.value() != statusCode.get()) {
+                                cvToRate.setCvRatingApiCallTRetryCount(Long.parseLong("3"));
+                                cvToRate.setCvRatingApiFlag(true);
+                                cvToRate.setErrorMessage(restResponseBean.getResponseBody());
+                                cvParsingDetailsRepository.save(cvToRate);
+                            }
+                            String cvRatingResponse = restResponseBean.getResponseBody();
+                            log.info("Response received from CV Rating Api : {}, JcmId : {}", cvRatingResponse, jcmId);
+                            long apiCallEndTime = System.currentTimeMillis();
+                            long startTime = System.currentTimeMillis();
+                            CvParserResponseBean responseBean = objectMapper.readValue(cvRatingResponse, CvParserResponseBean.class);
+                            Candidate candidate = responseBean.getCandidate();
+                            CvRatingResponseWrapper cvRatingResponseWrapper = responseBean.getCvRatingResponseWrapper();
+                            JobCandidateMapping jcmObj = jobCandidateMappingRepository.findById(jcmId).orElse(null);
+                            log.info("Update cv_rating for jcm id : "+jcmId);
+                            log.info("Old cv_rating : "+jcmObj.getOverallRating()+", New Rating : "+cvRatingResponseWrapper.overallRating);
+                            jcmObj.setOverallRating(cvRatingResponseWrapper.overallRating);
+                            jcmObj.setCvSkillRatingJson(cvRatingResponseWrapper.cvRatingResponse);
+                            jobCandidateMappingRepository.save(jcmObj);
+                            log.info("Time taken to update cv rating data " + (System.currentTimeMillis() - startTime) + "ms.");
+                            cvRatingApiProcessingTime = (apiCallEndTime - apiCallStartTime);
+                            //cvRatingApiProcessingTime = callCvRatingApi(cvToRate, new CvRatingRequestBean(neighbourSkillMap));
 
                         } catch (Exception e) {
                             log.info("Error while performing CV rating operation " + Util.getStackTrace(e));
