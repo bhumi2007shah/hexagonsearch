@@ -339,6 +339,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                         });
                         try {
                             AtomicInteger statusCode = new AtomicInteger();
+                            AtomicReference<CvParserResponseBean> cvParserResponseBean = new AtomicReference<CvParserResponseBean>();
                             ObjectMapper objectMapper = new ObjectMapper();
                             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                             objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
@@ -357,19 +358,15 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                                 cvToRate.setErrorMessage(restResponseBean.getResponseBody());
                                 cvParsingDetailsRepository.save(cvToRate);
                             }
-                            String cvRatingResponse = restResponseBean.getResponseBody();
-                            log.info("Response received from CV Rating Api : {}, JcmId : {}", cvRatingResponse, jcmId);
+                            cvParserResponseBean.set(objectMapper.readValue(restResponseBean.getResponseBody(), CvParserResponseBean.class));
+                            log.info("Response received from CV Rating Api : {}, JcmId : {}", cvParserResponseBean, jcmId);
                             long apiCallEndTime = System.currentTimeMillis();
                             long startTime = System.currentTimeMillis();
-                            CvParserResponseBean responseBean = objectMapper.readValue(cvRatingResponse, CvParserResponseBean.class);
-                            Candidate candidate = responseBean.getCandidate();
-                            CvRatingResponseWrapper cvRatingResponseWrapper = responseBean.getCvRatingResponseWrapper();
-                            JobCandidateMapping jcmObj = jobCandidateMappingRepository.findById(jcmId).orElse(null);
+                            Candidate candidate = cvParserResponseBean.get().getCandidate();
+                            CvRatingResponseWrapper cvRatingResponseWrapper = cvParserResponseBean.get().getCvRatingResponseWrapper();
                             log.info("Update cv_rating for jcm id : "+jcmId);
-                            log.info("Old cv_rating : "+jcmObj.getOverallRating()+", New Rating : "+cvRatingResponseWrapper.overallRating);
-                            jcmObj.setOverallRating(cvRatingResponseWrapper.overallRating);
-                            jcmObj.setCvSkillRatingJson(cvRatingResponseWrapper.cvRatingResponse);
-                            jobCandidateMappingRepository.save(jcmObj);
+                            cvToRate.getJobCandidateMappingId().setOverallRating(cvRatingResponseWrapper.overallRating);
+                            cvToRate.getJobCandidateMappingId().setCvSkillRatingJson(cvRatingResponseWrapper.cvRatingResponse);
                             log.info("Time taken to update cv rating data " + (System.currentTimeMillis() - startTime) + "ms.");
                             cvRatingApiProcessingTime = (apiCallEndTime - apiCallStartTime);
                             //cvRatingApiProcessingTime = callCvRatingApi(cvToRate, new CvRatingRequestBean(neighbourSkillMap));
