@@ -363,6 +363,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
 
     @Transactional(propagation = Propagation.REQUIRED)
     private long callCvRatingApi(CvParsingDetails cvParsingDetails, CvRatingRequestBean requestBean) throws Exception {
+        AtomicInteger statusCode = new AtomicInteger();
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
@@ -373,7 +374,15 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         queryString.append("?file=");
         queryString.append(environment.getProperty(IConstant.CV_STORAGE_LOCATION)).append(cvParsingDetails.getJobCandidateMappingId().getJob().getId()).append("/").append(cvParsingDetails.getCandidateId()).append(cvParsingDetails.getJobCandidateMappingId().getCvFileType());
         long apiCallStartTime = System.currentTimeMillis();
-        String cvRatingResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), queryString.toString(), HttpMethod.POST, null,null,java.util.Optional.of(IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT),Optional.of(headerInformation)).getResponseBody();
+        RestClientResponseBean restResponseBean = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), queryString.toString(), HttpMethod.POST, null,null,java.util.Optional.of(IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT),Optional.of(headerInformation));
+        statusCode.set(restResponseBean.getStatusCode());
+        if(HttpStatus.OK.value() != statusCode.get()) {
+            cvParsingDetails.setCvRatingApiCallTRetryCount(Long.parseLong("3"));
+            cvParsingDetails.setCvRatingApiFlag(true);
+            cvParsingDetails.setErrorMessage(restResponseBean.getResponseBody());
+            cvParsingDetailsRepository.save(cvParsingDetails);
+        }
+        String cvRatingResponse = restResponseBean.getResponseBody();
         log.info("Response received from CV Rating Api : {}, JcmId : {}", cvRatingResponse, jcmId);
         long apiCallEndTime = System.currentTimeMillis();
         long startTime = System.currentTimeMillis();
