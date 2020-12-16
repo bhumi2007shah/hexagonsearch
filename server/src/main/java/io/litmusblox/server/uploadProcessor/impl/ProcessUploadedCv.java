@@ -396,7 +396,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         jcmObj.setCvSkillRatingJson(cvRatingResponseWrapper.cvRatingResponse);
         jobCandidateMappingRepository.save(jcmObj);
         log.info("Time taken to update cv rating data " + (System.currentTimeMillis() - startTime) + "ms.");
-        updateCandidateInfo(cvParsingDetails, candidate);
+        //updateCandidateInfo(cvParsingDetails, candidate);
         return (apiCallEndTime - apiCallStartTime);
     }
 
