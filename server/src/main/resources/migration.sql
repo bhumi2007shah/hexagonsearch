@@ -2880,3 +2880,8 @@ ALTER TABLE candidate_screening_question_response ADD CONSTRAINT unique_candidat
 
 -- For ticket 710
 alter table job_skills_attributes add column selected boolean not null default false;
+
+-- For ticket 700
+drop table cv_rating_skill_keyword_details;
+drop table cv_parsing_api_details;
+drop table cv_rating;
