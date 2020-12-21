@@ -153,7 +153,7 @@ public class MasterDataService implements IMasterDataService {
                 MasterDataBean.getInstance().getQuestionTypeMap().put(data.getValueToUSe(), data);
             }
             else
-                ((Map)mapAccessor.getPropertyValue(data.getType())).put(data.getId(), data.getValue());
+                ((Map)mapAccessor.  getPropertyValue(data.getType())).put(data.getId(), data.getValue());
 
             if(data.getType().equalsIgnoreCase("noticePeriod"))
                 MasterDataBean.getInstance().getNoticePeriodMapping().put(data.getValue(), data);

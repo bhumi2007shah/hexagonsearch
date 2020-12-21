@@ -25,6 +25,7 @@ public class OTPRequestBean {
     private String receivercountrycode;
     private String sendercountrycode;
     private String sendercompany;
+    private String templateName;
 
     public OTPRequestBean(int otp, int otpExpiry, String receivermobile, String receivercountrycode, String receiveremail, String receiverfirstname, String sendercompany) {
         this.otp = otp;

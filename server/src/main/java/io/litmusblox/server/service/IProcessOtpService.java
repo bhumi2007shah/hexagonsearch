@@ -4,6 +4,8 @@
 
 package io.litmusblox.server.service;
 
+import java.util.UUID;
+
 /**
  * @author : Shital Raval
  * Date : 13/1/20
@@ -23,7 +25,7 @@ public interface IProcessOtpService {
      * @param companyShortName shortname of the company
      * @throws Exception
      */
-    void sendOtp(boolean sendEmailOtp, String mobileNumber, String countryCode, String email, String recepientName, String companyShortName) throws Exception;
+    void sendOtp(boolean sendEmailOtp, String mobileNumber, String countryCode, String email, String recepientName, String companyShortName, UUID uuid) throws Exception;
 
     /**
      * Service method to validate Otp against a mobile number
