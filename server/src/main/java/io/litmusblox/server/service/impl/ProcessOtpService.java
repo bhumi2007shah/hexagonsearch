@@ -116,11 +116,11 @@ public class ProcessOtpService implements IProcessOtpService {
         else
             otpRequestBean = new OTPRequestBean(otp, MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes(), mobileNumber, countryCode, null, recepientName, companyObjToUse.getCompanyName());
 
-        if(null != uuid && null != userRepository.findByUserUuid(uuid)) {
+        if(null != uuid && null == userRepository.findByUserUuid(uuid)) {
             log.info("UUID received {}", uuid);
             throw new ValidationException(IErrorMessages.UUID_NOT_FOUND, HttpStatus.UNPROCESSABLE_ENTITY);
         }
-        //if(null != uuid)
+        if(null != uuid)
             otpRequestBean.setTemplateName("HiringManagerOtpEmail");
         jmsTemplate.convertAndSend(queue, objectMapper.writeValueAsString(otpRequestBean));
         log.info("Put message on queue {}", queue.getQueueName());
