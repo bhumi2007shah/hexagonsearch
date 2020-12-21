@@ -375,7 +375,8 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         List<JobSkillsAttributes> jdKeySkills = jobSkillsAttributesRepository.findByJobId(jobId);
         jdKeySkills.forEach(jobSkillsAttributes -> {
             if (null != jobSkillsAttributes.getSkillId())
-                neighbourSkillMap.put(jobSkillsAttributes.getSkillId().getSkillName(), (null != jobSkillsAttributes.getNeighbourSkills()) ? Arrays.asList(jobSkillsAttributes.getNeighbourSkills()) : new ArrayList<>());
+                if(jobSkillsAttributes.isSelected())
+                    neighbourSkillMap.put(jobSkillsAttributes.getSkillId().getSkillName(), (null != jobSkillsAttributes.getNeighbourSkills()) ? Arrays.asList(jobSkillsAttributes.getNeighbourSkills()) : new ArrayList<>());
         });
         StringBuffer queryString = new StringBuffer(environment.getProperty("parserBaseUrl")+environment.getProperty("pythonParseCv"));
         queryString.append("?file=");
