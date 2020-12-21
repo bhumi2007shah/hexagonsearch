@@ -66,23 +66,15 @@ public interface IJobCandidateMappingService {
      * @param interest boolean to capture candidate consent
      * @throws Exception
      */
-    void captureCandidateInterest(UUID uuid, boolean interest) throws Exception;
+    void captureCandidateInterest(UUID uuid, boolean interest, Long candidateNotInterestedReasonId, String userAgent) throws Exception;
 
     /**
      * Service method to capture candidate response to screening questions from chatbot
      * @param uuid the uuid corresponding to a unique jcm record
-     * @param candidateResponse the response provided by a candidate against each screening question
+     * @param screeningQuestionRequestBean Candidate chatbot response object
      * @throws Exception
      */
-    void saveScreeningQuestionResponses(UUID uuid, Map<Long, List<String>> candidateResponse) throws Exception;
-
-    /**
-     * Service method to capture candidate response to screening questions from chatbot
-     * @param uuid the uuid corresponding to a unique jcm record
-     * @param response Map of qId and List of responses received from chatbot
-     * @throws Exception
-     */
-    void saveScreeningQuestion(UUID uuid, Map<Long, List<String>> response) throws Exception;
+    void saveScreeningQuestion(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean, String userAgent) throws Exception;
 
 
     /**
@@ -90,15 +82,6 @@ public interface IJobCandidateMappingService {
      * @throws Exception
      */
     void inviteAutoSourcedCandidate()throws Exception;
-
-    /**
-     *
-     * Service method to call inviteAutoSourcedOrLDEBCandidates
-     * with jcm which are uploaded in job of companies
-     * with LDEB subscription and currently in sourcing stage
-     * @throws Exception
-     */
-    void inviteLDEBCandidates() throws Exception;
 
     /**
      * Service method to invite candidates to fill chatbot for a job
@@ -169,21 +152,6 @@ public interface IJobCandidateMappingService {
      */
     void setStageForCandidates(List<Long> jcmList, String stage, Long candidateRejectionValue) throws Exception;
 
-    /**
-     * Service to return error list for drag and drop CV's for a job
-     *
-     * @param jobId job id for which files with error wil be returned
-     * @return List of RChilliErrorResponseBean which have file name, processed date, status, jcmId, candidate name if available
-     * @throws Exception
-     */
-    List<ResponseBean> getRchilliError(Long jobId) throws Exception;
-
-    /**
-     * Service to retrieve candidate history based on jcmId
-     *
-     * @param jcmId
-     * @return list of jcm
-     */
     List<JcmHistory> retrieveCandidateHistory(Long jcmId);
 
     /**
@@ -305,5 +273,7 @@ public interface IJobCandidateMappingService {
      */
     List<InterviewsResponseBean> getInterviewsForCompany(Long companyId);
 
-    public void createExistingCandidateOnSearchEngine();
+    void createExistingCandidateOnSearchEngine();
+
+
 }

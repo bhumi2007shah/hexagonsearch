@@ -309,6 +309,21 @@ public interface IConstant {
         }
     }
 
+    Map<String,String> ArchiveStatus = new LinkedHashMap<>(){{
+        put("Success – We hired candidates for all positions in this job","Success");
+        put("Partial Success – We hired candidates for some positions in this job","Partial Success");
+        put("No Success – We did not hire candidates for any positions in this job","No Success");
+    }};
+
+    Map<String,String> ArchiveReason = new LinkedHashMap<>(){{
+        put("Business Approval - not received","Business Approval");
+        put("Business Change - requirements changed","Business Change");
+        put("Hiring Manager - requirements changed","Hiring Manager");
+        put("Candidate Backout - identified candidate backed out","Candidate Backout");
+        put("Recruitment - not able to find the right candidates.","Recruitment");
+        put("Other","Other");
+    }};
+
     //constants for create candidate if firstName, lastName.
     String NOT_FIRST_NAME = "Not";
     String NOT_LAST_NAME = "Available";
@@ -352,7 +367,7 @@ public interface IConstant {
     String NOT_AVAILABLE_EMAIL = "@notavailable.io";
     String SYSTEM_USER_EMAIL = "systemuser@hex.com";
 
-    String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countries", "education", "otpExpiryMinutes", "hiringManagerRejectReasons"};
+    String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countries", "education", "otpExpiryMinutes", "hiringManagerRejectReasons", "candidateNotInterestedReason","location"};
 
     String REPLACEMENT_KEY_FOR_SHORTNAME = "_shortName_";
     String GODADDY_SUCCESS_RESPONSE = "\"code\":";
@@ -380,7 +395,7 @@ String REF_ID_MATCH_REGEX = "[a-fA-F0-9]{8}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-
     int OTP_EXPIRY_SECONDS = 90;
 
     enum ASYNC_OPERATIONS {
-        FileUpload, InviteCandidates
+        FileUpload, InviteCandidates, DragDrop
     }
 
     String LB_SHORT_CODE = "LB";

@@ -26,4 +26,6 @@ public interface CandidateScreeningQuestionResponseRepository extends JpaReposit
     List<CandidateScreeningQuestionResponse> findByJobCandidateMappingId(Long id);
 
     List<CandidateScreeningQuestionResponse> findByJobCandidateMappingIdIn(List<Long> id);
+
+    CandidateScreeningQuestionResponse findByJobCandidateMappingIdAndJobScreeningQuestionId(Long jcmId, Long questionId);
 }

@@ -140,15 +140,15 @@ job_candidate_mapping.created_on, job_candidate_mapping.candidate_first_name, jo
 job_candidate_mapping.chatbot_status, job_candidate_mapping.score,job_candidate_mapping.rejected,
 job_candidate_mapping.candidate_chatbot_response, job_candidate_mapping.candidate_source as source,
 job_candidate_mapping.candidate_rejection_value as rejection_reason, job_candidate_mapping.updated_on, (select concat(first_name, ' ', last_name) from users where id=job_candidate_mapping.updated_by) as updated_by,
-cv_rating.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name,
+job_candidate_mapping.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name,
 candidateCompany.designation, candidateCompany.notice_period, candidate_details.total_experience,
+job_candidate_mapping.candidate_quick_question_response,
 (CASE WHEN (job_candidate_mapping.cv_file_type!='') THEN
 (CONCAT('CandidateCv/',job_candidate_mapping.job_id, '/', job_candidate_mapping.candidate_id, job_candidate_mapping.cv_file_type))
 else null
 END) as cv_location,
 job_candidate_mapping.cv_file_type as cv_file_type
 from users,job_candidate_mapping
-left join cv_rating on job_candidate_mapping.id = cv_rating.job_candidate_mapping_id
 left join candidate_details on candidate_details.candidate_id = job_candidate_mapping.candidate_id
 left join
 	(select ccd.company_name, ccd.designation, ccd.candidate_id, master_data.value as notice_period

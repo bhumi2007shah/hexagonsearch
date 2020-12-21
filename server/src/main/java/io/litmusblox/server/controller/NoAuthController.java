@@ -78,40 +78,25 @@ public class NoAuthController {
      */
     @PutMapping("/candidateInterest")
     @ResponseStatus(HttpStatus.OK)
-    void captureCandidateInterest(@RequestParam("uuid") UUID uuid, @RequestParam("interest") boolean interest) throws Exception {
+    void captureCandidateInterest(@RequestParam("uuid") UUID uuid, @RequestParam("interest") boolean interest, @RequestParam("candidateNotInterestReasonId") Optional<Long> candidateNotInterestedReasonId ) throws Exception {
         log.info("Received candidate interest capture request: " + uuid);
         long startTime = System.currentTimeMillis();
-        jobCandidateMappingService.captureCandidateInterest(uuid, interest);
+        jobCandidateMappingService.captureCandidateInterest(uuid, interest, (candidateNotInterestedReasonId.isPresent())?candidateNotInterestedReasonId.get():null, servletRequest.getHeader("User-Agent"));
         log.info("Completed capturing candidate request in {}ms",(System.currentTimeMillis()-startTime));
     }
 
     /**
      * Rest api to capture candidate response to screening questions from chatbot
      * @param uuid the uuid corresponding to a unique jcm record
-     * @param candidateResponse the response provided by a candidate against each screening question
-     * @throws Exception
-     */
-    @PostMapping("/screeningQuestionResponses")
-    @ResponseStatus(HttpStatus.OK)
-    void screeningQuestionResponses(@RequestParam("uuid") UUID uuid, @RequestBody Map<Long,List<String>> candidateResponse) throws Exception{
-        log.info("Received screening question responses from candidate: " + uuid);
-        long startTime = System.currentTimeMillis();
-        jobCandidateMappingService.saveScreeningQuestionResponses(uuid, candidateResponse);
-        log.info("Completed saving candidate response to screening questions in {}ms",(System.currentTimeMillis()-startTime));
-    }
-
-    /**
-     * Rest api to capture candidate response to screening questions from chatbot
-     * @param uuid the uuid corresponding to a unique jcm record
-     * @param response Candidates respone for questin id
+     * @param screeningQuestionRequestBean Candidates response for question id
      * @throws Exception
      */
     @PostMapping("/screeningQuestionResponse")
     @ResponseStatus(HttpStatus.OK)
-    void screeningQuestionResponse(@RequestParam("uuid") UUID uuid, @RequestBody Map<Long , List<String>>response) throws Exception{
+    void screeningQuestionResponse(@RequestParam("uuid") UUID uuid, @RequestBody ScreeningQuestionRequestBean screeningQuestionRequestBean) throws Exception{
         log.info("Received screening question responses from candidate: " + uuid);
         long startTime = System.currentTimeMillis();
-        jobCandidateMappingService.saveScreeningQuestion(uuid, response);
+        jobCandidateMappingService.saveScreeningQuestion(uuid, screeningQuestionRequestBean, servletRequest.getHeader("User-Agent"));
         log.info("Completed saving candidate response to screening questions in {}ms",(System.currentTimeMillis()-startTime));
     }
 
@@ -260,6 +245,7 @@ public class NoAuthController {
                     put("CandidateCompanyDetails", new ArrayList<>(0));
                     put("JobStageStep", new ArrayList<>(0));
                     put("Candidate",new ArrayList<>(0));
+                    put("JobRole", Arrays.asList("role"));
                 }}),
                 new HashMap<String, List<String>>() {{
                     put("Job",Arrays.asList("jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy","companyJobId","noOfPositions","mlDataAvailable","status","createdOn","createdBy","userEnteredKeySkill"));

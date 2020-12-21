@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
  * @author : Shital Raval
  * Date : 22/10/19
@@ -22,4 +24,5 @@ public interface CvRatingRepository extends JpaRepository<CvRating, Long> {
 
     @Transactional
     void deleteByJobCandidateMappingId(Long jobCandidateMappingId);
+
 }

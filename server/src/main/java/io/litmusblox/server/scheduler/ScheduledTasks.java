@@ -57,13 +57,6 @@ public class ScheduledTasks {
         log.info("Completed inviting autosourced candidates. Thread: {}", Thread.currentThread().getId());
     }
 
-    @Scheduled(fixedRate = 2*60*1000, initialDelay = 2000)
-    public void inviteLDEBCandidates() throws Exception{
-        log.info("started inviting LDEB candidates. Thread {}", Thread.currentThread().getId());
-        jobCandidateMappingService.inviteLDEBCandidates();
-        log.info("Completed invitin LDEB candidates. Thread {}", Thread.currentThread().getId());
-    }
-
     @Scheduled(fixedDelay = 300000, initialDelay = 5000)
     public void updateCvRating() {
         log.info("started to update cv rating. Thread: {}", Thread.currentThread().getId());

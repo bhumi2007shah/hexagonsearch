@@ -166,6 +166,25 @@ public class JobCandidateMapping implements Serializable {
     @Column(name = "IS_CREATED_ON_SEARCHENGINE")
     private boolean isCreatedOnSearchEngine;
 
+    @Type(type = "jsonb")
+    @Column(columnDefinition = "jsonb", name = "cv_skill_rating_json")
+    private Map<String,Map<String,String>> cvSkillRatingJson;
+
+    @Column(name="overall_rating")
+    private Integer overallRating;
+
+    @Column(name="interest_access_by_device")
+    private  String interestAccessByDevice;
+
+    @Column(name="chatbot_completed_by_device")
+    private  String chatbotCompletedByDevice;
+
+    @Column(name = "CANDIDATE_QUICK_QUESTION_RESPONSE")
+    private String candidateQuickQuestionResponse;
+
+    @Column(name="candidate_not_interested_reason")
+    private String candidateNotInterestedReason;
+
     @Type(type = "hstore")
     @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "hstore")
     private Map<String, String> candidateChatbotResponse = new HashMap<>();
@@ -185,10 +204,6 @@ public class JobCandidateMapping implements Serializable {
     @Transient
     @JsonProperty
     private JcmCommunicationDetails jcmCommunicationDetails;
-
-    @Transient
-    @JsonProperty
-    CvRating cvRating;
 
     @Transient
     @JsonProperty
@@ -212,6 +227,12 @@ public class JobCandidateMapping implements Serializable {
 
     @Transient
     private String inviteErrorMessage;
+
+    @Transient
+    private List userScreeningQuestions;
+
+    @Transient
+    private Map<String,List<TechScreeningQuestion>> techScreeningQuestions;
 
     @JsonInclude
     @Transient
