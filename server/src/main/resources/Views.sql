@@ -9,7 +9,7 @@ select
   jcm.chatbot_uuid::varchar(50) as chatbot_link,
   jcm.chatbot_updated_on as chatbot_filled_timeStamp,
   jcm.candidate_chatbot_response as candidate_response,
-  cvr.overall_rating as key_skills_strength,
+  jcm.overall_rating as key_skills_strength,
   (
     case
     when
@@ -39,7 +39,6 @@ ivd.noShowReason as no_show_reason,
 ivd.cancelled,
 ivd.cancellationReason as cancellation_reason
 from job_candidate_mapping jcm
-  left join cv_rating cvr ON cvr.job_candidate_mapping_id = jcm.id
   left join (
     select candidate_id, company_name, designation from candidate_company_details where id in (
       select min(id) from candidate_company_details
