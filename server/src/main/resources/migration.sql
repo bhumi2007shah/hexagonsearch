@@ -3063,3 +3063,8 @@ insert into ATTRIBUTES_MASTER_DATA(JOB_ATTRIBUTE, FUNCTION) values
 ('Virtual Reality', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
 ('A/B testing', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
 ('SDLC', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT')));
+
+-- For ticket 700
+drop table cv_rating_skill_keyword_details;
+drop table cv_parsing_api_details;
+drop table cv_rating;
