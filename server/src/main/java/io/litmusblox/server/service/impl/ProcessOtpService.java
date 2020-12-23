@@ -61,7 +61,6 @@ public class ProcessOtpService implements IProcessOtpService {
     private synchronized void initializeCache() {
         otpCache = new TimedCache(1, MasterDataBean.getInstance().getOtpExpiryMinutes(), MasterDataBean.getInstance().getOtpExpiryMinutes(), TimeUnit.NANOSECONDS);
     }
-
     /**
      * Service method to handle send Otp request from search job page
      *
@@ -74,11 +73,23 @@ public class ProcessOtpService implements IProcessOtpService {
      * @throws Exception
      */
     @Override
-    public void sendOtp(boolean sendEmailOtp, String mobileNumber, String countryCode, String email, String recepientName, String companyShortName, UUID uuid) throws Exception {
+    public String sendOtp(boolean sendEmailOtp, String mobileNumber, String countryCode, String email, String recepientName, String companyShortName, UUID uuid) throws Exception {
         log.info("Received request to Send OTP for {} mobile: {} email: {} ", recepientName, mobileNumber, email);
         long startTime = System.currentTimeMillis();
         if(sendEmailOtp && (null == uuid || uuid.toString().trim().length() == 0))
             throw new ValidationException(IErrorMessages.UUID_NOT_FOUND, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        if(null != uuid) {
+            User user = null;
+            user = userRepository.findByUserUuid(uuid);
+            if(null == user)
+                throw new ValidationException(IErrorMessages.UUID_NOT_FOUND, HttpStatus.UNPROCESSABLE_ENTITY);
+            mobileNumber = user.getMobile();
+            countryCode = user.getCountryCode();
+            email = user.getEmail();
+            recepientName = user.getDisplayName();
+            companyShortName = user.getCompany().getShortName();
+        }
 
         if(sendEmailOtp && (null == email || email.trim().length() == 0))
             throw new ValidationException("Email address is required for Employee Referral OTP", HttpStatus.UNPROCESSABLE_ENTITY);
@@ -87,6 +98,7 @@ public class ProcessOtpService implements IProcessOtpService {
             throw new ValidationException("Mobile number is required to send OTP", HttpStatus.UNPROCESSABLE_ENTITY);
 
         //Retrieve the company name based on company short name
+
         Company companyObjToUse = companyRepository.findByShortNameIgnoreCase(companyShortName);
         if (null == companyObjToUse)
             throw new ValidationException("No company found for short name:"+companyShortName, HttpStatus.UNPROCESSABLE_ENTITY);
@@ -115,16 +127,13 @@ public class ProcessOtpService implements IProcessOtpService {
             otpRequestBean = new OTPRequestBean(otp, MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes(), null, countryCode, email, recepientName, companyObjToUse.getCompanyName());
         else
             otpRequestBean = new OTPRequestBean(otp, MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes(), mobileNumber, countryCode, null, recepientName, companyObjToUse.getCompanyName());
-
-        if(null != uuid && null == userRepository.findByUserUuid(uuid)) {
-            log.info("UUID received {}", uuid);
-            throw new ValidationException(IErrorMessages.UUID_NOT_FOUND, HttpStatus.UNPROCESSABLE_ENTITY);
-        }
         if(null != uuid)
             otpRequestBean.setTemplateName("HiringManagerOtpEmail");
         jmsTemplate.convertAndSend(queue, objectMapper.writeValueAsString(otpRequestBean));
         log.info("Put message on queue {}", queue.getQueueName());
         log.info("Completed processing Send OTP request in {} ms",(System.currentTimeMillis() - startTime));
+
+        return email;
     }
 
     /**
