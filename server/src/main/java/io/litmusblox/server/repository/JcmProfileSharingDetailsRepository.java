@@ -30,7 +30,7 @@ public interface JcmProfileSharingDetailsRepository extends JpaRepository<JcmPro
     void deleteByJobCandidateMappingId(Long jobCandidateMappingId);
 
     @Transactional
-    @Query(value = "select count(details.id) from jcm_profile_sharing_details details, jcm_profile_sharing_master master\n" +
-            "where master.sender_id =:userId and master.id = details.profile_sharing_master_id;", nativeQuery = true)
+    @Query(value = "select count(details.id) from jcm_profile_sharing_details details, hiring_manager_workspace hmw\n"+
+            "where hmw.user_id=1 and hmw.share_profile_id=details.id;", nativeQuery = true)
     Integer getProfileSharingCount(Long userId);
 }
