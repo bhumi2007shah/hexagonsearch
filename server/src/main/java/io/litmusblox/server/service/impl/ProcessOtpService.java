@@ -81,7 +81,7 @@ public class ProcessOtpService implements IProcessOtpService {
 
         if(null != uuid) {
             User user = null;
-            user = userRepository.findByUserUuid(uuid);
+            user = userRepository.findByWorkspaceUuid(uuid);
             if(null == user)
                 throw new ValidationException(IErrorMessages.UUID_NOT_FOUND, HttpStatus.UNPROCESSABLE_ENTITY);
             email = user.getEmail();
