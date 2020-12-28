@@ -7,11 +7,8 @@ package io.litmusblox.server.controller;
 import io.litmusblox.server.model.JcmProfileSharingDetails;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobCandidateMapping;
-import io.litmusblox.server.service.HiringManagerWorkspaceDetails;
 import io.litmusblox.server.service.IHiringManagerWorkspaceService;
-import io.litmusblox.server.service.IJobCandidateMappingService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
-import io.litmusblox.server.service.impl.HiringManagerWorkspaceService;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,15 +34,16 @@ public class HiringManagerWorkspaceController {
     IHiringManagerWorkspaceService hiringManagerWorkspaceService;
 
     /**
-     *
+     * Service to fetch jcmList for stage and job id
      * @param stage stage for which details is required
+     * @param jobId for which job id we want data
      * @return all required details for the logged in hiring manager and stage
      * @throws Exception
      */
     @GetMapping(value = "/getDetails/{stage}")
-    String getDetails(@PathVariable("stage") String stage) throws Exception{
+    String getDetails(@PathVariable("stage") String stage, @RequestParam("jobId") Long jobId) throws Exception{
 
-        List<HiringManagerWorkspaceDetails> responseBean = hiringManagerWorkspaceService.getHiringManagerWorkspaceDetails(stage);
+        SingleJobViewResponseBean responseBean = hiringManagerWorkspaceService.getHiringManagerWorkspaceDetails(stage, jobId);
         return Util.stripExtraInfoFromResponseBean(responseBean,
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("displayName"));
@@ -66,7 +64,7 @@ public class HiringManagerWorkspaceController {
     }
 
     /**
-     * to fetch the candidate profile which the hiring manager has selected
+     * Service to fetch the candidate profile which the hiring manager has selected
      * @param jcmId for user whose profile is to be fetched
      * @return details of the candidates whose profile is fetched.
      * @throws Exception

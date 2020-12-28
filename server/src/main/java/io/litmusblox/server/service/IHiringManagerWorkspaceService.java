@@ -19,12 +19,13 @@ import java.util.List;
 public interface IHiringManagerWorkspaceService {
 
     /**
-     *
+     * Service to fetch jcmList for stage and job id
      * @param stage stage for which details is required
+     * @param jobId for which job id we want data
      * @return all required details for the logged in hiring manager and stage
      * @throws Exception
      */
-    List<HiringManagerWorkspaceDetails> getHiringManagerWorkspaceDetails(String stage) throws Exception;
+    SingleJobViewResponseBean getHiringManagerWorkspaceDetails(String stage, Long jobId) throws Exception;
 
     /**
      * to fetch the candidate profile which the hiring manager has selected

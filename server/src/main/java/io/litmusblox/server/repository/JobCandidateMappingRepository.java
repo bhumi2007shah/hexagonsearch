@@ -35,8 +35,16 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     List<Object[]> findCandidateCountByStage(Long jobId) throws Exception;
 
     @Transactional(readOnly = true)
+    @Query(value = "select stage, count(candidate_id) from job_candidate_mapping where id in (Select jcm_id from hiring_manager_workspace_details where user_id=:userId and job_id=:jobId) and rejected is false group by stage", nativeQuery = true)
+    List<Object[]> findCandidateCountByStageForHiringManager(Long userId, Long jobId) throws Exception;
+
+    @Transactional(readOnly = true)
     @Query(value = "select count(candidate_id) from job_candidate_mapping where job_id=:jobId and rejected is true", nativeQuery = true)
     int findRejectedCandidateCount(Long jobId) throws Exception;
+
+    @Transactional(readOnly = true)
+    @Query(value = "select count(candidate_id) from job_candidate_mapping where id in (Select jcm_id from hiring_manager_workspace_details where user_id=:userId and job_id=:jobId) and rejected is true", nativeQuery = true)
+    int findRejectedCandidateCountForHiringManager(Long userId, Long jobId) throws Exception;
 
     //find count of candidates per stage
     @Transactional

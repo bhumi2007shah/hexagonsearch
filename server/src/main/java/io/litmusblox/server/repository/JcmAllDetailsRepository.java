@@ -29,4 +29,8 @@ public interface JcmAllDetailsRepository extends JpaRepository<JCMAllDetails, Lo
     @Query(nativeQuery = true, value = "Select * from job_candidate_mapping_all_details where job_id=:jobId and stage=:stage and rejected is false")
     @Transactional
     List<JCMAllDetails> findByJobAndStageInAndRejectedIsFalse(Long jobId,Long stage);
+
+    @Query(nativeQuery = true, value = "select * from job_candidate_mapping_all_details where id in (Select jcm_id from hiring_manager_workspace_details where user_id=:userId and job_id=:jobId and stage=:stage)")
+    @Transactional
+    List<JCMAllDetails> findJcmListForHiringManager(Long userId, Long jobId,Long stage);
 }

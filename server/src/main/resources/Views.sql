@@ -164,7 +164,7 @@ order by job_candidate_mapping.created_on desc, job_candidate_mapping.candidate_
 drop view if exists hiring_manager_workspace_details;
 create view hiring_manager_workspace_details
 as select
-hiring_manager_workspace.id, hiring_manager_workspace.jcm_id, hiring_manager_workspace.user_id, job_candidate_mapping.job_id, job.job_title, job_candidate_mapping.candidate_id, job_candidate_mapping.email,
+hiring_manager_workspace.jcm_id, hiring_manager_workspace.user_id, job_candidate_mapping.job_id, job.job_title, job_candidate_mapping.candidate_id, job_candidate_mapping.email,
 job_candidate_mapping.mobile, job_candidate_mapping.country_code, job_candidate_mapping.stage,
 (select stage from stage_step_master where id = job_candidate_mapping.stage) as stage_name,
 job_candidate_mapping.created_on, job_candidate_mapping.candidate_first_name, job_candidate_mapping.candidate_last_name,
@@ -177,7 +177,8 @@ candidateCompany.designation, candidateCompany.notice_period, candidate_details.
 (CONCAT('CandidateCv/',job_candidate_mapping.job_id, '/', job_candidate_mapping.candidate_id, job_candidate_mapping.cv_file_type))
 else null
 END) as cv_location,
-job_candidate_mapping.cv_file_type as cv_file_type
+job_candidate_mapping.cv_file_type as cv_file_type,
+job_candidate_mapping.candidate_quick_question_response
 from users,job_candidate_mapping
 inner join hiring_manager_workspace on job_candidate_mapping.id = hiring_manager_workspace.jcm_id
 inner join job on job_candidate_mapping.job_id = job.id

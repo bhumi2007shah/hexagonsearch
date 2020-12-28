@@ -19,12 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
+import java.math.BigInteger;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Date : 11/11/20
@@ -66,13 +64,17 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
     @Resource
     JobRepository jobRepository;
 
+    @Resource
+    JcmAllDetailsRepository jcmAllDetailsRepository;
+
     /**
-     *
+     * Service to fetch jcmList for stage and job id
      * @param stage stage for which details is required
+     * @param jobId for which job id we want data
      * @return all required details for the logged in hiring manager and stage
      * @throws Exception
      */
-    public List<HiringManagerWorkspaceDetails> getHiringManagerWorkspaceDetails(String stage) throws Exception{
+    public SingleJobViewResponseBean getHiringManagerWorkspaceDetails(String stage, Long jobId) throws Exception{
 
         log.info("Inside get all details for stage {}", stage);
         Long startTime = System.currentTimeMillis();
@@ -82,18 +84,31 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Logged in user is: {}", loggedInUser.getDisplayName());
+        SingleJobViewResponseBean responseBean = new SingleJobViewResponseBean();
 
-
-        List<HiringManagerWorkspaceDetails> allWorkspaceDetails = hiringManagerWorkspaceDetailsRepository.findAllByUserIdAndStageName(loggedInUser.getId(), stage);
+        List<JCMAllDetails> allWorkspaceDetails = jcmAllDetailsRepository.findJcmListForHiringManager(loggedInUser.getId(), jobId, MasterDataBean.getInstance().getStageStepMap().get(MasterDataBean.getInstance().getStageStepMasterMap().get(stage)).getId());
 
         if (IConstant.Stage.Interview.getValue().equalsIgnoreCase(stage)) {
             allWorkspaceDetails.forEach(entry ->{
-                entry.getInterviewDetails().add(interviewDetailsRepository.findLatestEntryByJcmId(entry.getJcmId()));
+                entry.getInterviewDetails().add(interviewDetailsRepository.findLatestEntryByJcmId(entry.getId()));
             });
         }
+        responseBean.setJcmAllDetailsList(allWorkspaceDetails);
+        //Set candidate count by stage
+        List<Object[]> stageCountListView = jobCandidateMappingRepository.findCandidateCountByStageForHiringManager(loggedInUser.getId(), jobId);
+        Map<Long, StageStepMaster> stageStepMasterMap = MasterDataBean.getInstance().getStageStepMap();
+        stageCountListView.stream().forEach(objArray -> {
+            String key = stageStepMasterMap.get(((Integer) objArray[0]).longValue()).getStage();
+            if (null == responseBean.getCandidateCountByStage().get(key))
+                responseBean.getCandidateCountByStage().put(key, ((BigInteger) objArray[1]).intValue());
+            else //stage exists in response bean, add the count of the other step to existing value
+                responseBean.getCandidateCountByStage().put(key,responseBean.getCandidateCountByStage().get(key)  + ((BigInteger) objArray[1]).intValue());
+        });
+        //add count of rejected candidates
+        responseBean.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(),  jobCandidateMappingRepository.findRejectedCandidateCountForHiringManager(loggedInUser.getId(), jobId));
 
         log.info("Completed fetching all details in {} ms", System.currentTimeMillis() - startTime);
-        return allWorkspaceDetails ;
+        return responseBean ;
     }
 
     /**
