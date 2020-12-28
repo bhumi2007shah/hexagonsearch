@@ -187,7 +187,9 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
         }
         if(null != jcmProfileSharingDetails.getComments()) {
             if (jcmProfileSharingDetails.getComments().length() > IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.getValue())
-                existingJcmProfileSharingDetails.setComments(Util.truncateField(jcmObj.getCandidate(), IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.getValue(), jcmProfileSharingDetails.getComments()));
+                jcmProfileSharingDetails.setComments(Util.truncateField(jcmObj.getCandidate(), IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.name(), IConstant.MAX_FIELD_LENGTHS.HIRING_MANAGER_COMMENTS.getValue(), jcmProfileSharingDetails.getComments()));
+
+            existingJcmProfileSharingDetails.setComments(jcmProfileSharingDetails.getComments());
             jcmHistoryMsg.append(", Comments: ").append(existingJcmProfileSharingDetails.getComments());
         }
         jcmProfileSharingDetailsRepository.save(existingJcmProfileSharingDetails);
