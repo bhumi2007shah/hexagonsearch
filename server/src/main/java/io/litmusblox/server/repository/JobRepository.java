@@ -91,4 +91,7 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     @Query(value = "select count(id) from job where status =:status and date_archived is null and created_by =:userId", nativeQuery = true)
     int countByStatusAndDateArchivedIsNullAndCreatedBy(String status, Long userId);
 
+    @Query(value = "select * from job where id in (select job_id from job_candidate_mapping where id in (select jcm_id from hiring_manager_workspace where share_profile_id in (select id from jcm_profile_sharing_details where receiver_id =:hiringManagerId)))", nativeQuery = true)
+    List<Job> getJobListForHiringManager(Long hiringManagerId);
+
 }

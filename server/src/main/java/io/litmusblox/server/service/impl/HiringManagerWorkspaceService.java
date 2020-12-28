@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -61,6 +62,9 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
 
     @Autowired
     JobService jobService;
+
+    @Resource
+    JobRepository jobRepository;
 
     /**
      *
@@ -175,5 +179,29 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
         jcmHistoryRepository.save(new JcmHistory(jcmObj, jcmHistoryMsg.toString(), new Date(), null, jcmObj.getStage(), true));
         log.info(jcmHistoryMsg.toString());
         log.info("Completed getHiringManagerInterest call in {} ms", System.currentTimeMillis() - startTime);
+    }
+
+    /**
+     * Api for retrieving a list of jobs who's at least one candidate shared with hiring manager
+     * @param hiringManagerId hiring manager id
+     * @return response bean with a list of jobs
+     * @throws Exception
+     */
+    @Transactional
+    public JobWorspaceResponseBean findAllJobsForShareProfileToHiringManager(Long hiringManagerId) {
+        log.info("Inside job list for hiring Manager for HMId: {}", hiringManagerId);
+        Long startTime = System.currentTimeMillis();
+        if(null == hiringManagerId)
+            throw new WebException("Candidate profile not shared with this hiring manager yet, hiring manager id : "+hiringManagerId, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        List<Job> jobListForHiringManager = jobRepository.getJobListForHiringManager(hiringManagerId);
+
+        JobWorspaceResponseBean responseBean = new JobWorspaceResponseBean();
+        if(null != jobListForHiringManager && jobListForHiringManager.size()>0){
+            responseBean.setListOfJobs(jobListForHiringManager);
+            responseBean.setLiveJobs(jobListForHiringManager.size());
+        }
+        log.info("Completed getJobListForHiringManager in {} ms", System.currentTimeMillis() - startTime);
+        return responseBean;
     }
 }

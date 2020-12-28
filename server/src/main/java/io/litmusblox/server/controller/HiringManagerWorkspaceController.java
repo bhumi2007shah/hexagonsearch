@@ -14,15 +14,11 @@ import io.litmusblox.server.service.SingleJobViewResponseBean;
 import io.litmusblox.server.service.impl.HiringManagerWorkspaceService;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -149,4 +145,27 @@ public class HiringManagerWorkspaceController {
     public void updateHiringManagerInterest(@RequestBody JcmProfileSharingDetails jcmProfileSharingDetails) throws Exception {
         hiringManagerWorkspaceService.getHiringManagerInterest(jcmProfileSharingDetails);
     }
+
+    /**
+     * Api for retrieving a list of jobs who's at least one candidate shared with hiring manager
+     * @param hiringManagerId hiring manager id
+     * @return response bean with a list of jobs
+     * @throws Exception
+     */
+    @GetMapping(value = "/listOfJobs")
+    String listAllJobsForShareProfileToHiringManager(@RequestParam("hiringManagerId") Long hiringManagerId) throws Exception {
+        return Util.stripExtraInfoFromResponseBean(
+                hiringManagerWorkspaceService.findAllJobsForShareProfileToHiringManager(hiringManagerId),
+                (new HashMap<String, List<String>>(){{
+                    put("User",Arrays.asList("id", "displayName"));
+                    put("CompanyAddress", Arrays.asList("address"));
+                    put("JobRole", Arrays.asList("role"));
+                }}),
+                (new HashMap<String, List<String>>(){{
+                    put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList","jobHiringTeamList","jobDetail", "expertise", "education", "noticePeriod", "function", "experienceRange", "userEnteredKeySkill", "updatedOn", "updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
+                }})
+        );
+    }
+
 }

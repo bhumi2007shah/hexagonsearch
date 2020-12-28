@@ -131,7 +131,7 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
 
         log.info("Completed processing login request in " + (System.currentTimeMillis() - startTime) +" ms.");
 
-        return new LoginResponseBean(userDetails.getId(), token, userDetails.getDisplayName(), userDetails.getCompany(),jobCandidateMappingRepository.getUploadedCandidateCount(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()), userDetails), userDetails.getRole());
+        return new LoginResponseBean(userDetails.getId(), token, userDetails.getDisplayName(), userDetails.getCompany(),jobCandidateMappingRepository.getUploadedCandidateCount(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()), userDetails), userDetails.getRole(), userDetails.getWorkspaceUuid());
     }
 
     @Override

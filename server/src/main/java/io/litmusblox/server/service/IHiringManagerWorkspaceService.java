@@ -49,4 +49,12 @@ public interface IHiringManagerWorkspaceService {
      */
     void getHiringManagerInterest(JcmProfileSharingDetails jcmProfileSharingDetails) throws Exception;
 
+    /**
+     * Api for retrieving a list of jobs who's at least one candidate shared with hiring manager
+     * @param hiringManagerId hiring manager id
+     * @return response bean with a list of jobs
+     * @throws Exception
+     */
+    JobWorspaceResponseBean findAllJobsForShareProfileToHiringManager(Long hiringManagerId);
+
 }

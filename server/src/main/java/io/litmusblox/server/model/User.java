@@ -121,6 +121,10 @@ public class User implements Serializable, UserDetails {
     @Column(name = "COMPANY_BU_ID")
     private Long companyBuId;
 
+    @Column(name="WORKSPACE_UUID")
+    @org.hibernate.annotations.Type(type = "pg-uuid")
+    private UUID workspaceUuid;
+
     @Transient
     @JsonProperty
     private String countryCode;
