@@ -146,14 +146,13 @@ public class HiringManagerWorkspaceController {
 
     /**
      * Api for retrieving a list of jobs who's at least one candidate shared with hiring manager
-     * @param hiringManagerId hiring manager id
      * @return response bean with a list of jobs
      * @throws Exception
      */
     @GetMapping(value = "/listOfJobs")
-    String listAllJobsForShareProfileToHiringManager(@RequestParam("hiringManagerId") Long hiringManagerId) throws Exception {
+    String listAllJobsForShareProfileToHiringManager() throws Exception {
         return Util.stripExtraInfoFromResponseBean(
-                hiringManagerWorkspaceService.findAllJobsForShareProfileToHiringManager(hiringManagerId),
+                hiringManagerWorkspaceService.findAllJobsForShareProfileToHiringManager(),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id", "displayName"));
                     put("CompanyAddress", Arrays.asList("address"));
