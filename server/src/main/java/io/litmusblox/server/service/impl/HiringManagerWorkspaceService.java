@@ -67,6 +67,9 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
     @Resource
     JcmAllDetailsRepository jcmAllDetailsRepository;
 
+    @Resource
+    CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
+
     /**
      * Service to fetch jcmList for stage and job id
      * @param stage stage for which details is required
@@ -103,6 +106,11 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
                 responseBean.getCandidateCountByStage().put(key, ((BigInteger) objArray[1]).intValue());
             else //stage exists in response bean, add the count of the other step to existing value
                 responseBean.getCandidateCountByStage().put(key,responseBean.getCandidateCountByStage().get(key)  + ((BigInteger) objArray[1]).intValue());
+        });
+
+        //set screeningQuestionResponse
+        allWorkspaceDetails.forEach(jcm->{
+            jcm.setScreeningQuestionResponses(candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcm.getId()));
         });
         //add count of rejected candidates
         responseBean.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(),  jobCandidateMappingRepository.findRejectedCandidateCountForHiringManager(loggedInUser.getId(), jobId));
