@@ -4,9 +4,8 @@
 
 package io.litmusblox.server.controller;
 
-import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.IJobCandidateMappingService;
-import io.litmusblox.server.service.LoginResponseBean;
+import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,5 +72,30 @@ public class HarvesterController {
                     put("CompanyAddress", new ArrayList<>(0));
                 }});
     }
+
+    /**
+     * API to add candidate by Harvester using candidate id and job id
+     *
+     * @param candidateId candidate id to upload candidate
+     * @param jobId the job for which the candidate is to be added
+     * @return the status of upload operation
+     * @throws Exception
+     */
+    @GetMapping("/addCandidate/{jobId}/{candidateId}")
+    @ResponseBody
+    @ResponseStatus(HttpStatus.OK)
+    String addCandidateByHarvester(@PathVariable Long candidateId, @PathVariable Long jobId) throws Exception {
+        log.info("Received request to add a candidate from harvester");
+        long startTime = System.currentTimeMillis();
+        UploadResponseBean responseBean = jobCandidateMappingService.uploadIndividualCandidateByHarvester(candidateId, jobId);
+        log.info("Completed adding candidate from harvester in " + (System.currentTimeMillis()-startTime) + "ms.");
+        return Util.stripExtraInfoFromResponseBean(responseBean, null,
+                new HashMap<String, List<String>>() {{
+                    put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
+                            "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
+                    put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
+                }});
+    }
+
 
 }

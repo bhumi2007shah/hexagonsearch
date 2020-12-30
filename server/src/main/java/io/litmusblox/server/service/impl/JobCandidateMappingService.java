@@ -19,12 +19,12 @@ import io.litmusblox.server.uploadProcessor.IUploadDataProcessService;
 import io.litmusblox.server.uploadProcessor.NaukriExcelFileProcessorService;
 import io.litmusblox.server.utils.*;
 import lombok.extern.log4j.Log4j2;
+import org.apache.poi.util.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -35,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 import static java.util.stream.Collectors.groupingBy;
 import javax.annotation.Resource;
 import java.io.File;
+import java.io.FileInputStream;
 import java.math.BigInteger;
 import java.text.ParseException;
 import java.time.LocalDate;
@@ -2398,5 +2399,46 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             log.error("Jcm record not found for candidateId : {}, companyId : {}",candidateId, companyId);
         log.info("Time taken to fetch candidate profile based on last updated jcm in : {}ms.", startTime-System.currentTimeMillis());
         return jcmFromDb;
+    }
+
+    @Override
+    public UploadResponseBean uploadIndividualCandidateByHarvester(Long candidateId, Long jobId) throws Exception {
+        log.info("Upload candidate for job : {} and candidateId : {}", jobId, candidateId);
+        long startTime = System.currentTimeMillis();
+
+        //LoggedIn user
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        //validate candidate
+        Candidate candidate = candidateRepository.findById(candidateId).orElse(null);
+        if(null == candidate)
+            throw new WebException("Candidate not found for candidateId : "+candidateId, HttpStatus.UNPROCESSABLE_ENTITY);
+        candidate.setEmail(candidateEmailHistoryRepository.findByCandidateIdOrderByIdDesc(candidateId).get(0).getEmail());
+        candidate.setMobile(candidateMobileHistoryRepository.findByCandidateIdOrderByIdDesc(candidateId).get(0).getMobile());
+        candidate.setCandidateSource(IConstant.CandidateSource.LBHarvester.name());
+        //validate job
+        Job jobFromDb = jobRepository.findById(jobId).orElse(null);
+        if(null == jobFromDb)
+            throw new WebException("Job not found for jobId : "+jobId, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        JobCandidateMapping lastUpdatedJcm = jobCandidateMappingRepository.getLastUpdatedJCMForCandidate(candidateId, loggedInUser.getCompany().getId());
+        if(null != lastUpdatedJcm){
+            candidate.setEmail(lastUpdatedJcm.getEmail());
+            candidate.setMobile(lastUpdatedJcm.getMobile());
+            candidate.setFirstName(lastUpdatedJcm.getCandidateFirstName());
+            candidate.setLastName(lastUpdatedJcm.getCandidateLastName());
+        }
+        StringBuffer cvLocation = new StringBuffer();
+        MultipartFile candidateCv = null;
+        if(null != lastUpdatedJcm && null != lastUpdatedJcm.getCvFileType()){
+            cvLocation.append(environment.getProperty(IConstant.REPO_LOCATION)).append(IConstant.CANDIDATE_CV).append(File.separator).append(lastUpdatedJcm.getJob().getId()).append(File.separator).append(lastUpdatedJcm.getCandidate().getId()).append(lastUpdatedJcm.getCvFileType());
+            File file = new File(cvLocation.toString());
+            FileInputStream input = new FileInputStream(file);
+            candidateCv = new MockMultipartFile("file",file.getName(), "text/plain", IOUtils.toByteArray(input));
+        }
+        //upload candidate
+        UploadResponseBean responseBean = uploadCandidateFromPlugin(candidate, jobId, candidateCv,  Optional.of(loggedInUser));
+        log.info("Time taken to upload candidate by harvester in : {}ms.", startTime-System.currentTimeMillis());
+        return responseBean;
     }
 }

@@ -282,4 +282,15 @@ public interface IJobCandidateMappingService {
      * @return JobCandidateMapping - last updated JCM details
      */
     JobCandidateMapping getCandidateProfileForHarvester(Long candidateId, Long companyId);
+
+    /**
+     * Service method to add candidate by Harvester using candidate id and job id
+     *
+     * @param candidateId candidate id to upload candidate
+     * @param jobId the job for which the candidate is to be added
+     * @return the status of upload operation
+     * @throws Exception
+     */
+    UploadResponseBean uploadIndividualCandidateByHarvester(Long candidateId, Long jobId) throws Exception;
+
 }
