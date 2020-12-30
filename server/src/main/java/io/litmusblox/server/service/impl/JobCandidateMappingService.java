@@ -919,13 +919,20 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         }else {
             objFromDb.setCandidateHistoryForHiringManager(jcmHistoryRepository.findByJcmIdAndCallLogOutComeIgnoreCase(objFromDb, "For Hiring Manager"));
         }
+
+        objFromDb = setJcmForCandidateProfile(objFromDb);
+
+        return objFromDb;
+    }
+
+    private JobCandidateMapping setJcmForCandidateProfile(JobCandidateMapping objFromDb){
         List<JobScreeningQuestions> screeningQuestions = jobScreeningQuestionsRepository.findByJobId(objFromDb.getJob().getId());
         Map<Long, JobScreeningQuestions> screeningQuestionsMap = new LinkedHashMap<>(screeningQuestions.size());
         screeningQuestions.forEach(screeningQuestion-> {
             screeningQuestionsMap.put(screeningQuestion.getId(), screeningQuestion);
         });
 
-        List<CandidateScreeningQuestionResponse> responses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jobCandidateMappingId);
+        List<CandidateScreeningQuestionResponse> responses = candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(objFromDb.getId());
 
         responses.forEach(candidateResponse -> {
             screeningQuestionsMap.get(candidateResponse.getJobScreeningQuestionId()).getCandidateResponse().add(candidateResponse.getResponse());
@@ -2372,5 +2379,24 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 jobCandidateMappingRepository.save(jobCandidateMapping);
         });
         log.info("Time taken to creating existing candidate on searchengine in : {}ms.", apiCallStartTime-System.currentTimeMillis());
+    }
+
+    /**
+     * Service method to get candidate last updated info
+     * @param candidateId candidate id for we want data
+     * @param companyId candidate related to which company
+     * @return JobCandidateMapping - last updated JCM details
+     */
+    @Transactional
+    public JobCandidateMapping getCandidateProfileForHarvester(Long candidateId, Long companyId) {
+        long startTime = System.currentTimeMillis();
+        log.info("Get candidate profile based on last updated jcm for candidateId : {}, companyId : {}", candidateId, companyId);
+        JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.getLastUpdatedJCMForCandidate(candidateId, companyId);
+        if(null != jcmFromDb)
+            jcmFromDb = setJcmForCandidateProfile(jcmFromDb);
+        else
+            log.error("Jcm record not found for candidateId : {}, companyId : {}",candidateId, companyId);
+        log.info("Time taken to fetch candidate profile based on last updated jcm in : {}ms.", startTime-System.currentTimeMillis());
+        return jcmFromDb;
     }
 }

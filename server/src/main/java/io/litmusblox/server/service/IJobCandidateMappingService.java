@@ -275,5 +275,11 @@ public interface IJobCandidateMappingService {
 
     void createExistingCandidateOnSearchEngine();
 
-
+    /**
+     * Service method to get candidate last updated info
+     * @param candidateId candidate id for we want data
+     * @param companyId candidate related to which company
+     * @return JobCandidateMapping - last updated JCM details
+     */
+    JobCandidateMapping getCandidateProfileForHarvester(Long candidateId, Long companyId);
 }

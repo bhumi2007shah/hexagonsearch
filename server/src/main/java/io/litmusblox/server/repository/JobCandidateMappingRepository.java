@@ -143,4 +143,8 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Query(value = "select * from job_candidate_mapping where IS_CREATED_ON_SEARCHENGINE='f' order by ID asc limit 100", nativeQuery = true)
         List<JobCandidateMapping> findJcmNotInSearchEngine();
 
+    @Transactional
+    @Query(value = "select * from job_candidate_mapping where id = (select id from (select id,unnest(array[created_on, updated_on]) from job_candidate_mapping where candidate_id =:candidateId and job_id in (select id from job where company_id =:companyId)) as jcm_dates where jcm_dates.unnest < current_date + interval '1' day  order by jcm_dates.unnest desc limit 1)", nativeQuery = true)
+    JobCandidateMapping getLastUpdatedJCMForCandidate(Long candidateId, Long companyId);
+
 }
