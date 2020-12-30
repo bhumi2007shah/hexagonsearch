@@ -382,8 +382,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 handleErrorRecords(uploadResponseBean.getFailedCandidates(), null, IConstant.ASYNC_OPERATIONS.FileUpload.name(), loggedInUser, jobId, originalFileName);
             }
         } catch (WebException webException) {
+            log.error("Error while upload candidate for fileName : {}, jobId : {}, loggedInUser : {}, errorMessage : {}", originalFileName, jobId, loggedInUser.getId(), webException.getErrorMessage());
             asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(jobId, null, null, null, null, webException.getErrorMessage(), IConstant.ASYNC_OPERATIONS.FileUpload.name(), loggedInUser, new Date(), originalFileName));
         } catch (ValidationException validationException) {
+            log.error("Error while upload candidate for fileName : {}, jobId : {}, loggedInUser : {}, errorMessage : {}", originalFileName, jobId, loggedInUser.getId(), validationException.getErrorMessage());
             asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(jobId, null, null, null, null, validationException.getErrorMessage(), IConstant.ASYNC_OPERATIONS.FileUpload.name(), loggedInUser, new Date(), originalFileName));
         }
         log.info("Thread - {} : Completed processing uploadCandidatesFromFile in JobCandidateMappingService in {}ms", Thread.currentThread().getName(), System.currentTimeMillis()- startTime);
@@ -808,6 +810,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 jcmListWithoutError.add(jobCandidateMapping.getId());
             }
         } catch(ValidationException validationException){
+            log.error("Error while invite candidates loggedInUser : {}, errorMessage : {}", loggedInUser.getId(), validationException.getErrorMessage());
             asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(null, null, null, null, null, validationException.getErrorMessage(), IConstant.ASYNC_OPERATIONS.InviteCandidates.name(), loggedInUser, new Date(), null));
         }
 
@@ -2243,6 +2246,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if(null != failedCandidates && failedCandidates.size() > 0) {
             recordsToSave = new ArrayList<>(failedCandidates.size());
             for(Candidate candidate: failedCandidates) {
+                log.error("Error while upload candidate for candidateEmail : {} fileName : {}, jobId : {}, loggedInUser : {}, errorMessage : {}",candidate.getEmail(), fileName, jobId, loggedInUser.getId(), candidate.getUploadErrorMessage());
                 recordsToSave.add(new AsyncOperationsErrorRecords(jobId, candidate.getFirstName(), candidate.getLastName(), candidate.getEmail(), candidate.getMobile(), candidate.getUploadErrorMessage(), asyncOperation, loggedInUser, new Date(), fileName));
             };
         }
@@ -2250,6 +2254,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         else if (null != failedJcm && failedJcm.size() > 0) {
             recordsToSave = new ArrayList<>(failedJcm.size());
             for(JobCandidateMapping jcm : failedJcm) {
+                log.error("Error while invite candidate for jcmId : {} fileName : {}, jobId : {}, loggedInUser : {}, errorMessage : {}", jcm.getId(),fileName, jobId, loggedInUser.getId(), jcm.getInviteErrorMessage());
                 recordsToSave.add(new AsyncOperationsErrorRecords(jobId, jcm, jcm.getInviteErrorMessage(), asyncOperation, loggedInUser, new Date()));
             }
         }

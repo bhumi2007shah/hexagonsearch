@@ -167,6 +167,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             RestClientResponseBean restResponseBean = callCvParsingApi(queryString, jobIdFromFileName);
             statusCode.set(restResponseBean.getStatusCode());
             if(HttpStatus.OK.value() != statusCode.get()){
+                log.error("Error while process cv by python API for jobId : {}, loggedInUser : {}, FileName : {}",jobIdFromFileName, user.getId(), fileName);
                 asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(jobIdFromFileName, null, null, null, null, pythonResponse.get(), IConstant.ASYNC_OPERATIONS.DragDrop.name(), user, new Date(), fileName));
                 moveFile(jobIdFromFileName, user, filePath, "");
                 log.info("cv parsing failed for job id {}, response from cv parser is {}",jobIdFromFileName,restResponseBean.getResponseBody());

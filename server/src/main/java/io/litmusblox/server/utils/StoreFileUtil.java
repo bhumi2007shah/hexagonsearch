@@ -12,7 +12,6 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -109,7 +108,7 @@ public class StoreFileUtil {
         }
     }
 
-    private static String getFileName(String fileName, long id, String repoLocation, String uploadType, Long candidateId, Boolean isZipFile) throws Exception {
+    public static String getFileName(String fileName, long id, String repoLocation, String uploadType, Long candidateId, Boolean isZipFile) throws Exception {
 
         try {
             StringBuffer filePath=new StringBuffer();
