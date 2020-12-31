@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.litmusblox.server.model.CandidateScreeningQuestionResponse;
 import io.litmusblox.server.model.InterviewDetails;
+import io.litmusblox.server.model.JcmHistory;
 import io.litmusblox.server.model.JcmProfileSharingDetails;
 import lombok.Data;
 import org.hibernate.annotations.Type;
@@ -62,6 +63,7 @@ public class JCMAllDetails {
     String updatedBy;
     String rejectionReason;
     String candidateQuickQuestionResponse;
+    Long shareProfileId;
 
 
     @Transient
@@ -82,6 +84,9 @@ public class JCMAllDetails {
 
     @Transient
     List<CandidateScreeningQuestionResponse> screeningQuestionResponses;
+
+    @Transient
+    List<JcmHistory> jcmHistories;
 
     public InterviewDetails getCurrentInterviewDetail(){
         if(this.getInterviewDetails().size()>0)

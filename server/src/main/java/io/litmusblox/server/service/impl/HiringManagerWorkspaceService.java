@@ -108,10 +108,13 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
                 responseBean.getCandidateCountByStage().put(key,responseBean.getCandidateCountByStage().get(key)  + ((BigInteger) objArray[1]).intValue());
         });
 
-        //set screeningQuestionResponse
         allWorkspaceDetails.forEach(jcm->{
+            //set screeningQuestionResponse
             jcm.setScreeningQuestionResponses(candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcm.getId()));
+            //Jcm history for related jcm
+            jcm.setJcmHistories(jcmHistoryRepository.findByJcmId(JobCandidateMapping.builder().id(jcm.getId()).build()));
         });
+
         //add count of rejected candidates
         responseBean.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(),  jobCandidateMappingRepository.findRejectedCandidateCountForHiringManager(loggedInUser.getId(), jobId));
 

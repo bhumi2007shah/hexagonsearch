@@ -146,7 +146,8 @@ job_candidate_mapping.candidate_quick_question_response,
 (CONCAT('CandidateCv/',job_candidate_mapping.job_id, '/', job_candidate_mapping.candidate_id, job_candidate_mapping.cv_file_type))
 else null
 END) as cv_location,
-job_candidate_mapping.cv_file_type as cv_file_type
+job_candidate_mapping.cv_file_type as cv_file_type,
+0 as share_profile_id
 from users,job_candidate_mapping
 left join candidate_details on candidate_details.candidate_id = job_candidate_mapping.candidate_id
 left join
@@ -178,7 +179,8 @@ candidateCompany.designation, candidateCompany.notice_period, candidate_details.
 else null
 END) as cv_location,
 job_candidate_mapping.cv_file_type as cv_file_type,
-job_candidate_mapping.candidate_quick_question_response
+job_candidate_mapping.candidate_quick_question_response,
+hiring_manager_workspace.share_profile_id
 from users,job_candidate_mapping
 inner join hiring_manager_workspace on job_candidate_mapping.id = hiring_manager_workspace.jcm_id
 inner join job on job_candidate_mapping.job_id = job.id
