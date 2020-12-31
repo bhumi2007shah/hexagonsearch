@@ -212,7 +212,7 @@ public class CustomQueryExecutor {
 
     private static final String totalLiveJobCountSelectQuery = "select count(id) from job where date_published is not null and date_archived is null";
 
-    private static final String futureInterviewDetailsForCompanyQuery = "select distinct on (jcm.id) ivd.id, job.id as job_id, job.job_title, concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidate_name, jcm.email, jcm.country_code, jcm.mobile, jcm.chatbot_status as screening_status, jcm.created_by as jcm_created_by, cv.overall_rating as key_skill_strength, ivd.interview_date, \n" +
+    private static final String futureInterviewDetailsForCompanyQuery = "select distinct on (jcm.id) ivd.id, job.id as job_id, job.job_title, concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidate_name, jcm.email, jcm.country_code, jcm.mobile, jcm.chatbot_status as screening_status, jcm.created_by as jcm_created_by, jcm.overall_rating as key_skill_strength, ivd.interview_date, \n" +
             "(CASE when ivd.cancelled = 't' then 'Cancelled' \n" +
             "when (ivd.candidate_confirmation_value is not null and md.value like '%reschedule%') then 'Rescheduled' \n" +
             "when (ivd.show_no_show is true) then 'Show' \n" +
@@ -221,7 +221,6 @@ public class CustomQueryExecutor {
             "md.value as candidate_confirmation, array(select id from interviewer_details where interview_id=ivd.id) as interviewers, ivd.created_by as iv_created_by from interview_details ivd \n" +
             "inner join job_candidate_mapping jcm on ivd.job_candidate_mapping_id=jcm.id \n" +
             "left join master_data md on ivd.candidate_confirmation_value=md.id \n" +
-            "left join cv_rating cv on ivd.job_candidate_mapping_id=cv.job_candidate_mapping_id \n" +
             "left join job on jcm.job_id=job.id \n" +
             "where ivd.interview_date>=current_date and job.date_archived is null";
 
