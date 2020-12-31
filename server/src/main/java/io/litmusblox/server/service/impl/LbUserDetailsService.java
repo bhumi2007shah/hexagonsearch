@@ -325,6 +325,7 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
             u.setCreatedBy(userFromDb.getCreatedBy());
             u.setCreatedOn(userFromDb.getCreatedOn());
             u.setUserUuid(userFromDb.getUserUuid());
+            u.setWorkspaceUuid(userFromDb.getWorkspaceUuid());
             if(!userFromDb.getEmail().equals(user.getEmail().toLowerCase()) && !IConstant.UserType.BUSINESS.getValue().equals(userFromDb.getUserType()) && !IConstant.UserStatus.New.name().equals(userFromDb.getStatus())){
                 log.info("Reset password because update email, Old email : {}, new email : {}",userFromDb.getEmail(), user.getEmail().toLowerCase());
                 u.setStatus(IConstant.UserStatus.Inactive.name());
@@ -336,6 +337,7 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
             log.info("Update User : {}", user.getId());
         }else{
             u.setUserUuid(UUID.randomUUID());
+            u.setWorkspaceUuid(UUID.randomUUID());
             if(user.getCreatedBy() == null)
                 u.setCreatedBy(loggedInUser.getId());
             else
