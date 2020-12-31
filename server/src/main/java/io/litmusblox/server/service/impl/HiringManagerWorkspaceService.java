@@ -113,6 +113,8 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
             jcm.setScreeningQuestionResponses(candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcm.getId()));
             //Jcm history for related jcm
             jcm.setJcmHistories(jcmHistoryRepository.findByJcmId(JobCandidateMapping.builder().id(jcm.getId()).build()));
+            //Set share profile id
+            jcm.setShareProfileId(hiringManagerWorkspaceRepository.findByJcmIdAndUserId(jcm.getId(), loggedInUser.getId()).getShareProfileId());
         });
 
         //add count of rejected candidates

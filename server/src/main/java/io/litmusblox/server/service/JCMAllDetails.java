@@ -63,8 +63,6 @@ public class JCMAllDetails {
     String updatedBy;
     String rejectionReason;
     String candidateQuickQuestionResponse;
-    Long shareProfileId;
-
 
     @Transient
     @JsonProperty
@@ -84,6 +82,9 @@ public class JCMAllDetails {
 
     @Transient
     List<CandidateScreeningQuestionResponse> screeningQuestionResponses;
+
+    @Transient
+    Long shareProfileId;
 
     @Transient
     List<JcmHistory> jcmHistories;
