@@ -119,7 +119,7 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
         responseBean.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(),  jobCandidateMappingRepository.findRejectedCandidateCountForHiringManager(loggedInUser.getId(), jobId));
 
         log.info("Completed fetching all details in {} ms", System.currentTimeMillis() - startTime);
-        return responseBean ;
+        return responseBean;
     }
 
     /**

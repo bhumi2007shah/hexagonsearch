@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vladmihalcea.hibernate.type.array.StringArrayType;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -38,6 +39,7 @@ import java.util.*;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonFilter("JobCandidateMapping")
 @Builder
+@AllArgsConstructor
 @TypeDefs({@TypeDef(name = "string-array",typeClass = StringArrayType.class), @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)})
 public class JobCandidateMapping implements Serializable {
 
