@@ -76,8 +76,9 @@ public class ProcessOtpService implements IProcessOtpService {
     public String sendOtp(boolean sendEmailOtp, String mobileNumber, String countryCode, String email, String recepientName, String companyShortName, UUID uuid) throws Exception {
         log.info("Received request to Send OTP for {} mobile: {} email: {} ", recepientName, mobileNumber, email);
         long startTime = System.currentTimeMillis();
-        if(sendEmailOtp && (null == uuid || uuid.toString().trim().length() == 0))
-            throw new ValidationException(IErrorMessages.UUID_NOT_FOUND, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        if(sendEmailOtp && (null == uuid || uuid.toString().trim().length() == 0) && (null == email || email.trim().length() == 0))
+            throw new ValidationException("Email address or UUID is required for sending OTP via email", HttpStatus.UNPROCESSABLE_ENTITY);
 
         if(null != uuid) {
             User user = null;
@@ -88,9 +89,6 @@ public class ProcessOtpService implements IProcessOtpService {
             recepientName = user.getDisplayName();
             companyShortName = user.getCompany().getShortName();
         }
-
-        if(sendEmailOtp && (null == email || email.trim().length() == 0))
-            throw new ValidationException("Email address is required for Employee Referral OTP", HttpStatus.UNPROCESSABLE_ENTITY);
 
         if(!sendEmailOtp && (null == mobileNumber || mobileNumber.trim().length() == 0))
             throw new ValidationException("Mobile number is required to send OTP", HttpStatus.UNPROCESSABLE_ENTITY);
