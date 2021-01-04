@@ -159,7 +159,7 @@ public class JobCandidateMapping implements Serializable {
     private String candidateRejectionValue;
 
     @Column(name = "EXPECTED_CTC")
-    private Long expectedCtc;
+    private Double expectedCtc;
 
     @Column(name = "PERCENTAGE_HIKE")
     private Long percentageHike;

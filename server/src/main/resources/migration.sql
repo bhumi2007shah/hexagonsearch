@@ -3068,3 +3068,5 @@ insert into ATTRIBUTES_MASTER_DATA(JOB_ATTRIBUTE, FUNCTION) values
 drop table cv_rating_skill_keyword_details;
 drop table cv_parsing_api_details;
 drop table cv_rating;
+
+ALTER TABLE JOB_CANDIDATE_MAPPING ALTER COLUMN EXPECTED_CTC TYPE DOUBLE PRECISION;

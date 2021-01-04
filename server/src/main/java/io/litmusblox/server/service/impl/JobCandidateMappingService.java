@@ -2326,7 +2326,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     else if (masterData.getValue().equals("Location"))
                         candidateDetails.setLocation(response);
                     else if (masterData.getValue().equals("Expected Salary"))
-                        jobCandidateMapping.setExpectedCtc(Long.parseLong(response));
+                        jobCandidateMapping.setExpectedCtc(Double.parseDouble(response));
                     else if (masterData.getValue().equals("Education")) {
                         //Find candidate education detail by degree as well. This code will not handle multiple degrees
                         CandidateEducationDetails candidateEducationDetails = candidateEducationDetailsRepository.findByCandidateIdAndDegree(jobCandidateMapping.getCandidate().getId(), response);
