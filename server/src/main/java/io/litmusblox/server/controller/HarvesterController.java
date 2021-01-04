@@ -76,18 +76,18 @@ public class HarvesterController {
     /**
      * API to add candidate by Harvester using candidate id and job id
      *
-     * @param candidateId candidate id to upload candidate
+     * @param candidateIdList candidate id to upload candidates
      * @param jobId the job for which the candidate is to be added
      * @return the status of upload operation
      * @throws Exception
      */
-    @GetMapping("/addCandidate/{jobId}/{candidateId}")
+    @PostMapping("/addCandidate/{jobId}")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    String addCandidateByHarvester(@PathVariable Long candidateId, @PathVariable Long jobId) throws Exception {
+    String addCandidateByHarvester(@RequestBody List<Long> candidateIdList, @PathVariable Long jobId) throws Exception {
         log.info("Received request to add a candidate from harvester");
         long startTime = System.currentTimeMillis();
-        UploadResponseBean responseBean = jobCandidateMappingService.uploadIndividualCandidateByHarvester(candidateId, jobId);
+        List<UploadResponseBean> responseBean = jobCandidateMappingService.uploadIndividualCandidateByHarvester(candidateIdList, jobId);
         log.info("Completed adding candidate from harvester in " + (System.currentTimeMillis()-startTime) + "ms.");
         return Util.stripExtraInfoFromResponseBean(responseBean, null,
                 new HashMap<String, List<String>>() {{

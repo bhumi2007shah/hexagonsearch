@@ -286,11 +286,11 @@ public interface IJobCandidateMappingService {
     /**
      * Service method to add candidate by Harvester using candidate id and job id
      *
-     * @param candidateId candidate id to upload candidate
+     * @param candidateIdList candidate id to upload candidates
      * @param jobId the job for which the candidate is to be added
      * @return the status of upload operation
      * @throws Exception
      */
-    UploadResponseBean uploadIndividualCandidateByHarvester(Long candidateId, Long jobId) throws Exception;
+    List<UploadResponseBean> uploadIndividualCandidateByHarvester(List<Long> candidateIdList, Long jobId) throws Exception;
 
 }
