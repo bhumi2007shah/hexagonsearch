@@ -267,6 +267,7 @@ public class CandidateService implements ICandidateService {
         candidateEducationDetailsRepository.deleteByCandidateId(candidate.getId());
         //insert new ones
         candidateEducationDetails.forEach(obj -> {
+
             //check if institute name is more than 75 characters
             if (!Util.isNull(obj.getInstituteName()) && obj.getInstituteName().length() > IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue()){
                 obj.setInstituteName(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.name(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue(), obj.getInstituteName()));
@@ -290,8 +291,8 @@ public class CandidateService implements ICandidateService {
                 obj.setYearOfPassing(Util.truncateField(candidate, IConstant.YEAR_OF_PASSING,IConstant.MAX_FIELD_LENGTHS.YEAR_OF_PASSING.getValue(), obj.getYearOfPassing()));
             }
 
-            obj.setCandidateId(candidate.getId());
-            candidateEducationDetailsRepository.save(obj);});
+            CandidateEducationDetails newCandidateEducationDetails = new CandidateEducationDetails(obj.getCandidateId(), obj.getDegree(), obj.getYearOfPassing(), obj.getInstituteName(), obj.getSpecialization());
+            candidateEducationDetailsRepository.save(newCandidateEducationDetails);});
     }
 
     @Transactional
@@ -308,7 +309,9 @@ public class CandidateService implements ICandidateService {
             if(!Util.isNull(obj.getCompanyName()) && obj.getCompanyName().length() > IConstant.MAX_FIELD_LENGTHS.ROLE.getValue()) {
                 obj.setRole(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.ROLE.name(), IConstant.MAX_FIELD_LENGTHS.ROLE.getValue(), obj.getCompanyName()));
             }
-            obj.setCandidateId(candidate.getId());candidateProjectDetailsRepository.save(obj);});
+            obj.setCandidateId(candidate.getId());
+            CandidateProjectDetails newCandidateProjectDetails = new CandidateProjectDetails(obj);
+            candidateProjectDetailsRepository.save(newCandidateProjectDetails);});
     }
 
     @Transactional
@@ -326,7 +329,9 @@ public class CandidateService implements ICandidateService {
             if(!Util.isNull(obj.getUrl()) && obj.getUrl().length() > IConstant.MAX_FIELD_LENGTHS.ONLINE_PROFILE_URL.getValue()) {
                 obj.setUrl(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.ONLINE_PROFILE_URL.name(), IConstant.MAX_FIELD_LENGTHS.ONLINE_PROFILE_URL.getValue(), obj.getUrl()));
             }
-            obj.setCandidateId(candidate.getId());candidateOnlineProfilesRepository.save(obj);});
+            obj.setCandidateId(candidate.getId());
+            CandidateOnlineProfile newCandidateOnlineProfile = new CandidateOnlineProfile(obj.getCandidateId(), obj.getProfileType(), obj.getUrl());
+            candidateOnlineProfilesRepository.save(newCandidateOnlineProfile);});
     }
 
     @Transactional
@@ -336,7 +341,10 @@ public class CandidateService implements ICandidateService {
         //delete existing records
         candidateLanguageProficiencyRepository.deleteByCandidateId(candidateId);
         //insert new ones
-        candidateLanguageProficiencies.forEach(obj -> {obj.setCandidateId(candidateId);candidateLanguageProficiencyRepository.save(obj);});
+        candidateLanguageProficiencies.forEach(obj -> {
+            obj.setCandidateId(candidateId);
+            CandidateLanguageProficiency newCandidateLanguageProficiency = new CandidateLanguageProficiency(obj.getCandidateId(), obj.getLanguage(), obj.getProficiency());
+            candidateLanguageProficiencyRepository.save(newCandidateLanguageProficiency);});
     }
 
     @Transactional
@@ -360,8 +368,8 @@ public class CandidateService implements ICandidateService {
                 obj.setSkill(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL.name(), IConstant.MAX_FIELD_LENGTHS.SKILL.getValue(), obj.getSkill()));
             }
             obj.setCandidateId(candidate.getId());
-            candidateSkillDetailsRepository.save(obj);});
-
+            CandidateSkillDetails newCandidateSkillDetails = new CandidateSkillDetails(obj.getCandidateId(), obj.getSkill(), obj.getLastUsed(), obj.getExpInMonths(), obj.getVersion());
+            candidateSkillDetailsRepository.save(newCandidateSkillDetails);});
     }
 
     @Transactional
@@ -382,7 +390,8 @@ public class CandidateService implements ICandidateService {
             if (!Util.isNull(obj.getDesignation()) && obj.getDesignation().length() > IConstant.MAX_FIELD_LENGTHS.DESIGNATION.getValue()) {
                 obj.setDesignation(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.DESIGNATION.name(), IConstant.MAX_FIELD_LENGTHS.DESIGNATION.getValue(), obj.getDesignation()));
             }
-            candidateCompanyDetailsRepository.save(obj);});
+            CandidateCompanyDetails newCandidateCompanyDetails = new CandidateCompanyDetails(obj);
+            candidateCompanyDetailsRepository.save(newCandidateCompanyDetails);});
     }
 
     /**

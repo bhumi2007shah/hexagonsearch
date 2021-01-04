@@ -89,7 +89,9 @@ public class HarvesterController {
         long startTime = System.currentTimeMillis();
         List<UploadResponseBean> responseBean = jobCandidateMappingService.uploadIndividualCandidateByHarvester(candidateIdList, jobId);
         log.info("Completed adding candidate from harvester in " + (System.currentTimeMillis()-startTime) + "ms.");
-        return Util.stripExtraInfoFromResponseBean(responseBean, null,
+        return Util.stripExtraInfoFromResponseBean(responseBean, new HashMap<String, List<String>>() {{
+                    put("User", Arrays.asList("displayName"));
+                }},
                 new HashMap<String, List<String>>() {{
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));

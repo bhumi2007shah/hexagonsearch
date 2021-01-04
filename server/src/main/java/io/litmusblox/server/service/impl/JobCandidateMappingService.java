@@ -511,7 +511,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                    jcm.setCvFileType("."+Util.getFileExtension(candidateCv.getOriginalFilename()));
                    jobCandidateMappingRepository.save(jcm);
                }
-                cvParsingDetailsRepository.save(new CvParsingDetails(null!=candidateCv?candidateCv.getOriginalFilename():null, new Date(), candidate.getCandidateDetails().getTextCv(), responseBean.getSuccessfulCandidates().get(0).getId(),jcm));
+                cvParsingDetailsRepository.save(new CvParsingDetails(null!=candidateCv?candidateCv.getOriginalFilename():null, new Date(), null != candidate.getCandidateDetails()?candidate.getCandidateDetails().getTextCv():null, responseBean.getSuccessfulCandidates().get(0).getId(),jcm));
             }
         }
         else {//null candidate object
@@ -2422,27 +2422,34 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         //LoggedIn user
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
+        //validate job
+        Job jobFromDb = jobRepository.findById(jobId).orElse(null);
+        if(null == jobFromDb)
+            throw new WebException("Job not found for jobId : "+jobId, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        //Validate loggedIn user and job
+        validateLoggedInUser(loggedInUser, jobFromDb);
+
         List<UploadResponseBean> responseBeanList = new ArrayList<>();
         candidateIdList.forEach(candidateId->{
             //validate candidate
             Candidate candidate = candidateRepository.findById(candidateId).orElse(null);
             if(null == candidate)
                 throw new WebException("Candidate not found for candidateId : "+candidateId, HttpStatus.UNPROCESSABLE_ENTITY);
-            candidate.setEmail(candidateEmailHistoryRepository.findByCandidateIdOrderByIdDesc(candidateId).get(0).getEmail());
-            candidate.setMobile(candidateMobileHistoryRepository.findByCandidateIdOrderByIdDesc(candidateId).get(0).getMobile());
-            candidate.setCandidateSource(IConstant.CandidateSource.LBHarvester.name());
-            //validate job
-            Job jobFromDb = jobRepository.findById(jobId).orElse(null);
-            if(null == jobFromDb)
-                throw new WebException("Job not found for jobId : "+jobId, HttpStatus.UNPROCESSABLE_ENTITY);
+          candidate.setCandidateSource(IConstant.CandidateSource.LBHarvester.name());
 
             JobCandidateMapping lastUpdatedJcm = jobCandidateMappingRepository.getLastUpdatedJCMForCandidate(candidateId, loggedInUser.getCompany().getId());
-            if(null != lastUpdatedJcm){
-                candidate.setEmail(lastUpdatedJcm.getEmail());
-                candidate.setMobile(lastUpdatedJcm.getMobile());
-                candidate.setFirstName(lastUpdatedJcm.getCandidateFirstName());
-                candidate.setLastName(lastUpdatedJcm.getCandidateLastName());
+
+            //Validate
+            if(null == lastUpdatedJcm){
+                log.info("Candidate : {} not found for company : {}",candidateId, loggedInUser.getCompany().getId());
+                throw new WebException("Candidate : "+candidateId+" not found for company : "+loggedInUser.getCompany().getId(), HttpStatus.UNPROCESSABLE_ENTITY);
             }
+
+            candidate.setEmail(lastUpdatedJcm.getEmail());
+            candidate.setMobile(lastUpdatedJcm.getMobile());
+            candidate.setFirstName(lastUpdatedJcm.getCandidateFirstName());
+            candidate.setLastName(lastUpdatedJcm.getCandidateLastName());
             StringBuffer cvLocation = new StringBuffer();
             MultipartFile candidateCv = null;
             if(null != lastUpdatedJcm && null != lastUpdatedJcm.getCvFileType()){
@@ -2457,12 +2464,16 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 }
             }
             //upload candidate
+            UploadResponseBean responseBean = null;
             try {
-                UploadResponseBean responseBean = uploadCandidateFromPlugin(candidate, jobId, candidateCv,  Optional.of(loggedInUser));
-                responseBeanList.add(responseBean);
+                responseBean = uploadCandidateFromPlugin(candidate, jobId, candidateCv,  Optional.of(loggedInUser));
             } catch (Exception e) {
                 log.error(Util.getStackTrace(e));
+                if(null == responseBean)
+                    responseBean = new UploadResponseBean();
+                responseBean.setErrorMessage(e.getMessage());
             }
+            responseBeanList.add(responseBean);
         });
         log.info("Time taken to upload candidates by harvester in : {}ms.", startTime-System.currentTimeMillis());
         return responseBeanList;
