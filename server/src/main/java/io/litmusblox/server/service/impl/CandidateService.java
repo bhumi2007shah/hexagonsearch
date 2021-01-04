@@ -485,11 +485,10 @@ public class CandidateService implements ICandidateService {
         // Creating and setting noticePeriod from CandidateDetails after parsing it to int as data type
         // is String and search engine need an int value
         if(null != candidate.getCandidateCompanyDetails() && candidate.getCandidateCompanyDetails().size()>0 &&  (null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriod() || null!= candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb())){
-            candidateRequestBean.setNoticePeriod(
-                    null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()?
-                            Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()):
-                            Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb().getValue().replaceAll("\\D+",""))
-            );
+            if(Util.isNotNull(candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()))
+                candidateRequestBean.setNoticePeriod(Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()));
+            else if(!"Others".equals(candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb().getValue()) && null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb())
+                candidateRequestBean.setNoticePeriod(Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb().getValue().replaceAll("\\D+","")));
         }
 
         // extracting value of experience range from job in which candidate is sourced
