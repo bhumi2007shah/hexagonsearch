@@ -291,7 +291,7 @@ public class CandidateService implements ICandidateService {
                 obj.setYearOfPassing(Util.truncateField(candidate, IConstant.YEAR_OF_PASSING,IConstant.MAX_FIELD_LENGTHS.YEAR_OF_PASSING.getValue(), obj.getYearOfPassing()));
             }
 
-            CandidateEducationDetails newCandidateEducationDetails = new CandidateEducationDetails(obj.getCandidateId(), obj.getDegree(), obj.getYearOfPassing(), obj.getInstituteName(), obj.getSpecialization());
+            CandidateEducationDetails newCandidateEducationDetails = new CandidateEducationDetails(candidate.getId(), obj.getDegree(), obj.getYearOfPassing(), obj.getInstituteName(), obj.getSpecialization());
             candidateEducationDetailsRepository.save(newCandidateEducationDetails);});
     }
 
