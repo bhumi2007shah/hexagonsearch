@@ -178,25 +178,20 @@ public class FetchEmailService {
 
         if(IConstant.UPLOAD_STATUS.Success.name().equals(candidateUploadStatus)){
             filePath = StoreFileUtil.getFileName(mailData.getFileName(), mailData.getJobFromReference().getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.CANDIDATE_CV,  mailData.getCandidateFromMail().getId(), isZipFile);
-            MultipartFile multipartFile = Util.convertInputStreamToMultipartFile(mailData.getFileStream(), filePath);
+            log.info("");
+            MultipartFile multipartFile = Util.convertInputStreamToMultipartFile(mailData.getFileStream(), environment.getProperty(IConstant.REPO_LOCATION)+"/"+filePath);
             filePath = StoreFileUtil.storeFile(multipartFile, mailData.getJobFromReference().getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.CANDIDATE_CV, mailData.getCandidateFromMail(), null);
-        }
-        else if(IConstant.CandidateSource.NaukriMassMail.getValue().equals(mailData.getCandidateSource())){
-            fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.MASS_MAIL).append(File.separator);
+        }else{
+            if(IConstant.CandidateSource.NaukriMassMail.getValue().equals(mailData.getCandidateSource()))
+                fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.MASS_MAIL).append(File.separator);
+            else if(IConstant.CandidateSource.GenericEmail.getValue().equals(mailData.getCandidateSource()))
+                fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.GENERIC_EMAIL).append(File.separator);
+            else
+                fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.JOB_POSTING).append(File.separator);
+
+            StringBuffer removeString = new StringBuffer(job.getCreatedBy().getId().toString()).append("_").append(job.getId()).append("_");
             filePath = StoreFileUtil.getFileName(mailData.getFileName(), job.getId(), fileLocation.toString(), IConstant.FILE_TYPE.other.toString(), job.getCreatedBy().getId(), isZipFile);
-            MultipartFile multipartFile = Util.convertInputStreamToMultipartFile(mailData.getFileStream(), filePath);
-            filePath = StoreFileUtil.storeFile(multipartFile, job.getId(), fileLocation.toString(), IConstant.FILE_TYPE.other.toString(), null, job.getCreatedBy());
-        }
-        else if(IConstant.CandidateSource.GenericEmail.getValue().equals(mailData.getCandidateSource())){
-            fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.GENERIC_EMAIL).append(File.separator);
-            filePath = StoreFileUtil.getFileName(mailData.getFileName(), job.getId(), fileLocation.toString(), IConstant.FILE_TYPE.other.toString(), job.getCreatedBy().getId(), isZipFile);
-            MultipartFile multipartFile = Util.convertInputStreamToMultipartFile(mailData.getFileStream(), filePath);
-            filePath = StoreFileUtil.storeFile(multipartFile, job.getId(), fileLocation.toString(), IConstant.FILE_TYPE.other.toString(), null, job.getCreatedBy());
-        }
-        else{
-            fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.JOB_POSTING).append(File.separator);
-            filePath = StoreFileUtil.getFileName(mailData.getFileName(), job.getId(), fileLocation.toString(), IConstant.FILE_TYPE.other.toString(), job.getCreatedBy().getId(), isZipFile);
-            MultipartFile multipartFile = Util.convertInputStreamToMultipartFile(mailData.getFileStream(), filePath);
+            MultipartFile multipartFile = Util.convertInputStreamToMultipartFile(mailData.getFileStream(), filePath.replace(removeString, ""));
             filePath = StoreFileUtil.storeFile(multipartFile, job.getId(), fileLocation.toString(), IConstant.FILE_TYPE.other.toString(), null, job.getCreatedBy());
         }
         log.info("File save location : {}",filePath);
