@@ -156,7 +156,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
                 throw new WebException(IErrorMessages.JOB_NOT_FOUND + jobIdFromFileName, HttpStatus.UNPROCESSABLE_ENTITY);
             }
         } catch (Exception e){
-            moveFile(jobIdFromFileName, user, filePath, "fileNameWithoutJobId/");
+            moveFile(jobIdFromFileName, user, filePath, "fileNameWithoutJobId");
         }
         Map headerInformation = LoggedInUserInfoUtil.getLoggedInUserJobInformation(jobIdFromFileName);
         AtomicReference<CvParserResponseBean> cvParserResponseBean = new AtomicReference<CvParserResponseBean>();
@@ -183,7 +183,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
             log.info("Python parser response : {}",pythonResponse.get());
             if(HttpStatus.OK.value() != statusCode.get()){
                 log.error("Error while process cv by python API for jobId : {}, loggedInUser : {}, FileName : {}",jobIdFromFileName, user.getId(), fileName);
-                asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(jobIdFromFileName, null, null, null, null, pythonResponse.get(), IConstant.ASYNC_OPERATIONS.DragDrop.name(), user, new Date(), fileName));
+                asyncOperationsErrorRecordsRepository.save(new AsyncOperationsErrorRecords(jobIdFromFileName, null, null, null, null, pythonResponse.get(), candidateSource, user, new Date(), fileName));
                 moveFile(jobIdFromFileName, user, filePath, "");
             }
             if(null == cvParsingDetails.get()){
@@ -207,7 +207,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
     private void moveFile(Long jobId, User user,Path filePath,String location){
         File file = new File(String.valueOf(filePath));
         try {
-            StoreFileUtil.storeFile(Util.createMultipartFile(file), jobId, environment.getProperty(IConstant.REPO_LOCATION), IConstant.ERROR_FILES+"/"+location, null, user);
+            StoreFileUtil.storeFile(Util.createMultipartFile(file), jobId, environment.getProperty(IConstant.REPO_LOCATION), Util.isNotNull(location)?IConstant.ERROR_FILES+"/"+location:IConstant.ERROR_FILES, null, user);
         } catch (Exception e) { e.printStackTrace(); }
         file.delete();
     }
