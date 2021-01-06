@@ -2397,6 +2397,13 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     public JobCandidateMapping getCandidateProfileForHarvester(Long candidateId, Long companyId) {
         long startTime = System.currentTimeMillis();
         log.info("Get candidate profile based on last updated jcm for candidateId : {}, companyId : {}", candidateId, companyId);
+
+        //LoggedIn user
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        //Validate loggedInUser and company id
+        validateloggedInUser(loggedInUser, companyId);
+
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.getLastUpdatedJCMForCandidate(candidateId, companyId);
         if(null != jcmFromDb)
             jcmFromDb = setJcmForCandidateProfile(jcmFromDb);
