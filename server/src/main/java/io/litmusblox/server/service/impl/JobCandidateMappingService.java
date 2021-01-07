@@ -2455,8 +2455,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
             candidate.setEmail(lastUpdatedJcm.getEmail());
             candidate.setMobile(lastUpdatedJcm.getMobile());
-            candidate.setFirstName(lastUpdatedJcm.getCandidateFirstName());
-            candidate.setLastName(lastUpdatedJcm.getCandidateLastName());
+            candidate.setCandidateName(lastUpdatedJcm.getCandidateFirstName()+" "+lastUpdatedJcm.getCandidateLastName());
             StringBuffer cvLocation = new StringBuffer();
             MultipartFile candidateCv = null;
             if(null != lastUpdatedJcm && null != lastUpdatedJcm.getCvFileType()){
