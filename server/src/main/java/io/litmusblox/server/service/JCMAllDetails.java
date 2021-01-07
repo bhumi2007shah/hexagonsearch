@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.service;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -12,6 +13,7 @@ import io.litmusblox.server.model.InterviewDetails;
 import io.litmusblox.server.model.JcmHistory;
 import io.litmusblox.server.model.JcmProfileSharingDetails;
 import lombok.Data;
+import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
@@ -30,6 +32,7 @@ import java.util.Map;
 @Data
 @Entity
 @Table(name = "JOB_CANDIDATE_MAPPING_ALL_DETAILS")
+@JsonFilter("JCMAllDetails")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class JCMAllDetails {
     @Id
@@ -85,6 +88,9 @@ public class JCMAllDetails {
 
     @Transient
     Long shareProfileId;
+
+    @Transient
+    Date profileSharedOn;
 
     @Transient
     List<JcmHistory> jcmHistories;

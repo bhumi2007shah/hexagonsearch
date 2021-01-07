@@ -46,19 +46,10 @@ public class HiringManagerWorkspaceController {
         SingleJobViewResponseBean responseBean = hiringManagerWorkspaceService.getHiringManagerWorkspaceDetails(stage, jobId);
         return Util.stripExtraInfoFromResponseBean(responseBean,
                 (new HashMap<String, List<String>>(){{
-                    put("User",Arrays.asList("displayName"));
-                    put("CvRating", Arrays.asList("overallRating"));
-                    put("CandidateEducationDetails", Arrays.asList("degree"));
-                    put("JobStageStep", Arrays.asList("stageName"));
-                    put("CompanyAddress", Arrays.asList("address"));
+                    put("InterviewDetails",Arrays.asList("interviewType","interviewMode","interviewDate","showNoShow", "cancelled", "candidateConfirmation","candidateConfirmationValue"));
                 }}),
                 (new HashMap<String, List<String>>(){{
-                    put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy"));
-                    put("Candidate", Arrays.asList("candidateProjectDetails","candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies",
-                            "candidateSkillDetails","createdOn","createdBy", "firstName", "lastName", "displayName"));
-                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData", "interviewDetails", "candidateReferralDetail", "candidateSourceHistories"));
-                    put("CandidateDetails", Arrays.asList("id","candidateId"));
-                    put("CandidateCompanyDetails", Arrays.asList("candidateId"));
+                    put("JCMAllDetails",Arrays.asList("jobId","cvFileType","cvLocation","updatedOn", "updatedBy", "countryCode","source","stage","stageName"));
                 }})
         );
     }
@@ -78,13 +69,13 @@ public class HiringManagerWorkspaceController {
                     put("ScreeningQuestions", Arrays.asList("id","question","options"));
                     put("CvRating", Arrays.asList("overallRating"));
                     put("JobStageStep", new ArrayList<>(0));
+                    put("Job",new ArrayList<>(0));
                 }},
                 new HashMap<String, List<String>>() {{
-                    put("Job",Arrays.asList("createdBy","createdOn","updatedBy","updatedOn","noOfPositions","jobDescription","mlDataAvailable","datePublished","status","scoringEngineJobAvailable","function","education","expertise","jobKeySkillsList","userEnteredKeySkill"));
                     put("Candidate",Arrays.asList("id","createdBy","createdOn","updatedBy","updatedOn","uploadErrorMessage", "firstName", "lastName","email","mobile", "candidateSource"));
                     put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company", "questionType"));
                     put("UserScreeningQuestion", Arrays.asList("createdOn","createdBy","updatedOn","userId","questionType"));
-                    put("JobCandidateMapping", Arrays.asList("createdOn","createdBy","updatedOn","updatedBy","techResponseData","candidateSource","candidateInterest","candidateInterestDate","candidateFirstName","candidateLastName","chatbotUuid", "stage", "candidateSourceHistories"));
+                    put("JobCandidateMapping", Arrays.asList("createdOn","createdBy","updatedOn","updatedBy","techResponseData","candidateSource","candidateInterest","candidateInterestDate","candidateFirstName","candidateLastName","chatbotUuid", "stage", "candidateSourceHistories","interestAccessByDevice","chatbotCompletedByDevice","createdOnSearchEngine"));
                     put("JobCapabilities", Arrays.asList("jobCapabilityStarRatingMappingList","jobId"));
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateEducationDetails", Arrays.asList("id","candidateId"));
@@ -159,7 +150,9 @@ public class HiringManagerWorkspaceController {
                     put("JobRole", Arrays.asList("role"));
                 }}),
                 (new HashMap<String, List<String>>(){{
-                    put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList","jobHiringTeamList","jobDetail", "expertise", "education", "noticePeriod", "function", "experienceRange", "userEnteredKeySkill", "updatedOn", "updatedBy"));
+                    put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList","jobHiringTeamList","jobDetail", "expertise", "education", "noticePeriod", "function",
+                            "experienceRange", "userEnteredKeySkill", "updatedOn", "updatedBy","companyId","createdBy","hiringManager","minSalary","maxSalary", "resubmitHrChatbot","scoringEngineJobAvailable","visibleToCareerPage",
+                            "jobShortCode", "jobReferenceId","hrQuestionAvailable","customizedChatbot","currency","autoInvite","companyJobId","interviewLocation","jobIndustry","recruiter","jobLocation","jobFunction"));
                     put("MasterData", new ArrayList<>(0));
                 }})
         );

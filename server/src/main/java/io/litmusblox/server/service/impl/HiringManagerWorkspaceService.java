@@ -96,6 +96,10 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
                 entry.getInterviewDetails().add(interviewDetailsRepository.findLatestEntryByJcmId(entry.getId()));
             });
         }
+        allWorkspaceDetails.forEach(jcm->{
+           //Set share profile id
+            jcm.setProfileSharedOn(hiringManagerWorkspaceRepository.getProfileSharedOnByJcmIdAndUserId(jcm.getId(), loggedInUser.getId()));
+        });
         responseBean.setJcmAllDetailsList(allWorkspaceDetails);
         //Set candidate count by stage
         List<Object[]> stageCountListView = jobCandidateMappingRepository.findCandidateCountByStageForHiringManager(loggedInUser.getId(), jobId);
@@ -106,15 +110,6 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
                 responseBean.getCandidateCountByStage().put(key, ((BigInteger) objArray[1]).intValue());
             else //stage exists in response bean, add the count of the other step to existing value
                 responseBean.getCandidateCountByStage().put(key,responseBean.getCandidateCountByStage().get(key)  + ((BigInteger) objArray[1]).intValue());
-        });
-
-        allWorkspaceDetails.forEach(jcm->{
-            //set screeningQuestionResponse
-            jcm.setScreeningQuestionResponses(candidateScreeningQuestionResponseRepository.findByJobCandidateMappingId(jcm.getId()));
-            //Jcm history for related jcm
-            jcm.setJcmHistories(jcmHistoryRepository.findByJcmId(JobCandidateMapping.builder().id(jcm.getId()).build()));
-            //Set share profile id
-            jcm.setShareProfileId(hiringManagerWorkspaceRepository.findByJcmIdAndUserId(jcm.getId(), loggedInUser.getId()).getShareProfileId());
         });
 
         //add count of rejected candidates
@@ -142,11 +137,12 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
             throw new ValidationException("You are not a valid user.", HttpStatus.UNAUTHORIZED);
         JobCandidateMapping responseObj = jobCandidateMappingService.getCandidateProfile(jcmId, true);
 
-        if(workspaceEntry.getShareProfileId() != null && responseObj.getStage().getStage().equals(IConstant.Stage.ResumeSubmit.getValue())) {
+        if(null != workspaceEntry.getShareProfileId()&& responseObj.getStage().getStage().equals(IConstant.Stage.ResumeSubmit.getValue())) {
             JcmProfileSharingDetails details = jcmProfileSharingDetailsRepository.getOne(workspaceEntry.getShareProfileId());
             if (null != details.getHiringManagerInterestDate()) {
                 responseObj.setCollectInterest(true);
                 responseObj.setShareProfileId(workspaceEntry.getShareProfileId());
+                responseObj.setHiringManagerInterestDate(details.getHiringManagerInterestDate());
             }
         }
         log.info("Completed fetching Candidate Profile Details in {} ms", System.currentTimeMillis() - startTime);
@@ -229,6 +225,19 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
             responseBean.setListOfJobs(jobListForHiringManager);
             responseBean.setLiveJobs(jobListForHiringManager.size());
         }
+        //Set candidate count per stage
+        List<Object[]> countByStage = jobCandidateMappingRepository.getCandidateCountByStageForHmw(loggedInUser.getId());
+        if(null != countByStage.get(0)[0]){
+            responseBean.setSourcingCandidateCount(Integer.parseInt(countByStage.get(0)[0].toString()));
+            responseBean.setScreeningCandidateCount(Integer.parseInt(countByStage.get(0)[1].toString()));
+            responseBean.setSubmittedCandidateCount(Integer.parseInt(countByStage.get(0)[2].toString()));
+            responseBean.setInterviewCandidateCount(Integer.parseInt(countByStage.get(0)[3].toString()));
+            responseBean.setMakeOfferCandidateCount(Integer.parseInt(countByStage.get(0)[4].toString()));
+            responseBean.setOfferCandidateCount(Integer.parseInt(countByStage.get(0)[5].toString()));
+            responseBean.setHiredCandidateCount(Integer.parseInt(countByStage.get(0)[6].toString()));
+            responseBean.setRejectedCandidateCount(jobCandidateMappingRepository.getRejectedCandidateCountForHmw(loggedInUser.getId()));
+        }
+
         log.info("Completed getJobListForHiringManager in {} ms", System.currentTimeMillis() - startTime);
         return responseBean;
     }

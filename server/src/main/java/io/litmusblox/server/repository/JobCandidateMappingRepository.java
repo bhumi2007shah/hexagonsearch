@@ -147,4 +147,18 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Query(value = "select * from job_candidate_mapping where id = (select id from (select id,unnest(array[created_on, updated_on]) from job_candidate_mapping where candidate_id =:candidateId and job_id in (select id from job where company_id =:companyId)) as jcm_dates where jcm_dates.unnest < current_date + interval '1' day  order by jcm_dates.unnest desc limit 1)", nativeQuery = true)
     JobCandidateMapping getLastUpdatedJCMForCandidate(Long candidateId, Long companyId);
 
+    @Query(value = "select sum((jcm.stage=1)\\:\\:INT) AS SourceCandidate, sum((jcm.stage=2)\\:\\:INT) As ScreeningCandidate, sum((jcm.stage=3)\\:\\:INT) AS SubmittedCandidate, sum((jcm.stage=4)\\:\\:INT) AS InterviewCandidate, sum((jcm.stage=5)\\:\\:INT) AS MakeOfferCandidate, sum((jcm.stage=6)\\:\\:INT) AS OfferCandidate, sum((jcm.stage=7)\\:\\:INT) AS HiredCandidate from job j\n" +
+            "inner join job_candidate_mapping jcm on jcm.job_id = j.id\n" +
+            "inner join hiring_manager_workspace hmw on hmw.jcm_id = jcm.id\n" +
+            "inner join jcm_profile_sharing_details jpsd on jpsd.id = hmw.share_profile_id\n" +
+            "where j.status in ('Draft', 'Live') and jpsd.receiver_id =:hiringManagerId and jcm.rejected = false;", nativeQuery = true)
+    List<Object[]> getCandidateCountByStageForHmw(Long hiringManagerId);
+
+    @Query(value = "select count(jcm.id) from job j\n" +
+            "inner join job_candidate_mapping jcm on jcm.job_id = j.id\n" +
+            "inner join hiring_manager_workspace hmw on hmw.jcm_id = jcm.id\n" +
+            "inner join jcm_profile_sharing_details jpsd on jpsd.id = hmw.share_profile_id\n" +
+            "where j.status in ('Draft', 'Live') and jpsd.receiver_id =:hiringManagerId and jcm.rejected = true;", nativeQuery = true)
+    int getRejectedCandidateCountForHmw(Long hiringManagerId);
+
 }
