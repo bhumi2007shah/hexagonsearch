@@ -141,9 +141,9 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
             JcmProfileSharingDetails details = jcmProfileSharingDetailsRepository.getOne(workspaceEntry.getShareProfileId());
             if (null != details.getHiringManagerInterestDate()) {
                 responseObj.setCollectInterest(true);
-                responseObj.setShareProfileId(workspaceEntry.getShareProfileId());
                 responseObj.setHiringManagerInterestDate(details.getHiringManagerInterestDate());
             }
+            responseObj.setShareProfileId(workspaceEntry.getShareProfileId());
         }
         log.info("Completed fetching Candidate Profile Details in {} ms", System.currentTimeMillis() - startTime);
         return responseObj;
