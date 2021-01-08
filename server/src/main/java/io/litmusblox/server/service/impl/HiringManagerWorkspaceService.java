@@ -159,7 +159,7 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
         log.info("Inside get job details for hiring manager for job id: {}", jobId);
         Long startTime = System.currentTimeMillis();
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if(!hiringManagerWorkspaceDetailsRepository.existsByUserIdAndJobId(loggedInUser.getId(), jobId))
+        if(null == hiringManagerWorkspaceDetailsRepository.existsByUserIdAndJobId(loggedInUser.getId(), jobId))
             throw new ValidationException("You are not a valid user.", HttpStatus.UNAUTHORIZED);
         Job responseObj = jobService.getJobDetails(jobId, true);
         log.info("Completed get Job Details in {} ms", System.currentTimeMillis() - startTime);
