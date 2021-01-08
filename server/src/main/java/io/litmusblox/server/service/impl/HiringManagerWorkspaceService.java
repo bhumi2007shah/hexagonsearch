@@ -20,9 +20,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Date : 11/11/20
@@ -213,7 +218,7 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
      * @throws Exception
      */
     @Transactional
-    public JobWorspaceResponseBean findAllJobsForShareProfileToHiringManager() {
+    public JobWorspaceResponseBean findAllJobsForShareProfileToHiringManager() throws Exception {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Inside job list for hiring Manager for HMId: {}", loggedInUser.getId());
         Long startTime = System.currentTimeMillis();
@@ -225,20 +230,45 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
             responseBean.setListOfJobs(jobListForHiringManager);
             responseBean.setLiveJobs(jobListForHiringManager.size());
         }
-        //Set candidate count per stage
-        List<Object[]> countByStage = jobCandidateMappingRepository.getCandidateCountByStageForHmw(loggedInUser.getId());
-        if(null != countByStage.get(0)[0]){
-            responseBean.setSourcingCandidateCount(Integer.parseInt(countByStage.get(0)[0].toString()));
-            responseBean.setScreeningCandidateCount(Integer.parseInt(countByStage.get(0)[1].toString()));
-            responseBean.setSubmittedCandidateCount(Integer.parseInt(countByStage.get(0)[2].toString()));
-            responseBean.setInterviewCandidateCount(Integer.parseInt(countByStage.get(0)[3].toString()));
-            responseBean.setMakeOfferCandidateCount(Integer.parseInt(countByStage.get(0)[4].toString()));
-            responseBean.setOfferCandidateCount(Integer.parseInt(countByStage.get(0)[5].toString()));
-            responseBean.setHiredCandidateCount(Integer.parseInt(countByStage.get(0)[6].toString()));
-            responseBean.setRejectedCandidateCount(jobCandidateMappingRepository.getRejectedCandidateCountForHmw(loggedInUser.getId()));
-        }
-
+        //set per stage count for every job
+        getCandidateCountByStage(jobListForHiringManager);
         log.info("Completed getJobListForHiringManager in {} ms", System.currentTimeMillis() - startTime);
         return responseBean;
     }
+
+
+    private void getCandidateCountByStage(List<Job> jobs) {
+        if(jobs != null & jobs.size() > 0) {
+            long startTime = System.currentTimeMillis();
+            //Converting list of jobs into map, so each job is available by key
+            Map<Long, Job> jobsMap = jobs.stream().collect(Collectors.toMap(Job::getId, Function.identity()));
+            log.info("Getting candidate count for " + jobs.size() + " jobs");
+            try {
+                List<Long> jobIds = new ArrayList<>();
+                jobIds.addAll(jobsMap.keySet());
+                //get counts by stage for ALL job ids in 1 db call
+                List<Object[]> stageCountList = jobCandidateMappingRepository.findCandidateCountByStageJobIds(jobIds, false);
+                //Format results in a map<jobId, resultset>
+                Map<Long, List<Object[]>> stageCountMapByJobId = stageCountList.stream().collect(groupingBy(obj -> ((Integer) obj[0]).longValue()));
+                log.info("Got stageCountByJobIds, row count: " + stageCountMapByJobId.size());
+                //Loop through map to assign count by stage for each job
+                stageCountMapByJobId.forEach((key, value) -> {
+                    Job job = jobsMap.get(key);
+                    value.stream().forEach(objArray -> {
+                        job.getCandidateCountByStage().put(objArray[1].toString(), ((BigInteger) objArray[2]).intValue());
+                    });
+                    try {
+                        job.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(), jobCandidateMappingRepository.findRejectedCandidateCount(job.getId()));
+                    } catch (Exception e) {
+                        log.error("Exception while finding rejected candidate count for job with id {}" + job.getId());
+                    }
+                });
+
+                log.info("Got candidate count by stage for " + jobs.size() + " jobs in " + (System.currentTimeMillis() - startTime) + "ms");
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
+        }
+    }
+
 }
