@@ -231,13 +231,13 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
             responseBean.setLiveJobs(jobListForHiringManager.size());
         }
         //set per stage count for every job
-        getCandidateCountByStage(jobListForHiringManager);
+        getCandidateCountByStage(jobListForHiringManager, loggedInUser.getId());
         log.info("Completed getJobListForHiringManager in {} ms", System.currentTimeMillis() - startTime);
         return responseBean;
     }
 
 
-    private void getCandidateCountByStage(List<Job> jobs) {
+    private void getCandidateCountByStage(List<Job> jobs, Long hiringManagerId) {
         if(jobs != null & jobs.size() > 0) {
             long startTime = System.currentTimeMillis();
             //Converting list of jobs into map, so each job is available by key
@@ -247,7 +247,7 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
                 List<Long> jobIds = new ArrayList<>();
                 jobIds.addAll(jobsMap.keySet());
                 //get counts by stage for ALL job ids in 1 db call
-                List<Object[]> stageCountList = jobCandidateMappingRepository.findCandidateCountByStageJobIds(jobIds, false);
+                List<Object[]> stageCountList = jobCandidateMappingRepository.findCandidateCountByStageJobIdsForHmw(jobIds, false, hiringManagerId);
                 //Format results in a map<jobId, resultset>
                 Map<Long, List<Object[]>> stageCountMapByJobId = stageCountList.stream().collect(groupingBy(obj -> ((Integer) obj[0]).longValue()));
                 log.info("Got stageCountByJobIds, row count: " + stageCountMapByJobId.size());
