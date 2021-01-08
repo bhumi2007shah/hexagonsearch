@@ -70,6 +70,7 @@ public class HiringManagerWorkspaceController {
                     put("CvRating", Arrays.asList("overallRating"));
                     put("JobStageStep", new ArrayList<>(0));
                     put("Job",new ArrayList<>(0));
+                    put("JcmProfileSharingDetails", Arrays.asList("comments", "hiringManagerInterest", "hiringManagerInterestDate"));
                 }},
                 new HashMap<String, List<String>>() {{
                     put("Candidate",Arrays.asList("id","createdBy","createdOn","updatedBy","updatedOn","uploadErrorMessage", "firstName", "lastName","email","mobile", "candidateSource"));
@@ -112,7 +113,7 @@ public class HiringManagerWorkspaceController {
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("companyId","createdBy","hiringManager","minSalary","maxSalary","resubmitHrChatbot","scoringEngineJobAvailable",
-                            "visibleToCareerPage","jobShortCode","jobReferenceId","hrQuestionAvailable","customizedChatbot","currency","autoInvite","companyJobId",
+                            "visibleToCareerPage","jobShortCode","jobReferenceId","hrQuestionAvailable","customizedChatbot","currency","autoInvite",
                             "interviewLocation","jobIndustry","recruiter","jobLocation","jobFunction"));
                     put("JobScreeningQuestions",new ArrayList<>(0));
                     put("ScreeningQuestions",new ArrayList<>(0));

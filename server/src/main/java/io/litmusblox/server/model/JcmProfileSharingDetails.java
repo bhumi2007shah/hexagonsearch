@@ -4,15 +4,14 @@
 
 package io.litmusblox.server.model;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
-import java.util.UUID;
 
 /**
  * @author : Sumit
@@ -25,6 +24,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "JCM_PROFILE_SHARING_DETAILS")
+@JsonFilter("JcmProfileSharingDetails")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class JcmProfileSharingDetails {
 

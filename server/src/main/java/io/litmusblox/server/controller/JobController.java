@@ -126,6 +126,7 @@ public class JobController {
                     put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData", "interviewDetails", "candidateReferralDetail", "candidateSourceHistories"));
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateCompanyDetails", Arrays.asList("candidateId"));
+                    put("JcmProfileSharingDetails", new ArrayList<>(0));
                 }})
         );
     }

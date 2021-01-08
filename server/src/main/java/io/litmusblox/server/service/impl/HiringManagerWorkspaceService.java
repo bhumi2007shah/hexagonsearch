@@ -20,10 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -144,11 +141,7 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
 
         if(null != workspaceEntry.getShareProfileId()&& responseObj.getStage().getStage().equals(IConstant.Stage.ResumeSubmit.getValue())) {
             JcmProfileSharingDetails details = jcmProfileSharingDetailsRepository.getOne(workspaceEntry.getShareProfileId());
-            if (null != details.getHiringManagerInterestDate()) {
-                responseObj.setCollectInterest(true);
-                responseObj.setHiringManagerInterestDate(details.getHiringManagerInterestDate());
-            }
-            responseObj.setShareProfileId(workspaceEntry.getShareProfileId());
+            responseObj.setInterestedHiringManagers(Arrays.asList(details));
         }
         log.info("Completed fetching Candidate Profile Details in {} ms", System.currentTimeMillis() - startTime);
         return responseObj;
@@ -182,13 +175,17 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
         JcmProfileSharingDetails existingJcmProfileSharingDetails = jcmProfileSharingDetailsRepository.getOne(jcmProfileSharingDetails.getId());
         if(null == existingJcmProfileSharingDetails)
             throw new WebException("Profile not found", HttpStatus.UNPROCESSABLE_ENTITY);
+
+        JobCandidateMapping jcmObj = jobCandidateMappingRepository.getOne(existingJcmProfileSharingDetails.getJobCandidateMappingId());
+        if(!IConstant.Stage.ResumeSubmit.getValue().equals(jcmObj.getStage().getStage()))
+            throw new WebException("Candidate is not in a submitted stage so can not update interest", HttpStatus.UNPROCESSABLE_ENTITY);
+
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         HiringManagerWorkspace workspaceEntry = hiringManagerWorkspaceRepository.findByJcmIdAndUserId(existingJcmProfileSharingDetails.getJobCandidateMappingId(), loggedInUser.getId());
        if(null == workspaceEntry || workspaceEntry.getShareProfileId() == null)
             throw new ValidationException("You are not a valid user.", HttpStatus.UNAUTHORIZED);
         existingJcmProfileSharingDetails.setHiringManagerInterestDate(new Date());
         existingJcmProfileSharingDetails.setHiringManagerInterest(jcmProfileSharingDetails.getHiringManagerInterest());
-        JobCandidateMapping jcmObj = jobCandidateMappingRepository.getOne(existingJcmProfileSharingDetails.getJobCandidateMappingId());
         StringBuffer jcmHistoryMsg = new StringBuffer("Hiring Manager ").append(loggedInUser.getDisplayName()).append(" is").append(jcmProfileSharingDetails.getHiringManagerInterest()?" interested ":" not interested ").append("in this Profile");
         if(!jcmProfileSharingDetails.getHiringManagerInterest()){
             if(null == jcmProfileSharingDetails.getRejectionReason().getId())
