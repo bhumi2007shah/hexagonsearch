@@ -223,6 +223,10 @@ public class JobCandidateMapping implements Serializable {
 
     @Transient
     @JsonProperty
+    Long shareProfileId;
+
+    @Transient
+    @JsonProperty
     private String cvLocation;
 
     @Transient

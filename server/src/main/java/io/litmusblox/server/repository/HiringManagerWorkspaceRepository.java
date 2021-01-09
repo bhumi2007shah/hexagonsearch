@@ -22,10 +22,6 @@ import java.util.List;
 public interface HiringManagerWorkspaceRepository extends JpaRepository<HiringManagerWorkspace, Long> {
 
     @Transactional
-    @Query(value = "select email_sent_on from  jcm_profile_sharing_details where id = (select share_profile_id from hiring_manager_workspace where jcm_id =:jcmId and user_id =:userId)", nativeQuery = true)
-    Date getProfileSharedOnByJcmIdAndUserId(Long jcmId, Long userId);
-
-    @Transactional
     HiringManagerWorkspace findByJcmIdAndUserId(Long jcmId, Long userId);
 
     @Transactional

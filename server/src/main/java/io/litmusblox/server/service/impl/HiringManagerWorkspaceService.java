@@ -99,9 +99,17 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
             });
         }
         allWorkspaceDetails.forEach(jcm->{
-           //Set share profile id
-            jcm.setProfileSharedOn(hiringManagerWorkspaceRepository.getProfileSharedOnByJcmIdAndUserId(jcm.getId(), loggedInUser.getId()));
+            JcmProfileSharingDetails details = jcmProfileSharingDetailsRepository.getProfileSharedByJcmIdAndUserId(jcm.getId(), loggedInUser.getId());
+
+            //Set share profile id
+            jcm.setProfileSharedOn(details.getEmailSentOn());
+
+            //Set Hiring manager interest model
+            if(jcm.getStageName().equals(IConstant.Stage.ResumeSubmit.getValue())) {
+                jcm.setInterestedHiringManagers(Arrays.asList(details));
+            }
         });
+
         responseBean.setJcmAllDetailsList(allWorkspaceDetails);
         //Set candidate count by stage
         List<Object[]> stageCountListView = jobCandidateMappingRepository.findCandidateCountByStageForHiringManager(loggedInUser.getId(), jobId);
@@ -137,11 +145,10 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
 
         if(null == workspaceEntry)
             throw new ValidationException("You are not a valid user.", HttpStatus.UNAUTHORIZED);
-        JobCandidateMapping responseObj = jobCandidateMappingService.getCandidateProfile(jcmId, true);
 
-        if(null != workspaceEntry.getShareProfileId()&& responseObj.getStage().getStage().equals(IConstant.Stage.ResumeSubmit.getValue())) {
-            JcmProfileSharingDetails details = jcmProfileSharingDetailsRepository.getOne(workspaceEntry.getShareProfileId());
-            responseObj.setInterestedHiringManagers(Arrays.asList(details));
+        JobCandidateMapping responseObj = jobCandidateMappingService.getCandidateProfile(jcmId, true);
+        if(null != workspaceEntry.getShareProfileId()) {
+            responseObj.setShareProfileId(workspaceEntry.getShareProfileId());
         }
         log.info("Completed fetching Candidate Profile Details in {} ms", System.currentTimeMillis() - startTime);
         return responseObj;

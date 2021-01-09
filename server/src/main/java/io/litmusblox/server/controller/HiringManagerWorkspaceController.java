@@ -47,6 +47,7 @@ public class HiringManagerWorkspaceController {
         return Util.stripExtraInfoFromResponseBean(responseBean,
                 (new HashMap<String, List<String>>(){{
                     put("InterviewDetails",Arrays.asList("interviewType","interviewMode","interviewDate","showNoShow", "cancelled", "candidateConfirmation","candidateConfirmationValue"));
+                    put("JcmProfileSharingDetails", Arrays.asList("comments", "hiringManagerInterest", "hiringManagerInterestDate"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("JCMAllDetails",Arrays.asList("jobId","cvFileType","cvLocation","updatedOn", "updatedBy", "countryCode","source","stage","stageName"));
