@@ -83,7 +83,7 @@ public class JobController {
                 jobService.findAllJobsForUser((archived.isPresent() ? archived.get() : false),(companyId.isPresent()?companyId.get():null), (jobStatus.isPresent()?jobStatus.get():null)),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id", "displayName"));
-                    put("CompanyAddress", Arrays.asList("address"));
+                    put("CompanyAddress", Arrays.asList("address","city"));
                     put("JobRole", Arrays.asList("role"));
                 }}),
                 (new HashMap<String, List<String>>(){{

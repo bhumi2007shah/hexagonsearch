@@ -150,7 +150,7 @@ public class HiringManagerWorkspaceController {
                 hiringManagerWorkspaceService.findAllJobsForShareProfileToHiringManager(),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id", "displayName"));
-                    put("CompanyAddress", Arrays.asList("address"));
+                    put("CompanyAddress", Arrays.asList("address", "city"));
                     put("JobRole", Arrays.asList("role"));
                 }}),
                 (new HashMap<String, List<String>>(){{
