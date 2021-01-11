@@ -880,7 +880,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 JcmProfileSharingDetails jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.save(new JcmProfileSharingDetails(jcmId, loggedInUser.getId(), receiverUser.getId(), receiverUser.getDisplayName()));
                 HiringManagerWorkspace hiringManagerWorkspace = hiringManagerWorkspaceRepository.findByJcmIdAndUserId(jcmId, receiverUser.getId());
                 if(null == hiringManagerWorkspace)
-                    hiringManagerWorkspaceRepository.save(new HiringManagerWorkspace(jcmId, receiverUser.getId(), jcmProfileSharingDetails.getId()));
+                    hiringManagerWorkspaceRepository.save(new HiringManagerWorkspace(jcmId, receiverUser.getId(), jcmProfileSharingDetails.getId(), null));
                 else if (hiringManagerWorkspace.getShareProfileId() == null)
                     hiringManagerWorkspaceRepository.updateProfileShareId(jcmProfileSharingDetails.getId(), hiringManagerWorkspace.getId());
                 else
@@ -2075,10 +2075,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 InterviewerDetails interviewerDetails = interviewerDetailsRepository.save(new InterviewerDetails(interviewDetailsFromDb.get(), new Date(), loggedInUser, interviewerDetailsFromReq.getInterviewer()));
                 HiringManagerWorkspace hiringManagerWorkspace = hiringManagerWorkspaceRepository.findByJcmIdAndUserId(jobCandidateMapping.getId(), interviewerDetailsFromReq.getInterviewer().getId());
                 if(null == hiringManagerWorkspace)
-                    hiringManagerWorkspaceRepository.save(new HiringManagerWorkspace(jobCandidateMapping.getId(), interviewerDetailsFromReq.getInterviewer().getId(), interviewerDetails.getId()));
+                    hiringManagerWorkspaceRepository.save(new HiringManagerWorkspace(jobCandidateMapping.getId(), interviewerDetailsFromReq.getInterviewer().getId(), null, interviewerDetails.getId()));
                 else
                     hiringManagerWorkspaceRepository.updateInterviewShareId(interviewerDetails.getId(), hiringManagerWorkspace.getId());
-
             });
 
             interviewDetailsFromReq.getInterviewIdList().add(interviewDetailsFromDb.get());

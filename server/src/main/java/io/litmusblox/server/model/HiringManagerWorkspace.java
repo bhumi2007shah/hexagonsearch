@@ -5,6 +5,7 @@
 package io.litmusblox.server.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -23,6 +24,7 @@ import javax.validation.constraints.NotNull;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "HIRING_MANAGER_WORKSPACE")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -46,10 +48,13 @@ public class HiringManagerWorkspace {
     @Column(name = "SHARE_PROFILE_ID")
     private Long shareProfileId;
 
-    public HiringManagerWorkspace(@NotNull Long jcmId, Long receiverId, Long shareProfileId) {
-        this.jcmId = jcmId;
-        this.shareProfileId = shareProfileId;
-        this.userId = receiverId;
-    }
+    @Column(name = "SHARE_INTERVIEW_ID")
+    private Long shareInterviewId;
 
+    public HiringManagerWorkspace(@NotNull Long jcmId, @NotNull Long userId, Long shareProfileId, Long shareInterviewId) {
+        this.jcmId = jcmId;
+        this.userId = userId;
+        this.shareProfileId = shareProfileId;
+        this.shareInterviewId = shareInterviewId;
+    }
 }
