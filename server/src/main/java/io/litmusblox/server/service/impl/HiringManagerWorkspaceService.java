@@ -101,13 +101,16 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
         allWorkspaceDetails.forEach(jcm->{
             JcmProfileSharingDetails details = jcmProfileSharingDetailsRepository.getProfileSharedByJcmIdAndUserId(jcm.getId(), loggedInUser.getId());
 
-            //Set share profile id
-            jcm.setProfileSharedOn(details.getEmailSentOn());
+            if(null != details){
+                //Set share profile id
+                jcm.setProfileSharedOn(details.getEmailSentOn());
 
-            //Set Hiring manager interest model
-            if(jcm.getStageName().equals(IConstant.Stage.ResumeSubmit.getValue())) {
-                jcm.setInterestedHiringManagers(Arrays.asList(details));
+                //Set Hiring manager interest model
+                if(jcm.getStageName().equals(IConstant.Stage.ResumeSubmit.getValue())) {
+                    jcm.setInterestedHiringManagers(Arrays.asList(details));
+                }
             }
+
         });
 
         responseBean.setJcmAllDetailsList(allWorkspaceDetails);
