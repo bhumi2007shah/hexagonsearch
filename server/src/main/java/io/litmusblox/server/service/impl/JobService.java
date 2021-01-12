@@ -467,12 +467,12 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 oldJob.setRecruiter(job.getRecruiter());
 
             if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())){
-                oldJob.setJobTitle(job.getJobTitle());
                 oldJob.setJobDescription(job.getJobDescription());
             } else {
                 oldJob.setAutoInvite(job.isAutoInvite());
                 oldJob.setVisibleToCareerPage(job.isVisibleToCareerPage());
             }
+            oldJob.setJobTitle(job.getJobTitle());
             oldJob.setUpdatedBy(loggedInUser);
             oldJob.setUpdatedOn(new Date());
             oldJob = jobRepository.save(oldJob);
