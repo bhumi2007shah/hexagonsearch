@@ -367,6 +367,9 @@ public class CandidateService implements ICandidateService {
             if(!Util.isNull(obj.getSkill()) && obj.getSkill().length() > IConstant.MAX_FIELD_LENGTHS.SKILL.getValue()) {
                 obj.setSkill(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL.name(), IConstant.MAX_FIELD_LENGTHS.SKILL.getValue(), obj.getSkill()));
             }
+            if(!Util.isNull(obj.getVersion()) && obj.getVersion().length() > IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.getValue()) {
+                obj.setVersion(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.name(), IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.getValue(), obj.getVersion()));
+            }
             obj.setCandidateId(candidate.getId());
             CandidateSkillDetails newCandidateSkillDetails = new CandidateSkillDetails(obj.getCandidateId(), obj.getSkill(), obj.getLastUsed(), obj.getExpInMonths(), obj.getVersion());
             candidateSkillDetailsRepository.save(newCandidateSkillDetails);});
