@@ -3070,3 +3070,10 @@ drop table cv_parsing_api_details;
 drop table cv_rating;
 
 ALTER TABLE JOB_CANDIDATE_MAPPING ALTER COLUMN EXPECTED_CTC TYPE DOUBLE PRECISION;
+
+insert into rejection_reason_master_data values
+	(DEFAULT,'Relocate','Candidate not willing to relocate','Candidate Reasons',1),
+	(DEFAULT,'Reticent','Candidate not willing to share information','Candidate Reasons',1),
+	(DEFAULT,'Already working','Candidate already working for the company','Recruiter Reasons',1),
+	(DEFAULT,'Duplicate','Duplicate','Recruiter Reasons',1),
+	(DEFAULT,'Incorrect job','Tagged in wrong job id','Recruiter Reasons',1);
