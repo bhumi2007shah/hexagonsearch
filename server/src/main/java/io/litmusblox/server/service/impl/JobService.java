@@ -472,6 +472,10 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 oldJob.setAutoInvite(job.isAutoInvite());
                 oldJob.setVisibleToCareerPage(job.isVisibleToCareerPage());
             }
+
+            if(Util.isNotNull(job.getJobTitle()))
+                throw new ValidationException("Job Title cannot be empty", HttpStatus.BAD_REQUEST);
+
             oldJob.setJobTitle(job.getJobTitle());
             oldJob.setUpdatedBy(loggedInUser);
             oldJob.setUpdatedOn(new Date());
