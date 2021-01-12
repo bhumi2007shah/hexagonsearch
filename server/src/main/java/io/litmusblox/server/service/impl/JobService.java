@@ -441,6 +441,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
         //boolean deleteExistingJobStageStep = (null != job.getId());
 
         //validate title
+        if(Util.isNull(job.getJobTitle()))
+            throw new ValidationException("Job Title cannot be empty", HttpStatus.BAD_REQUEST);
+
         if (job.getJobTitle().length() > IConstant.TITLE_MAX_LENGTH)  //Truncate job title if it is greater than max length
             job.setJobTitle(job.getJobTitle().substring(0, IConstant.TITLE_MAX_LENGTH));
         Company userCompany = null;
@@ -472,10 +475,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 oldJob.setAutoInvite(job.isAutoInvite());
                 oldJob.setVisibleToCareerPage(job.isVisibleToCareerPage());
             }
-
-            if(Util.isNotNull(job.getJobTitle()))
-                throw new ValidationException("Job Title cannot be empty", HttpStatus.BAD_REQUEST);
-
+            
             oldJob.setJobTitle(job.getJobTitle());
             oldJob.setUpdatedBy(loggedInUser);
             oldJob.setUpdatedOn(new Date());
