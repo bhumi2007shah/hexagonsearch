@@ -3077,3 +3077,5 @@ insert into rejection_reason_master_data values
 	(DEFAULT,'Already working','Candidate already working for the company','Recruiter Reasons',1),
 	(DEFAULT,'Duplicate','Duplicate','Recruiter Reasons',1),
 	(DEFAULT,'Incorrect job','Tagged in wrong job id','Recruiter Reasons',1);
+
+update master_data set value_to_use = '1' where type='callOutCome' and value in ('For Hiring Manager','Connected');

@@ -1795,6 +1795,13 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         else
             validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
 
+        if(comment.equals("")) {
+            List<MasterData> mandatoryCallOutComes = (masterDataRepository.mandatoryCallOutComes());
+            mandatoryCallOutComes.forEach(row -> {
+                if (callOutCome.equals(row.getValue()))
+                    throw new ValidationException("Comment cannot be empty", HttpStatus.BAD_REQUEST);
+            });
+        }
         jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, comment, callOutCome, false, new Date(), jobCandidateMapping.getStage(), loggedInUser));
     }
 
