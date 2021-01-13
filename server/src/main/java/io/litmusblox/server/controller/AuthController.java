@@ -52,7 +52,20 @@ public class AuthController {
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
     LoginResponseBean login(@RequestBody User user) throws Exception {
-        return userDetailsService.login(user);
+        return userDetailsService.login(user, false);
+    }
+
+    /**
+     *
+     * @param user object with email and otp
+     * @return jwt token for authenticated user
+     * @throws Exception
+     */
+    @PostMapping(value = "/loginWithOtp")
+    @ResponseBody
+    @ResponseStatus(HttpStatus.OK)
+    LoginResponseBean loginWithOtp(@RequestBody User user) throws Exception {
+        return userDetailsService.login(user, true);
     }
 
     @PostMapping(value = "/activateUser")

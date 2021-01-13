@@ -7,7 +7,9 @@ package io.litmusblox.server.model;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.litmusblox.server.utils.DateDeserializer;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -21,6 +23,8 @@ import java.util.Date;
  */
 @Data
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "CANDIDATE_PROJECT_DETAILS")
 @JsonFilter("CandidateProjectDetails")
 public class CandidateProjectDetails {
@@ -60,4 +64,16 @@ public class CandidateProjectDetails {
 
     @Column(name = "EMPLOYMENT_STATUS")
     private String employmentStatus;
+
+    public CandidateProjectDetails(CandidateProjectDetails objFromDb) {
+        this.candidateId = objFromDb.getCandidateId();
+        this.companyName = objFromDb.getCompanyName();
+        this.fromDate = objFromDb.getFromDate();
+        this.toDate = objFromDb.getToDate();
+        this.clientName = objFromDb.getClientName();
+        this.role = objFromDb.getRole();
+        this.roleDescription = objFromDb.getRoleDescription();
+        this.skillsUsed = objFromDb.getSkillsUsed();
+        this.employmentStatus = objFromDb.getEmploymentStatus();
+    }
 }

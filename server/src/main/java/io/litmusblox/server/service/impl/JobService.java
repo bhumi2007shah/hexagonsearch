@@ -441,6 +441,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
         //boolean deleteExistingJobStageStep = (null != job.getId());
 
         //validate title
+        if(Util.isNull(job.getJobTitle()))
+            throw new ValidationException("Job Title cannot be empty", HttpStatus.BAD_REQUEST);
+
         if (job.getJobTitle().length() > IConstant.TITLE_MAX_LENGTH)  //Truncate job title if it is greater than max length
             job.setJobTitle(job.getJobTitle().substring(0, IConstant.TITLE_MAX_LENGTH));
         Company userCompany = null;
@@ -467,12 +470,13 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 oldJob.setRecruiter(job.getRecruiter());
 
             if(!IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())){
-                oldJob.setJobTitle(job.getJobTitle());
                 oldJob.setJobDescription(job.getJobDescription());
             } else {
                 oldJob.setAutoInvite(job.isAutoInvite());
                 oldJob.setVisibleToCareerPage(job.isVisibleToCareerPage());
             }
+            
+            oldJob.setJobTitle(job.getJobTitle());
             oldJob.setUpdatedBy(loggedInUser);
             oldJob.setUpdatedOn(new Date());
             oldJob = jobRepository.save(oldJob);
@@ -939,13 +943,15 @@ public class JobService extends AbstractAccessControl implements IJobService {
     }
 
     @Transactional
-    public Job getJobDetails(Long jobId) throws Exception {
+    public Job getJobDetails(Long jobId, Boolean isCallForHiringManager) throws Exception {
         Job job = jobRepository.findById(jobId).orElse(null);
         if (null == job) {
             throw new WebException("Job with id " + jobId + " does not exist", HttpStatus.UNPROCESSABLE_ENTITY);
         }
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        validateLoggedInUser(loggedInUser, job);
+        if(!isCallForHiringManager) {
+            User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            validateLoggedInUser(loggedInUser, job);
+        }
         job.setHasCompletedCandidate(jobCandidateMappingRepository.countByJobIdAndStatus(job.getId(), IConstant.ChatbotStatus.COMPLETE.getValue())>0);
         job.setRecruiterList(userRepository.findByIdIn(Arrays.asList(job.getRecruiter()).stream()
                 .mapToLong(Integer::longValue)

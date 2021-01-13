@@ -23,6 +23,7 @@ import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.uploadProcessor.impl.NaukriHtmlParser;
 import io.litmusblox.server.uploadProcessor.impl.NaukriMassMailParser;
 import io.litmusblox.server.utils.SentryUtil;
+import io.litmusblox.server.utils.StoreFileUtil;
 import io.litmusblox.server.utils.Util;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -30,15 +31,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.mail.*;
 import javax.mail.search.FlagTerm;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -169,41 +167,34 @@ public class FetchEmailService {
     }
 
     //write the candidate cv
-    private void saveCandidateCv(MailData mailData, String candidateUploadStatus, Job job) throws IOException {
+    private void saveCandidateCv(MailData mailData, String candidateUploadStatus, Job job) throws Exception {
        log.info("Inside saveCandidateCv");
         StringBuffer fileLocation = new StringBuffer("");
+        String fileExtension = Util.getFileExtension(mailData.getFileName());
+        Boolean isZipFile = false;
+        String filePath = null;
+        if(fileExtension.contains(IConstant.FILE_TYPE.zip.toString()) || fileExtension.contains(IConstant.FILE_TYPE.rar.toString()))
+            isZipFile=true;
 
         if(IConstant.UPLOAD_STATUS.Success.name().equals(candidateUploadStatus)){
-            fileLocation.append(environment.getProperty(IConstant.REPO_LOCATION)).append(IConstant.CANDIDATE_CV).append(File.separator).append(mailData.getJobFromReference().getId());
-            createFileFolder(fileLocation);
-            fileLocation.append(File.separator).append(mailData.getCandidateFromMail().getId()).append(".").append(Util.getFileExtension(mailData.getFileName()));
-        }
-        else if(IConstant.CandidateSource.NaukriMassMail.getValue().equals(mailData.getCandidateSource())){
-            fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.MASS_MAIL);
-            createFileFolder(fileLocation);
-            fileLocation.append(File.separator).append(job.getCreatedBy().getId()).append("_").append(job.getId()).append("_").append(mailData.getFileName());
-        }
-        else if(IConstant.CandidateSource.GenericEmail.getValue().equals(mailData.getCandidateSource())){
-            fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.GENERIC_EMAIL);
-            createFileFolder(fileLocation);
-            fileLocation.append(File.separator).append(job.getCreatedBy().getId()).append("_").append(job.getId()).append("_").append(mailData.getFileName());
-        }
-        else{
-            fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.JOB_POSTING);
-            createFileFolder(fileLocation);
-            fileLocation.append(File.separator).append(job.getCreatedBy().getId()).append("_").append(job.getId()).append("_").append(mailData.getFileName());
-        }
+            filePath = StoreFileUtil.getFileName(mailData.getFileName(), mailData.getJobFromReference().getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.CANDIDATE_CV,  mailData.getCandidateFromMail().getId(), isZipFile);
+            log.info("");
+            MultipartFile multipartFile = Util.convertInputStreamToMultipartFile(mailData.getFileStream(), environment.getProperty(IConstant.REPO_LOCATION)+"/"+filePath);
+            filePath = StoreFileUtil.storeFile(multipartFile, mailData.getJobFromReference().getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.CANDIDATE_CV, mailData.getCandidateFromMail(), null);
+        }else{
+            if(IConstant.CandidateSource.NaukriMassMail.getValue().equals(mailData.getCandidateSource()))
+                fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.MASS_MAIL).append(File.separator);
+            else if(IConstant.CandidateSource.GenericEmail.getValue().equals(mailData.getCandidateSource()))
+                fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.GENERIC_EMAIL).append(File.separator);
+            else
+                fileLocation.append(environment.getProperty(IConstant.TEMP_REPO_LOCATION)).append(IConstant.JOB_POSTING).append(File.separator);
 
-        Files.copy(mailData.getFileStream(), Paths.get(fileLocation.toString()), StandardCopyOption.REPLACE_EXISTING);
-        log.info("File save location : {}",fileLocation.toString());
-        new File(fileLocation.toString());
-    }
-
-    private void createFileFolder(StringBuffer fileLocation){
-        File file = new File(fileLocation.toString());
-        if (!file.exists()) {
-            file.mkdirs();
+            StringBuffer removeString = new StringBuffer(job.getCreatedBy().getId().toString()).append("_").append(job.getId()).append("_");
+            filePath = StoreFileUtil.getFileName(mailData.getFileName(), job.getId(), fileLocation.toString(), IConstant.FILE_TYPE.other.toString(), job.getCreatedBy().getId(), isZipFile);
+            MultipartFile multipartFile = Util.convertInputStreamToMultipartFile(mailData.getFileStream(), filePath.replace(removeString, ""));
+            filePath = StoreFileUtil.storeFile(multipartFile, job.getId(), fileLocation.toString(), IConstant.FILE_TYPE.other.toString(), null, job.getCreatedBy());
         }
+        log.info("File save location : {}",filePath);
     }
 
     private Job findJobForEmailSubject(String subject) {

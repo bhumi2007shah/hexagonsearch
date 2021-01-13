@@ -10,6 +10,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vladmihalcea.hibernate.type.array.StringArrayType;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
@@ -36,6 +38,8 @@ import java.util.*;
 @Table(name="JOB_CANDIDATE_MAPPING")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonFilter("JobCandidateMapping")
+@Builder
+@AllArgsConstructor
 @TypeDefs({@TypeDef(name = "string-array",typeClass = StringArrayType.class), @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)})
 public class JobCandidateMapping implements Serializable {
 
@@ -155,7 +159,7 @@ public class JobCandidateMapping implements Serializable {
     private String candidateRejectionValue;
 
     @Column(name = "EXPECTED_CTC")
-    private Long expectedCtc;
+    private Double expectedCtc;
 
     @Column(name = "PERCENTAGE_HIKE")
     private Long percentageHike;
@@ -215,7 +219,11 @@ public class JobCandidateMapping implements Serializable {
 
     @Transient
     @JsonProperty
-    private Date hiringManagerInterestDate;
+    List<JcmProfileSharingDetails> interestedHiringManagers = new ArrayList<>();
+
+    @Transient
+    @JsonProperty
+    Long shareProfileId;
 
     @Transient
     @JsonProperty

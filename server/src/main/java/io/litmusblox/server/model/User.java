@@ -121,6 +121,10 @@ public class User implements Serializable, UserDetails {
     @Column(name = "COMPANY_BU_ID")
     private Long companyBuId;
 
+    @Column(name="WORKSPACE_UUID")
+    @org.hibernate.annotations.Type(type = "pg-uuid")
+    private UUID workspaceUuid;
+
     @Transient
     @JsonProperty
     private String countryCode;
@@ -132,6 +136,10 @@ public class User implements Serializable, UserDetails {
     @Transient
     @JsonProperty
     private String confirmPassword;
+
+    @Transient
+    @JsonProperty
+    private String   otp;
 
     public String getDisplayName() {
         return firstName + " " + lastName;

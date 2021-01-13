@@ -101,30 +101,13 @@ public interface IJobCandidateMappingService {
     void shareCandidateProfiles(ShareCandidateProfileRequestBean requestBean);
 
     /**
-     * Service method to capture hiring manager interest
-     *
-     * @param jcmProfileSharingDetails details of hiring manager response like interestValue, comment, rejectionReasonId
-     * @throws Exception
-     */
-    void updateHiringManagerInterest(JcmProfileSharingDetails jcmProfileSharingDetails);
-
-    /**
      * Service method to fetch details of a single candidate for a job
      *
      * @param jobCandidateMappingId
      * @return candidate object with required details
      * @throws Exception
      */
-    JobCandidateMapping getCandidateProfile(Long jobCandidateMappingId, Date hiringManagerInterestDate, boolean isCallFromNoAuth) throws Exception;
-
-    /**
-     * Service method to fetch details of a single candidate for a job
-     *
-     * @param profileSharingUuid uuid corresponding to the profile shared with hiring manager
-     * @return candidate object with required details
-     * @throws Exception
-     */
-    JobCandidateMapping getCandidateProfile(UUID profileSharingUuid) throws Exception;
+    JobCandidateMapping getCandidateProfile(Long jobCandidateMappingId, boolean isCallForHiringManager) throws Exception;
 
     /**
      * Service method to upload candidates by means of drag and drop cv
@@ -292,5 +275,22 @@ public interface IJobCandidateMappingService {
 
     void createExistingCandidateOnSearchEngine();
 
+    /**
+     * Service method to get candidate last updated info
+     * @param candidateId candidate id for we want data
+     * @param companyId candidate related to which company
+     * @return JobCandidateMapping - last updated JCM details
+     */
+    JobCandidateMapping getCandidateProfileForHarvester(Long candidateId, Long companyId);
+
+    /**
+     * Service method to add candidate by Harvester using candidate id and job id
+     *
+     * @param candidateIdList candidate id to upload candidates
+     * @param jobId the job for which the candidate is to be added
+     * @return the status of upload operation
+     * @throws Exception
+     */
+    List<UploadResponseBean> uploadIndividualCandidateByHarvester(List<Long> candidateIdList, Long jobId) throws Exception;
 
 }

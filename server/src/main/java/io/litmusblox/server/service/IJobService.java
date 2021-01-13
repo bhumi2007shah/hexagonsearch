@@ -85,8 +85,9 @@ public interface IJobService {
      * Service method to get job details by job id
      *
      * @param jobId id for which details will be retrieved
+     * @param isCallForHiringManager
      */
-    Job getJobDetails(Long jobId) throws Exception;
+    Job getJobDetails(Long jobId, Boolean isCallForHiringManager) throws Exception;
 
     /**
      * Service method to get job history by job id

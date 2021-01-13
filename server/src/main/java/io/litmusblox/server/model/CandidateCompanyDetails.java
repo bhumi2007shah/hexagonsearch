@@ -82,6 +82,18 @@ public class CandidateCompanyDetails {
         this.endDate = endDate;
     }
 
+    public CandidateCompanyDetails(CandidateCompanyDetails objFromDb) {
+        this.candidateId = objFromDb.getCandidateId();
+        this.companyName = objFromDb.getCompanyName();
+        this.designation = objFromDb.getDesignation();
+        this.salary = objFromDb.getSalary();
+        this.location = objFromDb.getLocation();
+        this.noticePeriod = objFromDb.getNoticePeriod();
+        this.noticePeriodInDb = objFromDb.getNoticePeriodInDb();
+        this.startDate = objFromDb.getStartDate();
+        this.endDate = objFromDb.getEndDate();
+    }
+
     public CandidateCompanyDetails() {
         super();
     }

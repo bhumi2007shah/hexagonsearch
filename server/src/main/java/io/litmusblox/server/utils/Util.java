@@ -22,6 +22,7 @@ import io.litmusblox.server.service.MasterDataBean;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang.WordUtils;
+import org.apache.poi.util.IOUtils;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -503,6 +504,17 @@ public class Util {
                 ex.printStackTrace();
             }
         }
+    }
+
+    //Method to convert input stream to multipart file
+    public static MultipartFile convertInputStreamToMultipartFile(InputStream inputStream, String filePath) throws IOException {
+        File file = new File(filePath);
+        try(OutputStream outputStream = new FileOutputStream(file)){
+            IOUtils.copy(inputStream, outputStream);
+        } catch (Exception e) {
+            throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,e);
+        }
+        return createMultipartFile(file);
     }
 
     //This method is used for comparing interview date with current date time

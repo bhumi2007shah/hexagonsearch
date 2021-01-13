@@ -5,7 +5,9 @@
 package io.litmusblox.server.model;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
@@ -18,6 +20,8 @@ import javax.persistence.*;
  */
 @Data
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "CANDIDATE_ONLINE_PROFILE")
 @JsonFilter("CandidateOnlineProfile")
 public class CandidateOnlineProfile {
@@ -38,4 +42,9 @@ public class CandidateOnlineProfile {
     @Column(name = "URL")
     private String url;
 
+    public CandidateOnlineProfile(Long candidateId, String profileType, String url) {
+        this.candidateId = candidateId;
+        this.profileType = profileType;
+        this.url = url;
+    }
 }

@@ -9,6 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 /**
  * @author : Shital Raval
  * Date : 22/7/19
@@ -26,4 +28,5 @@ public class LoginResponseBean {
     private Company company;
     private int candidatesProcessed;
     private String userRole;
+    private UUID workspaceUuid;
 }

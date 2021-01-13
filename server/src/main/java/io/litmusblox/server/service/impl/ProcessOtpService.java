@@ -5,9 +5,14 @@
 package io.litmusblox.server.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.Company;
+import io.litmusblox.server.model.JobCandidateMapping;
+import io.litmusblox.server.model.User;
 import io.litmusblox.server.repository.CompanyRepository;
+import io.litmusblox.server.repository.JobCandidateMappingRepository;
+import io.litmusblox.server.repository.UserRepository;
 import io.litmusblox.server.service.IProcessOtpService;
 import io.litmusblox.server.service.MasterDataBean;
 import io.litmusblox.server.service.OTPRequestBean;
@@ -22,6 +27,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import javax.jms.Queue;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -47,16 +53,18 @@ public class ProcessOtpService implements IProcessOtpService {
     @Resource
     CompanyRepository companyRepository;
 
+    @Resource
+    UserRepository userRepository;
+
     private static TimedCache otpCache;
 
     private synchronized void initializeCache() {
         otpCache = new TimedCache(1, MasterDataBean.getInstance().getOtpExpiryMinutes(), MasterDataBean.getInstance().getOtpExpiryMinutes(), TimeUnit.NANOSECONDS);
     }
-
     /**
      * Service method to handle send Otp request from search job page
      *
-     * @param isEmployeeReferral true if the send otp request was from employee referral flow
+     * @param sendEmailOtp true if the send otp request was from employee referral flow
      * @param mobileNumber mobile number to send otp to
      * @param countryCode country code
      * @param email email address of the employee
@@ -65,22 +73,33 @@ public class ProcessOtpService implements IProcessOtpService {
      * @throws Exception
      */
     @Override
-    public void sendOtp(boolean isEmployeeReferral, String mobileNumber, String countryCode, String email, String recepientName, String companyShortName) throws Exception {
+    public String sendOtp(boolean sendEmailOtp, String mobileNumber, String countryCode, String email, String recepientName, String companyShortName, UUID uuid) throws Exception {
         log.info("Received request to Send OTP for {} mobile: {} email: {} ", recepientName, mobileNumber, email);
         long startTime = System.currentTimeMillis();
 
-        if(isEmployeeReferral && (null == email || email.trim().length() == 0))
-            throw new ValidationException("Email address is required for Employee Referral OTP", HttpStatus.UNPROCESSABLE_ENTITY);
+        if(sendEmailOtp && (null == uuid || uuid.toString().trim().length() == 0) && (null == email || email.trim().length() == 0))
+            throw new ValidationException("Email address or UUID is required for sending OTP via email", HttpStatus.UNPROCESSABLE_ENTITY);
 
-        if(!isEmployeeReferral && (null == mobileNumber || mobileNumber.trim().length() == 0))
+        if(null != uuid) {
+            User user = null;
+            user = userRepository.findByWorkspaceUuid(uuid);
+            if(null == user)
+                throw new ValidationException(IErrorMessages.UUID_NOT_FOUND, HttpStatus.UNPROCESSABLE_ENTITY);
+            email = user.getEmail();
+            recepientName = user.getDisplayName();
+            companyShortName = user.getCompany().getShortName();
+        }
+
+        if(!sendEmailOtp && (null == mobileNumber || mobileNumber.trim().length() == 0))
             throw new ValidationException("Mobile number is required to send OTP", HttpStatus.UNPROCESSABLE_ENTITY);
 
         //Retrieve the company name based on company short name
+
         Company companyObjToUse = companyRepository.findByShortNameIgnoreCase(companyShortName);
         if (null == companyObjToUse)
             throw new ValidationException("No company found for short name:"+companyShortName, HttpStatus.UNPROCESSABLE_ENTITY);
 
-        String otpRequestKey = isEmployeeReferral?email:mobileNumber;
+        String otpRequestKey = sendEmailOtp ?email:mobileNumber;
 
         Random random = new Random();
         int otp = 0;
@@ -100,14 +119,17 @@ public class ProcessOtpService implements IProcessOtpService {
         OTPRequestBean otpRequestBean;
         //if the otp is for employee referral, do not send mobile to queue
         //if the otp is for candidate career page, do not send email to queue
-        if (isEmployeeReferral)
+        if (sendEmailOtp)
             otpRequestBean = new OTPRequestBean(otp, MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes(), null, countryCode, email, recepientName, companyObjToUse.getCompanyName());
         else
             otpRequestBean = new OTPRequestBean(otp, MasterDataBean.getInstance().getConfigSettings().getOtpExpiryMinutes(), mobileNumber, countryCode, null, recepientName, companyObjToUse.getCompanyName());
-
+        if(null != uuid)
+            otpRequestBean.setTemplateName("HiringManagerOtpEmail");
         jmsTemplate.convertAndSend(queue, objectMapper.writeValueAsString(otpRequestBean));
         log.info("Put message on queue {}", queue.getQueueName());
         log.info("Completed processing Send OTP request in {} ms",(System.currentTimeMillis() - startTime));
+
+        return email;
     }
 
     /**
@@ -123,7 +145,7 @@ public class ProcessOtpService implements IProcessOtpService {
         if(null == otpCache)
             return false;
         Object otpObj = otpCache.get(otpRequestKey);
-        if(null == otpObj)
+            if(null == otpObj)
             return false;
         int cachedOtp = Integer.parseInt(otpObj.toString());
         log.info("Otp: from request:: {} from cache:: {}",otp,cachedOtp);

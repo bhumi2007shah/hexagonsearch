@@ -83,7 +83,7 @@ public class JobController {
                 jobService.findAllJobsForUser((archived.isPresent() ? archived.get() : false),(companyId.isPresent()?companyId.get():null), (jobStatus.isPresent()?jobStatus.get():null)),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id", "displayName"));
-                    put("CompanyAddress", Arrays.asList("address"));
+                    put("CompanyAddress", Arrays.asList("address","city"));
                     put("JobRole", Arrays.asList("role"));
                 }}),
                 (new HashMap<String, List<String>>(){{
@@ -126,6 +126,7 @@ public class JobController {
                     put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData", "interviewDetails", "candidateReferralDetail", "candidateSourceHistories"));
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateCompanyDetails", Arrays.asList("candidateId"));
+                    put("JcmProfileSharingDetails", new ArrayList<>(0));
                 }})
         );
     }
@@ -218,7 +219,7 @@ public class JobController {
     @ResponseBody
     String getJobDetails(@PathVariable("jobId") Long jobId) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
-                jobService.getJobDetails(jobId),
+                jobService.getJobDetails(jobId, false),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id","displayName"));
                     put("CompanyAddress", Arrays.asList("id", "address"));

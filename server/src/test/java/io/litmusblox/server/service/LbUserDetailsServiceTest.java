@@ -44,7 +44,7 @@ class LbUserDetailsServiceTest extends AbstractTest {
             user.setEmail("test@litmusblox.io");
             user.setPassword("123456");
 
-            LoginResponseBean loginResponseBean = lbUserDetailsService.login(user);
+            LoginResponseBean loginResponseBean = lbUserDetailsService.login(user, false);
             assertThat(loginResponseBean).isNotNull();
             assertThat(loginResponseBean.getCompany()).isNotNull();
         } catch (Exception e) {

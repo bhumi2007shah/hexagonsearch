@@ -7,6 +7,7 @@ package io.litmusblox.server.service;
 import io.litmusblox.server.model.Job;
 import lombok.Data;
 
+import javax.persistence.Transient;
 import java.util.ArrayList;
 import java.util.List;
 

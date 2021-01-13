@@ -35,8 +35,16 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     List<Object[]> findCandidateCountByStage(Long jobId) throws Exception;
 
     @Transactional(readOnly = true)
+    @Query(value = "select stage, count(candidate_id) from job_candidate_mapping where id in (Select jcm_id from hiring_manager_workspace_details where user_id=:userId and job_id=:jobId) and rejected is false group by stage", nativeQuery = true)
+    List<Object[]> findCandidateCountByStageForHiringManager(Long userId, Long jobId) throws Exception;
+
+    @Transactional(readOnly = true)
     @Query(value = "select count(candidate_id) from job_candidate_mapping where job_id=:jobId and rejected is true", nativeQuery = true)
     int findRejectedCandidateCount(Long jobId) throws Exception;
+
+    @Transactional(readOnly = true)
+    @Query(value = "select count(candidate_id) from job_candidate_mapping where id in (Select jcm_id from hiring_manager_workspace_details where user_id=:userId and job_id=:jobId) and rejected is true", nativeQuery = true)
+    int findRejectedCandidateCountForHiringManager(Long userId, Long jobId) throws Exception;
 
     //find count of candidates per stage
     @Transactional
@@ -134,5 +142,19 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Transactional
     @Query(value = "select * from job_candidate_mapping where IS_CREATED_ON_SEARCHENGINE='f' order by ID asc limit 100", nativeQuery = true)
         List<JobCandidateMapping> findJcmNotInSearchEngine();
+
+    @Transactional
+    @Query(value = "select * from job_candidate_mapping where id = (select id from (select id,unnest(array[created_on, updated_on]) from job_candidate_mapping where candidate_id =:candidateId and job_id in (select id from job where company_id =:companyId)) as jcm_dates where jcm_dates.unnest < current_date + interval '1' day  order by jcm_dates.unnest desc limit 1)", nativeQuery = true)
+    JobCandidateMapping getLastUpdatedJCMForCandidate(Long candidateId, Long companyId);
+
+    @Transactional
+    @Query(value = "select jcm.job_id, ssm.stage, count(jcm.candidate_id) \n" +
+            "from job_candidate_mapping jcm\n" +
+            "inner join job j on j.id = jcm.job_id\n" +
+            "inner join stage_step_master ssm on ssm.id = jcm.stage\n" +
+            "inner join hiring_manager_workspace hmw on hmw.jcm_id = jcm.id\n" +
+            "inner join jcm_profile_sharing_details jpsd on jpsd.id = hmw.share_profile_id\n" +
+            "where jcm.job_id in :jobIds and jcm.stage = ssm.id and j.status in ('Draft', 'Live') and jpsd.receiver_id =:hiringManagerId and jcm.rejected =:rejected group by jcm.job_id, ssm.stage order by jcm.job_id;", nativeQuery = true)
+    List<Object[]> findCandidateCountByStageJobIdsForHmw(List<Long> jobIds, boolean rejected, Long hiringManagerId) throws Exception;
 
 }
