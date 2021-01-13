@@ -1141,10 +1141,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             //Update candidate percentage hike
             if(null != jobCandidateMapping.getPercentageHike())
                 jcmFromDb.setPercentageHike(jobCandidateMapping.getPercentageHike());
+            String comments = jobCandidateMapping.getComments().trim();
+            if(Util.isNotNull(comments) && !jcmFromDb.getComments().equals(comments))
+                jcmHistoryRepository.save(new JcmHistory(jcmFromDb,comments,null,false,new Date(),jcmFromDb.getStage(),loggedInUser));
 
             //Update recruiter comments for candidate
-            if(Util.isNotNull(jobCandidateMapping.getComments()))
-                jcmFromDb.setComments(jobCandidateMapping.getComments());
+            jcmFromDb.setComments(comments);
 
             //Update candidate servingNoticePeriod
             jcmFromDb.setServingNoticePeriod(jobCandidateMapping.isServingNoticePeriod());
@@ -1795,7 +1797,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         else
             validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
 
-        if(comment.equals("")) {
+        if(Util.isNull(comment) && Util.isNotNull(callOutCome)) {
             List<MasterData> mandatoryCallOutComes = (masterDataRepository.mandatoryCallOutComes());
             mandatoryCallOutComes.forEach(row -> {
                 if (callOutCome.equals(row.getValue()))
