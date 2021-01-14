@@ -21,6 +21,6 @@ public interface MasterDataRepository extends JpaRepository<MasterData, Long> {
     @Transactional(readOnly = true)
     List<MasterData> findByTypeOrderByValueToUSe(String type);
 
-    @Query(value = "select * from master_data where type = 'callOutCome' and value_to_use='1'",nativeQuery = true)
-    List<MasterData> mandatoryCallOutComes();
+    @Transactional(readOnly = true)
+    List<MasterData> findByTypeAndValue(String type,String value);
 }
