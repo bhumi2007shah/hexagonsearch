@@ -142,8 +142,10 @@ public class MasterDataService implements IMasterDataService {
                 MasterDataBean.getInstance().getReasonForChange().add(data.getValue());
             else if(data.getType().equalsIgnoreCase("questionCategory"))
                 MasterDataBean.getInstance().getQuestionCategory().put(data.getValue(), data);
-            else if(data.getType().equalsIgnoreCase("callOutCome"))
+            else if(data.getType().equalsIgnoreCase("callOutCome")){
                 MasterDataBean.getInstance().getCallOutCome().add(data.getValue());
+                MasterDataBean.getInstance().getIsCallOutComeMandatory().put(data.getValue(),null != data.getValueToUSe() ? data.getValueToUSe().equals("1")?true:false:false);
+            }
             else if(data.getType().equalsIgnoreCase("location"))
                 MasterDataBean.getInstance().getLocation().add(data.getValue());
             else if(data.getType().equalsIgnoreCase("interviewConfirmation"))
@@ -376,6 +378,7 @@ public class MasterDataService implements IMasterDataService {
     private static final String REASON_FOR_CHANGE = "reasonForChange";
     private static final String DEFAULT_EXPORT_FORMAT = "defaultExportFormats";
     private static final String CALL_OUT_COME = "callOutCome";
+    private static final String IS_CALL_OUTCOME_MANDATORY = "isCallOutComeMandatory";
     private static final String STAGE_MASTER_DATA = "stage";
     private static final String INTERVIEW_TYPE = "interviewType";
     private static final String INTERVIEW_MODE = "interviewMode";
@@ -453,6 +456,9 @@ public class MasterDataService implements IMasterDataService {
                 break;
             case CALL_OUT_COME:
                 master.getCallOutCome().addAll(MasterDataBean.getInstance().getCallOutCome());
+                break;
+            case IS_CALL_OUTCOME_MANDATORY:
+                master.getIsCallOutComeMandatory().putAll(MasterDataBean.getInstance().getIsCallOutComeMandatory());
                 break;
             case STAGE_MASTER_DATA:
                 master.getStage().addAll(MasterDataBean.getInstance().getStage());
