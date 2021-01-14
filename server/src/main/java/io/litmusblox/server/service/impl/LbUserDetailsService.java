@@ -19,6 +19,7 @@ import io.litmusblox.server.service.UserWorkspaceBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -95,6 +96,7 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
      * @throws Exception
      */
     @Transactional
+    @CachePut(cacheNames="user", key="#user.email")
     public LoginResponseBean login(User user, boolean isOtpAvailable) throws Exception {
         log.info("Received login request from " + user.getEmail());
         long startTime = System.currentTimeMillis();

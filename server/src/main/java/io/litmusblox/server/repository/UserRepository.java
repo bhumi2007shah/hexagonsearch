@@ -24,7 +24,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByCompanyId(Long companyId);
 
-    @Cacheable(cacheNames="user", key="#email")
+   /* @Cacheable(cacheNames="user", key="#email")*/
     User findByEmail(String email);
 
     User findByUserUuid(UUID userUuid);
