@@ -5,6 +5,7 @@
 package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.User;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -22,7 +23,10 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByCompanyId(Long companyId);
+
+    @Cacheable(cacheNames="user", key="#email")
     User findByEmail(String email);
+
     User findByUserUuid(UUID userUuid);
     User findByWorkspaceUuid(UUID workspaceUuid);
     int countByCompanyId(Long companyId);

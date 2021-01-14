@@ -588,17 +588,18 @@ public class CompanyService extends AbstractAccessControl implements ICompanySer
     @Transactional
     public Company getCompanyDetail(Long companyId) {
         log.info("inside getCompanyDetail method");
+        long startTime = System.currentTimeMillis();
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Long validCompanyId = validateCompanyId(loggedInUser, companyId);
         if(!validCompanyId.equals(companyId))
             log.error("Given company id : {} and valid company id : {} both are mismatched", companyId, validCompanyId);
-
-        Company company = companyRepository.findById(validCompanyId).orElse(null);
+        Company company = companyRepository.getOne(validCompanyId);
         if(null == company)
             throw new ValidationException("Company not found for id : " + validCompanyId, HttpStatus.BAD_REQUEST);
 
         Hibernate.initialize(company.getCompanyBuList());
         Hibernate.initialize(company.getCompanyAddressList());
+        log.info("Find company by id in {}ms.", (System.currentTimeMillis() - startTime));
         return company;
     }
 
