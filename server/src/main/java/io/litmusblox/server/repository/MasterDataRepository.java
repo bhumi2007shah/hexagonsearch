@@ -2,6 +2,7 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.MasterData;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,4 +20,7 @@ public interface MasterDataRepository extends JpaRepository<MasterData, Long> {
 
     @Transactional(readOnly = true)
     List<MasterData> findByTypeOrderByValueToUSe(String type);
+
+    @Transactional(readOnly = true)
+    List<MasterData> findByTypeAndValue(String type,String value);
 }

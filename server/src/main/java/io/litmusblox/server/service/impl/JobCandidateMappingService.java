@@ -1190,10 +1190,16 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             //Update candidate percentage hike
             if(null != jobCandidateMapping.getPercentageHike())
                 jcmFromDb.setPercentageHike(jobCandidateMapping.getPercentageHike());
+            String comments = jobCandidateMapping.getComments();
+            if(Util.isNotNull(comments)){
+                comments = comments.trim();
+                String commentsFromDb = jcmFromDb.getComments();
+                if(Util.isNotNull(comments) && (commentsFromDb == null || !commentsFromDb.equals(comments)))
+                    jcmHistoryRepository.save(new JcmHistory(jcmFromDb,comments,null,false,new Date(),jcmFromDb.getStage(),loggedInUser));
+            }
 
             //Update recruiter comments for candidate
-            if(Util.isNotNull(jobCandidateMapping.getComments()))
-                jcmFromDb.setComments(jobCandidateMapping.getComments());
+            jcmFromDb.setComments(comments);
 
             //Update candidate servingNoticePeriod
             jcmFromDb.setServingNoticePeriod(jobCandidateMapping.isServingNoticePeriod());
@@ -1867,6 +1873,18 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             throw new ValidationException("Job candidate mapping not found for jcmId : "+jcmId, HttpStatus.BAD_REQUEST);
         else
             validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
+        if(Util.isNotNull(comment)) comment = comment.trim();
+        else if( Util.isNotNull(callOutCome)) {
+                List<MasterData> callOutcomeFromDb = (masterDataRepository.findByTypeAndValue("callOutCome",callOutCome));
+                if(callOutcomeFromDb.size() == 0)
+                    throw new ValidationException(callOutCome+" is not a valid callOutCome", HttpStatus.BAD_REQUEST);
+
+                String valueToUse = callOutcomeFromDb.get(0).getValueToUSe();
+                if(Util.isNotNull(valueToUse) && valueToUse.equals("1")){
+                    throw new ValidationException("Comment is mandatory for "+callOutCome, HttpStatus.BAD_REQUEST);
+                }
+            }
+
 
         jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, comment, callOutCome, false, new Date(), jobCandidateMapping.getStage(), loggedInUser));
     }

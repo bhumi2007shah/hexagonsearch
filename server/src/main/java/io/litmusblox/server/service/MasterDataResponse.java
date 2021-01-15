@@ -40,6 +40,7 @@ public class MasterDataResponse {
     private List<String> reasonForChange = new ArrayList<>();
     private Map<Long, String> defaultExportFormats = new HashMap<>();
     private List<String> callOutCome = new ArrayList<>();
+    private Map<String,Boolean> isCallOutComeMandatory = new HashMap<>();
     private Map<Long, String> referrerRelation = new HashMap<>();
     private Map<Long, String> jobType = new HashMap<>();
     private Map<String, Long> stageStepMasterMap = new LinkedHashMap<>();
