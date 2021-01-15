@@ -57,4 +57,12 @@ public class CandidateSkillDetails {
         this.candidateId = candidateId;
         this.skill = skill;
     }
+
+    public CandidateSkillDetails(Long candidateId, String skill, Date lastUsed, Long expInMonths, String version) {
+        this.candidateId = candidateId;
+        this.skill = skill;
+        this.lastUsed = lastUsed;
+        this.expInMonths = expInMonths;
+        this.version = version;
+    }
 }

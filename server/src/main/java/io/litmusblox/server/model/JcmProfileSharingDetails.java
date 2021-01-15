@@ -4,15 +4,14 @@
 
 package io.litmusblox.server.model;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
-import java.util.UUID;
 
 /**
  * @author : Sumit
@@ -25,21 +24,17 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "JCM_PROFILE_SHARING_DETAILS")
+@JsonFilter("JcmProfileSharingDetails")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class JcmProfileSharingDetails {
 
     private static final long serialVersionUID = 6868521896546285046L;
 
     @Id
-    @Column(name = "ID", unique = true)
-    @GeneratedValue(generator="system-uuid")
-    private UUID id;
+    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="PROFILE_SHARING_MASTER_ID")
-    private JcmProfileSharingMaster profileSharingMaster;
-
-    @NotNull
     @Column(name="JOB_CANDIDATE_MAPPING_ID")
     private Long jobCandidateMappingId;
 
@@ -53,11 +48,27 @@ public class JcmProfileSharingDetails {
     @Column(name = "COMMENTS")
     private String comments;
 
-    @Column(name="REJECTION_REASON_ID")
-    private Long rejectionReasonId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="REJECTION_REASON_ID")
+    private RejectionReasonMasterData rejectionReason;
 
-    public JcmProfileSharingDetails(JcmProfileSharingMaster profileSharingMasterId, @NotNull Long jobCandidateMappingId) {
-        this.profileSharingMaster = profileSharingMasterId;
+    @Column(name = "RECEIVER_NAME")
+    private String receiverName;
+
+    @Column(name = "RECEIVER_ID")
+    private Long receiverId;
+
+    @Column(name = "SENDER_ID")
+    private Long senderId;
+
+    @Column(name = "EMAIL_SENT_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date emailSentOn;
+
+    public JcmProfileSharingDetails(@NotNull Long jobCandidateMappingId, Long senderId, Long receiverId, String receiverName) {
         this.jobCandidateMappingId = jobCandidateMappingId;
+        this.receiverName = receiverName;
+        this.receiverId = receiverId;
+        this.senderId = senderId;
     }
 }

@@ -4,6 +4,8 @@
 
 package io.litmusblox.server.service;
 
+import java.util.UUID;
+
 /**
  * @author : Shital Raval
  * Date : 13/1/20
@@ -15,7 +17,7 @@ public interface IProcessOtpService {
     /**
      * Service method to handle send Otp request from search job page
      *
-     * @param isEmployeeReferral true if the send otp request was from employee referral flow
+     * @param sendEmailOtp true if the send otp request was from employee referral flow
      * @param mobileNumber mobile number to send otp to
      * @param countryCode country code
      * @param email email address of the employee
@@ -23,7 +25,7 @@ public interface IProcessOtpService {
      * @param companyShortName shortname of the company
      * @throws Exception
      */
-    void sendOtp(boolean isEmployeeReferral, String mobileNumber, String countryCode, String email, String recepientName, String companyShortName) throws Exception;
+    String sendOtp(boolean sendEmailOtp, String mobileNumber, String countryCode, String email, String recepientName, String companyShortName, UUID uuid) throws Exception;
 
     /**
      * Service method to validate Otp against a mobile number

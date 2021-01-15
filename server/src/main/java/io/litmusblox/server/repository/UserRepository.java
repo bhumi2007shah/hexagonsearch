@@ -24,6 +24,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByCompanyId(Long companyId);
     User findByEmail(String email);
     User findByUserUuid(UUID userUuid);
+    User findByWorkspaceUuid(UUID workspaceUuid);
     int countByCompanyId(Long companyId);
     int countByCompanyBuId(Long companyBuId);
     List<User> findByIdIn(List<Long> userId);

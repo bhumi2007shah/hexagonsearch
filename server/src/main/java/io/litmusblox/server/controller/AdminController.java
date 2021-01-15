@@ -112,10 +112,4 @@ public class AdminController {
             adminService.addCompanyCandidateOnSearchEngine();
         }
     }
-    @PutMapping(value = "/addHiringManagerAsUser")
-    @PreAuthorize("hasRole('"+IConstant.UserRole.Names.SUPER_ADMIN +"')")
-    @ResponseStatus(value = HttpStatus.OK)
-    void addHiringManagerAsUser() throws Exception{
-        adminService.addHiringManagerAsUser();
-    }
 }

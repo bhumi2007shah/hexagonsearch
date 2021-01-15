@@ -35,6 +35,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import static java.util.stream.Collectors.groupingBy;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileInputStream;
@@ -622,6 +623,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         }
     }
 
+    /**
+     * Service method to capture candidate response to screening questions from chatbot
+     * @param uuid the uuid corresponding to a unique jcm record
+     * @param response Map of questionId and response List of responses received from chatbot
+     * @throws Exception
+     */
     @Transactional(propagation = Propagation.REQUIRED)
     public void saveScreeningQuestionResponse(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean, JobCandidateMapping jcmFromDb, String userAgent) throws Exception {
         log.info("Saving chatbot response for uuid : {}, jobId : {} and jcmId : {}", uuid, jcmFromDb.getJob().getId(), jcmFromDb.getId());

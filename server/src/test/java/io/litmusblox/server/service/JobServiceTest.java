@@ -240,6 +240,7 @@ class JobServiceTest extends AbstractTest {
         boolean testPass = true;
         try {
             int educationArray[] = {15};
+            Integer functionArray[] = {15};
             Integer recruiterArray[] = {1};
             Integer hiringManagerArray[]={1};
             Job testJob = Job.builder()
@@ -250,12 +251,11 @@ class JobServiceTest extends AbstractTest {
                     .createdOn(new Date())
                     .companyId(Company.builder().id(2L).build())
                     .education(educationArray)
-                    .role(RoleMasterData.builder().id(1L).build())
                     .expertise(MasterData.builder().id(122L).build())
                     .minExperience(2l)
                     .maxExperience(4l)
                     .jobIndustry(IndustryMasterData.builder().id(1L).build())
-                    .function(FunctionMasterData.builder().id(13L).build())
+                    .function(functionArray)
                     .jobReferenceId(UUID.randomUUID())
                     .recruiter(recruiterArray)
                     .hiringManager(hiringManagerArray)
@@ -265,7 +265,7 @@ class JobServiceTest extends AbstractTest {
                     .minExperience(0L)
                     .maxExperience(2L)
                     .build();
-            jobService.addJob(testJob, IConstant.AddJobPages.overview.name());
+            jobService.addJobFlow(testJob, IConstant.AddJobPages.overview.name());
             assertThat(testJob.getId()).isNotNull();
         } catch (Exception e) {
             e.printStackTrace();

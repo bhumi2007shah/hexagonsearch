@@ -83,6 +83,12 @@ public class MasterDataService implements IMasterDataService {
     @Resource
     RoleMasterDataRepository roleMasterDataRepository;
 
+    @Resource
+    StatementsBlockMasterDataRepository statementsBlockMasterDataRepository;
+
+    @Resource
+    AttributesMasterDataRepository attributesMasterDataRepository;
+
     @Autowired
     Environment environment;
 
@@ -138,6 +144,8 @@ public class MasterDataService implements IMasterDataService {
                 MasterDataBean.getInstance().getQuestionCategory().put(data.getValue(), data);
             else if(data.getType().equalsIgnoreCase("callOutCome"))
                 MasterDataBean.getInstance().getCallOutCome().add(data.getValue());
+            else if(data.getType().equalsIgnoreCase("location"))
+                MasterDataBean.getInstance().getLocation().add(data.getValue());
             else if(data.getType().equalsIgnoreCase("interviewConfirmation"))
                 MasterDataBean.getInstance().getInterviewConfirmation().put(data.getValue(), data);
             else if(data.getType().equalsIgnoreCase("questionType")){
@@ -234,6 +242,19 @@ public class MasterDataService implements IMasterDataService {
                 tempRoleMap.put(roleMasterData1.getRole(), roleMasterData1.getId()));
             MasterDataBean.getInstance().getRoleMap().put(function.getKey(), tempRoleMap);
         });
+
+        //Load JobAttribute in master data
+        attributesMasterDataRepository.findAll().forEach(attributeMasterData ->
+                MasterDataBean.getInstance().getAttribute().put(attributeMasterData.getId(), attributeMasterData));
+        MasterDataBean.getInstance().getFunction().entrySet().forEach(function ->{
+            Map<String, Long> tempAttributeMap = new HashMap<>();
+            attributesMasterDataRepository.findByFunction(function.getValue()).forEach(attributeMasterData1 ->
+                    tempAttributeMap.put(attributeMasterData1.getJobAttribute(), attributeMasterData1.getId()));
+            MasterDataBean.getInstance().getAttributeMap().put(function.getKey(), tempAttributeMap);
+        });
+
+        //Load statement block data
+        MasterDataBean.getInstance().getStatementBlocks().addAll(statementsBlockMasterDataRepository.findAll());
 
     }
 
@@ -368,6 +389,12 @@ public class MasterDataService implements IMasterDataService {
     private static final String JOB_FUNCTION = "function";
     private static final String JOB_ROLE = "role";
     private static final String SALARY_RANGE = "salaryRange";
+    private static final String ARCHIVE_STATUS = "archiveStatus";
+    private static final String ARCHIVE_REASON = "archiveReason";
+    private static final String LOCATION = "location";
+    private static final String STATEMENT_BLOCKS = "statementBlocks";
+    private static final String JOB_ATTRIBUTE = "attribute";
+    private static final String CANDIDATE_NOT_INTERESTED_REASON = "candidateNotInterestedReason";
 
     /**
      * Method to fetch specific master data from cache
@@ -469,6 +496,24 @@ public class MasterDataService implements IMasterDataService {
             case SALARY_RANGE:
                 master.getSalaryRange().putAll(MasterDataBean.getInstance().getSalaryRange());
                 break;
+            case ARCHIVE_STATUS:
+                master.getArchiveStatus().putAll(IConstant.ArchiveStatus);
+                break;
+            case ARCHIVE_REASON:
+                master.getArchiveReason().putAll(IConstant.ArchiveReason);
+                break;
+            case STATEMENT_BLOCKS:
+                master.getStatementBlocks().addAll(MasterDataBean.getInstance().getStatementBlocks());
+                break;
+            case LOCATION:
+                master.getLocation().addAll(MasterDataBean.getInstance().getLocation());
+                break;
+            case JOB_ATTRIBUTE:
+                master.getAttributeMap().putAll(MasterDataBean.getInstance().getAttributeMap());
+                break;
+            case CANDIDATE_NOT_INTERESTED_REASON:
+                master.getCandidateNotInterestedReason().putAll(MasterDataBean.getInstance().getCandidateNotInterestedReason());
+                break;
             default: //for all other properties, use reflection
 
                 //handle to the getter method for the field
@@ -486,6 +531,7 @@ public class MasterDataService implements IMasterDataService {
     public void addIndustryMasterData(List<IndustryMasterDataRequestBean> industryMasterDataRequestBeanList){
         log.info("Received request to add Industry Master Data with data: {}", industryMasterDataRequestBeanList);
         for(IndustryMasterDataRequestBean industryMasterDataRequestBean:industryMasterDataRequestBeanList) {
+            //Add Industry data
             IndustryMasterData industryMasterData = null;
             String industry = industryMasterDataRequestBean.getIndustryName();
             industryMasterData = industryMasterDataRepository.findByIndustry(industry);
@@ -494,6 +540,8 @@ public class MasterDataService implements IMasterDataService {
                 industryMasterData.setIndustry(industry);
                 industryMasterData = industryMasterDataRepository.save(industryMasterData);
             }
+
+            //Add Function data
             List<IndustryFunction> industryFunctionsList = industryMasterDataRequestBean.getFunctions();
             if(!industryFunctionsList.isEmpty()){
                 for(IndustryFunction industryFunction:industryMasterDataRequestBean.getFunctions()){
@@ -506,18 +554,26 @@ public class MasterDataService implements IMasterDataService {
                         functionMasterData.setIndustry(industryMasterData);
                         functionMasterData = functionMasterDataRepository.save(functionMasterData);
                     }
-                    List<IndustryRole> industryRolesList = industryFunction.getRoles();
-                    if(!industryRolesList.isEmpty()){
-                        for(IndustryRole industryRole:industryRolesList){
-                            String role = industryRole.getRoleName();
-                            RoleMasterData roleMasterData = null;
-                            roleMasterData = roleMasterDataRepository.findByRoleAndFunction(role, functionMasterData);
-                            if(null == roleMasterData){
-                                roleMasterData = new RoleMasterData();
-                                roleMasterData.setRole(role);
-                                roleMasterData.setFunction(functionMasterData);
-                                roleMasterDataRepository.save(roleMasterData);
-                            }
+                    //Add Role master data
+                    for(String role:industryFunction.getRoles()){
+                        RoleMasterData roleMasterData = null;
+                        roleMasterData = roleMasterDataRepository.findByRoleAndFunction(role, functionMasterData);
+                        if(null == roleMasterData){
+                            roleMasterData = new RoleMasterData();
+                            roleMasterData.setRole(role);
+                            roleMasterData.setFunction(functionMasterData);
+                            roleMasterDataRepository.save(roleMasterData);
+                        }
+                    }
+                    //Add attribute master data
+                    for(String attribute:industryFunction.getAttributes()){
+                        AttributesMasterData attributeMasterData = null;
+                        attributeMasterData = attributesMasterDataRepository.findByJobAttributeAndFunction(attribute, functionMasterData);
+                        if(null == attributeMasterData){
+                            attributeMasterData = new AttributesMasterData();
+                            attributeMasterData.setJobAttribute(attribute);
+                            attributeMasterData.setFunction(functionMasterData);
+                            attributesMasterDataRepository.save(attributeMasterData);
                         }
                     }
                 }

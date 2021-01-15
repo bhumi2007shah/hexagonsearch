@@ -4,11 +4,9 @@
 
 package io.litmusblox.server.model;
 
-import com.fasterxml.jackson.annotation.JsonFilter;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.vladmihalcea.hibernate.type.array.IntArrayType;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import io.litmusblox.server.constant.IConstant;
@@ -105,10 +103,6 @@ public class Job implements Serializable {
     @JoinColumn(name = "BU_ID")
     private CompanyBu buId;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "OLD_FUNCTION")
-    private MasterData oldFunction;
-
     @Column(name = "CURRENCY")
     private String currency = "INR";
 
@@ -196,23 +190,23 @@ public class Job implements Serializable {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "jobId")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private List<JobKeySkills> jobKeySkillsList=new ArrayList<>();
+    private List<JobSkillsAttributes> jobSkillsAttributesList =new ArrayList<>();
 
     @OneToMany(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobId")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private List<JobCapabilities> jobCapabilityList=new ArrayList<>();
 
+    @OneToMany(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobId")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private List<JobRole> jobRoleList=new ArrayList<>();
+
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "JOB_INDUSTRY")
     private IndustryMasterData jobIndustry;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "FUNCTION")
-    private FunctionMasterData function;
-
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "ROLE")
-    private RoleMasterData role;
+    @Type(type = "int-array")
+    @Column(name = "FUNCTION", columnDefinition = "integer[]")
+    private Integer[] function;
 
     @Column(name = "AUTO_INVITE")
     private boolean autoInvite;
@@ -220,9 +214,22 @@ public class Job implements Serializable {
     @Column(name = "VISIBLE_TO_CAREER_PAGE")
     private boolean visibleToCareerPage;
 
+    @Column(name = "ARCHIVE_STATUS")
+    private String archiveStatus;
+
+    @Column(name = "ARCHIVE_REASON")
+    private String archiveReason;
+
     @Type(type="jsonb")
     @Column(name = "EXPECTED_ANSWER", columnDefinition = "jsonb")
     private JsonNode expectedAnswer;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "STATEMENT_BLOCK")
+    private StatementsBlockMasterData statementBlock;
+
+    @Column(name = "QUICK_QUESTION")
+    private boolean quickQuestion;
 
     @Transient
     @JsonInclude
@@ -244,7 +251,8 @@ public class Job implements Serializable {
     private Map<Long,String> roles = new HashMap<>();
 
     @Transient
-    private List<String> selectedRole;
+    @JsonProperty
+    private List<Integer> selectedRole = new ArrayList<>();
 
     @Transient
     private String companyDescription;
@@ -259,9 +267,9 @@ public class Job implements Serializable {
     @JsonProperty
     private List<String> selectedKeySkills;
 
-    @JsonProperty
     @Transient
-    private String userSelectedRole;
+    @JsonProperty
+    private List<Integer> selectedAttribute;
 
     @Transient
     private String experienceRange;

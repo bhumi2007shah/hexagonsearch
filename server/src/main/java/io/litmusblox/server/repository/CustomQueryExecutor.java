@@ -212,18 +212,17 @@ public class CustomQueryExecutor {
 
     private static final String totalLiveJobCountSelectQuery = "select count(id) from job where date_published is not null and date_archived is null";
 
-    private static final String futureInterviewDetailsForCompanyQuery = "select ivd.id, concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidate_name, jcm.email, jcm.country_code, jcm.mobile, jcm.chatbot_status as screening_status, jcm.created_by as jcm_created_by, cv.overall_rating as key_skill_strength, CAST(ivd.interview_date as varchar),\n" +
-            "(CASE when (ivd.candidate_confirmation_value is not null and md.value like 'Yes%') then 'Confirmed'\n" +
-            "when (ivd.candidate_confirmation_value is not null and md.value like '%reschedule%') then 'Rescheduled'\n" +
-            "when (ivd.candidate_confirmation_value is not null and md.value like 'No%') or  ivd.cancelled = 't' then 'Cancelled'\n" +
-            "else 'Scheduled'\n" +
-            "END) as interview_status, md.value as candidate_confirmation, array(select id from interviewer_details where interview_id=ivd.id) as interviewers, ivd.created_by as iv_created_by\n" +
-            "from interview_details ivd\n" +
-            "inner join job_candidate_mapping jcm on ivd.job_candidate_mapping_id=jcm.id\n" +
-            "left join master_data md on ivd.candidate_confirmation_value=md.id\n" +
-            "left join cv_rating cv on ivd.job_candidate_mapping_id=cv.job_candidate_mapping_id\n" +
-            "left join job j on jcm.job_id=j.id \n" +
-            "where ivd.interview_date>now() and j.date_archived is null and j.company_id=\n";
+    private static final String futureInterviewDetailsForCompanyQuery = "select distinct on (jcm.id) ivd.id, job.id as job_id, job.job_title, concat(jcm.candidate_first_name, ' ', jcm.candidate_last_name) as candidate_name, jcm.email, jcm.country_code, jcm.mobile, jcm.chatbot_status as screening_status, jcm.created_by as jcm_created_by, jcm.overall_rating as key_skill_strength, ivd.interview_date, \n" +
+            "(CASE when ivd.cancelled = 't' then 'Cancelled' \n" +
+            "when (ivd.candidate_confirmation_value is not null and md.value like '%reschedule%') then 'Rescheduled' \n" +
+            "when (ivd.show_no_show is true) then 'Show' \n" +
+            "when (ivd.no_show_reason is not null and show_no_show is false) then 'No Show' else 'Scheduled' \n" +
+            "END) as interview_status, \n" +
+            "md.value as candidate_confirmation, array(select id from interviewer_details where interview_id=ivd.id) as interviewers, ivd.created_by as iv_created_by from interview_details ivd \n" +
+            "inner join job_candidate_mapping jcm on ivd.job_candidate_mapping_id=jcm.id \n" +
+            "left join master_data md on ivd.candidate_confirmation_value=md.id \n" +
+            "left join job on jcm.job_id=job.id \n" +
+            "where ivd.interview_date>=current_date and job.date_archived is null";
 
     @Transactional(readOnly = true)
     public List<AnalyticsResponseBean> analyticsByCompany(String startDate, String endDate, String companyIdList) throws Exception {
@@ -506,9 +505,14 @@ public class CustomQueryExecutor {
     }
 
     @Transactional(readOnly = true)
-    public List<InterviewsResponseBean> getInterviewDetailsByCompany(Long companyId) {
+    public List<InterviewsResponseBean> getInterviewDetailsByCompany(Long companyId, User loggedInUser) {
         StringBuffer queryString = new StringBuffer();
-        queryString.append(futureInterviewDetailsForCompanyQuery).append(companyId);
+        queryString.append(futureInterviewDetailsForCompanyQuery);
+        if(IConstant.UserRole.CLIENT_ADMIN.toString().equals(loggedInUser.getRole()) || IConstant.UserRole.SUPER_ADMIN.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobAgingClientAdminWhereClause).append(companyId).append(")");
+        else if(IConstant.UserRole.RECRUITER.toString().equals(loggedInUser.getRole()))
+            queryString.append(jobAgingRecruiterWhereClause).append(loggedInUser.getId()).append(checkForRecruiterList).append(")");
+        queryString.append(" order by jcm.id, ivd.id desc");
         Query query = entityManager.createNativeQuery(queryString.toString(), InterviewsResponseBean.class);
         return query.getResultList();
     }

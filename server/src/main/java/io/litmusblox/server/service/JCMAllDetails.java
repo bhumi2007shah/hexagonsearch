@@ -13,6 +13,7 @@ import io.litmusblox.server.model.InterviewDetails;
 import io.litmusblox.server.model.JcmHistory;
 import io.litmusblox.server.model.JcmProfileSharingDetails;
 import lombok.Data;
+import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;

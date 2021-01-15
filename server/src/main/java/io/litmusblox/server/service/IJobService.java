@@ -24,12 +24,6 @@ import java.util.UUID;
  * Project Name : server
  */
 public interface IJobService {
-    /**
-     * Add a new job
-     * @return Response bean with jobId, and optionally list of skills and capabilities from ML
-     * @throws Exception
-     */
-    Job addJob(Job job, String pageName) throws Exception;
 
     /**
      * Find all jobs for logged in user
@@ -78,7 +72,7 @@ public interface IJobService {
      *
      * @param jobId id of the job to be archived
      */
-    void archiveJob(Long jobId);
+    void archiveJob(Long jobId, String arciveStatus, String archiveReason);
 
     /**
      * Service method to unarchive a job
@@ -91,8 +85,9 @@ public interface IJobService {
      * Service method to get job details by job id
      *
      * @param jobId id for which details will be retrieved
+     * @param isCallForHiringManager
      */
-    Job getJobDetails(Long jobId) throws Exception;
+    Job getJobDetails(Long jobId, Boolean isCallForHiringManager) throws Exception;
 
     /**
      * Service method to get job history by job id
@@ -172,7 +167,7 @@ public interface IJobService {
      * @return Response bean with jobId, and optionally list of skills from ML
      * @throws Exception
      */
-    Job newAddJobFlow(Job job, String pageName) throws Exception;
+    Job addJobFlow(Job job, String pageName) throws Exception;
 
     /**
      * API to get and add tech questions from search engine

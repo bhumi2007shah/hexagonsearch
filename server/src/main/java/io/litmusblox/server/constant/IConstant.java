@@ -143,7 +143,7 @@ public interface IConstant {
     }
 
     enum CandidateSource {
-        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriMassMail("NaukriMassMail"), NaukriJobPosting("NaukriJobPosting"), EmployeeReferral("EmployeeReferral"), CareerPage("CareerPage"), JobPosting("JobPosting"), GenericEmail("GenericEmail");
+        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriMassMail("NaukriMassMail"), NaukriJobPosting("NaukriJobPosting"), EmployeeReferral("EmployeeReferral"), CareerPage("CareerPage"), JobPosting("JobPosting"), GenericEmail("GenericEmail"), LBHarvester("LBHarvester");
         private String value;
 
         CandidateSource(String val) {
@@ -228,7 +228,7 @@ public interface IConstant {
 
 
     enum MAX_FIELD_LENGTHS {
-        INSTITUTE_NAME(75), COMPANY_NAME(75), DESIGNATION(100), ADDRESS(255), KEY_SKILLS(255), ONLINE_PROFILE_URL(255), ONLINE_PROFILE_TYPE(20), WORK_SUMMARY(255), GENDER(1), DEGREE(100), SKILL(50), ROLE(40), YEAR_OF_PASSING(4), REASON_FOR_CHANGE(100), SPECIALIZATION(50), INTERVIEW_COMMENTS(250);
+        INSTITUTE_NAME(75), COMPANY_NAME(75), DESIGNATION(100), ADDRESS(255), KEY_SKILLS(255), ONLINE_PROFILE_URL(255), ONLINE_PROFILE_TYPE(20), WORK_SUMMARY(255), GENDER(1), DEGREE(100), SKILL(50), SKILL_VERSION(10), ROLE(40), YEAR_OF_PASSING(4), REASON_FOR_CHANGE(100), SPECIALIZATION(50), INTERVIEW_COMMENTS(250), HIRING_MANAGER_COMMENTS(300);
 
         private int value;
 
@@ -309,6 +309,21 @@ public interface IConstant {
         }
     }
 
+    Map<String,String> ArchiveStatus = new LinkedHashMap<>(){{
+        put("Success – We hired candidates for all positions in this job","Success");
+        put("Partial Success – We hired candidates for some positions in this job","Partial Success");
+        put("No Success – We did not hire candidates for any positions in this job","No Success");
+    }};
+
+    Map<String,String> ArchiveReason = new LinkedHashMap<>(){{
+        put("Business Approval - not received","Business Approval");
+        put("Business Change - requirements changed","Business Change");
+        put("Hiring Manager - requirements changed","Hiring Manager");
+        put("Candidate Backout - identified candidate backed out","Candidate Backout");
+        put("Recruitment - not able to find the right candidates.","Recruitment");
+        put("Other","Other");
+    }};
+
     //constants for create candidate if firstName, lastName.
     String NOT_FIRST_NAME = "Not";
     String NOT_LAST_NAME = "Available";
@@ -352,7 +367,7 @@ public interface IConstant {
     String NOT_AVAILABLE_EMAIL = "@notavailable.io";
     String SYSTEM_USER_EMAIL = "systemuser@hex.com";
 
-    String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countries", "education", "otpExpiryMinutes", "hiringManagerRejectReasons"};
+    String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countries", "education", "otpExpiryMinutes", "hiringManagerRejectReasons", "candidateNotInterestedReason","location"};
 
     String chatCompleteScreeningMessage = "Candidate completed chatbot";
 
@@ -382,7 +397,7 @@ String REF_ID_MATCH_REGEX = "[a-fA-F0-9]{8}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-
     int OTP_EXPIRY_SECONDS = 90;
 
     enum ASYNC_OPERATIONS {
-        FileUpload, InviteCandidates
+        FileUpload, InviteCandidates, DragDrop
     }
 
     String LB_SHORT_CODE = "LB";

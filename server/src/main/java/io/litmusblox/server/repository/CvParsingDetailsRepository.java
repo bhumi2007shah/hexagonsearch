@@ -23,27 +23,18 @@ import java.util.List;
 @Repository
 public interface CvParsingDetailsRepository extends JpaRepository<CvParsingDetails, Long> {
 
-    List<CvParsingDetails> findByRchilliJsonProcessed(boolean rchilliJsonProcessed);
 
     @Transactional
-    @Query(nativeQuery = true, value = "select * from cv_parsing_details where cv_rating_api_flag is false and (processing_status is null or processing_status = 'Success') and  parsing_response_text is not null and length(trim(parsing_response_text))>=:responseTxtLimit order by id desc limit 10")
+    @Query(nativeQuery = true, value = "select * from cv_parsing_details where cv_rating_api_flag is false and (processing_status is null or processing_status = 'Success') and  parsing_response_text is not null and length(trim(parsing_response_text))>=:responseTxtLimit and candidate_skills is not null and CV_RATING_API_CALL_RETRY_COUNT < 4 order by id desc limit 10")
     List<CvParsingDetails> findCvRatingRecordsToProcess(int responseTxtLimit);
 
     @Transactional
     void deleteByJobCandidateMappingId(JobCandidateMapping jobCandidateMapping);
 
-    @Transactional
-    @Query(nativeQuery = true, value = "select * from cv_parsing_details where processing_status='Failure' and cv_file_name like (concat('%_',:jobId,'_%'))")
-    List<CvParsingDetails> getRchilliErrorResponseBeanList(Long jobId);
-
-    @Query(value = "select cpd.* from cv_parsing_details cpd\n" +
-            "inner join job_candidate_mapping jcm on jcm.id = cpd.job_candidate_mapping_id\n" +
-            "where cpd.parsing_response_text is null \n" +
-            "and cpd.cv_rating_api_flag = false \n" +
-            "and (cpd.processing_status is null or cpd.processing_status = 'Success')\n" +
-            //commented out the source as per ticket #442
-            //"and jcm.candidate_source not in ('File', 'Individual')\n" +
-            "and cpd.cv_convert_api_flag = false \n" +
-            "and (jcm.cv_file_type is not null and trim(jcm.cv_file_type) != '')", nativeQuery = true)
-    List<CvParsingDetails> getDataForConvertCvToCvText();
+    @Query(value = "select cpd.* from cv_parsing_details cpd " +
+            "inner join job_candidate_mapping jcm on jcm.id = cpd.job_candidate_mapping_id " +
+            "inner join (select max(job_id) as jobId from job_skills_attributes where selected = 't' group by job_id) as jsa on jsa.jobId = jcm.job_id " +
+            "where jcm.overall_rating is null and (jcm.cv_file_type is not null and trim(jcm.cv_file_type) != '') and cpd.cv_rating_api_flag = false " +
+            "order by cpd.id desc limit 10;\n", nativeQuery = true)
+    List<CvParsingDetails> getDataForUpdateCvRating();
 }

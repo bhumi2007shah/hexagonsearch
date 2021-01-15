@@ -15,6 +15,7 @@ import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.CandidateRequestBean;
 import io.litmusblox.server.service.ICandidateService;
 import io.litmusblox.server.service.ISearchEngineService;
+import io.litmusblox.server.utils.LoggedInUserInfoUtil;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
@@ -65,6 +66,9 @@ public class CandidateService implements ICandidateService {
 
     @Resource
     CandidateOnlineProfilesRepository candidateOnlineProfilesRepository;
+
+    @Resource
+    JobCandidateMappingRepository jobCandidateMappingRepository;
 
     @Resource
     CandidateLanguageProficiencyRepository candidateLanguageProficiencyRepository;
@@ -263,6 +267,7 @@ public class CandidateService implements ICandidateService {
         candidateEducationDetailsRepository.deleteByCandidateId(candidate.getId());
         //insert new ones
         candidateEducationDetails.forEach(obj -> {
+
             //check if institute name is more than 75 characters
             if (!Util.isNull(obj.getInstituteName()) && obj.getInstituteName().length() > IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue()){
                 obj.setInstituteName(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.name(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue(), obj.getInstituteName()));
@@ -286,8 +291,8 @@ public class CandidateService implements ICandidateService {
                 obj.setYearOfPassing(Util.truncateField(candidate, IConstant.YEAR_OF_PASSING,IConstant.MAX_FIELD_LENGTHS.YEAR_OF_PASSING.getValue(), obj.getYearOfPassing()));
             }
 
-            obj.setCandidateId(candidate.getId());
-            candidateEducationDetailsRepository.save(obj);});
+            CandidateEducationDetails newCandidateEducationDetails = new CandidateEducationDetails(candidate.getId(), obj.getDegree(), obj.getYearOfPassing(), obj.getInstituteName(), obj.getSpecialization());
+            candidateEducationDetailsRepository.save(newCandidateEducationDetails);});
     }
 
     @Transactional
@@ -304,7 +309,9 @@ public class CandidateService implements ICandidateService {
             if(!Util.isNull(obj.getCompanyName()) && obj.getCompanyName().length() > IConstant.MAX_FIELD_LENGTHS.ROLE.getValue()) {
                 obj.setRole(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.ROLE.name(), IConstant.MAX_FIELD_LENGTHS.ROLE.getValue(), obj.getCompanyName()));
             }
-            obj.setCandidateId(candidate.getId());candidateProjectDetailsRepository.save(obj);});
+            obj.setCandidateId(candidate.getId());
+            CandidateProjectDetails newCandidateProjectDetails = new CandidateProjectDetails(obj);
+            candidateProjectDetailsRepository.save(newCandidateProjectDetails);});
     }
 
     @Transactional
@@ -322,7 +329,9 @@ public class CandidateService implements ICandidateService {
             if(!Util.isNull(obj.getUrl()) && obj.getUrl().length() > IConstant.MAX_FIELD_LENGTHS.ONLINE_PROFILE_URL.getValue()) {
                 obj.setUrl(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.ONLINE_PROFILE_URL.name(), IConstant.MAX_FIELD_LENGTHS.ONLINE_PROFILE_URL.getValue(), obj.getUrl()));
             }
-            obj.setCandidateId(candidate.getId());candidateOnlineProfilesRepository.save(obj);});
+            obj.setCandidateId(candidate.getId());
+            CandidateOnlineProfile newCandidateOnlineProfile = new CandidateOnlineProfile(obj.getCandidateId(), obj.getProfileType(), obj.getUrl());
+            candidateOnlineProfilesRepository.save(newCandidateOnlineProfile);});
     }
 
     @Transactional
@@ -332,7 +341,10 @@ public class CandidateService implements ICandidateService {
         //delete existing records
         candidateLanguageProficiencyRepository.deleteByCandidateId(candidateId);
         //insert new ones
-        candidateLanguageProficiencies.forEach(obj -> {obj.setCandidateId(candidateId);candidateLanguageProficiencyRepository.save(obj);});
+        candidateLanguageProficiencies.forEach(obj -> {
+            obj.setCandidateId(candidateId);
+            CandidateLanguageProficiency newCandidateLanguageProficiency = new CandidateLanguageProficiency(obj.getCandidateId(), obj.getLanguage(), obj.getProficiency());
+            candidateLanguageProficiencyRepository.save(newCandidateLanguageProficiency);});
     }
 
     @Transactional
@@ -349,13 +361,18 @@ public class CandidateService implements ICandidateService {
         log.info("Inside saveUpdateCandidateSkillDetails method");
         //delete existing records
         candidateSkillDetailsRepository.deleteByCandidateId(candidate.getId());
+        List<CandidateSkillDetails> skillList = new ArrayList<CandidateSkillDetails>(candidateSkillDetails.stream().collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(CandidateSkillDetails::getSkill)))));
         //insert new ones
-        candidateSkillDetails.forEach(obj -> {
+        skillList.forEach(obj -> {
             if(!Util.isNull(obj.getSkill()) && obj.getSkill().length() > IConstant.MAX_FIELD_LENGTHS.SKILL.getValue()) {
                 obj.setSkill(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL.name(), IConstant.MAX_FIELD_LENGTHS.SKILL.getValue(), obj.getSkill()));
             }
-            obj.setCandidateId(candidate.getId());candidateSkillDetailsRepository.save(obj);});
-
+            if(!Util.isNull(obj.getVersion()) && obj.getVersion().length() > IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.getValue()) {
+                obj.setVersion(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.name(), IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.getValue(), obj.getVersion()));
+            }
+            obj.setCandidateId(candidate.getId());
+            CandidateSkillDetails newCandidateSkillDetails = new CandidateSkillDetails(obj.getCandidateId(), obj.getSkill(), obj.getLastUsed(), obj.getExpInMonths(), obj.getVersion());
+            candidateSkillDetailsRepository.save(newCandidateSkillDetails);});
     }
 
     @Transactional
@@ -376,26 +393,29 @@ public class CandidateService implements ICandidateService {
             if (!Util.isNull(obj.getDesignation()) && obj.getDesignation().length() > IConstant.MAX_FIELD_LENGTHS.DESIGNATION.getValue()) {
                 obj.setDesignation(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.DESIGNATION.name(), IConstant.MAX_FIELD_LENGTHS.DESIGNATION.getValue(), obj.getDesignation()));
             }
-            candidateCompanyDetailsRepository.save(obj);});
+            CandidateCompanyDetails newCandidateCompanyDetails = new CandidateCompanyDetails(obj);
+            candidateCompanyDetailsRepository.save(newCandidateCompanyDetails);});
     }
 
     /**
      * Method to call search engine to add a candidate.
      * @param candidate
      */
-    public void createCandidateOnSearchEngine(Candidate candidate , Job job, String authToken) {
+    public int createCandidateOnSearchEngine(Candidate candidate , Job job, String authToken) {
         log.info("inside create candidate on search engine for candidate {}, in job {}, for company {}.", candidate, job, job.getCompanyName());
         long startTime = System.currentTimeMillis();
 
         CandidateRequestBean candidateRequestBean = getCandidateRequestBean(candidate, job);
 
+        int statusCode = 500;
+
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, Object> userDetails = searchEngineService.getLoggedInUserInformation();
+        Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
 
         log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), job.getId());
         try {
-            RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null, Optional.of(userDetails));
+            statusCode = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null, Optional.of(userDetails)).getStatusCode();
         }
         catch ( JsonProcessingException e ){
             log.error("Failed while converting candidateRequestBean to String. " + e.getMessage());
@@ -403,8 +423,16 @@ public class CandidateService implements ICandidateService {
         catch ( Exception e ){
             log.error("Failed to create candidate on search engine. " + e.getMessage());
         }
+        String logText="Failed to add";
+        JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByJobAndCandidate(job, candidate);
+        if(statusCode==200){
+            jobCandidateMapping.setCreatedOnSearchEngine(true);
+            jobCandidateMappingRepository.save(jobCandidateMapping);
+            logText="Successfully added";
+        }
+        log.info(logText+" candidate on search engine in for candidate {}, job {}, for company {}", System.currentTimeMillis() - startTime, candidate, job, job.getCompanyId());
 
-        log.info("Added candidate on search engine in {}ms for candidate {}, in job {}, for company {}.",System.currentTimeMillis()-startTime, candidate, job, job.getCompanyName());
+        return statusCode;
     }
     //Method to truncate the value in the field and send out a sentry message for the same
     //move this truncateField method to Util class because it is use in other place also like CandidateCompanyDetails model
@@ -424,7 +452,7 @@ public class CandidateService implements ICandidateService {
 
         // ObjectMapper object to convert candidateRequestBean to String
         ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, Object> userDetail = searchEngineService.getLoggedInUserInformation();
+        Map<String, Object> userDetail = LoggedInUserInfoUtil.getLoggedInUserInformation();
 
         log.info("Calling SearchEngine API to create candidates of job: {}", job.getId());
         try {
@@ -469,11 +497,10 @@ public class CandidateService implements ICandidateService {
         // Creating and setting noticePeriod from CandidateDetails after parsing it to int as data type
         // is String and search engine need an int value
         if(null != candidate.getCandidateCompanyDetails() && candidate.getCandidateCompanyDetails().size()>0 &&  (null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriod() || null!= candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb())){
-            candidateRequestBean.setNoticePeriod(
-                    null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()?
-                            Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()):
-                            Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb().getValue().replaceAll("\\D+",""))
-            );
+            if(Util.isNotNull(candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()))
+                candidateRequestBean.setNoticePeriod(Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()));
+            else if(!"Others".equals(candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb().getValue()) && null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb())
+                candidateRequestBean.setNoticePeriod(Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb().getValue().replaceAll("\\D+","")));
         }
 
         // extracting value of experience range from job in which candidate is sourced

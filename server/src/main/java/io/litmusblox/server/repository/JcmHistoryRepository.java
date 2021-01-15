@@ -29,4 +29,7 @@ public interface JcmHistoryRepository extends JpaRepository<JcmHistory, Long> {
 
     @Transactional(readOnly = true)
     List<JcmHistory> findByJcmIdAndCallLogOutComeIgnoreCase(JobCandidateMapping jcmId, String callLogOutcome);
+
+    @Transactional
+    List<JcmHistory> findByJcmId(JobCandidateMapping jcmId);
 }

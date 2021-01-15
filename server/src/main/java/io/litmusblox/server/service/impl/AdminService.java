@@ -54,9 +54,6 @@ public class AdminService implements IAdminService {
     UserRepository userRepository;
 
     @Resource
-    JcmProfileSharingMasterRepository jcmProfileSharingMasterRepository;
-
-    @Resource
     JcmProfileSharingDetailsRepository jcmProfileSharingDetailsRepository;
 
     /**
@@ -133,75 +130,5 @@ public class AdminService implements IAdminService {
             log.error("company not found {}", companyId);
         }
         log.info("Finished adding company and candidates on search engine in {}ms", System.currentTimeMillis()-startTime);
-    }
-
-    public void addHiringManagerAsUser() throws Exception{
-        Long startTime = System.currentTimeMillis();
-        log.info("Received request to migrate Hiring manager from jcm_candidate_profile_sharing_table to user_table");
-
-        //List of all domains to be migrated
-        ArrayList<List<String>> emailDomainsToBeIncluded = new ArrayList<List<String>>();
-        emailDomainsToBeIncluded.add(Arrays.asList("@apisero.com", "63", "184"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@litmusblox.io", "3", "6"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@evolenthealth.com", "44", "119"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@krehsst.com", "16", "30"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@slb.com", "39", "104"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@accurategauging.com", "35", "90"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@bolddialogue.com", "4", "9"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@enzigma.com", "67", "190"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@hexagonsearch.com", "1", "42"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@hexagonselect.com", "14", "25"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@impauto.com", "45", "122"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@lntinfotech.com", "25", "61"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@mercer.com", "135", "433"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@mmc.com", "135", "433"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@nativeworld.com", "62", "182"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@persistent.com", "36", "196"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@sanjaytools.com", "15", "28"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@synechron.com", "26", "63"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@zycus.com", "56", "115"));
-        emailDomainsToBeIncluded.add(Arrays.asList("@sajdyno.com", "141", "464"));
-
-
-        emailDomainsToBeIncluded.forEach((domain) -> {
-            //Fetch from jcm_profile_sharing_master for that domain;
-            List<JcmProfileSharingMaster> hiringManagerList = jcmProfileSharingMasterRepository.findByReceiverEmailContainingIgnoreCase(domain.get(0));
-            hiringManagerList.forEach((hiringManager) -> {
-                //Check that if the email id already exist in the user table. If yes use the same id.
-                User existingUser = userRepository.findByEmail(hiringManager.getReceiverEmail().toLowerCase());
-                if(existingUser == null){
-
-                    User newUser = new User();
-                    String name [] = hiringManager.getReceiverName().split(" ");
-                    newUser.setFirstName(name[0]);
-                    if (name.length > 1 && name[1].length()>0)
-                        newUser.setLastName(name[1]);
-                    else
-                        newUser.setLastName("-");
-                    newUser.setMobile("8149202289");
-                    newUser.setEmail(hiringManager.getReceiverEmail());
-                    newUser.setRole(IConstant.UserRole.Names.BUSINESS_USER);
-                    Country country = new Country();
-                    country.setId(3L);
-                    newUser.setCountryId(country);
-
-                    //Get company details for the new user
-                    Company company = companyRepository.getOne(Long.valueOf(domain.get(1)));
-                    newUser.setCompany(company);
-                    newUser.setCreatedBy(Long.valueOf(domain.get(2)));
-
-                    try {
-                        existingUser = lbUserDetailsService.createUpdateUser(newUser);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                }
-                hiringManager.setReceiverId(existingUser.getId());
-                jcmProfileSharingMasterRepository.save(hiringManager);
-
-            });
-        });
-        log.info("Completed migration in {} ms", System.currentTimeMillis() - startTime);
     }
 }

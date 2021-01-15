@@ -14,7 +14,6 @@ import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.repository.UserRepository;
 import io.litmusblox.server.service.*;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
-import io.litmusblox.server.uploadProcessor.RChilliCvProcessor;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,9 +52,6 @@ public class JobCandidateMappingController {
 
     @Autowired
     UserRepository userRepository;
-
-    @Autowired
-    RChilliCvProcessor rChilliCvProcessor;
 
     /**
      * Api to add a single candidate to a job
@@ -168,12 +164,13 @@ public class JobCandidateMappingController {
     String getCandidateProfile(@PathVariable("jobCandidateMappingId") Long jobCandidateMappingId) throws Exception {
         log.info("Received request to fetch candidate profile");
         long startTime = System.currentTimeMillis();
-        String response = Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.getCandidateProfile(jobCandidateMappingId, null, false),
+        String response = Util.stripExtraInfoFromResponseBean(jobCandidateMappingService.getCandidateProfile(jobCandidateMappingId, false),
                 new HashMap<String, List<String>>() {{
                     put("User", Arrays.asList("displayName"));
                     put("ScreeningQuestions", Arrays.asList("id","question","options"));
                     put("CvRating", Arrays.asList("overallRating"));
                     put("JobStageStep", new ArrayList<>(0));
+                    put("JobRole", Arrays.asList("role"));
                 }},
                 new HashMap<String, List<String>>() {{
                     put("Job",Arrays.asList("id", "createdBy","createdOn","updatedBy","updatedOn","jobTitle","noOfPositions","jobDescription","mlDataAvailable","datePublished","status","scoringEngineJobAvailable","function","education","expertise","jobKeySkillsList","userEnteredKeySkill"));
@@ -227,24 +224,6 @@ public class JobCandidateMappingController {
     }
 
     /**
-     * Service to process rchilli json which is failed 1st time in drag and drop process
-     */
-    @GetMapping("/processRchilliJson")
-    @ResponseBody
-    @ResponseStatus(value = HttpStatus.OK)
-    void processRchilliJson(){
-        rChilliCvProcessor.processRchilliJson();
-    }
-
-    @GetMapping("/processFailedRchilliJson")
-    @ResponseBody
-    void processFailedRchilli(@RequestBody Map<String, String> json){
-        String filePath = json.get("filePath");
-        String rchilliJson = json.get("rchilliJson");
-        rChilliCvProcessor.processFailedRchilli(rchilliJson, filePath);
-    }
-
-    /**
      * REST API to set a specific stage like Interview, Offer etc
      *
      * @param jcmList The list of candidates for the job that need to be moved to the specified stage
@@ -257,16 +236,6 @@ public class JobCandidateMappingController {
     @ResponseStatus(value = HttpStatus.OK)
     void setStageForCandidates(@RequestBody List<Long> jcmList, @PathVariable("stage") @NotNull String stage, @RequestParam(required = false, value = "candidateRejectionValue") Optional<Long> candidateRejectionValue) throws Exception {
         jobCandidateMappingService.setStageForCandidates(jcmList, stage, candidateRejectionValue.isPresent()?candidateRejectionValue.get():null);
-    }
-
-    @GetMapping("cvuploaderror/{jobId}")
-    @ResponseBody
-    List<ResponseBean> getRchilliError(@PathVariable("jobId") @NotNull Long jobId)throws Exception{
-        log.info("Received request to fetch drag and drop cv error list for jobId: "+jobId);
-        long startTime = System.currentTimeMillis();
-        List<ResponseBean> rChilliErrorResponseBeanList=  jobCandidateMappingService.getRchilliError(jobId);
-        log.info("Completed processing frequest to fetch drag and drop cv error list for jobId: "+ jobId+ " in "+ (System.currentTimeMillis()-startTime) + "ms.");
-        return rChilliErrorResponseBeanList;
     }
 
     /**
