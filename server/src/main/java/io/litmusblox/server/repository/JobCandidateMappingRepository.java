@@ -4,7 +4,10 @@
 
 package io.litmusblox.server.repository;
 
-import io.litmusblox.server.model.*;
+import io.litmusblox.server.model.Candidate;
+import io.litmusblox.server.model.Job;
+import io.litmusblox.server.model.JobCandidateMapping;
+import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.CandidateInteractionHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -27,12 +30,7 @@ import java.util.UUID;
  */
 public interface JobCandidateMappingRepository extends JpaRepository<JobCandidateMapping, Long> {
 
-    //find by job and stage id
-    @Transactional (readOnly = true)
-    List<JobCandidateMapping> findByJobAndStageInAndRejectedIsFalse(Job job, StageStepMaster stage) throws Exception;
-
-    //find all rejected candidates
-    List<JobCandidateMapping> findByJobAndRejectedIsTrue(Job job) throws Exception;
+    //Both the methods used not found so I have removed.
 
     //find count of candidates per stage
     @Transactional(readOnly = true)
@@ -40,8 +38,16 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     List<Object[]> findCandidateCountByStage(Long jobId) throws Exception;
 
     @Transactional(readOnly = true)
+    @Query(value = "select stage, count(candidate_id) from job_candidate_mapping where id in (Select jcm_id from hiring_manager_workspace_details where user_id=:userId and job_id=:jobId) and rejected is false group by stage", nativeQuery = true)
+    List<Object[]> findCandidateCountByStageForHiringManager(Long userId, Long jobId) throws Exception;
+
+    @Transactional(readOnly = true)
     @Query(value = "select count(candidate_id) from job_candidate_mapping where job_id=:jobId and rejected is true", nativeQuery = true)
     int findRejectedCandidateCount(Long jobId) throws Exception;
+
+    @Transactional(readOnly = true)
+    @Query(value = "select count(candidate_id) from job_candidate_mapping where id in (Select jcm_id from hiring_manager_workspace_details where user_id=:userId and job_id=:jobId) and rejected is true", nativeQuery = true)
+    int findRejectedCandidateCountForHiringManager(Long userId, Long jobId) throws Exception;
 
     //find count of candidates per stage
     @Transactional
@@ -74,8 +80,31 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     @Transactional
     @Modifying
-    @Query(nativeQuery = true, value = "update job_candidate_mapping set stage = :newStageId, rejected = false, updated_by = :updatedBy, updated_on = :updatedOn where stage = :oldStageId and id in :jcmList")
-    void updateStageStepId(List<Long> jcmList, Long oldStageId, Long newStageId, Long updatedBy, Date updatedOn);
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set stage =:newStageId, rejected = false, updated_by =:updatedBy, updated_on =:updatedOn where stage =:oldStageId and id =:jcmId")
+    void updateStageStepId(
+            Long jcmId,
+            String screeningBy,
+            Date screeningOn,
+            String submittedBy,
+            Date submittedOn,
+            String makeOfferBy,
+            Date makeOfferOn,
+            String offerBy,
+            Date offerOn,
+            String hiredBy,
+            Date hiredOn,
+            String rejectedBy,
+            Date rejectedOn,
+            Long oldStageId,
+            Long newStageId,
+            Long updatedBy,
+            Date updatedOn
+    );
+
+    @Transactional
+    @Modifying
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set submitted_by =:submittedBy, submitted_on = submittedOn where id in :jcmList")
+    void setSubmittedByAndOn(List<Long> jcmList, String submittedBy, Date submittedOn);
 
     @Transactional(readOnly = true)
     @Query(nativeQuery = true, value = "select count(distinct stage) from job_candidate_mapping where id in :jcmList")
@@ -83,7 +112,12 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     @Modifying
     @Query(nativeQuery = true, value = "update job_candidate_mapping set rejected=true,candidate_rejection_value =:candidateRejectionValue, updated_by=:updatedBy, updated_on = :updatedOn where id in :jcmList")
-    void updateForRejectStage(List<Long> jcmList, String candidateRejectionValue, Long updatedBy, Date updatedOn);
+    void updateForRejectStage(
+            List<Long> jcmList,
+            String candidateRejectionValue,
+            Long updatedBy,
+            Date updatedOn
+    );
 
     @Transactional
     @Query(value = "select count(jcd.id)\n" +
@@ -117,12 +151,8 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     List<Object[]> getCandidateCountPerStage(Long jobId, String stage) throws Exception;
 
     @Transactional
-    @Query(nativeQuery = true, value = "select * from job_candidate_mapping where chatbot_status is null and job_id in (select id from job where auto_invite = 't') and stage=(select id from stage_step_master where stage='Sourcing')")
+    @Query(nativeQuery = true, value = "select * from job_candidate_mapping where chatbot_status is null and job_id in (select id from job where auto_invite = 't') and stage=(select id from stage_step_master where stage='Sourcing') and (job_candidate_mapping.mobile is not null or job_candidate_mapping.email not like '%notavailable.io')")
     List<JobCandidateMapping> getNewAutoSourcedJcmList();
-
-    @Transactional
-    @Query(nativeQuery = true, value="select * from job_candidate_mapping where job_id in (select id from job where company_id in (select id from company where send_communication='f')) and stage=(select id from stage_step_master where stage='Sourcing') and chatbot_status is null")
-    List<JobCandidateMapping> getLDEBCandidates();
 
     List<JobCandidateMapping> findAllByJobId(Long jobId);
 
@@ -139,5 +169,23 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Transactional(readOnly = true)
     @Query(nativeQuery = true, value = "select distinct(job_id) from job_candidate_mapping where id in :jcmList")
     List<Long> findDistinctJobIdByJcmID(List<Long> jcmList);
+
+    @Transactional
+    @Query(value = "select * from job_candidate_mapping where IS_CREATED_ON_SEARCHENGINE='f' order by ID asc limit 100", nativeQuery = true)
+        List<JobCandidateMapping> findJcmNotInSearchEngine();
+
+    @Transactional
+    @Query(value = "select * from job_candidate_mapping where id = (select id from (select id,unnest(array[created_on, updated_on]) from job_candidate_mapping where candidate_id =:candidateId and job_id in (select id from job where company_id =:companyId)) as jcm_dates where jcm_dates.unnest < current_date + interval '1' day  order by jcm_dates.unnest desc limit 1)", nativeQuery = true)
+    JobCandidateMapping getLastUpdatedJCMForCandidate(Long candidateId, Long companyId);
+
+    @Transactional
+    @Query(value = "select jcm.job_id, ssm.stage, count(jcm.candidate_id) \n" +
+            "from job_candidate_mapping jcm\n" +
+            "inner join job j on j.id = jcm.job_id\n" +
+            "inner join stage_step_master ssm on ssm.id = jcm.stage\n" +
+            "inner join hiring_manager_workspace hmw on hmw.jcm_id = jcm.id\n" +
+            "inner join jcm_profile_sharing_details jpsd on jpsd.id = hmw.share_profile_id\n" +
+            "where jcm.job_id in :jobIds and jcm.stage = ssm.id and j.status in ('Draft', 'Live') and jpsd.receiver_id =:hiringManagerId and jcm.rejected =:rejected group by jcm.job_id, ssm.stage order by jcm.job_id;", nativeQuery = true)
+    List<Object[]> findCandidateCountByStageJobIdsForHmw(List<Long> jobIds, boolean rejected, Long hiringManagerId) throws Exception;
 
 }

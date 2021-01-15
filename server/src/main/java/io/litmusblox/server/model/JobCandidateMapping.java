@@ -10,6 +10,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vladmihalcea.hibernate.type.array.StringArrayType;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
@@ -36,6 +38,8 @@ import java.util.*;
 @Table(name="JOB_CANDIDATE_MAPPING")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonFilter("JobCandidateMapping")
+@Builder
+@AllArgsConstructor
 @TypeDefs({@TypeDef(name = "string-array",typeClass = StringArrayType.class), @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)})
 public class JobCandidateMapping implements Serializable {
 
@@ -155,13 +159,77 @@ public class JobCandidateMapping implements Serializable {
     private String candidateRejectionValue;
 
     @Column(name = "EXPECTED_CTC")
-    private Long expectedCtc;
+    private Double expectedCtc;
 
     @Column(name = "PERCENTAGE_HIKE")
     private Long percentageHike;
 
     @Column(name = "COMMENTS")
     private String comments;
+
+    @Column(name = "IS_CREATED_ON_SEARCHENGINE")
+    private boolean isCreatedOnSearchEngine;
+
+    @Type(type = "jsonb")
+    @Column(columnDefinition = "jsonb", name = "cv_skill_rating_json")
+    private Map<String,Map<String,String>> cvSkillRatingJson;
+
+    @Column(name="overall_rating")
+    private Integer overallRating;
+
+    @Column(name="interest_access_by_device")
+    private  String interestAccessByDevice;
+
+    @Column(name="chatbot_completed_by_device")
+    private  String chatbotCompletedByDevice;
+
+    @Column(name = "CANDIDATE_QUICK_QUESTION_RESPONSE")
+    private String candidateQuickQuestionResponse;
+
+    @Column(name="candidate_not_interested_reason")
+    private String candidateNotInterestedReason;
+
+    @Column(name="SCREENING_BY")
+    private String screeningBy;
+
+    @Column(name="SCREENING_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date screeningOn;
+
+    @Column(name="SUBMITTED_BY")
+    private String submittedBy;
+
+    @Column(name="SUBMITTED_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date submittedOn;
+
+    @Column(name="MAKE_OFFER_BY")
+    private String makeOfferBy;
+
+    @Column(name="MAKE_OFFER_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date makeOfferOn;
+
+    @Column(name="OFFER_BY")
+    private String offerBy;
+
+    @Column(name="OFFER_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date offerOn;
+
+    @Column(name="HIRED_BY")
+    private String hiredBy;
+
+    @Column(name="HIRED_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date hiredOn;
+
+    @Column(name="REJECTED_BY")
+    private String rejectedBy;
+
+    @Column(name="REJECTED_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date rejectedOn;
 
     @Type(type = "hstore")
     @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "hstore")
@@ -185,10 +253,6 @@ public class JobCandidateMapping implements Serializable {
 
     @Transient
     @JsonProperty
-    CvRating cvRating;
-
-    @Transient
-    @JsonProperty
     Map<Integer, Map<String, Integer>> candidateSkillsByRating;
 
     @Transient
@@ -197,7 +261,11 @@ public class JobCandidateMapping implements Serializable {
 
     @Transient
     @JsonProperty
-    private Date hiringManagerInterestDate;
+    List<JcmProfileSharingDetails> interestedHiringManagers = new ArrayList<>();
+
+    @Transient
+    @JsonProperty
+    Long shareProfileId;
 
     @Transient
     @JsonProperty
@@ -205,6 +273,12 @@ public class JobCandidateMapping implements Serializable {
 
     @Transient
     private String inviteErrorMessage;
+
+    @Transient
+    private List userScreeningQuestions;
+
+    @Transient
+    private Map<String,List<TechScreeningQuestion>> techScreeningQuestions;
 
     @JsonInclude
     @Transient

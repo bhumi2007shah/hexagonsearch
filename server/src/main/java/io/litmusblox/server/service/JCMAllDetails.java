@@ -4,10 +4,13 @@
 
 package io.litmusblox.server.service;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.litmusblox.server.model.CandidateScreeningQuestionResponse;
 import io.litmusblox.server.model.InterviewDetails;
+import io.litmusblox.server.model.JcmHistory;
 import io.litmusblox.server.model.JcmProfileSharingDetails;
 import lombok.Data;
 import org.hibernate.annotations.Type;
@@ -28,6 +31,8 @@ import java.util.Map;
 @Data
 @Entity
 @Table(name = "JOB_CANDIDATE_MAPPING_ALL_DETAILS")
+@JsonFilter("JCMAllDetails")
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class JCMAllDetails {
     @Id
     Long id;
@@ -59,7 +64,19 @@ public class JCMAllDetails {
     Date updatedOn;
     String updatedBy;
     String rejectionReason;
-
+    String candidateQuickQuestionResponse;
+    String screeningBy;
+    Date screeningOn;
+    String submittedBy;
+    Date submittedOn;
+    String makeOfferBy;
+    Date makeOfferOn;
+    String offerBy;
+    Date offerOn;
+    String hiredBy;
+    Date hiredOn;
+    String rejectedBy;
+    Date rejectedOn;
 
     @Transient
     @JsonProperty
@@ -79,6 +96,15 @@ public class JCMAllDetails {
 
     @Transient
     List<CandidateScreeningQuestionResponse> screeningQuestionResponses;
+
+    @Transient
+    Long shareProfileId;
+
+    @Transient
+    Date profileSharedOn;
+
+    @Transient
+    List<JcmHistory> jcmHistories;
 
     public InterviewDetails getCurrentInterviewDetail(){
         if(this.getInterviewDetails().size()>0)

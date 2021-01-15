@@ -2699,3 +2699,389 @@ alter table job alter column hiring_manager type integer[] using array[hiring_ma
 
 --For ticket #584
 update candidate_company_details set salary = regexp_replace(salary, '[^0-9.]','', 'g');
+
+--Increase option size
+ALTER TABLE TECH_SCREENING_QUESTION ALTER COLUMN OPTIONS TYPE CHARACTER VARYING(400)[];
+ALTER TABLE TECH_SCREENING_QUESTION ALTER COLUMN DEFAULT_ANS TYPE CHARACTER VARYING(400)[];
+
+-- For ticket - https://github.com/hexagonsearch/litmusblox-scheduler/issues/61
+update sms_templates set template_content = '[[${commBean.sendercompany}]] is considering your profile for the [[${commBean.jobtitle}]] position. Please be on the lookout for more communication.' where template_name = 'AutosourceAcknowledgement';
+
+--For ticket 648
+ALTER TABLE SCREENING_QUESTION
+ADD COLUMN IS_MANDATORY BOOL DEFAULT 'f';
+update screening_question set options=array_remove(options,'I wish not to answer') where question in ('Which City are you currently based in?','What is your Total work experience range?','What is the official Notice Period you are required to serve in your current company?','What is your highest level of education?');
+update screening_question set options[1]=initcap(options[1]),options[2]=initcap(options[2]),options[3]=initcap(options[3]),options[4]=initcap(options[4]), options[5]=initcap(options[5]), options[6]=initcap(options[6]) where question='What is the official Notice Period you are required to serve in your current company?';
+update screening_question SET is_mandatory ='t' where question in ('Which Company are you currently working for?','What is your Job Title?','What is your Total work experience range?','What is the official Notice Period you are required to serve in your current company?','Which City are you currently based in?','What is your Current Annual Salary?','What is your expected annual salary requirement?','What is your highest level of education?');
+
+--For ticket 630
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN IS_CREATED_ON_SEARCHENGINE BOOL NOT NULL DEFAULT 'f';
+
+ALTER TABLE CV_PARSING_DETAILS
+ADD COLUMN CANDIDATE_SKILLS VARCHAR(100)[];
+
+--For ticket #674
+ALTER TABLE CV_PARSING_DETAILS
+ADD COLUMN CV_RATING_API_CALL_RETRY_COUNT INTEGER DEFAULT 0;
+
+--For ticket #679
+update jcm_profile_sharing_master psm SET receiver_name = concat(u.first_name, ' ', u.last_name) from users u where psm.receiver_name is null and psm.receiver_id = u.id;
+alter table jcm_profile_sharing_master drop column receiver_email ;
+
+-- Issue in chatbot while updating candidate info
+ALTER TABLE CANDIDATE_COMPANY_DETAILS ALTER COLUMN COMPANY_NAME TYPE VARCHAR(300);
+ALTER TABLE CANDIDATE_COMPANY_DETAILS ALTER COLUMN DESIGNATION TYPE VARCHAR(300);
+
+--For ticket #682
+ALTER TABLE jcm_profile_sharing_details ALTER COLUMN comments TYPE varchar(300);
+
+-- hiring manager issue script
+COPY jcm_profile_sharing_master(id, receiver_name,sender_id, email_sent_on, receiver_id) FROM '/home/lbprod/UserIdShareCandidateMasterDataUpdate.csv' DELIMITER ',' CSV HEADER;
+--Removing entries from details table
+delete from jcm_profile_sharing_details where id in (select psd.id from jcm_profile_sharing_details psd left join jcm_profile_sharing_master psm on psm.id = psd.profile_sharing_master_id where psm.id is null);
+
+
+--For ticket 676
+alter table users add column workspace_uuid UUID NOT NULL DEFAULT uuid_generate_v1();
+--Migrating to profile sharing details table and deleting the profile sharing master table
+alter table jcm_profile_sharing_details add column receiver_name varchar(45), add column receiver_id integer references users(id), add column sender_id integer references users(id), add column email_sent_on timestamp without time zone;
+update jcm_profile_sharing_details psd set receiver_name = psm.receiver_name, email_sent_on = psm.email_sent_on, receiver_id = psm.receiver_id, sender_id = psm.sender_id from jcm_profile_sharing_master psm where psm.id = psd.profile_sharing_master_id;
+alter table jcm_profile_sharing_details drop column id, drop column profile_sharing_master_id;
+drop table jcm_profile_sharing_master ;
+alter table jcm_profile_sharing_details add column id serial PRIMARY KEY;
+--deleting rows with same jcm_id and user_id
+delete from jcm_profile_sharing_details psd1 using jcm_profile_sharing_details psd2 where psd1.ctid < psd2.ctid and psd1.job_candidate_mapping_id = psd2.job_candidate_mapping_id and psd1.receiver_id = psd2.receiver_id;
+alter table interviewer_details add column email_sent_on timestamp without time zone;
+
+--CREATE TABLE hiring_manager_workspace
+--CREATE VIEW hiring_manager_workspace_details
+
+--To insert existing share profile details in hiring manager workspace.
+insert into hiring_manager_workspace (jcm_id, user_id, share_profile_id) select job_candidate_mapping_id, receiver_id, id from jcm_profile_sharing_details;
+--To update the hiring manager workspace with user_id and jcm_id combination existing because of jcm_profile_sharing migration
+update hiring_manager_workspace hmwo set share_interview_id = temp.id from (select distinct on (ivd.job_candidate_mapping_id, ivrd.interviewer) ivd.job_candidate_mapping_id, ivrd.interviewer, ivrd.id from interviewer_details ivrd inner join interview_details ivd on ivrd.interview_id = ivd.id inner join hiring_manager_workspace hmw on ivd.job_candidate_mapping_id = hmw.jcm_id order by ivrd.interviewer, ivd.job_candidate_mapping_id, ivd.id desc) as temp where temp.job_candidate_mapping_id = hmwo.jcm_id and temp.interviewer= hmwo.user_id;
+-- To insert all remaining interviews with user_id and jcm_id combination as unique
+insert into hiring_manager_workspace (jcm_id, user_id, share_interview_id) select distinct on (ivd.job_candidate_mapping_id, ivrd.interviewer) ivd.job_candidate_mapping_id, ivrd.interviewer, ivrd.id from interviewer_details ivrd inner join interview_details ivd on ivrd.interview_id = ivd.id left join hiring_manager_workspace hmw on ivd.job_candidate_mapping_id = hmw.jcm_id and ivrd.interviewer = hmw.user_id where hmw.id is null order by ivrd.interviewer, ivd.job_candidate_mapping_id, ivd.id desc;
+
+-- for ticket #697
+ALTER TABLE cv_parsing_details ALTER COLUMN cv_rating_api_call_retry_count SET DEFAULT 1;
+update cv_parsing_details set cv_rating_api_call_retry_count = 1 where cv_rating_api_call_retry_count is null;
+
+--For ticket #690
+update screening_question set question_type=(select id from master_data where type='questionType' and value='Radio button') where question='Which City are you currently based in?';
+
+--For ticket #649
+alter table job
+add column archive_status char(20),
+add column archive_reason char(20);
+
+CREATE TABLE ATTRIBUTES_MASTER_DATA(
+ID serial PRIMARY KEY NOT NULL,
+JOB_ATTRIBUTE VARCHAR (100) NOT NULL,
+FUNCTION INTEGER REFERENCES FUNCTION_MASTER_DATA(ID) NOT NULL,
+CONSTRAINT UNIQUE_JOB_ATTRIBUTE_MASTER_DATA UNIQUE (JOB_ATTRIBUTE, FUNCTION)
+);
+
+CREATE TABLE STATEMENTS_BLOCK_MASTER_DATA(
+ID SERIAL PRIMARY KEY,
+STATEMENT_BLOCK VARCHAR(25) NOT NULL,
+QUESTION VARCHAR(100) NOT NULL,
+OPTIONS VARCHAR(400)[]
+);
+
+CREATE TABLE JOB_ROLE(
+ID SERIAL PRIMARY KEY,
+ROLE INTEGER REFERENCES ROLE_MASTER_DATA(ID) NOT NULL,
+JOB INTEGER REFERENCES JOB(ID) NOT NULL,
+CONSTRAINT UNIQUE_JOB_ROLE UNIQUE (ROLE, JOB)
+);
+
+ALTER TABLE job DROP CONSTRAINT job_function_fkey1;
+alter table job alter function type integer[] using array[function]::INTEGER[];
+insert into job_role(job, role) select id, role from job where role is not null;
+alter table job drop column role;
+ALTER TABLE JOB ADD COLUMN STATEMENT_BLOCK INTEGER REFERENCES STATEMENTS_BLOCK_MASTER_DATA(ID);
+alter table job add column is_quick_question bool default 'f';
+alter table job_candidate_mapping add column candidate_quick_question_response text;
+alter table job_key_skills drop column selected;
+ALTER TABLE job_key_skills RENAME TO job_skills_attributes;
+ALTER TABLE job_key_skills_id_seq RENAME TO job_skills_attributes_id_seq;
+ALTER TABLE job_skills_attributes ADD COLUMN ATTRIBUTE INTEGER REFERENCES ATTRIBUTES_MASTER_DATA(ID);
+
+insert into STATEMENTS_BLOCK_MASTER_DATA(STATEMENT_BLOCK, QUESTION, OPTIONS) values
+('Expertise Level', 'What is your expertise level on this?', '{"No Experience", "Trained but not used in practice", "Hands on practice; need some help for complex job", "Hands on; Totally independent at work", "Expert / Guru who train who trains others"}'),
+('Skill Usage', 'What is your skill level on this?', '{"Not aware", "Trained but not used", "Used this in the past", "Moderately used in present job", "Extensively used in present job"}'),
+('Experience Band', 'How many years of hands on experience do you have on this skill?', '{"Not experience", "Upto 1 year", "2 to 3 years", "4 to 8 years", "Above 8 years"}'),
+('Skill Rating', 'How do you rate yourself on this skill(1 is Lowest, 5 is Highest)?', '{"1", "2", "3", "4", "5"}');
+
+INSERT INTO FUNCTION_MASTER_DATA(FUNCTION, INDUSTRY) VALUES
+('Production', (select id from industry_master_data where industry = 'Manufacturing')),
+('Vendor Development /Procurement', (select id from industry_master_data where industry = 'Manufacturing')),
+('Process Design & Manufacturing Engg', (select id from industry_master_data where industry = 'Manufacturing')),
+('Plant Engineering', (select id from industry_master_data where industry = 'Manufacturing'));
+
+insert into ATTRIBUTES_MASTER_DATA(JOB_ATTRIBUTE, FUNCTION) values
+('Production Planning', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Resource Planning', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Inventory Planning', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Preventive Maintenance', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Spares Planning', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Breakdown Maintenance', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Tool Tryouts', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Machine Tryouts', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Outsourcing', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Customer / Field Quality', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Plant & Machinery Installation', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Environment & Safety Compliance', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Process Design', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('New Product Development', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing')));
+
+insert into ATTRIBUTES_MASTER_DATA(JOB_ATTRIBUTE, FUNCTION) values
+('Stores', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Dispatch', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('FMEA', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Capital Goods Purchase', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Service Contracts', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Labour Contracts', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Commercials, Duties & Taxation', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Goods Return, Rejections, Damages & Scrap', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Inventory Management', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Warranty Claims', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Penalty settlements', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Insurance Claims', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Supply Chain', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Stores', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Tools Purchase', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Process Validation', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Tool Design', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Tool Tryouts', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Machine Tryouts', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Design of Experiments', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Process & Operation Costing', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Time & Motion Study', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Motion / Method Study', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Shop / Machine Layout', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Work Station Design', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Reliability Assessment / Testing', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Design of Material Handling Systems', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Design of Piping & Fluid Control systems', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Electrical Design', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Electronics & Instrumentation Design', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Structural Design', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Vendor & Contractor Selection', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('CAD / CAE experience', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing')));
+
+--For ticket #687
+alter table job_candidate_mapping add column cv_skill_rating_json jsonb;
+alter table job_candidate_mapping add column overall_rating smallint;
+
+--For ticket #698
+alter table job_candidate_mapping add column candidate_not_interested_reason varchar(50);
+insert into master_data (type,value) values
+('candidateNotInterestedReason','The role is not relevant for me'),
+('candidateNotInterestedReason','Just took up another job. Not looking any more'),
+('candidateNotInterestedReason','Not willing to relocate'),
+('candidateNotInterestedReason','Had a poor experience with this company earlier');
+
+--For ticket #699
+update screening_question set question_type=(select id from master_data where type='questionType' and value='InputBox') where question='Which City are you currently based in?';
+update screening_question SET options ='{}' where question='Which City are you currently based in?';
+update screening_question SET customize_question='location' where question='Which City are you currently based in?';
+insert into master_data (value,type) values
+('Delhi','location'),('Mumbai','location'),('Kolkata','location'),('Bangalore','location'),('Chennai','location'),('Hyderabad','location'),('Pune','location'),('Ahmadabad','location'),('Surat','location'),('Lucknow','location'),('Jaipur','location'),('Cawnpore','location'),('Mirzapur','location'),('Nagpur','location'),('Ghaziabad','location'),('Indore','location'),('Vadodara','location'),('Vishakhapatnam','location'),('Bhopal','location'),('Chinchvad','location'),('Patna','location'),('Ludhiana','location'),('Agra','location'),('Kalyan','location'),('Madurai','location'),('Jamshedpur','location'),('Nasik','location'),('Faridabad','location'),('Aurangabad','location'),('Rajkot','location'),('Meerut','location'),('Jabalpur','location'),('Thane','location'),('Dhanbad','location'),('Allahabad','location'),('Varanasi','location'),('Srinagar','location'),('Amritsar','location'),('Aligarh','location'),('Bhiwandi','location'),('Gwalior','location'),('Bhilai','location'),('Haora','location'),('Ranchi','location'),('Bezwada','location'),('Chandigarh','location'),('Mysore','location'),('Raipur','location'),('Kota','location'),('Bareilly','location'),('Jodhpur','location'),('Coimbatore','location'),('Dispur','location'),('Guwahati','location'),('Solapur','location'),('Trichinopoly','location'),('Hubli','location'),('Jalandhar','location'),('Bhubaneshwar','location'),('Bhayandar','location'),('Moradabad','location'),('Kolhapur','location'),('Thiruvananthapuram','location'),('Saharanpur','location'),('Warangal','location'),('Salem','location'),('Malegaon','location'),('Kochi','location'),('Gorakhpur','location'),('Shimoga','location'),('Tiruppur','location'),('Guntur','location'),('Raurkela','location'),('Mangalore','location'),('Nanded','location'),('Cuttack','location'),('Chanda','location'),('Dehra Dun','location'),('Durgapur','location'),('Asansol','location'),('Bhavnagar','location'),('Amravati','location'),('Nellore','location'),('Ajmer','location'),('Tinnevelly','location'),('Bikaner','location'),('Agartala','location'),('Ujjain','location'),('Jhansi','location'),('Ulhasnagar','location'),('Davangere','location'),('Jammu','location'),('Belgaum','location'),('Gulbarga','location'),('Jamnagar','location'),('Dhulia','location'),('Gaya','location'),('Jalgaon','location'),('Kurnool','location'),('Udaipur','location'),('Bellary','location'),('Sangli','location'),('Tuticorin','location'),('Calicut','location'),('Akola','location'),('Bhagalpur','location'),('Sikar','location'),('Tumkur','location'),('Quilon','location'),('Muzaffarnagar','location'),('Bhilwara','location'),('Nizamabad','location'),('Bhatpara','location'),('Kakinada','location'),('Parbhani','location'),('Panihati','location'),('Latur','location'),('Rohtak','location'),('Rajapalaiyam','location'),('Ahmadnagar','location'),('Cuddapah','location'),('Rajahmundry','location'),('Alwar','location'),('Muzaffarpur','location'),('Bilaspur','location'),('Mathura','location'),('Kamarhati','location'),('Patiala','location'),('Saugor','location'),('Bijapur','location'),('Brahmapur','location'),('Shahjanpur','location'),('Trichur','location'),('Barddhaman','location'),('Kulti','location'),('Sambalpur','location'),('Purnea','location'),('Hisar','location'),('Firozabad','location'),('Bidar','location'),('Rampur','location'),('Shiliguri','location'),('Bali','location'),('Panipat','location'),('Karimnagar','location'),('Bhuj','location'),('Ichalkaranji','location'),('Tirupati','location'),('Hospet','location'),('Aizawl','location'),('Sannai','location'),('Barasat','location'),('Ratlam','location'),('Handwara','location'),('Drug','location'),('Imphal','location'),('Anantapur','location'),('Etawah','location'),('Raichur','location'),('Ongole','location'),('Bharatpur','location'),('Begusarai','location'),('Sonipat','location'),('Ramgundam','location'),('Hapur','location'),('Uluberiya','location'),('Porbandar','location'),('Pali','location'),('Vizianagaram','location'),('Puducherry','location'),('Karnal','location'),('Nagercoil','location'),('Tanjore','location'),('Sambhal','location'),('Shimla','location'),('Ghandinagar','location'),('Shillong','location'),('New Delhi','location'),('Port Blair','location'),('Gangtok','location'),('Kohima','location'),('Itanagar','location'),('Panaji','location'),('Daman','location'),('Kavaratti','location'),('Panchkula','location'),('Kagaznagar','location'),('Other','location');
+
+ALTER TABLE JOB RENAME COLUMN IS_QUICK_QUESTION TO QUICK_QUESTION;
+
+--For ticket #703
+alter table job_candidate_mapping add column interest_access_by_device varchar(50), add column chatbot_completed_by_device varchar(50);
+alter table job_candidate_mapping alter column interest_access_by_device type text, alter column chatbot_completed_by_device type text;
+
+-- For ticket #708
+ALTER TABLE candidate_screening_question_response ADD CONSTRAINT unique_candidate_screening_question_response UNIQUE (JOB_CANDIDATE_MAPPING_ID, JOB_SCREENING_QUESTION_ID);
+
+-- For ticket 710
+alter table job_skills_attributes add column selected boolean not null default false;
+
+-- For ticket #715
+INSERT INTO FUNCTION_MASTER_DATA(FUNCTION, INDUSTRY) VALUES
+('Quality', (select id from industry_master_data where industry = 'Manufacturing')),
+('Tool Engineering', (select id from industry_master_data where industry = 'Manufacturing'));
+
+INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
+('BI Programmer', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('ETL Programmer', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Big Data Engineer', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Data Science', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Front End', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('UI development', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('UI Design', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('ML / NLP', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Backend development', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Database Developer', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SI / ERP / CRM / Product Implementation', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('IT Security Programmer', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('DevOps Engineer', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Application Support Engineer', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Process Automation Developer', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Mobile Developer', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('System Integration Programmer', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Test Automation Professional', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Manager - Plant Engineering', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Project Manager - Engg Projects', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Manager - Machine Design', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Maintenance Manager', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Manager Quality', (select id from function_master_data where function = 'Quality' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Manager - Purchase', (select id from function_master_data where function = 'Vendor Development /Procurement' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Manager Tool Engineering', (select id from function_master_data where function = 'Tool Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Process Designer', (select id from function_master_data where function = 'Process Design & Manufacturing Engg' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Manager NPD - New Product Development', (select id from function_master_data where function = 'NPD - New Product Development' and industry = (select id from industry_master_data where industry = 'Manufacturing')));
+
+insert into ATTRIBUTES_MASTER_DATA(JOB_ATTRIBUTE, FUNCTION) values
+('Performance Testing', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Regression Testing', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Configuration Management', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Cyber Security', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('DevOps', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('ETL', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Robotic Process Automation', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Version Control', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('IAM (Identity & Access Management)', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Continuous Deployment (CD)', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Continuous Integration (CI)', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Continuous Testing', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Web Application Security', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Agile', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SCRUM', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('ORM', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('App Store Management', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Bug / Issue Tracking', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Release management', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Cloud Deployment', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('DataWarehousing', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Design Patterns', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('AI / ML', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('IoT', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Requirements Gathering', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Data Migration', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('System Integration', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('API', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('System / Application deployment', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Rapid prototyping', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Memory management', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Virtualization', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Containerization', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('L3 Support', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Design Thinking', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('UI Design', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Web Analytics', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Load Balancing', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Threat Modelling', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Data Preprocessing', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Build Automation', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Ethical hacking', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Log Analysis', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Team Leading', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Disaster Recovery', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Cloud Security', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Cloud storage', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Microservices', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('MVC', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Serverless', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Encryption', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Wireframe', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Big Data', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('L2 Support', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('MultiThreading ', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('VAPT', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Business analysis', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Functional programming', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Mathematical modeling', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Embedded Programming', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Statistical Analysis', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('User Centric Design', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Reactive programming', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Socket programming', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Localization / Internalization', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Dynamic Programming', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Accessibility', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('User Documentation', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Issue Resolution', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Database Design', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Computer graphics', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Augmented Reality', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Virtual Reality', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('UX Design', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Data Analysis', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Data Modeling', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Image Processing', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SEO', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Social Media Marketing', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Video Streaming', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Product Management', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Deep Learning', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Visual Design', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Cryptography', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Data Mining', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Open Source', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Algorithms', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('eCommerce', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Prototyping', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SDLC', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('BlockChain', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Chatbot programming', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Object Oriented Programming', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('IT Infra Automation', (select id from function_master_data where function = 'Coding / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Performance Testing', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Regression Testing', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Configuration Management', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Cyber Security', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('DevOps', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Version Control', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Mobile Testing', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Continuous Deployment (CD)', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Continuous Integration (CI)', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Continuous Testing', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Agile', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SCRUM', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Bug / Issue Tracking', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('IoT', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Requirements Gathering', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('API', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Threat Modelling', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Build Automation', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SI / ERP / CRM Interface testing', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Ethical hacking', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Team Leading', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('VAPT', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Embedded Programming', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Usability testing', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Accessibility', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('User Documentation', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Issue Resolution', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Augmented Reality', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Virtual Reality', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('A/B testing', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('SDLC', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT')));
+
+-- For ticket 700
+drop table cv_rating_skill_keyword_details;
+drop table cv_parsing_api_details;
+drop table cv_rating;
+
+ALTER TABLE JOB_CANDIDATE_MAPPING ALTER COLUMN EXPECTED_CTC TYPE DOUBLE PRECISION;
+
+-- For ticket #738
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN SCREENING_BY varchar(90),
+ADD COLUMN SCREENING_ON TIMESTAMP,
+ADD COLUMN SUBMITTED_BY varchar(90),
+ADD COLUMN SUBMITTED_ON TIMESTAMP,
+ADD COLUMN MAKE_OFFER_BY varchar(90),
+ADD COLUMN MAKE_OFFER_ON TIMESTAMP,
+ADD COLUMN OFFER_BY varchar(90),
+ADD COLUMN OFFER_ON TIMESTAMP,
+ADD COLUMN HIRED_BY varchar(90),
+ADD COLUMN HIRED_ON TIMESTAMP,
+ADD COLUMN REJECTED_BY varchar(90),
+ADD COLUMN REJECTED_ON TIMESTAMP,
