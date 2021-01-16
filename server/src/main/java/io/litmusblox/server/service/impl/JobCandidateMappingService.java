@@ -35,7 +35,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import static java.util.stream.Collectors.groupingBy;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileInputStream;
@@ -512,10 +511,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             //#189: save the text format of CV if available
             if(responseBean.getSuccessfulCandidates().size() > 0) {
                 JobCandidateMapping jcm = jobCandidateMappingRepository.findByJobAndCandidate(getJob(jobId), responseBean.getSuccessfulCandidates().get(0));
-               if(null!=candidateCv){
-                   jcm.setCvFileType("."+Util.getFileExtension(candidateCv.getOriginalFilename()));
-                   jobCandidateMappingRepository.save(jcm);
-               }
+                if(null!=candidateCv){
+                    jcm.setCvFileType("."+Util.getFileExtension(candidateCv.getOriginalFilename()));
+                    jobCandidateMappingRepository.save(jcm);
+                }
                 cvParsingDetailsRepository.save(new CvParsingDetails(null!=candidateCv?candidateCv.getOriginalFilename():null, new Date(), null != candidate.getCandidateDetails()?candidate.getCandidateDetails().getTextCv():null, responseBean.getSuccessfulCandidates().get(0).getId(),jcm));
             }
         }
@@ -554,7 +553,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         }
         else{
             if(null == candidateNotInterestedReasonId)
-                    throw new WebException("Candidate Not Interested Reason is null for uuid " + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
+                throw new WebException("Candidate Not Interested Reason is null for uuid " + uuid, HttpStatus.UNPROCESSABLE_ENTITY);
             objFromDb.setChatbotStatus(IConstant.ChatbotStatus.NOT_INTERESTED.getValue());
             MasterData masterData = masterDataRepository.findById(candidateNotInterestedReasonId).get();
             if(!masterData.getType().equals("candidateNotInterestedReason"))
@@ -598,26 +597,14 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             log.info("Updating Candidate Details based on Candidate Chatbot Resposne. Chatbot uuid is {}", uuid);
             updateCandidateResponse(jcmFromDb, candidateChatbotResponse);
             Map<String, Long> stageIdMap = MasterDataBean.getInstance().getStageStepMasterMap();
-            jobCandidateMappingRepository.updateStageStepId(
-                    jcmFromDb.getId(),
+            jobCandidateMappingRepository.setScreenedByAndOn(
+                    Arrays.asList(jcmFromDb.getId()),
                     Util.isNull(jcmFromDb.getScreeningBy())?IConstant.chatCompleteScreeningMessage:jcmFromDb.getScreeningBy(),
                     Util.isNull(jcmFromDb.getScreeningBy())?new Date():jcmFromDb.getScreeningOn(),
-                    jcmFromDb.getSubmittedBy(),
-                    jcmFromDb.getSubmittedOn(),
-                    jcmFromDb.getMakeOfferBy(),
-                    jcmFromDb.getMakeOfferOn(),
-                    jcmFromDb.getOfferBy(),
-                    jcmFromDb.getOfferOn(),
-                    jcmFromDb.getHiredBy(),
-                    jcmFromDb.getHiredOn(),
-                    jcmFromDb.getRejectedBy(),
-                    jcmFromDb.getRejectedOn(),
                     stageIdMap.get(IConstant.Stage.Source.getValue()),
                     stageIdMap.get(IConstant.Stage.Screen.getValue()),
                     jcmFromDb.getCreatedBy().getId(), new Date()
             );
-            jcmFromDb.setScreeningBy(IConstant.chatCompleteScreeningMessage);
-            jcmFromDb.setScreeningOn(new Date());
             jobCandidateMappingRepository.save(jcmFromDb);
             log.info("Completed Updating Candidate Details in {} ms.",  System.currentTimeMillis()-updateCandidateResponseStartTime);
         }
@@ -626,7 +613,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     /**
      * Service method to capture candidate response to screening questions from chatbot
      * @param uuid the uuid corresponding to a unique jcm record
-     * @param response Map of questionId and response List of responses received from chatbot
+     * @param screeningQuestionRequestBean Map of questionId and response List of responses received from chatbot
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
@@ -709,10 +696,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         //Update chatbot status
         if((jcmFromDb.getJob().isQuickQuestion() && jobSkillsAttributesListSize == quickScreeningResponse.size() && totalResponses == jcmFromDb.getJob().getJobScreeningQuestionsList().size())
                 || (totalResponses == jcmFromDb.getJob().getJobScreeningQuestionsList().size() && !jcmFromDb.getJob().isQuickQuestion())){
-             jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
-             jcmFromDb.setChatbotCompletedByDevice(userAgent);
-             if(!jcmFromDb.getJob().isQuickQuestion())
-                 jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(jcmFromDb.getId());
+            jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.COMPLETE.getValue());
+            jcmFromDb.setChatbotCompletedByDevice(userAgent);
+            if(!jcmFromDb.getJob().isQuickQuestion())
+                jcmCommunicationDetailsRepository.updateHrChatbotFlagByJcmId(jcmFromDb.getId());
         }else
             jcmFromDb.setChatbotStatus(IConstant.ChatbotStatus.INCOMPLETE.getValue());
 
@@ -907,7 +894,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             User receiverUser = userRepository.getOne(user);
             validateloggedInUser(receiverUser, jcm.getJob().getCompanyId().getId());
             Set<JcmProfileSharingDetails> detailsSet = new HashSet<>(requestBean.getJcmId().size());
-                requestBean.getJcmId().forEach(jcmId ->{
+            requestBean.getJcmId().forEach(jcmId ->{
                 JcmProfileSharingDetails jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.save(new JcmProfileSharingDetails(jcmId, loggedInUser.getId(), receiverUser.getId(), receiverUser.getDisplayName()));
                 HiringManagerWorkspace hiringManagerWorkspace = hiringManagerWorkspaceRepository.findByJcmIdAndUserId(jcmId, receiverUser.getId());
                 if(null == hiringManagerWorkspace)
@@ -928,28 +915,16 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         });
         jcmHistoryRepository.saveAll(jcmHistoryList);
         //move to Submit stage
-        List<JobCandidateMapping> jcmList = jobCandidateMappingRepository.findAllById(requestBean.getJcmId());
-        if(IConstant.Stage.Source.getValue().equals(jcmList.get(0).getStage().getStage()) || IConstant.Stage.Screen.getValue().equals(jcmList.get(0).getStage().getStage())) {
-            jcmList.stream().parallel().forEach(jobCandidateMapping -> {
-                jobCandidateMappingRepository.updateStageStepId(
-                        jobCandidateMapping.getId(),
-                        jobCandidateMapping.getScreeningBy(),
-                        jobCandidateMapping.getScreeningOn(),
-                        Util.isNull(jobCandidateMapping.getSubmittedBy()) ? loggedInUser.getDisplayName() : jobCandidateMapping.getSubmittedBy(),
-                        Util.isNull(jobCandidateMapping.getSubmittedBy()) ? new Date() : jobCandidateMapping.getSubmittedOn(),
-                        jobCandidateMapping.getMakeOfferBy(),
-                        jobCandidateMapping.getMakeOfferOn(),
-                        jobCandidateMapping.getOfferBy(),
-                        jobCandidateMapping.getOfferOn(),
-                        jobCandidateMapping.getHiredBy(),
-                        jobCandidateMapping.getHiredOn(),
-                        jobCandidateMapping.getRejectedBy(),
-                        jobCandidateMapping.getRejectedOn(),
-                        jobCandidateMapping.getStage().getId(),
-                        MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.ResumeSubmit.getValue()),
-                        loggedInUser.getId(), new Date()
-                );
-            });
+        JobCandidateMapping jcmObject = jobCandidateMappingRepository.getOne(requestBean.getJcmId().get(0));
+        if(IConstant.Stage.Source.getValue().equals(jcmObject.getStage().getStage()) || IConstant.Stage.Screen.getValue().equals(jcmObject.getStage().getStage())) {
+            jobCandidateMappingRepository.setSubmittedByAndOn(
+                    requestBean.getJcmId(),
+                    loggedInUser.getDisplayName(),
+                    new Date(),
+                    jcmObject.getStage().getId(),
+                    MasterDataBean.getInstance().getStageStepMasterMap().get(IConstant.Stage.ResumeSubmit.getValue()),
+                    loggedInUser.getId(), new Date()
+            );
         }
     }
 
@@ -1793,37 +1768,44 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         RejectionReasonMasterData reasonMasterData = null;
         if (IConstant.Stage.Reject.getValue().equals(stage)) {
             reasonMasterData = MasterDataBean.getInstance().getCandidateRejections().get(candidateRejectionValue);
-            jobCandidateMappingRepository.updateForRejectStage(
+            jobCandidateMappingRepository.setRejectedByAndOn(
                     jcmList,
+                    loggedInUser.getDisplayName(),
+                    new Date(),
                     (null != reasonMasterData)?reasonMasterData.getValue():null,
                     loggedInUser.getId(),
-                    new Date());
+                    new Date()
+            );
         }
         else {
 
-            List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.findAllById(jcmList);
+            JobCandidateMapping jcmObject = jobCandidateMappingRepository.getOne(jcmList.get(0));
             Map<String, Long> jobStageIds = MasterDataBean.getInstance().getStageStepMasterMap();
 
-            jobCandidateMappings.stream().parallel().forEach(jobCandidateMapping -> {
-                jobCandidateMappingRepository.updateStageStepId(
-                        jobCandidateMapping.getId(),
-                        jobCandidateMapping.getScreeningBy(),
-                        jobCandidateMapping.getScreeningOn(),
-                        Util.isNull(jobCandidateMapping.getSubmittedBy())?loggedInUser.getDisplayName():jobCandidateMapping.getSubmittedBy(),
-                        Util.isNull(jobCandidateMapping.getSubmittedBy())?new Date():jobCandidateMapping.getSubmittedOn(),
-                        jobCandidateMapping.getMakeOfferBy(),
-                        jobCandidateMapping.getMakeOfferOn(),
-                        jobCandidateMapping.getOfferBy(),
-                        jobCandidateMapping.getOfferOn(),
-                        jobCandidateMapping.getHiredBy(),
-                        jobCandidateMapping.getHiredOn(),
-                        jobCandidateMapping.getRejectedBy(),
-                        jobCandidateMapping.getRejectedOn(),
-                        jobCandidateMapping.getStage().getId(),
-                        jobStageIds.get(stage),
-                        loggedInUser.getId(), new Date()
-                );
-            });
+            switch(stage){
+                case "Sourcing":
+                case "Interview":
+                    jobCandidateMappingRepository.updateStageStepId(jcmList, jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
+                    break;
+                case "Screening":
+                    jobCandidateMappingRepository.setScreenedByAndOn(jcmList, loggedInUser.getDisplayName(), new Date(), jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
+                    break;
+                case "Submitted":
+                    jobCandidateMappingRepository.setSubmittedByAndOn(jcmList, loggedInUser.getDisplayName(), new Date(), jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
+                    break;
+                case "Make Offer":
+                    jobCandidateMappingRepository.setMakeOfferByAndOn(jcmList, loggedInUser.getDisplayName(), new Date(), jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
+                    break;
+                case "Offer":
+                    jobCandidateMappingRepository.setOfferByAndOn(jcmList, loggedInUser.getDisplayName(), new Date(), jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
+                    break;
+                case "Hired":
+                    jobCandidateMappingRepository.setHiredByAndOn(jcmList, loggedInUser.getDisplayName(), new Date(), jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
+                    break;
+                default:
+                    log.info("Stage not found {}", stage);
+                    break;
+            }
         }
         RejectionReasonMasterData finalReasonMasterData = reasonMasterData;
         jcmList.stream().forEach(jcm -> {
@@ -1875,15 +1857,15 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
         if(Util.isNotNull(comment)) comment = comment.trim();
         else if( Util.isNotNull(callOutCome)) {
-                List<MasterData> callOutcomeFromDb = (masterDataRepository.findByTypeAndValue("callOutCome",callOutCome));
-                if(callOutcomeFromDb.size() == 0)
-                    throw new ValidationException(callOutCome+" is not a valid callOutCome", HttpStatus.BAD_REQUEST);
+            List<MasterData> callOutcomeFromDb = (masterDataRepository.findByTypeAndValue("callOutCome",callOutCome));
+            if(callOutcomeFromDb.size() == 0)
+                throw new ValidationException(callOutCome+" is not a valid callOutCome", HttpStatus.BAD_REQUEST);
 
-                String valueToUse = callOutcomeFromDb.get(0).getValueToUSe();
-                if(Util.isNotNull(valueToUse) && valueToUse.equals("1")){
-                    throw new ValidationException("Comment is mandatory for "+callOutCome, HttpStatus.BAD_REQUEST);
-                }
+            String valueToUse = callOutcomeFromDb.get(0).getValueToUSe();
+            if(Util.isNotNull(valueToUse) && valueToUse.equals("1")){
+                throw new ValidationException("Comment is mandatory for "+callOutCome, HttpStatus.BAD_REQUEST);
             }
+        }
 
 
         jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, comment, callOutCome, false, new Date(), jobCandidateMapping.getStage(), loggedInUser));
@@ -2401,7 +2383,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                         //As all the other experience options are in years only two options are in months so in-order to store the candidate experience in months 0.5 is used
                         if(response.contains("months"))
                             response="0.5";
-                        //For any other options finding for the first digit or digits and saving it two db (the lowest range will be saved to db eg: 1-3 years 1 will be saved
+                            //For any other options finding for the first digit or digits and saving it two db (the lowest range will be saved to db eg: 1-3 years 1 will be saved
                         else {
                             Pattern pattern = Pattern.compile("\\d+");
                             Matcher match = pattern.matcher(response);
@@ -2472,7 +2454,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             Job job = jobCandidateMapping.getJob();
             if(candidateService.createCandidateOnSearchEngine(candidate, job,JwtTokenUtil.getAuthToken())==200)
                 jobCandidateMapping.setCreatedOnSearchEngine(true);
-                jobCandidateMappingRepository.save(jobCandidateMapping);
+            jobCandidateMappingRepository.save(jobCandidateMapping);
         });
         log.info("Time taken to creating existing candidate on searchengine in : {}ms.", apiCallStartTime-System.currentTimeMillis());
     }
@@ -2533,7 +2515,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             Candidate candidate = candidateRepository.findById(candidateId).orElse(null);
             if(null == candidate)
                 throw new WebException("Candidate not found for candidateId : "+candidateId, HttpStatus.UNPROCESSABLE_ENTITY);
-          candidate.setCandidateSource(IConstant.CandidateSource.LBHarvester.name());
+            candidate.setCandidateSource(IConstant.CandidateSource.LBHarvester.name());
 
             JobCandidateMapping lastUpdatedJcm = jobCandidateMappingRepository.getLastUpdatedJCMForCandidate(candidateId, loggedInUser.getCompany().getId());
 

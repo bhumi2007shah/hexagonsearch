@@ -80,21 +80,9 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     @Transactional
     @Modifying
-    @Query(nativeQuery = true, value = "update job_candidate_mapping set stage =:newStageId, rejected = false, updated_by =:updatedBy, updated_on =:updatedOn where stage =:oldStageId and id =:jcmId")
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set stage =:newStageId, rejected = false, updated_by =:updatedBy, updated_on =:updatedOn where stage =:oldStageId and id in :jcmId")
     void updateStageStepId(
-            Long jcmId,
-            String screeningBy,
-            Date screeningOn,
-            String submittedBy,
-            Date submittedOn,
-            String makeOfferBy,
-            Date makeOfferOn,
-            String offerBy,
-            Date offerOn,
-            String hiredBy,
-            Date hiredOn,
-            String rejectedBy,
-            Date rejectedOn,
+            List<Long> jcmId,
             Long oldStageId,
             Long newStageId,
             Long updatedBy,
@@ -103,8 +91,52 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
 
     @Transactional
     @Modifying
-    @Query(nativeQuery = true, value = "update job_candidate_mapping set submitted_by =:submittedBy, submitted_on = submittedOn where id in :jcmList")
-    void setSubmittedByAndOn(List<Long> jcmList, String submittedBy, Date submittedOn);
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set " +
+            "screening_by = case when screening_by is null then :screeningBy else screening_by end, " +
+            "screening_on = case when screening_by is null then :screeningOn else screening_on end, " +
+            "stage =:newStageId, rejected = false, updated_by =:updatedBy, updated_on =:updatedOn " +
+            "where stage =:oldStageId and id in :jcmList")
+    void setScreenedByAndOn(List<Long> jcmList, String screeningBy, Date screeningOn, Long oldStageId, Long newStageId, Long updatedBy, Date updatedOn);
+
+    @Transactional
+    @Modifying
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set " +
+            "submitted_by = case when submitted_by is null then :submittedBy else submitted_by end, " +
+            "submitted_on = case when submitted_on is null then :submittedOn else submitted_on end, " +
+            "stage =:newStageId, rejected = false, updated_by =:updatedBy, updated_on =:updatedOn where stage =:oldStageId and id in :jcmList")
+    void setSubmittedByAndOn(List<Long> jcmList, String submittedBy, Date submittedOn, Long oldStageId, Long newStageId, Long updatedBy, Date updatedOn);
+
+    @Transactional
+    @Modifying
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set " +
+            "make_offer_by = case when make_offer_by is null then :makeOfferBy else make_offer_by end, " +
+            "make_offer_on = case when make_offer_on is null then :makeOfferOn else make_offer_on end, " +
+            "stage =:newStageId, rejected = false, updated_by =:updatedBy, updated_on =:updatedOn where stage =:oldStageId and id in :jcmList")
+    void setMakeOfferByAndOn(List<Long> jcmList, String makeOfferBy, Date makeOfferOn, Long oldStageId, Long newStageId, Long updatedBy, Date updatedOn);
+
+    @Transactional
+    @Modifying
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set " +
+            "offer_by = case when offer_by is null then :offerBy else offer_by end, " +
+            "offer_on = case when offer_on is null then :offerOn else offer_on end, " +
+            "stage =:newStageId, rejected = false, updated_by =:updatedBy, updated_on =:updatedOn where stage =:oldStageId and id in :jcmList")
+    void setOfferByAndOn(List<Long> jcmList, String offerBy, Date offerOn, Long oldStageId, Long newStageId, Long updatedBy, Date updatedOn);
+
+    @Transactional
+    @Modifying
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set " +
+            "hired_by = case when hired_by is null then :hiredBy else hired_by end, " +
+            "hired_on = case when hired_on is null then :hiredOn else hired_on end, " +
+            "stage =:newStageId, rejected = false, updated_by =:updatedBy, updated_on =:updatedOn where stage =:oldStageId and id in :jcmList")
+    void setHiredByAndOn(List<Long> jcmList, String hiredBy, Date hiredOn, Long oldStageId, Long newStageId, Long updatedBy, Date updatedOn);
+
+    @Transactional
+    @Modifying
+    @Query(nativeQuery = true, value = "update job_candidate_mapping set " +
+            "rejected_by = case when rejected_by is null then :rejectedBy else rejected_by end, " +
+            "rejected_on = case when rejected_on is null then :rejectedOn else rejected_on end, " +
+            "rejected = true, candidate_rejection_value =:rejectionReason, updated_by =:updatedBy, updated_on =:updatedOn where id in :jcmList")
+    void setRejectedByAndOn(List<Long> jcmList, String rejectedBy, Date rejectedOn, String rejectionReason, Long updatedBy, Date updatedOn);
 
     @Transactional(readOnly = true)
     @Query(nativeQuery = true, value = "select count(distinct stage) from job_candidate_mapping where id in :jcmList")
