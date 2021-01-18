@@ -62,9 +62,7 @@ public class MasterDataBean {
 
     private List<ExportFormatMaster> defaultExportFormats = new ArrayList<>();
 
-    private List<String> callOutCome = new ArrayList<>();
-    private Map<String,Boolean> isCallOutComeMandatory = new HashMap<>();
-
+    private Map<String,Integer> callOutCome = new HashMap<>();
     private Map<Long, String> referrerRelation = new HashMap<>();
     private Map<Long, String> jobType = new HashMap<>();
     private Map<String, Long> stageStepMasterMap = new LinkedHashMap<>();
