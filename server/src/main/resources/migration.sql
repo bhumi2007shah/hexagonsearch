@@ -3080,3 +3080,6 @@ insert into rejection_reason_master_data values
 
 update master_data set value_to_use = '1' where type='callOutCome' and value in ('For Hiring Manager','Connected');
 update master_data set value_to_use = '0' where type='callOutCome' and value_to_use is null;
+
+-- for ticket #744
+update screening_question set options = '{"I can join immediately","15 Days","30 Days","45 Days","60 Days","90 Days"}' where question_category =(select id from master_data where value = 'Notice Period' and type = 'questionCategory');
