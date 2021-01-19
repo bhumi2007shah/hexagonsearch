@@ -1802,6 +1802,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
         if(Util.isNotNull(comment)) comment = comment.trim();
         else if( Util.isNotNull(callOutCome)) {
+                comment = "";
                 List<MasterData> callOutcomeFromDb = (masterDataRepository.findByTypeAndValue("callOutCome",callOutCome));
                 if(callOutcomeFromDb.size() == 0)
                     throw new ValidationException(callOutCome+" is not a valid callOutCome", HttpStatus.BAD_REQUEST);
