@@ -7,6 +7,7 @@ import io.litmusblox.server.constant.IConstant;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -23,6 +24,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
  */
 @EnableConfigurationProperties
 @EnableScheduling
+@EnableCaching
 @SpringBootApplication
 public class ServerApplication {
 

@@ -16,6 +16,7 @@ import io.litmusblox.server.service.SingleJobViewResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -149,7 +150,7 @@ public class JobController {
         log.info("Received request for chatbot completed candidate list for jobId={} and status={}, by user:{}", jobId, status, loggedInUser.getId());
         long startTime = System.currentTimeMillis();
 
-        String responseBean = Util.stripExtraInfoFromResponseBean( jobService.getJobViewByIdAndStatus(jobId, status),
+        String responseBean = Util.stripExtraInfoFromResponseBean(jobService.getJobViewByIdAndStatus(jobId, status),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("displayName"));
                     put("CvRating", Arrays.asList("overallRating"));
@@ -261,6 +262,7 @@ public class JobController {
     }
 
     @GetMapping(value = "/supportedexportformat/{jobId}")
+    @Cacheable(value = "Job", key = "#jobId")
     Map<Long, String> supportedExportFormat(@PathVariable("jobId") Long jobId) throws Exception{
         return jobService.getSupportedExportFormat(jobId);
     }
@@ -362,8 +364,7 @@ public class JobController {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Received request to save expected answer for job={} by user={}", requestJob.getId(), loggedInUser.getId());
         long startTime = System.currentTimeMillis();
-        jobService.
-                saveExpectedAnswer(requestJob);
+        jobService.saveExpectedAnswer(requestJob);
         log.info("Saved expected answer in {}ms", System.currentTimeMillis()-startTime);
     }
 

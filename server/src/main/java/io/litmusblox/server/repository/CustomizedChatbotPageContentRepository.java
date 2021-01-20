@@ -6,6 +6,7 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.Company;
 import io.litmusblox.server.model.CustomizedChatbotPageContent;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public interface CustomizedChatbotPageContentRepository extends JpaRepository<CustomizedChatbotPageContent, Long> {
 
     @Transactional
+    @Cacheable(cacheNames = "chatbotContent", key = "#companyId")
     CustomizedChatbotPageContent findByCompanyId(Company companyId);
 
 }
