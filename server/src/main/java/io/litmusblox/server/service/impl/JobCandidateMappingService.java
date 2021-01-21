@@ -1808,13 +1808,14 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         else
             validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
         if(Util.isNotNull(comment)) comment = comment.trim();
-        else if( Util.isNotNull(callOutCome)) {
+
+        if( Util.isNotNull(callOutCome)) {
                 List<MasterData> callOutcomeFromDb = (masterDataRepository.findByTypeAndValue("callOutCome",callOutCome));
                 if(callOutcomeFromDb.size() == 0)
                     throw new ValidationException(callOutCome+" is not a valid callOutCome", HttpStatus.BAD_REQUEST);
 
                 String valueToUse = callOutcomeFromDb.get(0).getValueToUSe();
-                if(Util.isNotNull(valueToUse) && valueToUse.equals("1")){
+                if(Util.isNull(comment) &&  "1".equals(valueToUse) ){
                     throw new ValidationException("Comment is mandatory for "+callOutCome, HttpStatus.BAD_REQUEST);
                 }
             }
