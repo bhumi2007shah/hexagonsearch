@@ -231,6 +231,13 @@ public class Job implements Serializable {
     @Column(name = "QUICK_QUESTION")
     private boolean quickQuestion;
 
+    @Column(name = "DEEP_QUESTION_SELECTED_BY")
+    private Long deepQuestionSelectedBy;
+
+    @Column(name = "HM_QUESTION_SELECT_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date hmQuestionSelectedOn;
+
     @Transient
     @JsonInclude
     private List<String> userEnteredKeySkill=new ArrayList<>();
