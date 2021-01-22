@@ -855,7 +855,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     @CacheEvict(cacheNames = "techQuestions", key = "#job.id"), @CacheEvict(cacheNames = "userQuestions", key = "#job.id")})
     public void publishJob(Job job) throws Exception {
         log.info("Received request to publish job with id: " + job.getId());
-        if(null == job.getHmQuestionSelectedOn() && !job.isQuickQuestion() && null == job.getDeepQuestionSelectedBy()){
+        if(null == job.getHmQuestionSelectedOn() && !job.isQuickQuestion() && null != job.getDeepQuestionSelectedBy()){
             throw new WebException("You will be notified once the hiring manager has selected the questions for deep screening. You can then publish the job. Until then the job will remain in a draft state",HttpStatus.BAD_REQUEST);
         }
         Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite(),null,null);
