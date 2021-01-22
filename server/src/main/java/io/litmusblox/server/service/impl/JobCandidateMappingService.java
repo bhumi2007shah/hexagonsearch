@@ -2431,7 +2431,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if (null == candidateCompanyDetails) {
             if(Util.isNotNull(companyDetails.getCompanyName())) {
                 companyDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
-                candidateCompanyDetailsRepository.save(companyDetails);
+                candidateCompanyDetails = companyDetails;
             }
         } else {
             candidateCompanyDetails.setCompanyName(companyDetails.getCompanyName());
@@ -2439,8 +2439,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             candidateCompanyDetails.setNoticePeriodInDb(companyDetails.getNoticePeriodInDb());
             if (Util.isNotNull(companyDetails.getSalary()))
                 candidateCompanyDetails.setSalary(companyDetails.getSalary());
-            candidateCompanyDetailsRepository.save(candidateCompanyDetails);
         }
+        if(null != jobCandidateMapping.getCandidate().getCandidateCompanyDetails() && null != candidateCompanyDetails && jobCandidateMapping.getCandidate().getCandidateCompanyDetails().size()!=0){
+            reStructureCompanyList(jobCandidateMapping, candidateCompanyDetails);
+        }else
+            candidateCompanyDetailsRepository.save(candidateCompanyDetails);
+
         CandidateDetails details = candidateDetailsRepository.findByCandidateId(jobCandidateMapping.getCandidate());
         if (null == details){
             candidateDetails.setCandidateId(jobCandidateMapping.getCandidate());
