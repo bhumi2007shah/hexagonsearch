@@ -3083,3 +3083,18 @@ update master_data set value_to_use = '0' where type='callOutCome' and value_to_
 
 -- for ticket #744
 update screening_question set options = '{"I can join immediately","15 Days","30 Days","45 Days","60 Days","90 Days"}' where question_category =(select id from master_data where value = 'Notice Period' and type = 'questionCategory');
+
+-- For ticket #738
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN SCREENING_BY varchar(90),
+ADD COLUMN SCREENING_ON TIMESTAMP,
+ADD COLUMN SUBMITTED_BY varchar(90),
+ADD COLUMN SUBMITTED_ON TIMESTAMP,
+ADD COLUMN MAKE_OFFER_BY varchar(90),
+ADD COLUMN MAKE_OFFER_ON TIMESTAMP,
+ADD COLUMN OFFER_BY varchar(90),
+ADD COLUMN OFFER_ON TIMESTAMP,
+ADD COLUMN HIRED_BY varchar(90),
+ADD COLUMN HIRED_ON TIMESTAMP,
+ADD COLUMN REJECTED_BY varchar(90),
+ADD COLUMN REJECTED_ON TIMESTAMP,

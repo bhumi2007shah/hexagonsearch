@@ -369,6 +369,8 @@ public interface IConstant {
 
     String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countries", "education", "otpExpiryMinutes", "hiringManagerRejectReasons", "candidateNotInterestedReason","location"};
 
+    String chatCompleteScreeningMessage = "Candidate completed chatbot";
+
     String REPLACEMENT_KEY_FOR_SHORTNAME = "_shortName_";
     String GODADDY_SUCCESS_RESPONSE = "\"code\":";
 

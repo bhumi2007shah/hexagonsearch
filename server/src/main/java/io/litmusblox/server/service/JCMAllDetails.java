@@ -66,6 +66,18 @@ public class JCMAllDetails {
     String updatedBy;
     String rejectionReason;
     String candidateQuickQuestionResponse;
+    String screeningBy;
+    Date screeningOn;
+    String submittedBy;
+    Date submittedOn;
+    String makeOfferBy;
+    Date makeOfferOn;
+    String offerBy;
+    Date offerOn;
+    String hiredBy;
+    Date hiredOn;
+    String rejectedBy;
+    Date rejectedOn;
 
     @Transient
     @JsonProperty

@@ -189,6 +189,48 @@ public class JobCandidateMapping implements Serializable {
     @Column(name="candidate_not_interested_reason")
     private String candidateNotInterestedReason;
 
+    @Column(name="SCREENING_BY")
+    private String screeningBy;
+
+    @Column(name="SCREENING_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date screeningOn;
+
+    @Column(name="SUBMITTED_BY")
+    private String submittedBy;
+
+    @Column(name="SUBMITTED_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date submittedOn;
+
+    @Column(name="MAKE_OFFER_BY")
+    private String makeOfferBy;
+
+    @Column(name="MAKE_OFFER_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date makeOfferOn;
+
+    @Column(name="OFFER_BY")
+    private String offerBy;
+
+    @Column(name="OFFER_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date offerOn;
+
+    @Column(name="HIRED_BY")
+    private String hiredBy;
+
+    @Column(name="HIRED_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date hiredOn;
+
+    @Column(name="REJECTED_BY")
+    private String rejectedBy;
+
+    @Column(name="REJECTED_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date rejectedOn;
+
     @Type(type = "hstore")
     @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "hstore")
     private Map<String, String> candidateChatbotResponse = new HashMap<>();
