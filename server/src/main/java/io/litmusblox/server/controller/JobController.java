@@ -368,4 +368,11 @@ public class JobController {
         log.info("Saved expected answer in {}ms", System.currentTimeMillis()-startTime);
     }
 
+    @PutMapping(value = "/setHiringManager/{jobId}")
+    void setHMForTechQuestionSelection(@PathVariable Long jobId,@RequestParam("hmUserId") Long hmUserId){
+        log.info("Received request to set Hiring Manager with id {} for JobId :{} to select tech questions",hmUserId,jobId);
+        jobService.setHMForTechQuestionSelection(jobId,hmUserId);
+        log.info("Successfully updated Hiring Manager with id {} for JobId :{} to select tech questions",hmUserId,jobId);
+    }
+
 }

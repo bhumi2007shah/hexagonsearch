@@ -182,4 +182,6 @@ public interface IJobService {
      * @param requestJob which has expected answer and jobId
      */
     void saveExpectedAnswer(Job requestJob);
+
+    void setHMForTechQuestionSelection(Long jobId, Long hmUserId);
 }

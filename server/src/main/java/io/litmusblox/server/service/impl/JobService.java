@@ -854,7 +854,15 @@ public class JobService extends AbstractAccessControl implements IJobService {
     @Caching(evict = {@CacheEvict(cacheNames = "job", key = "#job.id"), @CacheEvict("singleJobViewByStatus"), @CacheEvict("singleJobView"), @CacheEvict(cacheNames = "jobs"),
     @CacheEvict(cacheNames = "techQuestions", key = "#job.id"), @CacheEvict(cacheNames = "userQuestions", key = "#job.id")})
     public void publishJob(Job job) throws Exception {
-        log.info("Received request to publish job with id: " + job.getId());
+        String errorMessage;
+        Long jobId = job.getId();
+        log.info("Received request to publish job with id: " + jobId);
+        job = jobRepository.findById(jobId).orElse(null);
+        if(null == job){
+            errorMessage = "job with id : "+jobId+" does not exist";
+            log.error(errorMessage);
+            throw new WebException(errorMessage,HttpStatus.NOT_FOUND);
+        }
         if(null == job.getHmQuestionSelectedOn() && !job.isQuickQuestion() && null != job.getDeepQuestionSelectedBy()){
             throw new WebException("You will be notified once the hiring manager has selected the questions for deep screening. You can then publish the job. Until then the job will remain in a draft state",HttpStatus.BAD_REQUEST);
         }
@@ -1478,5 +1486,29 @@ public class JobService extends AbstractAccessControl implements IJobService {
         jobFromDb.setExpectedAnswer(requestJob.getExpectedAnswer());
 
         jobRepository.save(jobFromDb);
+    }
+
+    public void setHMForTechQuestionSelection(Long jobId,Long hmUserId){
+        String errorMessage;
+        if(null == jobId){
+            errorMessage = "jobId cannot be null";
+            log.error(errorMessage);
+            throw new WebException(errorMessage,HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        if(null == userRepository.findById(hmUserId).orElse(null)){
+            errorMessage = ("User with id : "+hmUserId+" does not exist");
+            log.error(errorMessage);
+            throw new WebException(errorMessage,HttpStatus.NOT_FOUND);
+        }
+
+        Job job = jobRepository.findById(jobId).orElse(null);
+
+        if(null == job){
+            errorMessage = ("Job with id : "+jobId+" does not exist");
+            log.error(errorMessage);
+            throw new WebException(errorMessage,HttpStatus.NOT_FOUND);
+        }
+        job.setDeepQuestionSelectedBy(hmUserId);
+        jobRepository.save(job);
     }
 }
