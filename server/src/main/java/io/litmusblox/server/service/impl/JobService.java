@@ -633,50 +633,42 @@ public class JobService extends AbstractAccessControl implements IJobService {
             return;
         }
 
-        if(job.isQuickQuestion()){
-            //validate statement block
-            if(null == job.getStatementBlock() || ((null == job.getSelectedAttribute() || job.getSelectedAttribute().size()==0)
-                    && (null == job.getSelectedKeySkills() || job.getSelectedKeySkills().size()==0))){
-                log.error("For job : {} statement block, attributes or keySkills {}",job.getId(),IErrorMessages.NULL_MESSAGE);
-                throw new ValidationException("For job : "+job.getId()+" statement block, attributes or keySkills " + IErrorMessages.NULL_MESSAGE, HttpStatus.BAD_REQUEST);
+        if(null == job.getDeepQuestionSelectedBy()) {
+            if (job.isQuickQuestion()) {
+                //validate statement block
+                if (null == job.getStatementBlock() || ((null == job.getSelectedAttribute() || job.getSelectedAttribute().size() == 0)
+                        && (null == job.getSelectedKeySkills() || job.getSelectedKeySkills().size() == 0))) {
+                    log.error("For job : {} statement block, attributes or keySkills {}", job.getId(), IErrorMessages.NULL_MESSAGE);
+                    throw new ValidationException("For job : " + job.getId() + " statement block, attributes or keySkills " + IErrorMessages.NULL_MESSAGE, HttpStatus.BAD_REQUEST);
+                }
+                if (!statementsBlockMasterDataRepository.findById(job.getStatementBlock().getId()).isPresent()) {
+                    log.error("Statement block not valid for id {} in job id :{}", job.getStatementBlock().getId(), job.getId());
+                    throw new ValidationException("Statement block not valid for id : " + job.getStatementBlock().getId() + " in job id : " + job.getId(), HttpStatus.BAD_REQUEST);
+                }
+                //set statement block
+                oldJob.setStatementBlock(job.getStatementBlock());
+                oldJob.setQuickQuestion(true);
             }
-            if(!statementsBlockMasterDataRepository.findById(job.getStatementBlock().getId()).isPresent()){
-                log.error("Statement block not valid for id {} in job id :{}", job.getStatementBlock().getId(), job.getId());
-                throw new ValidationException("Statement block not valid for id : "+job.getStatementBlock().getId()+" in job id : "+job.getId(), HttpStatus.BAD_REQUEST);
-            }
-            //set statement block
-            oldJob.setStatementBlock(job.getStatementBlock());
-            oldJob.setQuickQuestion(true);
+
+            //Update JobIndustry
+            addIndustry(job, oldJob);
+
+            //Validate jobRole and create entry
+            validateRole(job, oldJob);
+
+            //validate function
+            validateFunction(job, oldJob);
         }
 
-        //Update JobIndustry
-        addIndustry(job, oldJob);
-
-        //Validate jobRole and create entry
-        validateRole(job, oldJob);
-
-        //validate function
-        validateFunction(job, oldJob);
-
         String historyMsg = "Added";
-        AtomicBoolean masterQuestions = new AtomicBoolean(false);
-        AtomicBoolean techQuestions = new AtomicBoolean(false);
-        AtomicBoolean userQuestions = new AtomicBoolean(false);
-        masterQuestions.set(false);
-        techQuestions.set(false);
-        userQuestions.set(false);
 
         //Deleted code not used currently
 
         if (null != oldJob.getJobScreeningQuestionsList() && oldJob.getJobScreeningQuestionsList().size() > 0) {
             historyMsg = "Updated";
-            if(isNewAddJobFlow){
-                jobScreeningQuestionsRepository.deleteByMasterScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
-                jobScreeningQuestionsRepository.deleteByTechScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
-                jobScreeningQuestionsRepository.deleteByUserScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
-            }else
-                jobScreeningQuestionsRepository.deleteAll(oldJob.getJobScreeningQuestionsList());//delete old job screening question list
-
+            jobScreeningQuestionsRepository.deleteByMasterScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
+            jobScreeningQuestionsRepository.deleteByTechScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
+            jobScreeningQuestionsRepository.deleteByUserScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
             jobScreeningQuestionsRepository.flush();
         }
 
@@ -863,6 +855,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
     @CacheEvict(cacheNames = "techQuestions", key = "#job.id"), @CacheEvict(cacheNames = "userQuestions", key = "#job.id")})
     public void publishJob(Job job) throws Exception {
         log.info("Received request to publish job with id: " + job.getId());
+        if(null == job.getHmQuestionSelectedOn() && !job.isQuickQuestion() && null == job.getDeepQuestionSelectedBy()){
+            throw new WebException("You will be notified once the hiring manager has selected the questions for deep screening. You can then publish the job. Until then the job will remain in a draft state",HttpStatus.BAD_REQUEST);
+        }
         Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite(),null,null);
         log.info("Completed publishing job with id: " + job.getId());
         if (null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
