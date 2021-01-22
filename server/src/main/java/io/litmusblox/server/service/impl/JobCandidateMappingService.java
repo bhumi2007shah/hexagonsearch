@@ -35,6 +35,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import static java.util.stream.Collectors.groupingBy;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileInputStream;
@@ -1856,16 +1857,17 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         else
             validateLoggedInUser(loggedInUser, jobCandidateMapping.getJob());
         if(Util.isNotNull(comment)) comment = comment.trim();
-        else if( Util.isNotNull(callOutCome)) {
-            List<MasterData> callOutcomeFromDb = (masterDataRepository.findByTypeAndValue("callOutCome",callOutCome));
-            if(callOutcomeFromDb.size() == 0)
-                throw new ValidationException(callOutCome+" is not a valid callOutCome", HttpStatus.BAD_REQUEST);
 
-            String valueToUse = callOutcomeFromDb.get(0).getValueToUSe();
-            if(Util.isNotNull(valueToUse) && valueToUse.equals("1")){
-                throw new ValidationException("Comment is mandatory for "+callOutCome, HttpStatus.BAD_REQUEST);
+        if( Util.isNotNull(callOutCome)) {
+                List<MasterData> callOutcomeFromDb = (masterDataRepository.findByTypeAndValue("callOutCome",callOutCome));
+                if(callOutcomeFromDb.size() == 0)
+                    throw new ValidationException(callOutCome+" is not a valid callOutCome", HttpStatus.BAD_REQUEST);
+
+                String valueToUse = callOutcomeFromDb.get(0).getValueToUSe();
+                if(Util.isNull(comment) &&  "1".equals(valueToUse) ){
+                    throw new ValidationException("Comment is mandatory for "+callOutCome, HttpStatus.BAD_REQUEST);
+                }
             }
-        }
 
 
         jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, comment, callOutCome, false, new Date(), jobCandidateMapping.getStage(), loggedInUser));

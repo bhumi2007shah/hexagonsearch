@@ -35,7 +35,6 @@ public class JcmHistory {
     @JoinColumn(name = "JCM_ID")
     private JobCandidateMapping jcmId;
 
-    @NotNull
     @Column(name = "COMMENT")
     private String comment;
 
