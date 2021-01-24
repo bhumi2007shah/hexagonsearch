@@ -866,7 +866,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         validateLoggedInUser(loggedInUser,job);
 
-        if(null == job.getHmQuestionSelectedOn() && !job.isQuickQuestion() && null != job.getDeepQuestionSelectedBy()){
+        if(null == job.getDeepQuestionSelectedOn()   && !job.isQuickQuestion() && null != job.getDeepQuestionSelectedBy()){
             throw new WebException("You will be notified once the hiring manager has selected the questions for deep screening. You can then publish the job. Until then the job will remain in a draft state",HttpStatus.BAD_REQUEST);
         }
         Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite(),null,null);
@@ -1347,6 +1347,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 if(!IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus()))
                     addJobScreeningQuestions(job, oldJob, loggedInUser, true);
                 break;
+            case setHiringManager:
+                setHMForTechQuestionSelection(job,oldJob);
+                break;
             default:
                 throw new OperationNotSupportedException("Unknown page: " + pageName);
         }
@@ -1491,30 +1494,15 @@ public class JobService extends AbstractAccessControl implements IJobService {
         jobRepository.save(jobFromDb);
     }
 
-    public void setHMForTechQuestionSelection(Long jobId,Long hmUserId){
+    private void setHMForTechQuestionSelection(Job job,Job oldJob){
         String errorMessage;
-        if(null == jobId){
-            errorMessage = "jobId cannot be null";
-            log.error(errorMessage);
-            throw new WebException(errorMessage,HttpStatus.UNPROCESSABLE_ENTITY);
-        }
+        Long hmUserId = job.getDeepQuestionSelectedBy();
         if(null == userRepository.findById(hmUserId).orElse(null)){
             errorMessage = ("User with id : "+hmUserId+" does not exist");
             log.error(errorMessage);
             throw new WebException(errorMessage,HttpStatus.NOT_FOUND);
         }
-
-        Job job = jobRepository.findById(jobId).orElse(null);
-        if(null == job){
-            errorMessage = ("Job with id : "+jobId+" does not exist");
-            log.error(errorMessage);
-            throw new WebException(errorMessage,HttpStatus.NOT_FOUND);
-        }
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        validateLoggedInUser(loggedInUser,job);
-
-
-        job.setDeepQuestionSelectedBy(hmUserId);
-        jobRepository.save(job);
+        oldJob.setDeepQuestionSelectedBy(hmUserId);
+        jobRepository.save(oldJob);
     }
 }
