@@ -234,9 +234,9 @@ public class Job implements Serializable {
     @Column(name = "DEEP_QUESTION_SELECTED_BY")
     private Long deepQuestionSelectedBy;
 
-    @Column(name = "HM_QUESTION_SELECTED_ON")
+    @Column(name = "DEEP_QUESTION_SELECTED_ON")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date hmQuestionSelectedOn;
+    private Date deepQuestionSelectedOn;
 
     @Transient
     @JsonInclude

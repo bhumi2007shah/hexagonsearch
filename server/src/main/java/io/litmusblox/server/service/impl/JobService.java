@@ -633,23 +633,23 @@ public class JobService extends AbstractAccessControl implements IJobService {
             return;
         }
 
-        if(null == job.getDeepQuestionSelectedBy()) {
-            if (job.isQuickQuestion()) {
-                //validate statement block
-                if (null == job.getStatementBlock() || ((null == job.getSelectedAttribute() || job.getSelectedAttribute().size() == 0)
-                        && (null == job.getSelectedKeySkills() || job.getSelectedKeySkills().size() == 0))) {
-                    log.error("For job : {} statement block, attributes or keySkills {}", job.getId(), IErrorMessages.NULL_MESSAGE);
-                    throw new ValidationException("For job : " + job.getId() + " statement block, attributes or keySkills " + IErrorMessages.NULL_MESSAGE, HttpStatus.BAD_REQUEST);
-                }
-                if (!statementsBlockMasterDataRepository.findById(job.getStatementBlock().getId()).isPresent()) {
-                    log.error("Statement block not valid for id {} in job id :{}", job.getStatementBlock().getId(), job.getId());
-                    throw new ValidationException("Statement block not valid for id : " + job.getStatementBlock().getId() + " in job id : " + job.getId(), HttpStatus.BAD_REQUEST);
-                }
-                //set statement block
-                oldJob.setStatementBlock(job.getStatementBlock());
-                oldJob.setQuickQuestion(true);
+        if (job.isQuickQuestion()) {
+            //validate statement block
+            if (null == job.getStatementBlock() || ((null == job.getSelectedAttribute() || job.getSelectedAttribute().size() == 0)
+                    && (null == job.getSelectedKeySkills() || job.getSelectedKeySkills().size() == 0))) {
+                log.error("For job : {} statement block, attributes or keySkills {}", job.getId(), IErrorMessages.NULL_MESSAGE);
+                throw new ValidationException("For job : " + job.getId() + " statement block, attributes or keySkills " + IErrorMessages.NULL_MESSAGE, HttpStatus.BAD_REQUEST);
             }
+            if (!statementsBlockMasterDataRepository.findById(job.getStatementBlock().getId()).isPresent()) {
+                log.error("Statement block not valid for id {} in job id :{}", job.getStatementBlock().getId(), job.getId());
+                throw new ValidationException("Statement block not valid for id : " + job.getStatementBlock().getId() + " in job id : " + job.getId(), HttpStatus.BAD_REQUEST);
+            }
+            //set statement block
+            oldJob.setStatementBlock(job.getStatementBlock());
+            oldJob.setQuickQuestion(true);
+        }
 
+        if(null != oldJob.getDeepQuestionSelectedBy()){
             //Update JobIndustry
             addIndustry(job, oldJob);
 
