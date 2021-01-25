@@ -282,7 +282,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @throws Exception
      */
     @Transactional
-    @Cacheable(cacheNames = "singleJobView", key="#jobId.toString().concat('-').concat(#stage)")
+    //@Cacheable(cacheNames = "singleJobView", key="#jobId.toString().concat('-').concat(#stage)")
     public SingleJobViewResponseBean getJobViewById(Long jobId, String stage) throws Exception {
         log.info("Received request to find a list of all candidates for job: {} and stage {} ",jobId, stage);
         long startTimeMethod = System.currentTimeMillis(), startTime = System.currentTimeMillis();
@@ -392,7 +392,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @throws Exception
      */
     @Transactional
-    @Cacheable(cacheNames = "singleJobViewByStatus", key="#jobId.toString().concat('-').concat(#status)")
+    //@Cacheable(cacheNames = "singleJobViewByStatus", key="#jobId.toString().concat('-').concat(#status)")
     public SingleJobViewResponseBean getJobViewByIdAndStatus(Long jobId, String status) throws Exception{
         Job job = jobRepository.getOne(jobId);
 
@@ -955,7 +955,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     }
 
     @Transactional
-    @Cacheable(cacheNames = "job", key = "#jobId")
+    //@Cacheable(cacheNames = "job", key = "#jobId")
     public Job getJobDetails(Long jobId, Boolean isCallForHiringManager) throws Exception {
         Job job = jobRepository.findById(jobId).orElse(null);
         if (null == job) {
