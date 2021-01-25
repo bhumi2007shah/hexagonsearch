@@ -620,7 +620,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     }
 
     @CacheEvict(cacheNames = "job", key = "#job.id")
-    private void addJobScreeningQuestions(Job job, Job oldJob, User loggedInUser, boolean isNewAddJobFlow) throws Exception { //method for add screening questions
+    private void addJobScreeningQuestions(Job job, Job oldJob, User loggedInUser, boolean isNewAddJobFlow ,boolean isCallFromHiringManager) throws Exception { //method for add screening questions
 
         //commented out the check as per ticket #146
         /*
@@ -649,7 +649,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             oldJob.setQuickQuestion(true);
         }
 
-        if(null != oldJob.getDeepQuestionSelectedBy()){
+        if((null != oldJob.getDeepQuestionSelectedBy() && isCallFromHiringManager) || (null == oldJob.getDeepQuestionSelectedBy() && !isCallFromHiringManager)){
             //Update JobIndustry
             addIndustry(job, oldJob);
 
@@ -681,12 +681,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         });
 
         oldJob.setJobScreeningQuestionsList(job.getJobScreeningQuestionsList());
-        if(job.getJobScreeningQuestionsList().size()>0) {
-            oldJob.setHrQuestionAvailable(true);
-        }
-        else{
-            oldJob.setHrQuestionAvailable(false);
-        }
+        oldJob.setHrQuestionAvailable(job.getJobScreeningQuestionsList().size() > 0);
 
         try {
             log.info("Add Key Skills in job : {}",job.getId());
@@ -1298,7 +1293,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
     @Transactional
     @Caching(evict = {@CacheEvict(cacheNames = "job", key = "#job.id", condition = "#job.id != null"), @CacheEvict("singleJobViewByStatus"), @CacheEvict("singleJobView"), @CacheEvict(cacheNames = "jobs")})
-    public Job addJobFlow(Job job, String pageName) throws Exception {
+    public Job addJobFlow(Job job, String pageName,boolean isCallFromHiringManager) throws Exception {
         if (null != job.getStatus() && IConstant.JobStatus.ARCHIVED.equals(job.getStatus()))
             throw new ValidationException("Can't edit job because job in Archived state", HttpStatus.UNPROCESSABLE_ENTITY);
 
@@ -1345,7 +1340,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 break;
             case jobScreening:
                 if(!IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus()))
-                    addJobScreeningQuestions(job, oldJob, loggedInUser, true);
+                    addJobScreeningQuestions(job, oldJob, loggedInUser, true,isCallFromHiringManager);
                 break;
             case setHiringManager:
                 setHMForTechQuestionSelection(job,oldJob);

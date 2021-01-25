@@ -167,7 +167,7 @@ public interface IJobService {
      * @return Response bean with jobId, and optionally list of skills from ML
      * @throws Exception
      */
-    Job addJobFlow(Job job, String pageName) throws Exception;
+    Job addJobFlow(Job job, String pageName,boolean isCallFromHiringManager) throws Exception;
 
     /**
      * API to get and add tech questions from search engine
