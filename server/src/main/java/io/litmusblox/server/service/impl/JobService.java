@@ -1295,7 +1295,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
     @Transactional
     @Caching(evict = {@CacheEvict(cacheNames = "job", key = "#job.id", condition = "#job.id != null"), @CacheEvict("singleJobViewByStatus"), @CacheEvict("singleJobView"), @CacheEvict(cacheNames = "jobs")})
-    public Job addJobFlow(Job job, String pageName,boolean isCallFromHiringManager) throws Exception {
+    public Job addJobFlow(Job job, String pageName) throws Exception {
         if (null != job.getStatus() && IConstant.JobStatus.ARCHIVED.equals(job.getStatus()))
             throw new ValidationException("Can't edit job because job in Archived state", HttpStatus.UNPROCESSABLE_ENTITY);
 
@@ -1342,7 +1342,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 break;
             case jobScreening:
                 if(!IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus()))
-                    addJobScreeningQuestions(job, oldJob, loggedInUser, isCallFromHiringManager);
+                    addJobScreeningQuestions(job, oldJob, loggedInUser, false);
                 break;
             case setHiringManager:
                 setHMForTechQuestionSelection(job,oldJob);
@@ -1494,7 +1494,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     private void setHMForTechQuestionSelection(Job job,Job oldJob){
         String errorMessage;
         Long hmUserId = job.getDeepQuestionSelectedBy();
-        if(null == userRepository.findById(hmUserId).orElse(null)){
+        if(null == hmUserId || null == userRepository.findById(hmUserId).orElse(null)){
             errorMessage = ("User with id : "+hmUserId+" does not exist");
             log.error(errorMessage);
             throw new WebException(errorMessage,HttpStatus.NOT_FOUND);

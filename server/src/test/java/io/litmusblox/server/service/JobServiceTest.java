@@ -265,7 +265,7 @@ class JobServiceTest extends AbstractTest {
                     .minExperience(0L)
                     .maxExperience(2L)
                     .build();
-            jobService.addJobFlow(testJob, IConstant.AddJobPages.overview.name(),false);
+            jobService.addJobFlow(testJob, IConstant.AddJobPages.overview.name());
             assertThat(testJob.getId()).isNotNull();
         } catch (Exception e) {
             e.printStackTrace();

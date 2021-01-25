@@ -50,7 +50,7 @@ public class JobController {
         Job job = mapper.readValue(jobStr, Job.class);
 
         return Util.stripExtraInfoFromResponseBean(
-                jobService.addJobFlow(job, pageName,false),
+                jobService.addJobFlow(job, pageName),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("displayName","id"));
                     put("ScreeningQuestions", Arrays.asList("question","id","isMandatory"));
