@@ -620,7 +620,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     }
 
     @CacheEvict(cacheNames = "job", key = "#job.id")
-    private void addJobScreeningQuestions(Job job, Job oldJob, User loggedInUser, boolean isNewAddJobFlow) throws Exception { //method for add screening questions
+    private void addJobScreeningQuestions(Job job, Job oldJob, User loggedInUser, boolean isNewAddJobFlow ,boolean isCallFromHiringManager) throws Exception { //method for add screening questions
 
         //commented out the check as per ticket #146
         /*
@@ -633,50 +633,42 @@ public class JobService extends AbstractAccessControl implements IJobService {
             return;
         }
 
-        if(job.isQuickQuestion()){
+        if (job.isQuickQuestion()) {
             //validate statement block
-            if(null == job.getStatementBlock() || ((null == job.getSelectedAttribute() || job.getSelectedAttribute().size()==0)
-                    && (null == job.getSelectedKeySkills() || job.getSelectedKeySkills().size()==0))){
-                log.error("For job : {} statement block, attributes or keySkills {}",job.getId(),IErrorMessages.NULL_MESSAGE);
-                throw new ValidationException("For job : "+job.getId()+" statement block, attributes or keySkills " + IErrorMessages.NULL_MESSAGE, HttpStatus.BAD_REQUEST);
+            if (null == job.getStatementBlock() || ((null == job.getSelectedAttribute() || job.getSelectedAttribute().size() == 0)
+                    && (null == job.getSelectedKeySkills() || job.getSelectedKeySkills().size() == 0))) {
+                log.error("For job : {} statement block, attributes or keySkills {}", job.getId(), IErrorMessages.NULL_MESSAGE);
+                throw new ValidationException("For job : " + job.getId() + " statement block, attributes or keySkills " + IErrorMessages.NULL_MESSAGE, HttpStatus.BAD_REQUEST);
             }
-            if(!statementsBlockMasterDataRepository.findById(job.getStatementBlock().getId()).isPresent()){
+            if (!statementsBlockMasterDataRepository.findById(job.getStatementBlock().getId()).isPresent()) {
                 log.error("Statement block not valid for id {} in job id :{}", job.getStatementBlock().getId(), job.getId());
-                throw new ValidationException("Statement block not valid for id : "+job.getStatementBlock().getId()+" in job id : "+job.getId(), HttpStatus.BAD_REQUEST);
+                throw new ValidationException("Statement block not valid for id : " + job.getStatementBlock().getId() + " in job id : " + job.getId(), HttpStatus.BAD_REQUEST);
             }
             //set statement block
             oldJob.setStatementBlock(job.getStatementBlock());
             oldJob.setQuickQuestion(true);
         }
 
-        //Update JobIndustry
-        addIndustry(job, oldJob);
+        if((null != oldJob.getDeepQuestionSelectedBy() && isCallFromHiringManager) || (null == oldJob.getDeepQuestionSelectedBy() && !isCallFromHiringManager)){
+            //Update JobIndustry
+            addIndustry(job, oldJob);
 
-        //Validate jobRole and create entry
-        validateRole(job, oldJob);
+            //Validate jobRole and create entry
+            validateRole(job, oldJob);
 
-        //validate function
-        validateFunction(job, oldJob);
+            //validate function
+            validateFunction(job, oldJob);
+        }
 
         String historyMsg = "Added";
-        AtomicBoolean masterQuestions = new AtomicBoolean(false);
-        AtomicBoolean techQuestions = new AtomicBoolean(false);
-        AtomicBoolean userQuestions = new AtomicBoolean(false);
-        masterQuestions.set(false);
-        techQuestions.set(false);
-        userQuestions.set(false);
 
         //Deleted code not used currently
 
         if (null != oldJob.getJobScreeningQuestionsList() && oldJob.getJobScreeningQuestionsList().size() > 0) {
             historyMsg = "Updated";
-            if(isNewAddJobFlow){
-                jobScreeningQuestionsRepository.deleteByMasterScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
-                jobScreeningQuestionsRepository.deleteByTechScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
-                jobScreeningQuestionsRepository.deleteByUserScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
-            }else
-                jobScreeningQuestionsRepository.deleteAll(oldJob.getJobScreeningQuestionsList());//delete old job screening question list
-
+            jobScreeningQuestionsRepository.deleteByMasterScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
+            jobScreeningQuestionsRepository.deleteByTechScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
+            jobScreeningQuestionsRepository.deleteByUserScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
             jobScreeningQuestionsRepository.flush();
         }
 
@@ -689,12 +681,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         });
 
         oldJob.setJobScreeningQuestionsList(job.getJobScreeningQuestionsList());
-        if(job.getJobScreeningQuestionsList().size()>0) {
-            oldJob.setHrQuestionAvailable(true);
-        }
-        else{
-            oldJob.setHrQuestionAvailable(false);
-        }
+        oldJob.setHrQuestionAvailable(job.getJobScreeningQuestionsList().size() > 0);
 
         try {
             log.info("Add Key Skills in job : {}",job.getId());
@@ -862,7 +849,21 @@ public class JobService extends AbstractAccessControl implements IJobService {
     @Caching(evict = {@CacheEvict(cacheNames = "job", key = "#job.id"), @CacheEvict("singleJobViewByStatus"), @CacheEvict("singleJobView"), @CacheEvict(cacheNames = "jobs"),
     @CacheEvict(cacheNames = "techQuestions", key = "#job.id"), @CacheEvict(cacheNames = "userQuestions", key = "#job.id")})
     public void publishJob(Job job) throws Exception {
-        log.info("Received request to publish job with id: " + job.getId());
+        String errorMessage;
+        Long jobId = job.getId();
+        log.info("Received request to publish job with id: " + jobId);
+        job = jobRepository.findById(jobId).orElse(null);
+        if(null == job){
+            errorMessage = "job with id : "+jobId+" does not exist";
+            log.error(errorMessage);
+            throw new WebException(errorMessage,HttpStatus.NOT_FOUND);
+        }
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser,job);
+
+        if(null == job.getDeepQuestionSelectedOn()   && !job.isQuickQuestion() && null != job.getDeepQuestionSelectedBy()){
+            throw new WebException("You will be notified once the hiring manager has selected the questions for deep screening. You can then publish the job. Until then the job will remain in a draft state",HttpStatus.BAD_REQUEST);
+        }
         Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite(),null,null);
         log.info("Completed publishing job with id: " + job.getId());
         if (null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
@@ -1292,7 +1293,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
     @Transactional
     @Caching(evict = {@CacheEvict(cacheNames = "job", key = "#job.id", condition = "#job.id != null"), @CacheEvict("singleJobViewByStatus"), @CacheEvict("singleJobView"), @CacheEvict(cacheNames = "jobs")})
-    public Job addJobFlow(Job job, String pageName) throws Exception {
+    public Job addJobFlow(Job job, String pageName,boolean isCallFromHiringManager) throws Exception {
         if (null != job.getStatus() && IConstant.JobStatus.ARCHIVED.equals(job.getStatus()))
             throw new ValidationException("Can't edit job because job in Archived state", HttpStatus.UNPROCESSABLE_ENTITY);
 
@@ -1339,7 +1340,10 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 break;
             case jobScreening:
                 if(!IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus()))
-                    addJobScreeningQuestions(job, oldJob, loggedInUser, true);
+                    addJobScreeningQuestions(job, oldJob, loggedInUser, true,isCallFromHiringManager);
+                break;
+            case setHiringManager:
+                setHMForTechQuestionSelection(job,oldJob);
                 break;
             default:
                 throw new OperationNotSupportedException("Unknown page: " + pageName);
@@ -1483,5 +1487,17 @@ public class JobService extends AbstractAccessControl implements IJobService {
         jobFromDb.setExpectedAnswer(requestJob.getExpectedAnswer());
 
         jobRepository.save(jobFromDb);
+    }
+
+    private void setHMForTechQuestionSelection(Job job,Job oldJob){
+        String errorMessage;
+        Long hmUserId = job.getDeepQuestionSelectedBy();
+        if(null == userRepository.findById(hmUserId).orElse(null)){
+            errorMessage = ("User with id : "+hmUserId+" does not exist");
+            log.error(errorMessage);
+            throw new WebException(errorMessage,HttpStatus.NOT_FOUND);
+        }
+        oldJob.setDeepQuestionSelectedBy(hmUserId);
+        jobRepository.save(oldJob);
     }
 }
