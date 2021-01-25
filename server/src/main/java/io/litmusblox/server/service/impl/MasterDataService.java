@@ -143,7 +143,7 @@ public class MasterDataService implements IMasterDataService {
             else if(data.getType().equalsIgnoreCase("questionCategory"))
                 MasterDataBean.getInstance().getQuestionCategory().put(data.getValue(), data);
             else if(data.getType().equalsIgnoreCase("callOutCome"))
-                MasterDataBean.getInstance().getCallOutCome().add(data.getValue());
+                MasterDataBean.getInstance().getCallOutCome().put(data.getValue(), Integer.parseInt(data.getValueToUSe()));
             else if(data.getType().equalsIgnoreCase("location"))
                 MasterDataBean.getInstance().getLocation().add(data.getValue());
             else if(data.getType().equalsIgnoreCase("interviewConfirmation"))
@@ -376,6 +376,7 @@ public class MasterDataService implements IMasterDataService {
     private static final String REASON_FOR_CHANGE = "reasonForChange";
     private static final String DEFAULT_EXPORT_FORMAT = "defaultExportFormats";
     private static final String CALL_OUT_COME = "callOutCome";
+    private static final String IS_CALL_OUTCOME_MANDATORY = "isCallOutComeMandatory";
     private static final String STAGE_MASTER_DATA = "stage";
     private static final String INTERVIEW_TYPE = "interviewType";
     private static final String INTERVIEW_MODE = "interviewMode";
@@ -452,7 +453,7 @@ public class MasterDataService implements IMasterDataService {
                 master.getReasonForChange().addAll(MasterDataBean.getInstance().getReasonForChange());
                 break;
             case CALL_OUT_COME:
-                master.getCallOutCome().addAll(MasterDataBean.getInstance().getCallOutCome());
+                master.getCallOutCome().putAll(MasterDataBean.getInstance().getCallOutCome());
                 break;
             case STAGE_MASTER_DATA:
                 master.getStage().addAll(MasterDataBean.getInstance().getStage());

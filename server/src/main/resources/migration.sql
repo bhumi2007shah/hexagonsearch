@@ -3070,3 +3070,16 @@ drop table cv_parsing_api_details;
 drop table cv_rating;
 
 ALTER TABLE JOB_CANDIDATE_MAPPING ALTER COLUMN EXPECTED_CTC TYPE DOUBLE PRECISION;
+
+insert into rejection_reason_master_data values
+	(DEFAULT,'Relocate','Candidate not willing to relocate','Candidate Reasons',1),
+	(DEFAULT,'Reticent','Candidate not willing to share information','Candidate Reasons',1),
+	(DEFAULT,'Already working','Candidate already working for the company','Recruiter Reasons',1),
+	(DEFAULT,'Duplicate','Duplicate','Recruiter Reasons',1),
+	(DEFAULT,'Incorrect job','Tagged in wrong job id','Recruiter Reasons',1);
+
+update master_data set value_to_use = '1' where type='callOutCome' and value in ('For Hiring Manager','Connected');
+update master_data set value_to_use = '0' where type='callOutCome' and value_to_use is null;
+
+-- for ticket #744
+update screening_question set options = '{"I can join immediately","15 Days","30 Days","45 Days","60 Days","90 Days"}' where question_category =(select id from master_data where value = 'Notice Period' and type = 'questionCategory');
