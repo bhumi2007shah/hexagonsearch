@@ -9,6 +9,7 @@ import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.service.IHiringManagerWorkspaceService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
+import io.litmusblox.server.service.impl.HiringManagerWorkspaceService;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -160,6 +161,15 @@ public class HiringManagerWorkspaceController {
                     put("MasterData", new ArrayList<>(0));
                 }})
         );
+    }
+
+
+    @PostMapping(value = "/addTechQuestions")
+    void addTechQuestionsForJob(@RequestBody Job job) throws Exception{
+        long startTime = System.currentTimeMillis();
+        log.info("received request to add tech question for jobId : {}",job.getId());
+        hiringManagerWorkspaceService.setTechQuestionForJob(job);
+        log.info("Successfully added JobScreening questions from user Id  : {} in : {}ms",job.getDeepQuestionSelectedBy(),( System.currentTimeMillis() - startTime));
     }
 
 }
