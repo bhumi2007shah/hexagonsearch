@@ -243,6 +243,24 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
         return responseBean;
     }
 
+    @Override
+    @Transactional
+    public void setTechQuestionForJob(Job job) throws Exception {
+        String errorMessage;
+        Job oldJob = jobRepository.findById(job.getId()).orElse(null);
+        if(null == oldJob){
+            errorMessage = "job does not exist with id "+job.getId();
+            log.error(errorMessage);
+            throw new WebException(errorMessage,HttpStatus.NOT_FOUND);
+        }
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!loggedInUser.getId().equals(oldJob.getDeepQuestionSelectedBy())){
+            errorMessage = "You are not valid user to add tech questions";
+            throw new WebException(errorMessage,HttpStatus.UNAUTHORIZED);
+        }
+        jobService.addJobScreeningQuestions(job,oldJob,loggedInUser,true);
+    }
+
 
     private void getCandidateCountByStage(List<Job> jobs, Long hiringManagerId) {
         if(jobs != null & jobs.size() > 0) {

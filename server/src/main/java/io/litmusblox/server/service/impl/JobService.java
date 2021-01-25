@@ -620,7 +620,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     }
 
     @CacheEvict(cacheNames = "job", key = "#job.id")
-    private void addJobScreeningQuestions(Job job, Job oldJob, User loggedInUser, boolean isNewAddJobFlow ,boolean isCallFromHiringManager) throws Exception { //method for add screening questions
+    public void addJobScreeningQuestions(Job job, Job oldJob, User loggedInUser,boolean isCallFromHiringManager) throws Exception { //method for add screening questions
 
         //commented out the check as per ticket #146
         /*
@@ -689,6 +689,8 @@ public class JobService extends AbstractAccessControl implements IJobService {
         } catch (Exception exception) {
             log.error("Failed to add key skills. " + exception.getMessage());
         }
+
+        if(isCallFromHiringManager) oldJob.setDeepQuestionSelectedOn(new Date());
 
         jobRepository.save(oldJob);
         saveJobHistory(job.getId(), historyMsg + " screening questions", loggedInUser);
@@ -1340,7 +1342,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 break;
             case jobScreening:
                 if(!IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus()))
-                    addJobScreeningQuestions(job, oldJob, loggedInUser, true,isCallFromHiringManager);
+                    addJobScreeningQuestions(job, oldJob, loggedInUser, isCallFromHiringManager);
                 break;
             case setHiringManager:
                 setHMForTechQuestionSelection(job,oldJob);
