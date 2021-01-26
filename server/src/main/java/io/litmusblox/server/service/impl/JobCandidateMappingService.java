@@ -1134,7 +1134,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      */
     @Transactional
     @Override
-    @Caching(evict = {@CacheEvict(cacheNames = "jcm", key = "#jobCandidateMapping.id"),@CacheEvict(cacheNames = "jcmHistory", key = "#jobCandidateMapping.id"), @CacheEvict(cacheNames = "singleJobView"), @CacheEvict(cacheNames = "singleJobViewByStatus"), @CacheEvict(cacheNames = "exportData"), @CacheEvict(cacheNames = "TechRoleCompetency", key = "#jobCandidateMapping.job.id"), @CacheEvict(cacheNames = "harvesterCandidateProfile")})
+    @Caching(evict = {@CacheEvict(cacheNames = "jcm", key = "#jobCandidateMapping.id"),@CacheEvict(cacheNames = "jcmHistory", key = "#jobCandidateMapping.id"), @CacheEvict(cacheNames = "singleJobView"), @CacheEvict(cacheNames = "singleJobViewByStatus"), @CacheEvict(cacheNames = "exportData"), @CacheEvict(cacheNames = "TechRoleCompetency"), @CacheEvict(cacheNames = "harvesterCandidateProfile")})
     public void editCandidate(JobCandidateMapping jobCandidateMapping) {
         User loggedInUser = (null != SecurityContextHolder.getContext().getAuthentication())?(User)SecurityContextHolder.getContext().getAuthentication().getPrincipal():jobCandidateMapping.getCreatedBy();
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(jobCandidateMapping.getId()).orElse(null);
