@@ -24,7 +24,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
  */
 @EnableConfigurationProperties
 @EnableScheduling
-@EnableCaching
+//@EnableCaching
 @SpringBootApplication
 public class ServerApplication {
 

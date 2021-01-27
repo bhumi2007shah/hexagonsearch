@@ -5,7 +5,6 @@
 package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.TechScreeningQuestion;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +23,7 @@ public interface TechScreeningQuestionRepository extends JpaRepository<TechScree
     void deleteByJobId(Long jobId);
 
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = "techQuestions", key = "#jobId")
+    //@Cacheable(cacheNames = "techQuestions", key = "#jobId")
     List<TechScreeningQuestion> findByJobId(Long jobId);
 
     @Transactional(readOnly = true)

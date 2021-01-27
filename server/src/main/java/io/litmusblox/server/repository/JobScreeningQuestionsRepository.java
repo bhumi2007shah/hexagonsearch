@@ -5,7 +5,6 @@
 package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.JobScreeningQuestions;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -36,6 +35,6 @@ public interface JobScreeningQuestionsRepository extends JpaRepository<JobScreen
     void deleteJobScreeningQuestions(Long jobId, List<String> questionCategory);
 
     @Transactional
-    @Cacheable(cacheNames = "userQuestions", key = "#jobId")
+    //@Cacheable(cacheNames = "userQuestions", key = "#jobId")
     List findByUserScreeningQuestionIdIsNotNullAndJobId(Long jobId);
 }
