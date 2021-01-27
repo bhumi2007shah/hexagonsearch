@@ -145,10 +145,10 @@ public class HiringManagerWorkspaceController {
      * @return response bean with a list of jobs
      * @throws Exception
      */
-    @GetMapping(value = "/listOfJobs")
-    String listAllJobsForShareProfileToHiringManager() throws Exception {
+    @GetMapping(value = "/listOfJobs/{jobStatus}")
+    String listAllJobsForShareProfileToHiringManager(@PathVariable String jobStatus) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
-                hiringManagerWorkspaceService.findAllJobsForShareProfileToHiringManager(),
+                hiringManagerWorkspaceService.findAllJobsForShareProfileToHiringManager(jobStatus),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id", "displayName"));
                     put("CompanyAddress", Arrays.asList("address", "city"));
