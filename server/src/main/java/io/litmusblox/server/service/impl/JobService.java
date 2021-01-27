@@ -646,7 +646,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             oldJob.setQuickQuestion(true);
         }
 
-        if((null != oldJob.getDeepQuestionSelectedBy() && isCallFromHiringManager) || (null == oldJob.getDeepQuestionSelectedBy() && !isCallFromHiringManager)){
+        if(!job.isQuickQuestion() && ((null != oldJob.getDeepQuestionSelectedBy() && isCallFromHiringManager) || (null == oldJob.getDeepQuestionSelectedBy() && !isCallFromHiringManager))){
             //Update JobIndustry
             addIndustry(job, oldJob);
 
