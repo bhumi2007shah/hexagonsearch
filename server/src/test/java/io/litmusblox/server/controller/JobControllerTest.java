@@ -78,7 +78,7 @@ public class JobControllerTest {
 
         boolean testPass = true;
         try {
-            when(jobService.addJobFlow(any(Job.class), any(String.class),false)).thenReturn(job);
+            when(jobService.addJobFlow(any(Job.class), any(String.class))).thenReturn(job);
 
             String response = jobController.addJob(jobRequest,"overview");
             assertThat(response).isNotNull();
