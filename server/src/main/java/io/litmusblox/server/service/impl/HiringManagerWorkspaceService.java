@@ -225,20 +225,30 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
      * @throws Exception
      */
     @Transactional
-    public JobWorspaceResponseBean findAllJobsForShareProfileToHiringManager() throws Exception {
+    public JobWorspaceResponseBean findAllJobsForShareProfileToHiringManager(String jobStatus) throws Exception {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Inside job list for hiring Manager for HMId: {}", loggedInUser.getId());
-        Long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
 
-        List<Job> jobListForHiringManager = jobRepository.getJobListForHiringManager(loggedInUser.getId());
-
+        List<Job> listOfLiveJobs =  jobRepository.getLiveJobListForHiringManager(loggedInUser.getId());;
+        List<Job> listOfDraftJobs =  jobRepository.findJobByDeepQuestionSelectedByAndStatus(loggedInUser.getId(), "Draft");;
         JobWorspaceResponseBean responseBean = new JobWorspaceResponseBean();
-        if(null != jobListForHiringManager && jobListForHiringManager.size()>0){
-            responseBean.setListOfJobs(jobListForHiringManager);
-            responseBean.setLiveJobs(jobListForHiringManager.size());
+
+        if("live".equalsIgnoreCase(jobStatus)){
+            responseBean.setListOfJobs(listOfLiveJobs);
+            //set per stage count for every job
+            getCandidateCountByStage(listOfLiveJobs, loggedInUser.getId());
         }
-        //set per stage count for every job
-        getCandidateCountByStage(jobListForHiringManager, loggedInUser.getId());
+        else if("draft".equalsIgnoreCase(jobStatus))
+          responseBean.setListOfJobs(listOfDraftJobs);
+
+        else{
+            log.info("received request with wrong job status");
+            throw new WebException("status : "+ jobStatus +" does not exist ",HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        responseBean.setLiveJobs(listOfLiveJobs.size());
+        responseBean.setDraftJobs(listOfDraftJobs.size());
+
         log.info("Completed getJobListForHiringManager in {} ms", System.currentTimeMillis() - startTime);
         return responseBean;
     }

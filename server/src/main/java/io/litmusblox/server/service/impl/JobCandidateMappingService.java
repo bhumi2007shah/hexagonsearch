@@ -239,8 +239,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     }
 
     /*@Caching(evict = {@CacheEvict(cacheNames = "TechRoleCompetency", key = "#jobId"), @CacheEvict(cacheNames = "AsyncOperationsErrorRecords", key = "#jobId"), @CacheEvict(cacheNames = "singleJobView"), @CacheEvict(cacheNames = "singleJobViewByStatus"),
-    @CacheEvict(cacheNames = "exportData"), @CacheEvict(cacheNames = "TechRoleCompetency", key = "#jobId"), @CacheEvict(cacheNames = "candidateCountPerStage"), @CacheEvict(cacheNames = "harvesterCandidateProfile")})
-*/    private void processCandidateData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, User loggedInUser, Long jobId, int candidateProcessed, boolean ignoreMobile, Job job) throws Exception{
+    @CacheEvict(cacheNames = "exportData"), @CacheEvict(cacheNames = "TechRoleCompetency", key = "#jobId"), @CacheEvict(cacheNames = "candidateCountPerStage"), @CacheEvict(cacheNames = "harvesterCandidateProfile")})*/
+    private void processCandidateData(List<Candidate> candidateList, UploadResponseBean uploadResponseBean, User loggedInUser, Long jobId, int candidateProcessed, boolean ignoreMobile, Job job) throws Exception{
 
         if (null != candidateList && candidateList.size() > 0) {
             iUploadDataProcessService.processData(candidateList, uploadResponseBean, candidateProcessed,jobId, ignoreMobile, Optional.of(loggedInUser));
