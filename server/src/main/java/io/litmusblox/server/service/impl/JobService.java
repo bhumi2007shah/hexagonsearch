@@ -855,7 +855,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             throw new WebException(errorMessage,HttpStatus.NOT_FOUND);
         }
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        validateLoggedInUser(loggedInUser,job);
+        validateLoggedInUser(loggedInUser,jobFromDb);
 
         if(null == jobFromDb.getDeepQuestionSelectedOn()   && !jobFromDb.isQuickQuestion() && null != jobFromDb.getDeepQuestionSelectedBy()){
             throw new WebException("You will be notified once the hiring manager has selected the questions for deep screening. You can then publish the job. Until then the job will remain in a draft state",HttpStatus.BAD_REQUEST);
