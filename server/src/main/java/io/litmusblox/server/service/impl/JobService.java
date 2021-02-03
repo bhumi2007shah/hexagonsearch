@@ -851,8 +851,8 @@ public class JobService extends AbstractAccessControl implements IJobService {
         String errorMessage;
         Long jobId = job.getId();
         log.info("Received request to publish job with id: " + jobId);
-        job = jobRepository.findById(jobId).orElse(null);
-        if(null == job){
+        Job jobFromDb = jobRepository.findById(jobId).orElse(null);
+        if(null == jobFromDb){
             errorMessage = "job with id : "+jobId+" does not exist";
             log.error(errorMessage);
             throw new WebException(errorMessage,HttpStatus.NOT_FOUND);
@@ -860,7 +860,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         validateLoggedInUser(loggedInUser,job);
 
-        if(null == job.getDeepQuestionSelectedOn()   && !job.isQuickQuestion() && null != job.getDeepQuestionSelectedBy()){
+        if(null == jobFromDb.getDeepQuestionSelectedOn()   && !jobFromDb.isQuickQuestion() && null != jobFromDb.getDeepQuestionSelectedBy()){
             throw new WebException("You will be notified once the hiring manager has selected the questions for deep screening. You can then publish the job. Until then the job will remain in a draft state",HttpStatus.BAD_REQUEST);
         }
         Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite(),null,null);
