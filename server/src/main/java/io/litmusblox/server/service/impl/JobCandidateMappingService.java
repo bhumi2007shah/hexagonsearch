@@ -1290,7 +1290,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 log.info("Edit candidate info successfully for candidate : {}", jobCandidateMapping.getCandidate().getId());
 
                 //calling search engine addUpdate api to update candidate data.
-                candidateService.createCandidateOnSearchEngine(jcmFromDb.getCandidate(), jcmFromDb.getJob(), JwtTokenUtil.getAuthToken());
+                candidateService.createCandidateOnSearchEngine(jcmFromDb.getCandidate(), jcmFromDb, JwtTokenUtil.getAuthToken());
             }
         }
     }
@@ -2460,14 +2460,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         long apiCallStartTime = System.currentTimeMillis();
         List<JobCandidateMapping> jobCandidateMappingList = jobCandidateMappingRepository.findJcmNotInSearchEngine();
         jobCandidateMappingList.forEach(jobCandidateMapping -> {
-            log.info("Candidate : {} creating on searchengine", jobCandidateMapping.getCandidate().getId());
-            Candidate candidate = new Candidate(jobCandidateMapping.getCandidateFirstName(), jobCandidateMapping.getCandidateLastName(), jobCandidateMapping.getMobile(),jobCandidateMapping.getEmail(), jobCandidateMapping.getCountryCode(), jobCandidateMapping.getCreatedOn(), jobCandidateMapping.getCreatedBy());
-            Job job = jobCandidateMapping.getJob();
-            if(candidateService.createCandidateOnSearchEngine(candidate, job,JwtTokenUtil.getAuthToken())==200)
-                jobCandidateMapping.setCreatedOnSearchEngine(true);
-            jobCandidateMappingRepository.save(jobCandidateMapping);
+            log.info("Candidate : {} creating on search engine", jobCandidateMapping.getCandidate().getId());
+            candidateService.createCandidateOnSearchEngine(jobCandidateMapping.getCandidate(), jobCandidateMapping,null);
         });
-        log.info("Time taken to creating existing candidate on searchengine in : {}ms.", apiCallStartTime-System.currentTimeMillis());
+        log.info("Time taken to creating existing candidate on search engine in : {}ms.", apiCallStartTime-System.currentTimeMillis());
     }
 
     /**

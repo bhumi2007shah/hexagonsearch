@@ -401,11 +401,11 @@ public class CandidateService implements ICandidateService {
      * Method to call search engine to add a candidate.
      * @param candidate
      */
-    public int createCandidateOnSearchEngine(Candidate candidate , Job job, String authToken) {
-        log.info("inside create candidate on search engine for candidate {}, in job {}, for company {}.", candidate, job, job.getCompanyName());
+    public int createCandidateOnSearchEngine(Candidate candidate , JobCandidateMapping jcm, String authToken) {
+        log.info("inside create candidate on search engine for candidate {}, in job {}, for company {}.", candidate.getId(), jcm.getJob().getId(), jcm.getJob().getCompanyId().getCompanyName());
         long startTime = System.currentTimeMillis();
 
-        CandidateRequestBean candidateRequestBean = getCandidateRequestBean(candidate, job);
+        CandidateRequestBean candidateRequestBean = getCandidateRequestBean(candidate, jcm.getJob());
 
         int statusCode = 500;
 
@@ -413,7 +413,7 @@ public class CandidateService implements ICandidateService {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
 
-        log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), job.getId());
+        log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), jcm.getJob().getId());
         try {
             statusCode = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null, Optional.of(userDetails)).getStatusCode();
         }
@@ -424,14 +424,12 @@ public class CandidateService implements ICandidateService {
             log.error("Failed to create candidate on search engine. " + e.getMessage());
         }
         String logText="Failed to add";
-        JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByJobAndCandidate(job, candidate);
         if(statusCode==200){
-            jobCandidateMapping.setCreatedOnSearchEngine(true);
-            jobCandidateMappingRepository.save(jobCandidateMapping);
+            jcm.setCreatedOnSearchEngine(true);
+            jobCandidateMappingRepository.save(jcm);
             logText="Successfully added";
         }
-        log.info(logText+" candidate on search engine in for candidate {}, job {}, for company {}", System.currentTimeMillis() - startTime, candidate, job, job.getCompanyId());
-
+        log.info(logText+" candidate on search engine in {}ms, For candidate {}, job {}, for company {}", System.currentTimeMillis() - startTime,  candidate.getId(), jcm.getJob().getId(), jcm.getJob().getCompanyId().getCompanyName());
         return statusCode;
     }
     //Method to truncate the value in the field and send out a sentry message for the same

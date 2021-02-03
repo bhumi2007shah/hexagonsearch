@@ -80,7 +80,7 @@ public interface ICandidateService {
      * Method  to call search engine to add candidate
      * @param candidate
      */
-    int createCandidateOnSearchEngine(Candidate candidate, Job job, String authToken);
+    int createCandidateOnSearchEngine(Candidate candidate, JobCandidateMapping jcm, String authToken);
 
     void createCandidatesOnSearchEngine(List<Candidate> candidates, Job job, String authToken);
 }
