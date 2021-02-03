@@ -644,9 +644,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             //set statement block
             oldJob.setStatementBlock(job.getStatementBlock());
             oldJob.setQuickQuestion(true);
-        }
-
-        if((!job.isQuickQuestion() && ((null != oldJob.getDeepQuestionSelectedBy() && isCallFromHiringManager) || (null == job.getDeepQuestionSelectedBy() && !isCallFromHiringManager))) || !job.isSkipTechQuestions()){
+        }else if((null != oldJob.getDeepQuestionSelectedBy() && isCallFromHiringManager) || (null == job.getDeepQuestionSelectedBy() && !isCallFromHiringManager && !job.isSkipTechQuestions())){
             //Update JobIndustry
             addIndustry(job, oldJob);
 
@@ -656,7 +654,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
             //validate function
             validateFunction(job, oldJob);
         }
-
         String historyMsg = "Added";
 
         //Deleted code not used currently
@@ -1319,7 +1316,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         else
             //To not allow to remove created by user from list of hiring manager. Ticket Reference #664.
             job = setRecruiterArray(job, oldJob.getCreatedBy());
-        validateLoggedInUser(loggedInUser, job);
+        //validateLoggedInUser(loggedInUser, job);
 
         //Validate Hiring Manager
         if(null != job.getHiringManager()){
