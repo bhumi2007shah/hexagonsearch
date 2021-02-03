@@ -3188,3 +3188,5 @@ delete from function_master_data where id in (select id from function_master_dat
 delete from role_master_data where function in (select id from function_master_data where industry in (select id from industry_master_data where industry in('Manufacturing - Products','Banking Finance & Insurance', 'Healthcare')));
 delete from function_master_data where industry in (select id from industry_master_data where industry in ('Manufacturing - Products', 'Banking Finance & Insurance', 'Healthcare'));
 delete from industry_master_data where industry in ('Manufacturing - Products', 'Banking Finance & Insurance', 'Healthcare');
+
+ALTER TABLE JOB ADD COLUMN SKIP_TECH_QUESTIONS BOOL NOT NULL DEFAULT 'f';

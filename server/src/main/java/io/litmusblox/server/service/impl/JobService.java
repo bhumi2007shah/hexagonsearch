@@ -646,7 +646,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             oldJob.setQuickQuestion(true);
         }
 
-        if(!job.isQuickQuestion() && ((null != oldJob.getDeepQuestionSelectedBy() && isCallFromHiringManager) || (null == job.getDeepQuestionSelectedBy() && !isCallFromHiringManager))){
+        if((!job.isQuickQuestion() && ((null != oldJob.getDeepQuestionSelectedBy() && isCallFromHiringManager) || (null == job.getDeepQuestionSelectedBy() && !isCallFromHiringManager))) || !job.isSkipTechQuestions()){
             //Update JobIndustry
             addIndustry(job, oldJob);
 
@@ -1344,6 +1344,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
             case setHiringManager:
                 setHMForTechQuestionSelection(job,oldJob);
                 break;
+            case skipTechQuestions:
+                skipTechQuestions(job,oldJob);
+                break;
             default:
                 throw new OperationNotSupportedException("Unknown page: " + pageName);
         }
@@ -1499,4 +1502,14 @@ public class JobService extends AbstractAccessControl implements IJobService {
         oldJob.setDeepQuestionSelectedBy(hmUserId);
         jobRepository.save(oldJob);
     }
+
+    private void skipTechQuestions(Job job,Job oldJob){
+        if(null != oldJob && IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())){
+            log.error("Skip tech question flag can not update because the job has already published for jobId : {}", oldJob.getId());
+            return;
+        }
+        oldJob.setSkipTechQuestions(job.isSkipTechQuestions());
+        jobRepository.save(oldJob);
+    }
+
 }

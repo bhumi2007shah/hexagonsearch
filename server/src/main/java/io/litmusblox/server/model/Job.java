@@ -238,6 +238,9 @@ public class Job implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date deepQuestionSelectedOn;
 
+    @Column(name = "SKIP_TECH_QUESTIONS")
+    private boolean skipTechQuestions;
+
     @Transient
     @JsonInclude
     private List<String> userEnteredKeySkill=new ArrayList<>();
