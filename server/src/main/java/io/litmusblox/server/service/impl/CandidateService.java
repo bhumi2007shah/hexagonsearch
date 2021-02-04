@@ -475,6 +475,7 @@ public class CandidateService implements ICandidateService {
         candidateRequestBean.setCandidateId(candidate.getId());
         candidateRequestBean.setCandidateName(candidate.getFirstName()+" "+candidate.getLastName());
         candidateRequestBean.setCompanyId(job.getCompanyId().getId());
+        candidateRequestBean.setCompanyName(job.getCompanyId().getCompanyName());
 
         // Creating and settign list of skill names from CandidateSkillDetails.
         if(null != candidate.getCandidateSkillDetails() && candidate.getCandidateSkillDetails().size()>0){
