@@ -598,6 +598,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             long updateCandidateResponseStartTime = System.currentTimeMillis();
             log.info("Updating Candidate Details based on Candidate Chatbot Resposne. Chatbot uuid is {}", uuid);
             updateCandidateResponse(jcmFromDb, candidateChatbotResponse);
+            jobCandidateMappingRepository.save(jcmFromDb);
             Map<String, Long> stageIdMap = MasterDataBean.getInstance().getStageStepMasterMap();
             jobCandidateMappingRepository.setScreenedByAndOn(
                     Arrays.asList(jcmFromDb.getId()),
@@ -607,7 +608,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     stageIdMap.get(IConstant.Stage.Screen.getValue()),
                     jcmFromDb.getCreatedBy().getId(), new Date()
             );
-            jobCandidateMappingRepository.save(jcmFromDb);
             log.info("Completed Updating Candidate Details in {} ms.",  System.currentTimeMillis()-updateCandidateResponseStartTime);
         }
     }
