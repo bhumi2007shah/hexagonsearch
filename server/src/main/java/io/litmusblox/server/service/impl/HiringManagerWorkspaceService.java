@@ -70,6 +70,9 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
     JcmAllDetailsRepository jcmAllDetailsRepository;
 
     @Resource
+    UserRepository userRepository;
+
+    @Resource
     CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
 
     /**
@@ -100,7 +103,6 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
         }
         allWorkspaceDetails.forEach(jcm->{
             JcmProfileSharingDetails details = jcmProfileSharingDetailsRepository.getProfileSharedByJcmIdAndUserId(jcm.getId(), loggedInUser.getId());
-
             if(null != details){
                 //Set share profile id
                 jcm.setProfileSharedOn(details.getEmailSentOn());
@@ -234,15 +236,28 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
         List<Job> listOfDraftJobs =  jobRepository.findJobByDeepQuestionSelectedByAndStatus(loggedInUser.getId(), "Draft");;
         JobWorspaceResponseBean responseBean = new JobWorspaceResponseBean();
 
-        if("live".equalsIgnoreCase(jobStatus)){
+        if(IConstant.JobStatus.PUBLISHED.getValue().equalsIgnoreCase(jobStatus)){
             responseBean.setListOfJobs(listOfLiveJobs);
+            responseBean.getListOfJobs().forEach( job-> {
+                if(!Arrays.asList(job.getRecruiter()).contains(null)) {
+                    job.setRecruiterList(userRepository.findByIdIn(Arrays.asList(job.getRecruiter()).stream()
+                            .mapToLong(Integer::longValue)
+                            .boxed().collect(Collectors.toList())));
+                }
+            });
             //set per stage count for every job
             getCandidateCountByStage(listOfLiveJobs, loggedInUser.getId());
         }
-        else if("draft".equalsIgnoreCase(jobStatus))
-          responseBean.setListOfJobs(listOfDraftJobs);
-
-        else{
+        else if(IConstant.JobStatus.DRAFT.getValue().equalsIgnoreCase(jobStatus)) {
+            responseBean.setListOfJobs(listOfDraftJobs);
+            responseBean.getListOfJobs().forEach(job -> {
+                if (!Arrays.asList(job.getRecruiter()).contains(null)) {
+                    job.setRecruiterList(userRepository.findByIdIn(Arrays.asList(job.getRecruiter()).stream()
+                            .mapToLong(Integer::longValue)
+                            .boxed().collect(Collectors.toList())));
+                }
+            });
+        } else {
             log.info("received request with wrong job status");
             throw new WebException("status : "+ jobStatus +" does not exist ",HttpStatus.UNPROCESSABLE_ENTITY);
         }
