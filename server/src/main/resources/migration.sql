@@ -3233,3 +3233,7 @@ values
 INSERT into master_data(type, value)
 values
 ('location','Bogota');
+
+ALTER TABLE TECH_SCREENING_QUESTION
+    ADD COLUMN QUESTION_SEQ varchar(5),
+    ADD COLUMN QUESTION_OWNER_SEQ varchar(5);
