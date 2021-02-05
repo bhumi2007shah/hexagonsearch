@@ -2424,24 +2424,25 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 log.info("Error while Updating Candidate Response :: {}", e.getMessage());
             }
         });
-        CandidateCompanyDetails candidateCompanyDetails = candidateCompanyDetailsRepository.findByCandidateIdAndCompanyName(jobCandidateMapping.getCandidate().getId(), companyDetails.getCompanyName());
-        if (null == candidateCompanyDetails) {
-            if(Util.isNotNull(companyDetails.getCompanyName())) {
-                companyDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
-                candidateCompanyDetails = companyDetails;
+        if(null != companyDetails && null != companyDetails.getCompanyName()){
+            CandidateCompanyDetails candidateCompanyDetails = candidateCompanyDetailsRepository.findByCandidateIdAndCompanyName(jobCandidateMapping.getCandidate().getId(), companyDetails.getCompanyName());
+            if (null == candidateCompanyDetails) {
+                if(Util.isNotNull(companyDetails.getCompanyName())) {
+                    companyDetails.setCandidateId(jobCandidateMapping.getCandidate().getId());
+                    candidateCompanyDetails = companyDetails;
+                }
+            } else {
+                candidateCompanyDetails.setCompanyName(companyDetails.getCompanyName());
+                candidateCompanyDetails.setDesignation(companyDetails.getDesignation());
+                candidateCompanyDetails.setNoticePeriodInDb(companyDetails.getNoticePeriodInDb());
+                if (Util.isNotNull(companyDetails.getSalary()))
+                    candidateCompanyDetails.setSalary(companyDetails.getSalary());
             }
-        } else {
-            candidateCompanyDetails.setCompanyName(companyDetails.getCompanyName());
-            candidateCompanyDetails.setDesignation(companyDetails.getDesignation());
-            candidateCompanyDetails.setNoticePeriodInDb(companyDetails.getNoticePeriodInDb());
-            if (Util.isNotNull(companyDetails.getSalary()))
-                candidateCompanyDetails.setSalary(companyDetails.getSalary());
+            if(null != jobCandidateMapping.getCandidate().getCandidateCompanyDetails() && null != candidateCompanyDetails && jobCandidateMapping.getCandidate().getCandidateCompanyDetails().size()!=0){
+                reStructureCompanyList(jobCandidateMapping, candidateCompanyDetails);
+            }else
+                candidateCompanyDetailsRepository.save(candidateCompanyDetails);
         }
-        if(null != jobCandidateMapping.getCandidate().getCandidateCompanyDetails() && null != candidateCompanyDetails && jobCandidateMapping.getCandidate().getCandidateCompanyDetails().size()!=0){
-            reStructureCompanyList(jobCandidateMapping, candidateCompanyDetails);
-        }else
-            candidateCompanyDetailsRepository.save(candidateCompanyDetails);
-
         CandidateDetails details = candidateDetailsRepository.findByCandidateId(jobCandidateMapping.getCandidate());
         if (null == details){
             candidateDetails.setCandidateId(jobCandidateMapping.getCandidate());
