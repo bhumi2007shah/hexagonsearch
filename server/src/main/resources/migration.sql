@@ -3190,3 +3190,46 @@ delete from function_master_data where industry in (select id from industry_mast
 delete from industry_master_data where industry in ('Manufacturing - Products', 'Banking Finance & Insurance', 'Healthcare');
 
 ALTER TABLE JOB ADD COLUMN SKIP_TECH_QUESTIONS BOOL NOT NULL DEFAULT 'f';
+
+-- ticket #759
+ALTER TABLE JOB ADD COLUMN CURRENCY_UNIT CHAR (1);
+
+INSERT INTO COUNTRY(
+	COUNTRY_NAME,
+	COUNTRY_CODE,
+	MAX_MOBILE_LENGTH,
+	COUNTRY_SHORT_CODE
+)
+VALUES(
+	'Columbia',
+	'+57',
+	10,
+	'co'
+);
+
+INSERT INTO CURRENCY(
+	CURRENCY_FULL_NAME,
+	CURRENCY_SHORT_NAME,
+	COUNTRY,
+	MIN_SALARY,
+	MAX_SALARY,
+	SALARY_UNIT
+)
+VALUES (
+	'Columbian Peso',
+	'COP',
+	'co',
+	0,
+	10000,
+	'K'
+);
+
+INSERT into master_data(type, value)
+values
+('education','BE - Computer Science'),
+('education','BE - Electronics'),
+('education','BE - Mechanical Engineering');
+
+INSERT into master_data(type, value)
+values
+('location','Bogota');

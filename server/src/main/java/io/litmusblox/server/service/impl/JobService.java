@@ -12,6 +12,7 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
+import io.litmusblox.server.model.Currency;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.responsebean.export.JcmExportResponseBean;
@@ -131,6 +132,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
     @Autowired
     Environment environment;
+
+    @Autowired
+    CurrencyRepository currencyRepository;
 
     @Value("${searchEngineGenerateTechQuestionSuffix}")
     String searchEngineGenerateTechQuestionSuffix;
@@ -468,6 +472,8 @@ public class JobService extends AbstractAccessControl implements IJobService {
             jobStageStepRepository.flush();
         }*/
 
+        Currency currency = currencyRepository.findByCurrencyShortName(job.getCurrency());
+
         if (null != oldJob) {//only update existing job
             if(null != job.getHiringManager())
                 oldJob.setHiringManager(job.getHiringManager());
@@ -484,10 +490,16 @@ public class JobService extends AbstractAccessControl implements IJobService {
             oldJob.setJobTitle(job.getJobTitle());
             oldJob.setUpdatedBy(loggedInUser);
             oldJob.setUpdatedOn(new Date());
+            if(null!=currency) {
+                oldJob.setCurrency(currency.getCurrencyShortName());
+                oldJob.setCurrencyUnit(currency.getSalaryUnit());
+            }
             oldJob = jobRepository.save(oldJob);
             historyMsg = "Updated";
 
         } else if(null == oldJob){ //Create new entry for job
+            if(null!=currency)
+                job.setCurrencyUnit(currency.getSalaryUnit());
             job.setCreatedOn(new Date());
             job.setStatus(IConstant.JobStatus.DRAFT.getValue());
             job.setCreatedBy(loggedInUser);
