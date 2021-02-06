@@ -3201,7 +3201,7 @@ INSERT INTO COUNTRY(
 	COUNTRY_SHORT_CODE
 )
 VALUES(
-	'Columbia',
+	'Colombia',
 	'+57',
 	10,
 	'co'
@@ -3216,7 +3216,7 @@ INSERT INTO CURRENCY(
 	SALARY_UNIT
 )
 VALUES (
-	'Columbian Peso',
+	'Colombian Peso',
 	'COP',
 	'co',
 	0,
