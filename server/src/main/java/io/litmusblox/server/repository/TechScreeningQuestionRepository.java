@@ -23,6 +23,7 @@ public interface TechScreeningQuestionRepository extends JpaRepository<TechScree
     void deleteByJobId(Long jobId);
 
     @Transactional(readOnly = true)
+    //@Cacheable(cacheNames = "techQuestions", key = "#jobId")
     List<TechScreeningQuestion> findByJobId(Long jobId);
 
     @Transactional(readOnly = true)

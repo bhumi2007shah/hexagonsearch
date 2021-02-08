@@ -35,5 +35,6 @@ public interface JobScreeningQuestionsRepository extends JpaRepository<JobScreen
     void deleteJobScreeningQuestions(Long jobId, List<String> questionCategory);
 
     @Transactional
+    //@Cacheable(cacheNames = "userQuestions", key = "#jobId")
     List findByUserScreeningQuestionIdIsNotNullAndJobId(Long jobId);
 }

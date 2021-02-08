@@ -55,6 +55,8 @@ public interface IHiringManagerWorkspaceService {
      * @return response bean with a list of jobs
      * @throws Exception
      */
-    JobWorspaceResponseBean findAllJobsForShareProfileToHiringManager() throws Exception;
+    JobWorspaceResponseBean findAllJobsForShareProfileToHiringManager(String jobStatus) throws Exception;
+
+    void setTechQuestionForJob(Job job) throws Exception;
 
 }

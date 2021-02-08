@@ -4,9 +4,11 @@
 
 package io.litmusblox.server.model;
 
-import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonFilter;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.vladmihalcea.hibernate.type.array.IntArrayType;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import io.litmusblox.server.constant.IConstant;
@@ -105,6 +107,9 @@ public class Job implements Serializable {
 
     @Column(name = "CURRENCY")
     private String currency = "INR";
+
+    @Column(name = "CURRENCY_UNIT")
+    private String currencyUnit;
 
     @Column(name = "MIN_SALARY")
     private Long minSalary;
@@ -230,6 +235,16 @@ public class Job implements Serializable {
 
     @Column(name = "QUICK_QUESTION")
     private boolean quickQuestion;
+
+    @Column(name = "DEEP_QUESTION_SELECTED_BY")
+    private Long deepQuestionSelectedBy;
+
+    @Column(name = "DEEP_QUESTION_SELECTED_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date deepQuestionSelectedOn;
+
+    @Column(name = "SKIP_TECH_QUESTIONS")
+    private boolean skipTechQuestions;
 
     @Transient
     @JsonInclude

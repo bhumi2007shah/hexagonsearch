@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public interface CustomizedChatbotPageContentRepository extends JpaRepository<CustomizedChatbotPageContent, Long> {
 
     @Transactional
+    //@Cacheable(cacheNames = "chatbotContent", key = "#companyId")
     CustomizedChatbotPageContent findByCompanyId(Company companyId);
 
 }

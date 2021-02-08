@@ -12,6 +12,7 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
+import io.litmusblox.server.model.Currency;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.responsebean.export.JcmExportResponseBean;
@@ -34,16 +35,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import javax.naming.OperationNotSupportedException;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -136,6 +133,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
     @Autowired
     Environment environment;
 
+    @Autowired
+    CurrencyRepository currencyRepository;
+
     @Value("${searchEngineGenerateTechQuestionSuffix}")
     String searchEngineGenerateTechQuestionSuffix;
 
@@ -177,15 +177,20 @@ public class JobService extends AbstractAccessControl implements IJobService {
         switch(loggedInUser.getRole()) {
             case IConstant.UserRole.Names.CLIENT_ADMIN:
                 log.info(msg + "Request from Client Admin, all jobs for the company will be returned");
-                jobsForCompany(responseBean, archived, companyList, jobStatus);
+                jobsForCompany(responseBean, archived, companyList, jobStatus, loggedInUser);
                 break;
             case IConstant.UserRole.Names.SUPER_ADMIN:
                 log.info(msg + "Request from Super Admin for jobs of Company");
-                jobsForCompany(responseBean, archived, companyList, jobStatus);
+                jobsForCompany(responseBean, archived, companyList, jobStatus, loggedInUser);
                 break;
             default:
                 jobsForLoggedInUser(responseBean, archived, loggedInUser, jobStatus);
         }
+        log.info(msg + "Completed processing request to find all jobs for user in " + (System.currentTimeMillis() - startTime) + "ms");
+        return responseBean;
+    }
+
+    private void setRecruiterList(JobWorspaceResponseBean responseBean){
         responseBean.getListOfJobs().forEach( job-> {
             if(!Arrays.asList(job.getRecruiter()).contains(null)) {
                 job.setRecruiterList(userRepository.findByIdIn(Arrays.asList(job.getRecruiter()).stream()
@@ -193,10 +198,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
                         .boxed().collect(Collectors.toList())));
             }
         });
-        log.info(msg + "Completed processing request to find all jobs for user in " + (System.currentTimeMillis() - startTime) + "ms");
-        return responseBean;
     }
 
+    //@Cacheable(cacheNames = "jobs", key="#loggedInUser.id.toString().concat('-').concat(#stage)")
     private void jobsForLoggedInUser(JobWorspaceResponseBean responseBean, boolean archived, User loggedInUser, String jobStatus) {
         long startTime = System.currentTimeMillis();
         if (archived)
@@ -212,9 +216,11 @@ public class JobService extends AbstractAccessControl implements IJobService {
         }
         log.info("Got " + responseBean.getListOfJobs().size() + " jobs in " + (System.currentTimeMillis() - startTime) + "ms");
         getCandidateCountByStage(responseBean.getListOfJobs());
+        setRecruiterList(responseBean);
     }
 
-    private void jobsForCompany(JobWorspaceResponseBean responseBean, boolean archived, List<Company> companyList, String jobStatus) {
+    //@Cacheable(cacheNames = "jobs", key="#loggedInUser.id.toString().concat('-').concat(#stage)")
+    private void jobsForCompany(JobWorspaceResponseBean responseBean, boolean archived, List<Company> companyList, String jobStatus, User loggedInUser) {
         long startTime = System.currentTimeMillis();
         companyList.stream().forEach(company -> {
             if (archived)
@@ -231,6 +237,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         });
         log.info("Got " + responseBean.getListOfJobs().size() + " jobs in " + (System.currentTimeMillis() - startTime) + "ms");
         getCandidateCountByStage(responseBean.getListOfJobs());
+        setRecruiterList(responseBean);
     }
 
     private void getCandidateCountByStage(List<Job> jobs) {
@@ -256,7 +263,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                     try {
                         job.getCandidateCountByStage().put(IConstant.Stage.Reject.getValue(), jobCandidateMappingRepository.findRejectedCandidateCount(job.getId()));
                     } catch (Exception e) {
-                        log.error("Exception while finding rejected candidate count for job with id {}" + job.getId());
+                        log.error("Exception while finding rejected candidate count for job with id {}",job.getId());
                     }
                 });
 
@@ -276,6 +283,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @throws Exception
      */
     @Transactional
+    //@Cacheable(cacheNames = "singleJobView", key="#jobId.toString().concat('-').concat(#stage)")
     public SingleJobViewResponseBean getJobViewById(Long jobId, String stage) throws Exception {
         log.info("Received request to find a list of all candidates for job: {} and stage {} ",jobId, stage);
         long startTimeMethod = System.currentTimeMillis(), startTime = System.currentTimeMillis();
@@ -385,6 +393,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @throws Exception
      */
     @Transactional
+    //@Cacheable(cacheNames = "singleJobViewByStatus", key="#jobId.toString().concat('-').concat(#status)")
     public SingleJobViewResponseBean getJobViewByIdAndStatus(Long jobId, String status) throws Exception{
         Job job = jobRepository.getOne(jobId);
 
@@ -463,6 +472,8 @@ public class JobService extends AbstractAccessControl implements IJobService {
             jobStageStepRepository.flush();
         }*/
 
+        Currency currency = currencyRepository.findByCurrencyShortName(job.getCurrency());
+
         if (null != oldJob) {//only update existing job
             if(null != job.getHiringManager())
                 oldJob.setHiringManager(job.getHiringManager());
@@ -479,10 +490,16 @@ public class JobService extends AbstractAccessControl implements IJobService {
             oldJob.setJobTitle(job.getJobTitle());
             oldJob.setUpdatedBy(loggedInUser);
             oldJob.setUpdatedOn(new Date());
+            if(null!=currency) {
+                oldJob.setCurrency(currency.getCurrencyShortName());
+                oldJob.setCurrencyUnit(currency.getSalaryUnit());
+            }
             oldJob = jobRepository.save(oldJob);
             historyMsg = "Updated";
 
         } else if(null == oldJob){ //Create new entry for job
+            if(null!=currency)
+                job.setCurrencyUnit(currency.getSalaryUnit());
             job.setCreatedOn(new Date());
             job.setStatus(IConstant.JobStatus.DRAFT.getValue());
             job.setCreatedBy(loggedInUser);
@@ -611,7 +628,8 @@ public class JobService extends AbstractAccessControl implements IJobService {
         return oldJob;
     }
 
-    private void addJobScreeningQuestions(Job job, Job oldJob, User loggedInUser, boolean isNewAddJobFlow) throws Exception { //method for add screening questions
+    //@CacheEvict(cacheNames = "job", key = "#job.id")
+    public void addJobScreeningQuestions(Job job, Job oldJob, User loggedInUser,boolean isCallFromHiringManager) throws Exception { //method for add screening questions
 
         //commented out the check as per ticket #146
         /*
@@ -624,50 +642,39 @@ public class JobService extends AbstractAccessControl implements IJobService {
             return;
         }
 
-        if(job.isQuickQuestion()){
+        if (job.isQuickQuestion()) {
             //validate statement block
-            if(null == job.getStatementBlock() || ((null == job.getSelectedAttribute() || job.getSelectedAttribute().size()==0)
-                    && (null == job.getSelectedKeySkills() || job.getSelectedKeySkills().size()==0))){
-                log.error("For job : {} statement block, attributes or keySkills {}",job.getId(),IErrorMessages.NULL_MESSAGE);
-                throw new ValidationException("For job : "+job.getId()+" statement block, attributes or keySkills " + IErrorMessages.NULL_MESSAGE, HttpStatus.BAD_REQUEST);
+            if (null == job.getStatementBlock() || ((null == job.getSelectedAttribute() || job.getSelectedAttribute().size() == 0)
+                    && (null == job.getSelectedKeySkills() || job.getSelectedKeySkills().size() == 0))) {
+                log.error("For job : {} statement block, attributes or keySkills {}", job.getId(), IErrorMessages.NULL_MESSAGE);
+                throw new ValidationException("For job : " + job.getId() + " statement block, attributes or keySkills " + IErrorMessages.NULL_MESSAGE, HttpStatus.BAD_REQUEST);
             }
-            if(!statementsBlockMasterDataRepository.findById(job.getStatementBlock().getId()).isPresent()){
+            if (!statementsBlockMasterDataRepository.findById(job.getStatementBlock().getId()).isPresent()) {
                 log.error("Statement block not valid for id {} in job id :{}", job.getStatementBlock().getId(), job.getId());
-                throw new ValidationException("Statement block not valid for id : "+job.getStatementBlock().getId()+" in job id : "+job.getId(), HttpStatus.BAD_REQUEST);
+                throw new ValidationException("Statement block not valid for id : " + job.getStatementBlock().getId() + " in job id : " + job.getId(), HttpStatus.BAD_REQUEST);
             }
             //set statement block
             oldJob.setStatementBlock(job.getStatementBlock());
             oldJob.setQuickQuestion(true);
+        }else if((null != oldJob.getDeepQuestionSelectedBy() && isCallFromHiringManager) || (null == job.getDeepQuestionSelectedBy() && !isCallFromHiringManager && !job.isSkipTechQuestions())){
+            //Update JobIndustry
+            addIndustry(job, oldJob);
+
+            //Validate jobRole and create entry
+            validateRole(job, oldJob);
+
+            //validate function
+            validateFunction(job, oldJob);
         }
-
-        //Update JobIndustry
-        addIndustry(job, oldJob);
-
-        //Validate jobRole and create entry
-        validateRole(job, oldJob);
-
-        //validate function
-        validateFunction(job, oldJob);
-
         String historyMsg = "Added";
-        AtomicBoolean masterQuestions = new AtomicBoolean(false);
-        AtomicBoolean techQuestions = new AtomicBoolean(false);
-        AtomicBoolean userQuestions = new AtomicBoolean(false);
-        masterQuestions.set(false);
-        techQuestions.set(false);
-        userQuestions.set(false);
 
         //Deleted code not used currently
 
         if (null != oldJob.getJobScreeningQuestionsList() && oldJob.getJobScreeningQuestionsList().size() > 0) {
             historyMsg = "Updated";
-            if(isNewAddJobFlow){
-                jobScreeningQuestionsRepository.deleteByMasterScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
-                jobScreeningQuestionsRepository.deleteByTechScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
-                jobScreeningQuestionsRepository.deleteByUserScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
-            }else
-                jobScreeningQuestionsRepository.deleteAll(oldJob.getJobScreeningQuestionsList());//delete old job screening question list
-
+            jobScreeningQuestionsRepository.deleteByMasterScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
+            jobScreeningQuestionsRepository.deleteByTechScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
+            jobScreeningQuestionsRepository.deleteByUserScreeningQuestionIdIsNotNullAndJobId(oldJob.getId());
             jobScreeningQuestionsRepository.flush();
         }
 
@@ -680,12 +687,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         });
 
         oldJob.setJobScreeningQuestionsList(job.getJobScreeningQuestionsList());
-        if(job.getJobScreeningQuestionsList().size()>0) {
-            oldJob.setHrQuestionAvailable(true);
-        }
-        else{
-            oldJob.setHrQuestionAvailable(false);
-        }
+        oldJob.setHrQuestionAvailable(job.getJobScreeningQuestionsList().size() > 0);
 
         try {
             log.info("Add Key Skills in job : {}",job.getId());
@@ -693,6 +695,8 @@ public class JobService extends AbstractAccessControl implements IJobService {
         } catch (Exception exception) {
             log.error("Failed to add key skills. " + exception.getMessage());
         }
+
+        if(isCallFromHiringManager) oldJob.setDeepQuestionSelectedOn(new Date());
 
         jobRepository.save(oldJob);
         saveJobHistory(job.getId(), historyMsg + " screening questions", loggedInUser);
@@ -850,9 +854,24 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @param job to be published
      */
     @Transactional(propagation=Propagation.REQUIRES_NEW)
+    /*@Caching(evict = {@CacheEvict(cacheNames = "job", key = "#job.id"), @CacheEvict("singleJobViewByStatus"), @CacheEvict("singleJobView"), @CacheEvict(cacheNames = "jobs"),
+    @CacheEvict(cacheNames = "techQuestions", key = "#job.id"), @CacheEvict(cacheNames = "userQuestions", key = "#job.id")})*/
     public void publishJob(Job job) throws Exception {
+        String errorMessage;
+        Long jobId = job.getId();
+        log.info("Received request to publish job with id: " + jobId);
+        Job jobFromDb = jobRepository.findById(jobId).orElse(null);
+        if(null == jobFromDb){
+            errorMessage = "job with id : "+jobId+" does not exist";
+            log.error(errorMessage);
+            throw new WebException(errorMessage,HttpStatus.NOT_FOUND);
+        }
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser,jobFromDb);
 
-        log.info("Received request to publish job with id: " + job.getId());
+        if(null == jobFromDb.getDeepQuestionSelectedOn()   && !jobFromDb.isQuickQuestion() && null != jobFromDb.getDeepQuestionSelectedBy()){
+            throw new WebException("You will be notified once the hiring manager has selected the questions for deep screening. You can then publish the job. Until then the job will remain in a draft state",HttpStatus.BAD_REQUEST);
+        }
         Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite(),null,null);
         log.info("Completed publishing job with id: " + job.getId());
         if (null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
@@ -869,6 +888,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @param jobId id of the job to be archived
      */
     @Transactional
+   // @Caching(evict = {@CacheEvict(cacheNames = "job", key = "#jobId"), @CacheEvict("singleJobViewByStatus"), @CacheEvict("singleJobView"), @CacheEvict(cacheNames = "jobs")})
     public void archiveJob(Long jobId, String archiveStatus, String archiveReason) {
         log.info("Received request to archive job with id: " + jobId + "with archive status" + archiveStatus + "and archive Reason" + archiveReason);
         if(Util.isNull(archiveStatus) || !IConstant.ArchiveStatus.containsValue(archiveStatus))
@@ -885,6 +905,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @param jobId id of the job to be unarchived
      */
     @Transactional
+    //@Caching(evict = {@CacheEvict(cacheNames = "job", key = "#jobId"), @CacheEvict("singleJobViewByStatus"), @CacheEvict("singleJobView"), @CacheEvict(cacheNames = "jobs")})
     public void unarchiveJob(Long jobId) throws Exception {
         log.info("Received request to unarchive job with id: " + jobId);
         changeJobStatus(jobId,null, null, null, null, null);
@@ -943,6 +964,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     }
 
     @Transactional
+    //@Cacheable(cacheNames = "job", key = "#jobId")
     public Job getJobDetails(Long jobId, Boolean isCallForHiringManager) throws Exception {
         Job job = jobRepository.findById(jobId).orElse(null);
         if (null == job) {
@@ -964,11 +986,13 @@ public class JobService extends AbstractAccessControl implements IJobService {
         return job;
     }
 
+    //@CacheEvict(cacheNames = "jobHistory", key = "#jobId")
     private void saveJobHistory(Long jobId, String historyMsg, User loggedInUser) {
         jobHistoryRepository.save(new JobHistory(jobId, historyMsg, loggedInUser));
     }
 
     @Transactional
+    //@Cacheable(cacheNames = "jobHistory", key = "#jobId")
     public List<JobHistory>getJobHistory(Long jobId)throws Exception{
         Job job = jobRepository.findById(jobId).orElse(null);
         if (null == job) {
@@ -987,6 +1011,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @throws Exception
      */
     @Transactional
+    //@Cacheable(cacheNames = "exportFormat", key = "#jobId")
     public Map<Long, String> getSupportedExportFormat(Long jobId){
         log.info("Received Request to fetch supported export formats for jobId: {}", jobId);
         long startTime = System.currentTimeMillis();
@@ -1023,7 +1048,10 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @param formatId the format id to format export data
      * @return formatted json in String format
      * @throws Exception
+        log.info("Received Request to fetch supported export formats for jobId: {}", jobId);
+        long startTime = System.currentTimeMillis();
      */
+    //@Cacheable(cacheNames = "exportData", key = "#jobId.toString().concat('-').concat(#stage)")
     public String exportData(Long jobId, Long formatId, String stage) throws Exception {
         log.info("Received Request to fetch export data for jobId: {} and formatId: {} ", jobId , formatId!=null?formatId: "default");
         long startTime = System.currentTimeMillis();
@@ -1170,6 +1198,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @throws Exception
      */
     @Override
+    //@Cacheable(cacheNames = "TechRoleCompetency", key = "#jobId")
     public List<TechRoleCompetencyBean> getTechRoleCompetencyByJob(Long jobId) throws Exception {
         Job job = jobRepository.getOne(jobId);
 
@@ -1240,6 +1269,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @param asyncOperation
      * @return AsyncOperationErrorRecords
      */
+    //@Cacheable(cacheNames = "AsyncOperationsErrorRecords", key = "#jobId")
     public List<AsyncOperationsErrorRecords> findAsyncErrors(Long jobId, String asyncOperation){
         Job job = jobRepository.getOne(jobId);
         if(null == job){
@@ -1256,8 +1286,8 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @param jobId jobId For which we update flag
      */
     @Transactional
+    //@Caching(evict = {@CacheEvict(cacheNames = "job", key = "#jobId"), @CacheEvict(cacheNames = "jobs")})
     public void updateJobVisibilityFlagOnCareerPage(Long jobId, boolean visibilityFlag) {
-        log.info("Inside updateJobVisibilityFlagOnCareerPage");
         Job job = jobRepository.getOne(jobId);
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -1270,8 +1300,8 @@ public class JobService extends AbstractAccessControl implements IJobService {
     }
 
     @Transactional
+    //@Caching(evict = {@CacheEvict(cacheNames = "job", key = "#job.id", condition = "#job.id != null"), @CacheEvict("singleJobViewByStatus"), @CacheEvict("singleJobView"), @CacheEvict(cacheNames = "jobs")})
     public Job addJobFlow(Job job, String pageName) throws Exception {
-        log.info("Inside addJobFlow");
         if (null != job.getStatus() && IConstant.JobStatus.ARCHIVED.equals(job.getStatus()))
             throw new ValidationException("Can't edit job because job in Archived state", HttpStatus.UNPROCESSABLE_ENTITY);
 
@@ -1298,7 +1328,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         else
             //To not allow to remove created by user from list of hiring manager. Ticket Reference #664.
             job = setRecruiterArray(job, oldJob.getCreatedBy());
-        validateLoggedInUser(loggedInUser, job);
+        //validateLoggedInUser(loggedInUser, job);
 
         //Validate Hiring Manager
         if(null != job.getHiringManager()){
@@ -1318,7 +1348,13 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 break;
             case jobScreening:
                 if(!IConstant.JobStatus.PUBLISHED.getValue().equals(job.getStatus()))
-                    addJobScreeningQuestions(job, oldJob, loggedInUser, true);
+                    addJobScreeningQuestions(job, oldJob, loggedInUser, false);
+                break;
+            case setHiringManager:
+                setHMForTechQuestionSelection(job,oldJob);
+                break;
+            case skipTechQuestions:
+                skipTechQuestions(job,oldJob);
                 break;
             default:
                 throw new OperationNotSupportedException("Unknown page: " + pageName);
@@ -1357,6 +1393,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @param job object for which we generate tech question from search engine
      */
     @Transactional
+   // @Caching(evict = {@CacheEvict(cacheNames = "job", key = "#job.id"), @CacheEvict(cacheNames = "jobs"), @CacheEvict(cacheNames ="techQuestions", key = "#job.id")})
     public List<TechScreeningQuestion> generateAndAddTechScreeningQuestions(Job job) {
         log.info("Inside generateAndAddTechScreeningQuestions for jobId : {}",job.getId());
 
@@ -1446,6 +1483,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * Method to save expected answer for a job
      * @param requestJob which has expected answer and jobId
      */
+    //@Caching(evict = {@CacheEvict(cacheNames = "job", key = "#requestJob.id"), @CacheEvict(cacheNames = "jobs")})
     public void saveExpectedAnswer(Job requestJob){
         Job jobFromDb = jobRepository.getOne(requestJob.getId());
 
@@ -1461,4 +1499,26 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         jobRepository.save(jobFromDb);
     }
+
+    private void setHMForTechQuestionSelection(Job job,Job oldJob){
+        String errorMessage;
+        Long hmUserId = job.getDeepQuestionSelectedBy();
+        if(null == hmUserId || null == userRepository.findById(hmUserId).orElse(null)){
+            errorMessage = ("User with id : "+hmUserId+" does not exist");
+            log.error(errorMessage);
+            throw new WebException(errorMessage,HttpStatus.NOT_FOUND);
+        }
+        oldJob.setDeepQuestionSelectedBy(hmUserId);
+        jobRepository.save(oldJob);
+    }
+
+    private void skipTechQuestions(Job job,Job oldJob){
+        if(null != oldJob && IConstant.JobStatus.PUBLISHED.getValue().equals(oldJob.getStatus())){
+            log.error("Skip tech question flag can not update because the job has already published for jobId : {}", oldJob.getId());
+            return;
+        }
+        oldJob.setSkipTechQuestions(job.isSkipTechQuestions());
+        jobRepository.save(oldJob);
+    }
+
 }

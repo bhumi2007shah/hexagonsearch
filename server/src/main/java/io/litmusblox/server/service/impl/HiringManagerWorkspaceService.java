@@ -70,6 +70,9 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
     JcmAllDetailsRepository jcmAllDetailsRepository;
 
     @Resource
+    UserRepository userRepository;
+
+    @Resource
     CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
 
     /**
@@ -100,7 +103,6 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
         }
         allWorkspaceDetails.forEach(jcm->{
             JcmProfileSharingDetails details = jcmProfileSharingDetailsRepository.getProfileSharedByJcmIdAndUserId(jcm.getId(), loggedInUser.getId());
-
             if(null != details){
                 //Set share profile id
                 jcm.setProfileSharedOn(details.getEmailSentOn());
@@ -225,22 +227,63 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
      * @throws Exception
      */
     @Transactional
-    public JobWorspaceResponseBean findAllJobsForShareProfileToHiringManager() throws Exception {
+    public JobWorspaceResponseBean findAllJobsForShareProfileToHiringManager(String jobStatus) throws Exception {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Inside job list for hiring Manager for HMId: {}", loggedInUser.getId());
-        Long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
 
-        List<Job> jobListForHiringManager = jobRepository.getJobListForHiringManager(loggedInUser.getId());
-
+        List<Job> listOfLiveJobs =  jobRepository.getLiveJobListForHiringManager(loggedInUser.getId());;
+        List<Job> listOfDraftJobs =  jobRepository.findJobByDeepQuestionSelectedByAndStatus(loggedInUser.getId(), "Draft");;
         JobWorspaceResponseBean responseBean = new JobWorspaceResponseBean();
-        if(null != jobListForHiringManager && jobListForHiringManager.size()>0){
-            responseBean.setListOfJobs(jobListForHiringManager);
-            responseBean.setLiveJobs(jobListForHiringManager.size());
+
+        if(IConstant.JobStatus.PUBLISHED.getValue().equalsIgnoreCase(jobStatus)){
+            responseBean.setListOfJobs(listOfLiveJobs);
+            responseBean.getListOfJobs().forEach( job-> {
+                if(!Arrays.asList(job.getRecruiter()).contains(null)) {
+                    job.setRecruiterList(userRepository.findByIdIn(Arrays.asList(job.getRecruiter()).stream()
+                            .mapToLong(Integer::longValue)
+                            .boxed().collect(Collectors.toList())));
+                }
+            });
+            //set per stage count for every job
+            getCandidateCountByStage(listOfLiveJobs, loggedInUser.getId());
         }
-        //set per stage count for every job
-        getCandidateCountByStage(jobListForHiringManager, loggedInUser.getId());
+        else if(IConstant.JobStatus.DRAFT.getValue().equalsIgnoreCase(jobStatus)) {
+            responseBean.setListOfJobs(listOfDraftJobs);
+            responseBean.getListOfJobs().forEach(job -> {
+                if (!Arrays.asList(job.getRecruiter()).contains(null)) {
+                    job.setRecruiterList(userRepository.findByIdIn(Arrays.asList(job.getRecruiter()).stream()
+                            .mapToLong(Integer::longValue)
+                            .boxed().collect(Collectors.toList())));
+                }
+            });
+        } else {
+            log.info("received request with wrong job status");
+            throw new WebException("status : "+ jobStatus +" does not exist ",HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        responseBean.setLiveJobs(listOfLiveJobs.size());
+        responseBean.setDraftJobs(listOfDraftJobs.size());
+
         log.info("Completed getJobListForHiringManager in {} ms", System.currentTimeMillis() - startTime);
         return responseBean;
+    }
+
+    @Override
+    @Transactional
+    public void setTechQuestionForJob(Job job) throws Exception {
+        String errorMessage;
+        Job oldJob = jobRepository.findById(job.getId()).orElse(null);
+        if(null == oldJob){
+            errorMessage = "job does not exist with id "+job.getId();
+            log.error(errorMessage);
+            throw new WebException(errorMessage,HttpStatus.NOT_FOUND);
+        }
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!loggedInUser.getId().equals(oldJob.getDeepQuestionSelectedBy())){
+            errorMessage = "You are not valid user to add tech questions";
+            throw new WebException(errorMessage,HttpStatus.UNAUTHORIZED);
+        }
+        jobService.addJobScreeningQuestions(job,oldJob,loggedInUser,true);
     }
 
 

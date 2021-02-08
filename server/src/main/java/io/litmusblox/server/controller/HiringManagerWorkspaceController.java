@@ -9,6 +9,7 @@ import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.service.IHiringManagerWorkspaceService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
+import io.litmusblox.server.service.impl.HiringManagerWorkspaceService;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -144,10 +145,10 @@ public class HiringManagerWorkspaceController {
      * @return response bean with a list of jobs
      * @throws Exception
      */
-    @GetMapping(value = "/listOfJobs")
-    String listAllJobsForShareProfileToHiringManager() throws Exception {
+    @GetMapping(value = "/listOfJobs/{jobStatus}")
+    String listAllJobsForShareProfileToHiringManager(@PathVariable String jobStatus) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
-                hiringManagerWorkspaceService.findAllJobsForShareProfileToHiringManager(),
+                hiringManagerWorkspaceService.findAllJobsForShareProfileToHiringManager(jobStatus),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id", "displayName"));
                     put("CompanyAddress", Arrays.asList("address", "city"));
@@ -156,10 +157,19 @@ public class HiringManagerWorkspaceController {
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList","jobHiringTeamList","jobDetail", "expertise", "education", "noticePeriod", "function",
                             "experienceRange", "userEnteredKeySkill", "updatedOn", "updatedBy","companyId","createdBy","hiringManager","minSalary","maxSalary", "resubmitHrChatbot","scoringEngineJobAvailable","visibleToCareerPage",
-                            "jobShortCode", "jobReferenceId","hrQuestionAvailable","customizedChatbot","currency","autoInvite","companyJobId","interviewLocation","jobIndustry","recruiter","jobLocation","jobFunction"));
+                            "jobShortCode", "hrQuestionAvailable","customizedChatbot","currency","autoInvite","companyJobId","interviewLocation","jobIndustry", "recruiter", "jobFunction"));
                     put("MasterData", new ArrayList<>(0));
                 }})
         );
+    }
+
+
+    @PostMapping(value = "/addTechQuestions")
+    void addTechQuestionsForJob(@RequestBody Job job) throws Exception{
+        long startTime = System.currentTimeMillis();
+        log.info("received request to add tech question for jobId : {}",job.getId());
+        hiringManagerWorkspaceService.setTechQuestionForJob(job);
+        log.info("Successfully added JobScreening questions from user Id  : {} in : {}ms",job.getDeepQuestionSelectedBy(),( System.currentTimeMillis() - startTime));
     }
 
 }

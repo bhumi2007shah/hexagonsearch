@@ -109,7 +109,7 @@ public interface IConstant {
     }
 
     enum AddJobPages {
-        overview, screeningQuestions, keySkills, capabilities, jobDetail, hiringTeam, expertise, preview, jobScreening;
+        overview, screeningQuestions, keySkills, capabilities, jobDetail, hiringTeam, expertise, preview, jobScreening, setHiringManager, skipTechQuestions;
     }
 
     enum JobStatus {
@@ -368,6 +368,8 @@ public interface IConstant {
     String SYSTEM_USER_EMAIL = "systemuser@hex.com";
 
     String[] fetchItemsType = new String[]{"referrerRelation", "jobType", "interviewConfirmation", "countries", "education", "otpExpiryMinutes", "hiringManagerRejectReasons", "candidateNotInterestedReason","location"};
+
+    String chatCompleteScreeningMessage = "Candidate completed chatbot";
 
     String REPLACEMENT_KEY_FOR_SHORTNAME = "_shortName_";
     String GODADDY_SUCCESS_RESPONSE = "\"code\":";

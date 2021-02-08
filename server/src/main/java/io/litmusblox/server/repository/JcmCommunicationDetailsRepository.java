@@ -30,6 +30,7 @@ public interface JcmCommunicationDetailsRepository extends JpaRepository<JcmComm
     void inviteCandidates(List<Long> jcmIdList);
 
     @Transactional
+    //@Cacheable(cacheNames = "jcmCommDetails", key = "#jcmId")
     JcmCommunicationDetails findByJcmId(Long jcmId);
 
     @Transactional

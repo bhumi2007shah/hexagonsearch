@@ -3083,3 +3083,153 @@ update master_data set value_to_use = '0' where type='callOutCome' and value_to_
 
 -- for ticket #744
 update screening_question set options = '{"I can join immediately","15 Days","30 Days","45 Days","60 Days","90 Days"}' where question_category =(select id from master_data where value = 'Notice Period' and type = 'questionCategory');
+
+-- For ticket #738
+ALTER TABLE JOB_CANDIDATE_MAPPING
+ADD COLUMN SCREENING_BY varchar(90),
+ADD COLUMN SCREENING_ON TIMESTAMP,
+ADD COLUMN SUBMITTED_BY varchar(90),
+ADD COLUMN SUBMITTED_ON TIMESTAMP,
+ADD COLUMN MAKE_OFFER_BY varchar(90),
+ADD COLUMN MAKE_OFFER_ON TIMESTAMP,
+ADD COLUMN OFFER_BY varchar(90),
+ADD COLUMN OFFER_ON TIMESTAMP,
+ADD COLUMN HIRED_BY varchar(90),
+ADD COLUMN HIRED_ON TIMESTAMP,
+ADD COLUMN REJECTED_BY varchar(90),
+ADD COLUMN REJECTED_ON TIMESTAMP;
+
+ALTER TABLE JOB
+    ADD COLUMN DEEP_QUESTION_SELECTED_BY INTEGER REFERENCES USERS(ID),
+    ADD COLUMN DEEP_QUESTION_SELECTED_ON TIMESTAMP;
+
+ALTER TABLE JOB
+    ADD COLUMN DEEP_QUESTION_HM_EMAIL_SENT_ON TIMESTAMP DEFAULT NULL,
+    ADD COLUMN DEEP_QUESTION_RECRUITER_EMAIL_SENT_ON TIMESTAMP DEFAULT NULL;
+
+-- For ticket #743
+INSERT INTO INDUSTRY_MASTER_DATA(INDUSTRY) VALUES
+('Banking'),
+('Other');
+
+INSERT INTO FUNCTION_MASTER_DATA(FUNCTION, INDUSTRY) VALUES
+('Infra Admin / Infra Operations', (select id from industry_master_data where industry = 'IT')),
+
+('Other', (select id from industry_master_data where industry = 'IT')),
+('Other', (select id from industry_master_data where industry = 'Banking')),
+('Sales & Marketing (Banking)', (select id from industry_master_data where industry = 'Banking')),
+('Other', (select id from industry_master_data where industry = 'Manufacturing')),
+('Other', (select id from industry_master_data where industry = 'Other'));
+
+INSERT INTO ROLE_MASTER_DATA(ROLE, FUNCTION) VALUES
+('Other', (select id from function_master_data where function = 'Other' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Other', (select id from function_master_data where function = 'Testing' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Other', (select id from function_master_data where function = 'Developer / Programming' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Other', (select id from function_master_data where function = 'Infra Admin / Infra Operations' and industry = (select id from industry_master_data where industry = 'IT'))),
+('Other', (select id from function_master_data where function = 'Project/ Program Management' and industry = (select id from industry_master_data where industry = 'IT'))),
+
+('Other', (select id from function_master_data where function = 'Plant Engineering' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Other', (select id from function_master_data where function = 'R&D' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Other', (select id from function_master_data where function = 'Production' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+('Other', (select id from function_master_data where function = 'Other' and industry = (select id from industry_master_data where industry = 'Manufacturing'))),
+
+('Institutional Sales Manager', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Channel Sales Manager', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Retail / Field Sales Manager', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Relationship Manager', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Other', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Other', (select id from function_master_data where function = 'Other' and industry = (select id from industry_master_data where industry = 'Banking'))),
+
+('Other', (select id from function_master_data where function = 'Other' and industry = (select id from industry_master_data where industry = 'Other')));
+
+insert into ATTRIBUTES_MASTER_DATA(JOB_ATTRIBUTE, FUNCTION) values
+('Lead Generation', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Retail Liability Products', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Portfolio Management', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Retail Asset Products', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Business Asset Products', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Sales Conversion', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Customer Relationship', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Excel Sheets (Sales work)', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Sales Reporting', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Loan Proposals', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Team Leading', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Insurance Sales', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Field Work & Travel (Sales)', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking'))),
+('Sales Incentives', (select id from function_master_data where function = 'Sales & Marketing (Banking)' and industry = (select id from industry_master_data where industry = 'Banking')));
+
+
+update job_role set role = (select id from role_master_data where function = (select id from function_master_data where function = 'Other' and  industry = (select id from industry_master_data where industry = 'Manufacturing'))) where job in (select id from job where function && ARRAY(select id from function_master_data where industry = (select id from industry_master_data where industry = 'Manufacturing - Products')));
+update job_role set role = (select id from role_master_data where function = (select id from function_master_data where function = 'Other' and  industry = (select id from industry_master_data where industry = 'Banking'))) where job in (select id from job where function && ARRAY(select id from function_master_data where industry = (select id from industry_master_data where industry = 'Banking Finance & Insurance')));
+update job set function = array_append(function, (select id from function_master_data where industry = (select id from industry_master_data where industry = 'Manufacturing') and function = 'Other')) where id in (select id from job where function && Array(select id from function_master_data where industry =(select id from industry_master_data where industry = 'Manufacturing - Products')));
+update job set function = array_append(function, (select id from function_master_data where industry = (select id from industry_master_data where industry = 'Banking') and function = 'Other')) where id in (select id from job where function && ARRAY(select id from function_master_data where industry = (select id from industry_master_data where industry = 'Banking Finance & Insurance')));
+update job set job_industry = (select id from industry_master_data where industry = 'Manufacturing') where id in (select id from job where job_industry in (select id from industry_master_data where industry = 'Manufacturing - Products'));
+update job set job_industry = (select id from industry_master_data where industry = 'Banking') where id in (select id from job where job_industry in (select id from industry_master_data where industry = 'Banking Finance & Insurance'));
+
+update job_role set role = (select id from role_master_data where function = (select id from function_master_data where function = 'Other' and industry = (select id from industry_master_data where industry = 'Manufacturing'))) where job in (select distinct id from job where function && Array(select id from function_master_data where industry = (select id from industry_master_data where industry = 'Manufacturing') and function not in ('Plant Engineering', 'R&D', 'Production', 'Other')));
+update job_role set role = (select id from role_master_data where function = (select id from function_master_data where function = 'Other' and industry = (select id from industry_master_data where industry = 'IT'))) where job in (select distinct id from job where function && Array(select id from function_master_data where industry = (select id from industry_master_data where industry = 'IT') and function not in ('Testing', 'Developer / Programming', 'Infra Admin / Infra Operations', 'Project/ Program Management', 'Other')));
+update job set function = array_append(function, (select id from function_master_data where industry = (select id from industry_master_data where industry = 'Manufacturing') and function = 'Other')) where id in (select distinct id from job where function && Array(select id from function_master_data where industry = (select id from industry_master_data where industry = 'Manufacturing') and function not in ('Plant Engineering', 'R&D', 'Production', 'Other')));
+update job set function = array_append(function, (select id from function_master_data where industry = (select id from industry_master_data where industry = 'IT') and function = 'Other')) where id in (select distinct id from job where function && Array(select id from function_master_data where industry = (select id from industry_master_data where industry = 'IT') and function not in ('Testing', 'Developer / Programming', 'Infra Admin / Infra Operations', 'Project/ Program Management', 'Other')));
+
+update job_role set role = (select id from role_master_data where function = (select id from function_master_data where function = 'Other' and  industry = (select id from industry_master_data where industry = 'Other'))) where job in (select id from job where job_industry in (select id from industry_master_data where industry not in ('IT', 'Banking', 'Manufacturing', 'Other')));
+update job set job_industry = (select id from industry_master_data where industry = 'Other') where id in (select id from job where job_industry in (select id from industry_master_data where industry not in ('IT', 'Banking', 'Manufacturing', 'Other')));
+update job set function = array_append(function, (select id from function_master_data where industry = (select id from industry_master_data where industry = 'Other') and function = 'Other')) where id in (select id from job where job_industry = (select id from industry_master_data where industry in ('Other')));
+
+delete from job_skills_attributes where attribute is not null and attribute in (select id from attributes_master_data where function in (select id from function_master_data where industry = (select id from industry_master_data where industry = 'IT') and function not in ('Testing', 'Developer / Programming', 'Infra Admin / Infra Operations', 'Project/ Program Management', 'Project/ Program Management', 'Other')));
+delete from attributes_master_data where function in (select id from function_master_data where industry = (select id from industry_master_data where industry = 'IT') and function not in ('Testing', 'Developer / Programming', 'Infra Admin / Infra Operations', 'Project/ Program Management', 'Other'));
+delete from role_master_data where function in (select id from function_master_data where industry = (select id from industry_master_data where industry = 'IT') and function not in ('Testing', 'Developer / Programming', 'Infra Admin / Infra Operations', 'Project/ Program Management', 'Other'));
+delete from function_master_data where id in (select id from function_master_data where industry = (select id from industry_master_data where industry = 'IT') and function not in ('Testing', 'Developer / Programming', 'Infra Admin / Infra Operations', 'Project/ Program Management', 'Other'));
+
+delete from job_skills_attributes where attribute in (select id from attributes_master_data where function in (select id from function_master_data where industry = (select id from industry_master_data where industry = 'Manufacturing') and function not in ('Plant Engineering', 'R&D', 'Production', 'Other')));
+delete from attributes_master_data where function in (select id from function_master_data where industry = (select id from industry_master_data where industry = 'Manufacturing') and function not in ('Plant Engineering', 'R&D', 'Production', 'Other'));
+delete from role_master_data where function in (select id from function_master_data where industry = (select id from industry_master_data where industry = 'Manufacturing') and function not in ('Plant Engineering', 'R&D', 'Production', 'Other'));
+delete from function_master_data where id in (select id from function_master_data where industry = (select id from industry_master_data where industry = 'Manufacturing') and function not in ('Plant Engineering', 'R&D', 'Production', 'Other'));
+
+delete from role_master_data where function in (select id from function_master_data where industry in (select id from industry_master_data where industry in('Manufacturing - Products','Banking Finance & Insurance', 'Healthcare')));
+delete from function_master_data where industry in (select id from industry_master_data where industry in ('Manufacturing - Products', 'Banking Finance & Insurance', 'Healthcare'));
+delete from industry_master_data where industry in ('Manufacturing - Products', 'Banking Finance & Insurance', 'Healthcare');
+
+ALTER TABLE JOB ADD COLUMN SKIP_TECH_QUESTIONS BOOL NOT NULL DEFAULT 'f';
+
+-- ticket #759
+ALTER TABLE JOB ADD COLUMN CURRENCY_UNIT CHAR (1);
+
+INSERT INTO COUNTRY(
+	COUNTRY_NAME,
+	COUNTRY_CODE,
+	MAX_MOBILE_LENGTH,
+	COUNTRY_SHORT_CODE
+)
+VALUES(
+	'Colombia',
+	'+57',
+	10,
+	'co'
+);
+
+INSERT INTO CURRENCY(
+	CURRENCY_FULL_NAME,
+	CURRENCY_SHORT_NAME,
+	COUNTRY,
+	MIN_SALARY,
+	MAX_SALARY,
+	SALARY_UNIT
+)
+VALUES (
+	'Colombian Peso',
+	'COP',
+	'co',
+	0,
+	10000,
+	'K'
+);
+
+INSERT into master_data(type, value)
+values
+('education','BE - Computer Science'),
+('education','BE - Electronics'),
+('education','BE - Mechanical Engineering');
+
+INSERT into master_data(type, value)
+values
+('location','Bogota');

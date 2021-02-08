@@ -22,6 +22,7 @@ public class CandidateRequestBean {
     private Long candidateId;
     private String candidateName;
     private Long companyId;
+    private String companyName;
     private List<String> skill;
     private List<String> location;
     private int noticePeriod;
