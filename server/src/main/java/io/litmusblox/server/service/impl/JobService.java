@@ -1507,6 +1507,17 @@ public class JobService extends AbstractAccessControl implements IJobService {
         jobRepository.save(jobFromDb);
     }
 
+    @Override
+    public JobWorspaceResponseBean getJobTemplateList(Long companyId) throws Exception {
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        companyId = validateCompanyId(loggedInUser,companyId);
+        JobWorspaceResponseBean responseBean = new JobWorspaceResponseBean();
+        List<Job> listOfJobs = jobRepository.getJobByCompanyIdAndTemplate(companyId,true);
+        responseBean.setListOfJobs(listOfJobs);
+
+        return responseBean;
+    }
+
     private void setHMForTechQuestionSelection(Job job,Job oldJob){
         String errorMessage;
         Long hmUserId = job.getDeepQuestionSelectedBy();

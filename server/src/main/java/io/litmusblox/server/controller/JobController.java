@@ -14,6 +14,7 @@ import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
 import io.litmusblox.server.utils.Util;
+import lombok.NonNull;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -91,6 +92,21 @@ public class JobController {
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList","jobHiringTeamList","jobDetail", "expertise", "education", "noticePeriod", "function", "experienceRange", "userEnteredKeySkill", "updatedOn", "updatedBy"));
                     put("MasterData", new ArrayList<>(0));
                 }})
+        );
+    }
+    /**
+     * Api for retrieving a list of job templates
+     * @param companyId
+     * @return response bean with list of jobs with job title, company job id & job id
+     */
+    @GetMapping(value = "getJobTemplateList/")
+    String getJobTemplateList( @NonNull @RequestParam("companyId")Long companyId) throws Exception{
+
+        return Util.stripExtraInfoFromResponseBean(jobService.getJobTemplateList(companyId),
+                (new HashMap<String, List<String>>(){{
+                    put("Job",Arrays.asList("id","jobTitle","companyJobId"));
+                }})
+                ,null
         );
     }
 

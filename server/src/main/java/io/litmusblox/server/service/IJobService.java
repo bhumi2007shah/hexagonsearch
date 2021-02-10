@@ -10,6 +10,7 @@ import io.litmusblox.server.model.JobHistory;
 import io.litmusblox.server.model.TechScreeningQuestion;
 import io.litmusblox.server.service.impl.SearchRequestBean;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -182,5 +183,13 @@ public interface IJobService {
      * @param requestJob which has expected answer and jobId
      */
     void saveExpectedAnswer(Job requestJob);
+
+    /**
+     * method to get list of job templates
+     * @param companyId
+     * @return
+     * @throws Exception
+     */
+    JobWorspaceResponseBean getJobTemplateList(Long companyId) throws Exception;
 
 }
