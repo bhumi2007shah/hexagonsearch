@@ -1517,6 +1517,51 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         return responseBean;
     }
+    public void createJobByJobTemplate(Long jobId) throws Exception{
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Job job = jobRepository.getOne(jobId);
+        validateLoggedInUser(loggedInUser,job);
+        if(!job.isTemplate()){
+            String error = "error creating new job : "+job.getId()+" is not marked as a template";
+            log.error(error);
+            throw new WebException(error,HttpStatus.BAD_REQUEST);
+        }
+        job.setId(null);
+        job.setTemplate(false);
+        job.setCreatedBy(loggedInUser);
+        job.setCreatedOn(new Date());
+        job.setStatus(IConstant.JobStatus.DRAFT.getValue());
+
+        job = jobRepository.save(job);
+        Long newJobId = job.getId();
+
+        job.getJobRoleList().stream().forEach(role->{
+            role.setId(null);
+            role.setJobId(newJobId);
+            jobRoleRepository.save(role);
+        });
+        job.getJobSkillsAttributesList().stream().forEach(skill->{
+            skill.setId(null);
+            skill.setJobId(newJobId);
+            jobSkillsAttributesRepository.save(skill);
+        });
+        job.getJobScreeningQuestionsList().stream().forEach(question->{
+            TechScreeningQuestion techQuestion = question.getTechScreeningQuestionId();
+            question.setId(null);
+            question.setJobId(newJobId);
+            if( null != techQuestion){
+                techQuestion.setId(null);
+                techQuestion.setJobId(newJobId);
+                techQuestion = techScreeningQuestionRepository.save(techQuestion);
+                question.setTechScreeningQuestionId(techQuestion);
+            }
+            
+            jobScreeningQuestionsRepository.save(question);
+        });
+
+        saveJobHistory(job.getId(),"job created from job template : "+jobId,loggedInUser);
+        publishJob(job);
+    }
 
     private void setHMForTechQuestionSelection(Job job,Job oldJob){
         String errorMessage;

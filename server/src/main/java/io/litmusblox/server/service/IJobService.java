@@ -192,4 +192,5 @@ public interface IJobService {
      */
     JobWorspaceResponseBean getJobTemplateList(Long companyId) throws Exception;
 
+    void createJobByJobTemplate(Long jobId) throws Exception;
 }

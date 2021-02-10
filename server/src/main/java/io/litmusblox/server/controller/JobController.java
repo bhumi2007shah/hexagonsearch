@@ -111,6 +111,18 @@ public class JobController {
     }
 
     /**
+     *
+     */
+
+    @PutMapping(value = "/jobTemplate/createJob/{jobId}")
+    @ResponseStatus(HttpStatus.OK)
+    void createJobByJobTemplate(@PathVariable Long jobId) throws Exception{
+        log.info("received request to create job from job template : {}",jobId);
+        jobService.createJobByJobTemplate(jobId);
+        log.info("successfully created new job from job template :{}",jobId);
+    }
+
+    /**
      * Api to retrieve
      * 1. list candidates for job for specified stage
      * 2. count of candidates by each stage
