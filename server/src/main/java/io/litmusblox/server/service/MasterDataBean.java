@@ -91,6 +91,7 @@ public class MasterDataBean {
     private List<StatementsBlockMasterData> statementBlocks = new ArrayList<>();
     private Map<Long, String> candidateNotInterestedReason = new HashMap<>();
     private List location = new ArrayList();
+    private Set<String> verifiedSkills = new HashSet<>();
     // sentryDSN is only read from application.properties file as per profile it is not save in database
     private String sentryDSN=null;
 

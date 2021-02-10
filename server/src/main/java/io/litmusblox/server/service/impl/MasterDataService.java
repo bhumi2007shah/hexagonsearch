@@ -92,6 +92,9 @@ public class MasterDataService implements IMasterDataService {
     @Autowired
     Environment environment;
 
+    @Autowired
+    ISearchEngineService searchEngineService;
+
     /**
      * Method that will be called during application startup
      * Will read all master data from database and store them in internal cache
@@ -132,6 +135,9 @@ public class MasterDataService implements IMasterDataService {
                 );
         //handle to the getter method of the map in the master data singleton instance class
         ConfigurablePropertyAccessor mapAccessor = PropertyAccessorFactory.forDirectFieldAccess(MasterDataBean.getInstance());
+
+        //Get verified skill from search engine and set in master data
+        MasterDataBean.getInstance().setVerifiedSkills(searchEngineService.getVerifiedSkillFromSearchEngine());
 
         //For every master data record from database, populate the corresponding map with key-value pairs
         masterDataFromDb.forEach(data -> {
