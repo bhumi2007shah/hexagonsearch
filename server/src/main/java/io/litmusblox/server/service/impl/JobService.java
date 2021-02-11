@@ -518,7 +518,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             //make a call to ML api to obtain skills and capabilities
             if(MasterDataBean.getInstance().getConfigSettings().getMlCall()==1) {
                 try {
-                    JdParserRequestBean jdParserRequestBean = new JdParserRequestBean(Util.removeHtmlTags(job.getJobDescription()),true, false,job.getCompanyId().getId());
+                    JdParserRequestBean jdParserRequestBean = new JdParserRequestBean(Util.removeHtmlTags(job.getJobDescription()),true, false,job.getCompanyId().getId(), MasterDataBean.getInstance().getVerifiedSkills());
                     callJdParser(jdParserRequestBean, oldJob.getId(), job);
                     if(null == oldJob) {
                         jobRepository.save(job);

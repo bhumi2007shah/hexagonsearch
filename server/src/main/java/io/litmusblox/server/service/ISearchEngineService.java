@@ -6,7 +6,7 @@ package io.litmusblox.server.service;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Map;
+import java.util.Set;
 
 /**
  * Date : 14/09/20
@@ -50,5 +50,11 @@ public interface ISearchEngineService {
      * @throws Exception
      */
     public String importData(MultipartFile masterDataFile, Long companyId, String fileType, String authToken) throws Exception;
+
+    /**
+     * Service method to get verified skill set from search engine
+     * @return skill set
+     */
+    Set<String> getVerifiedSkillFromSearchEngine();
 
 }

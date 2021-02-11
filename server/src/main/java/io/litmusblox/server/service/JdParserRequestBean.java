@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author : Sumit
@@ -27,11 +28,13 @@ public class JdParserRequestBean {
     private boolean capabilityFlag;
     private List<String> function;
     private Long companyId;
+    private Set<String> skillSet;
 
-    public JdParserRequestBean(String jdString, boolean skillFlag, boolean capabilityFlag, Long companyId) {
+    public JdParserRequestBean(String jdString, boolean skillFlag, boolean capabilityFlag, Long companyId, Set<String> skillSet) {
         this.jdString = jdString;
         this.skillFlag = skillFlag;
         this.capabilityFlag = capabilityFlag;
         this.companyId = companyId;
+        this.skillSet = skillSet;
     }
 }
