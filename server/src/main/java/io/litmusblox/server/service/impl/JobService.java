@@ -575,14 +575,14 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 TechQuestionsRequestBean.Attributes attributes = new TechQuestionsRequestBean.Attributes();
                 TechQuestionsRequestBean.Functions functions = new TechQuestionsRequestBean.Functions();
                 TechQuestionsRequestBean.Industry industry = new TechQuestionsRequestBean.Industry();
-                industry.setIndustryName(job.getJobIndustry().getIndustry());
+                //industry.setIndustryName(job.getJobIndustry().getIndustry());
                 techQueRequestBean.setRoles(roles);
                 techQueRequestBean.setAttributes(attributes);
                 techQueRequestBean.setFunctions(functions);
                 techQueRequestBean.setCompanyId(job.getCompanyId().getId());
                 techQueRequestBean.setIndustry(industry);
                 techQueRequestBean.setSkills(jdParseSkillList);
-                techQueRequestBean.getSkills().addAll(job.getUserEnteredKeySkill());
+                //techQueRequestBean.getSkills().addAll(job.getUserEnteredKeySkill());
                 log.info("Calling SearchEngine API to generate tech questions for job: {}, request : {}", job.getId(), techQueRequestBean.toString());
                 String searchEngineQuestionResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null, Optional.of(userDetails)).getResponseBody();
                 questionMap = objectMapper.readValue(searchEngineQuestionResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
