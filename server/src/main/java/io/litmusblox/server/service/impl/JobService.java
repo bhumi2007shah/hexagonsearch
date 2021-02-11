@@ -554,7 +554,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             log.info("Sending request to JdParser for LB job id : {}",jobId);
             long searchEngineApiStartTime = System.currentTimeMillis();
-            String jdParserResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonJdParserUrl"), HttpMethod.POST, JwtTokenUtil.getAuthToken(),null,null,Optional.of(headerInformation)).getResponseBody();
+            String jdParserResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonJdParserUrl"), HttpMethod.POST, JwtTokenUtil.getAuthToken(),null, Optional.of(IConstant.REST_READ_TIME_OUT_FOR_GET_QUESTION),Optional.of(headerInformation)).getResponseBody();
             log.info("For jobId : {}, Jd Parser response received: {}", jobId, jdParserResponse);
             log.info("Getting response from JdParser for LB job id : {} in {}ms",jobId,System.currentTimeMillis()-searchEngineApiStartTime);
             long startTime = System.currentTimeMillis();
