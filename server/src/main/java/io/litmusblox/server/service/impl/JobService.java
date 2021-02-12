@@ -555,7 +555,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             log.info("Sending request to JdParser for LB job id : {}",jobId);
             long searchEngineApiStartTime = System.currentTimeMillis();
-            String jdParserResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonJdParserUrl"), HttpMethod.POST, JwtTokenUtil.getAuthToken(),null,null,Optional.of(headerInformation)).getResponseBody();
+            String jdParserResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonJdParserUrl"), HttpMethod.POST, JwtTokenUtil.getAuthToken(),null, null,Optional.of(headerInformation)).getResponseBody();
             log.info("For jobId : {}, Jd Parser response received: {}", jobId, jdParserResponse);
             log.info("Getting response from JdParser for LB job id : {} in {}ms",jobId,System.currentTimeMillis()-searchEngineApiStartTime);
             long startTime = System.currentTimeMillis();
@@ -576,16 +576,16 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 TechQuestionsRequestBean.Attributes attributes = new TechQuestionsRequestBean.Attributes();
                 TechQuestionsRequestBean.Functions functions = new TechQuestionsRequestBean.Functions();
                 TechQuestionsRequestBean.Industry industry = new TechQuestionsRequestBean.Industry();
-                industry.setIndustryName(job.getJobIndustry().getIndustry());
+                //industry.setIndustryName(job.getJobIndustry().getIndustry());
                 techQueRequestBean.setRoles(roles);
                 techQueRequestBean.setAttributes(attributes);
                 techQueRequestBean.setFunctions(functions);
                 techQueRequestBean.setCompanyId(job.getCompanyId().getId());
                 techQueRequestBean.setIndustry(industry);
                 techQueRequestBean.setSkills(jdParseSkillList);
-                techQueRequestBean.getSkills().addAll(job.getUserEnteredKeySkill());
+                //techQueRequestBean.getSkills().addAll(job.getUserEnteredKeySkill());
                 log.info("Calling SearchEngine API to generate tech questions for job: {}, request : {}", job.getId(), techQueRequestBean.toString());
-                String searchEngineQuestionResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null, Optional.of(userDetails)).getResponseBody();
+                String searchEngineQuestionResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, Optional.of(IConstant.REST_READ_TIME_OUT_FOR_GET_QUESTION), Optional.of(userDetails)).getResponseBody();
                 questionMap = objectMapper.readValue(searchEngineQuestionResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
             }catch (Exception e){
                 log.error("Error while getting questions from search engine : {}",e.getMessage());
