@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Candidate;
 import io.litmusblox.server.model.InterviewDetails;
+import io.litmusblox.server.model.JcmOfferDetails;
 import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.repository.UserRepository;
 import io.litmusblox.server.service.*;
@@ -190,6 +191,7 @@ public class JobCandidateMappingController {
                     put("JobScreeningQuestions", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("MasterData", new ArrayList<>(0));
                     put("CompanyAddress", new ArrayList<>(0));
+                    put("JcmOfferDetails",Arrays.asList("jcmId"));
                 }});
         log.info("Completed processing fetch candidate profile request in " + (System.currentTimeMillis()-startTime) + "ms.");
         return response;
@@ -355,6 +357,12 @@ public class JobCandidateMappingController {
     @ResponseStatus(value = HttpStatus.OK)
     List<InterviewsResponseBean> getInterviewForCompany(@PathVariable Long companyId) throws Exception {
         return jobCandidateMappingService.getInterviewsForCompany(companyId);
+    }
+
+    @PostMapping(value = "/offerDetails")
+    @ResponseStatus(value = HttpStatus.OK)
+    void saveOfferDetails(@RequestBody JcmOfferDetails jcmOfferDetails){
+        jobCandidateMappingService.saveOfferDetails(jcmOfferDetails);
     }
 
 }

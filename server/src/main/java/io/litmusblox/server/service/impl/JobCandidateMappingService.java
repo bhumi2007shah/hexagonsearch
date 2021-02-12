@@ -185,6 +185,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     @Resource
     TechScreeningQuestionRepository techScreeningQuestionRepository;
 
+    @Resource
+    JcmOfferDetailsRepository jcmOfferDetailsRepository;
+
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
         return jobRepository.findById(jobId).isPresent()?jobRepository.findById(jobId).get():null;
@@ -1801,7 +1804,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     jobCandidateMappingRepository.setMakeOfferByAndOn(jcmList, loggedInUser.getDisplayName(), new Date(), jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
                     break;
                 case "Offer":
-                    jobCandidateMappingRepository.setOfferByAndOn(jcmList, loggedInUser.getDisplayName(), new Date(), jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
+                    jobCandidateMappingRepository.setOfferBy(jcmList, loggedInUser.getDisplayName(), jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
                     break;
                 case "Hired":
                     jobCandidateMappingRepository.setHiredByAndOn(jcmList, loggedInUser.getDisplayName(), new Date(), jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
@@ -2565,5 +2568,39 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         });
         log.info("Time taken to upload candidates by harvester in : {}ms.", startTime-System.currentTimeMillis());
         return responseBeanList;
+    }
+
+    @Override
+    public void saveOfferDetails(JcmOfferDetails jcmOfferDetails) {
+        log.info("inside save offerDetails");
+        String error;
+        Long jcmId = jcmOfferDetails.getJcmId().getId();
+
+        if(!jobCandidateMappingRepository.existsById(jcmId)){
+            error = "jcmId : "+ jcmId+" does not exist";
+            log.error(error);
+            throw new WebException(error,HttpStatus.BAD_REQUEST);
+        }
+
+        JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.getOne(jcmId);
+        String stage = jcmFromDb.getStage().getStage();
+
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, jcmFromDb.getJob());
+
+        if(!Arrays.asList( IConstant.Stage.MakeOffer.getValue() ,IConstant.Stage.Offer.getValue(),IConstant.Stage.Join.getValue()).contains(stage) ){
+            error = "cannot set offer details for jcmId :"+jcmId+" from "+stage+" stage";
+            log.error(error);
+            throw new WebException(error,HttpStatus.BAD_REQUEST);
+        }
+
+        JcmOfferDetails jcmOfferFromDb = jcmOfferDetailsRepository.findByJcmId(jcmId);
+        if(null != jcmOfferFromDb)
+            jcmOfferDetails.setId(jcmOfferFromDb.getId());
+
+        jcmOfferDetails.setOfferedOn(new Date());
+        jcmOfferDetailsRepository.save(jcmOfferDetails);
+        jcmHistoryRepository.save(new JcmHistory(jcmFromDb,"Offer details added",jcmOfferDetails.getOfferedOn(),loggedInUser,jcmFromDb.getStage(),false));
+        log.info("offer details saved successfully!");
     }
 }

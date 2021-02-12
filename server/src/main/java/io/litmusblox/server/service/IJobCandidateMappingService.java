@@ -293,4 +293,5 @@ public interface IJobCandidateMappingService {
      */
     List<UploadResponseBean> uploadIndividualCandidateByHarvester(List<Long> candidateIdList, Long jobId) throws Exception;
 
+    void saveOfferDetails(JcmOfferDetails jcmOfferDetails);
 }

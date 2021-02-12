@@ -213,9 +213,8 @@ public class JobCandidateMapping implements Serializable {
     @Column(name="OFFER_BY")
     private String offerBy;
 
-    @Column(name="OFFER_ON")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date offerOn;
+    @OneToOne(mappedBy = "jcmId")
+    private JcmOfferDetails offerDetails;
 
     @Column(name="HIRED_BY")
     private String hiredBy;

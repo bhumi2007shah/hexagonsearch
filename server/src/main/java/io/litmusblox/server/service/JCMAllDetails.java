@@ -73,7 +73,6 @@ public class JCMAllDetails {
     String makeOfferBy;
     Date makeOfferOn;
     String offerBy;
-    Date offerOn;
     String hiredBy;
     Date hiredOn;
     String rejectedBy;

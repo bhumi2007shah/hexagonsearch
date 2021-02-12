@@ -3239,3 +3239,58 @@ ALTER TABLE TECH_SCREENING_QUESTION
     ADD COLUMN QUESTION_OWNER_SEQ varchar(5);
 
 ALTER TABLE JOB ADD COLUMN TEMPLATE BOOLEAN NOT NULL default 'f';
+
+--for ticket #762
+CREATE TABLE JCM_OFFER_DETAILS (
+    ID serial PRIMARY KEY NOT NULL,
+    JCM_ID INTEGER REFERENCES JOB_CANDIDATE_MAPPING(ID) NOT NULL,
+    OFFERED_COMPENSATION INTEGER,
+    OFFERED_ON TIMESTAMP,
+    JOINING_ON TIMESTAMP
+);
+insert into jcm_offer_details(jcm_id,offered_on)  select id as jcm_id ,offer_on as offered_on from job_candidate_mapping where offer_on is not null;
+
+drop view if exists job_candidate_mapping_all_details;
+create view job_candidate_mapping_all_details
+as select
+job_candidate_mapping.id, job_candidate_mapping.job_id, job_candidate_mapping.candidate_id, job_candidate_mapping.email,
+job_candidate_mapping.mobile, job_candidate_mapping.country_code, job_candidate_mapping.stage,
+(select stage from stage_step_master where id = job_candidate_mapping.stage) as stage_name,
+job_candidate_mapping.created_on, job_candidate_mapping.candidate_first_name, job_candidate_mapping.candidate_last_name,
+job_candidate_mapping.chatbot_status, job_candidate_mapping.score,job_candidate_mapping.rejected,
+job_candidate_mapping.candidate_chatbot_response, job_candidate_mapping.candidate_source as source,
+job_candidate_mapping.candidate_rejection_value as rejection_reason, job_candidate_mapping.updated_on, (select concat(first_name, ' ', last_name) from users where id=job_candidate_mapping.updated_by) as updated_by,
+job_candidate_mapping.overall_rating, concat(users.first_name,' ',users.last_name) as recruiter, candidateCompany.company_name,
+candidateCompany.designation, candidateCompany.notice_period, candidate_details.total_experience,
+job_candidate_mapping.screening_by,
+job_candidate_mapping.screening_on,
+job_candidate_mapping.submitted_by,
+job_candidate_mapping.submitted_on,
+job_candidate_mapping.make_offer_by,
+job_candidate_mapping.make_offer_on,
+job_candidate_mapping.offer_by,
+job_candidate_mapping.hired_by,
+job_candidate_mapping.hired_on,
+job_candidate_mapping.rejected_by,
+job_candidate_mapping.rejected_on,
+job_candidate_mapping.candidate_quick_question_response,
+(CASE WHEN (job_candidate_mapping.cv_file_type!='') THEN
+(CONCAT('CandidateCv/',job_candidate_mapping.job_id, '/', job_candidate_mapping.candidate_id, job_candidate_mapping.cv_file_type))
+else null
+END) as cv_location,
+job_candidate_mapping.cv_file_type as cv_file_type
+from users,job_candidate_mapping
+left join candidate_details on candidate_details.candidate_id = job_candidate_mapping.candidate_id
+left join
+	(select ccd.company_name, ccd.designation, ccd.candidate_id, master_data.value as notice_period
+	from candidate_company_details ccd
+	join (select min(id) as id, candidate_id from candidate_company_details group by candidate_id) singleRow
+	on ccd.candidate_id = singleRow.candidate_id and ccd.id = singleRow.id
+	left join master_data
+    on master_data.id = ccd.notice_period
+	) as candidateCompany
+on candidateCompany.candidate_id = job_candidate_mapping.candidate_id
+where users.id = job_candidate_mapping.created_by
+order by job_candidate_mapping.created_on desc, job_candidate_mapping.candidate_first_name asc, job_candidate_mapping.candidate_last_name asc;
+
+alter table job_candidate_mapping drop column offer_on;
