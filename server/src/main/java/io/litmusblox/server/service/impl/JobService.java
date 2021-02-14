@@ -1476,7 +1476,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
         log.info("Calling SearchEngine API to generate tech questions for job: {}, request : {}", job.getId(), techQueRequestBean.toString());
         try {
-            searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null, Optional.of(userDetails)).getResponseBody();
+            searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, Optional.of(IConstant.REST_READ_TIME_OUT_FOR_GET_QUESTION), Optional.of(userDetails)).getResponseBody();
             searchEngineResponseBean = mapper.readValue(searchEngineResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
             log.info("Search engine rest call response : {}", searchEngineResponse);
 

@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
  * Class Name : ScheduledTasks
  * Project Name : server
  */
-@Profile({"prod","testServer"})
+@Profile({"dev","prod","testServer"})
 @Component
 @Log4j2
 public class ScheduledTasks {
