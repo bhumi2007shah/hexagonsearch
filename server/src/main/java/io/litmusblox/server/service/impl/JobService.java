@@ -566,20 +566,12 @@ public class JobService extends AbstractAccessControl implements IJobService {
             List<String> jdParseSkillList = objectMapper.readValue(jdParserResponse, new TypeReference<List<String>>(){});
             log.info("Time taken to process JD in {}ms ",(System.currentTimeMillis() - startTime) + "ms.");
 
-            //Generate tech questions for jd parse skills
-            Map<String, List<SearchEngineQuestionsResponseBean>>  questionMap = new HashMap<>();
-            Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
-
-            if(null != jdParseSkillList && jdParseSkillList.size()>0){
-                Set<String> skillSet = jdParseSkillList.stream().collect(Collectors.toSet());
-                skillSet.forEach(skill -> {
-                    questionMap.put(skill, null);
-                });
-            }
-            if(questionMap.size()>0)
-                job.setSearchEngineSkillQuestionMap(questionMap);
+            //Set jd parse skill set
+            if(null != jdParseSkillList && jdParseSkillList.size()>0)
+                job.setJobSkills(jdParseSkillList.stream().collect(Collectors.toSet()));
 
             //Call search engine api to get neighbouring skills
+            Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
             Map<String, List<String>> searchEngineNeighbourSkillMap = new HashMap<>();
             try {
                 String searchEngineNeighbourSkillResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(jdParseSkillList), searchEngineBaseUrl + searchEngineNeighbourSkill, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null, Optional.of(userDetails)).getResponseBody();
@@ -605,14 +597,14 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private Job handleSkillsFromCvParser(Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineQuestionMap,Map<String, List<String>> neighbourSkillMap, Job job, Job oldJob) throws Exception {
+    private Job handleSkillsFromCvParser(Map<String, List<String>> neighbourSkillMap, Job job, Job oldJob) throws Exception {
         Set<String> skillsSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         //We are adding both the skill sets. Ref ticket - #661
         if (null != neighbourSkillMap)
             skillsSet.addAll(neighbourSkillMap.keySet());
 
-        if (null != searchEngineQuestionMap)
-            skillsSet.addAll(searchEngineQuestionMap.keySet());
+        if (null != job.getJobSkills() && job.getJobSkills().size()>0)
+            skillsSet.addAll(job.getJobSkills().stream().collect(Collectors.toSet()));
 
         log.info("Size of skill set : {} for job id : {} and skill set : {}", skillsSet.size(), job.getId(), skillsSet);
         List<String> skillList = new ArrayList<>(skillsSet);
@@ -714,7 +706,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
 
         try {
             log.info("Add Key Skills in job : {}",job.getId());
-            oldJob = handleSkillsFromCvParser(job.getSearchEngineSkillQuestionMap(), job.getNeighbourSkillsMap(), job, oldJob);
+            oldJob = handleSkillsFromCvParser(job.getNeighbourSkillsMap(), job, oldJob);
         } catch (Exception exception) {
             log.error("Failed to add key skills. " + exception.getMessage());
         }
@@ -1452,7 +1444,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
         techQueRequestBean.setCompanyId(job.getCompanyId().getId());
         techQueRequestBean.setIndustry(industry);
         techQueRequestBean.setSkills(job.getSelectedKeySkills());
-        techQueRequestBean.getSkills().addAll(job.getUserEnteredKeySkill());
         log.info("Tech Question Request : {}",techQueRequestBean);
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
