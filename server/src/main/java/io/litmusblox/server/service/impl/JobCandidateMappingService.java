@@ -1804,7 +1804,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     jobCandidateMappingRepository.setMakeOfferByAndOn(jcmList, loggedInUser.getDisplayName(), new Date(), jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
                     break;
                 case "Offer":
-                    jobCandidateMappingRepository.setOfferBy(jcmList, loggedInUser.getDisplayName(), jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
+                    jobCandidateMappingRepository.setOfferByAndOn(jcmList, loggedInUser.getDisplayName(), new Date(), jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());
                     break;
                 case "Hired":
                     jobCandidateMappingRepository.setHiredByAndOn(jcmList, loggedInUser.getDisplayName(), new Date(), jcmObject.getStage().getId(), jobStageIds.get(stage), loggedInUser.getId(), new Date());

@@ -50,6 +50,10 @@ public class JobCandidateMapping implements Serializable {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name="OFFER_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date offerOn;
+
     @NotNull
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "JOB_ID")

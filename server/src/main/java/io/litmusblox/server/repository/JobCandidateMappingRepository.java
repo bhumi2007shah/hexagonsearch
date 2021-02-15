@@ -120,9 +120,10 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Transactional
     @Modifying
     @Query(nativeQuery = true, value = "update job_candidate_mapping set " +
+            "offer_on = case when offer_on is null then :offerOn else offer_on end, " +
             "offer_by = case when offer_by is null then :offerBy else offer_by end, " +
             "stage =:newStageId, rejected = false, updated_by =:updatedBy, updated_on =:updatedOn where stage =:oldStageId and id in :jcmList")
-    void setOfferBy(List<Long> jcmList, String offerBy, Long oldStageId, Long newStageId, Long updatedBy, Date updatedOn);
+    void setOfferByAndOn(List<Long> jcmList, String offerBy, Date offerOn, Long oldStageId, Long newStageId, Long updatedBy, Date updatedOn);
 
     @Transactional
     @Modifying
