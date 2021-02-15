@@ -49,6 +49,9 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Query(value = "select count(candidate_id) from job_candidate_mapping where id in (Select jcm_id from hiring_manager_workspace_details where user_id=:userId and job_id=:jobId) and rejected is true", nativeQuery = true)
     int findRejectedCandidateCountForHiringManager(Long userId, Long jobId) throws Exception;
 
+    @Transactional(readOnly = true)
+    boolean existsById(Long id);
+
     //find count of candidates per stage
     @Transactional
     @Query(value = "select job_candidate_mapping.job_id, stage_step_master.stage, count(candidate_id) from job_candidate_mapping, stage_step_master\n" +
@@ -117,8 +120,8 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Transactional
     @Modifying
     @Query(nativeQuery = true, value = "update job_candidate_mapping set " +
-            "offer_by = case when offer_by is null then :offerBy else offer_by end, " +
             "offer_on = case when offer_on is null then :offerOn else offer_on end, " +
+            "offer_by = case when offer_by is null then :offerBy else offer_by end, " +
             "stage =:newStageId, rejected = false, updated_by =:updatedBy, updated_on =:updatedOn where stage =:oldStageId and id in :jcmList")
     void setOfferByAndOn(List<Long> jcmList, String offerBy, Date offerOn, Long oldStageId, Long newStageId, Long updatedBy, Date updatedOn);
 

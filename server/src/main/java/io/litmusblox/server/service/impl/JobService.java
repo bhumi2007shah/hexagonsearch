@@ -488,6 +488,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             } else {
                 oldJob.setAutoInvite(job.isAutoInvite());
                 oldJob.setVisibleToCareerPage(job.isVisibleToCareerPage());
+                oldJob.setTemplate(job.isTemplate());
             }
             
             oldJob.setJobTitle(job.getJobTitle());
@@ -1471,11 +1472,14 @@ public class JobService extends AbstractAccessControl implements IJobService {
         }
         log.info("Generate tech questions REST call completed in {}ms", System.currentTimeMillis()-startTime);
 
+        Comparator<SearchEngineQuestionsResponseBean> compareBySeq =
+                Comparator.nullsLast(Comparator.comparing(SearchEngineQuestionsResponseBean::getQuestionOwnerSeq,Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(SearchEngineQuestionsResponseBean::getQuestionSeq,Comparator.nullsLast(Comparator.naturalOrder())));
         for (Map.Entry<String, List<SearchEngineQuestionsResponseBean>> entry : searchEngineResponseBean.entrySet()) {
 
             if(techScreeningQuestionRepository.existsByJobIdAndQuestionCategory(job.getId(), entry.getKey()))
                 continue;
-
+            entry.setValue(entry.getValue().stream().sorted(compareBySeq).collect(Collectors.toList()));
             entry.getValue().forEach(object -> {
                 List<String> options = new ArrayList<>(object.getOptions().length+1);
                 options.addAll(Arrays.asList(object.getOptions()));
@@ -1493,7 +1497,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
                         object.getQuestionTag(),
                         null,
                         entry.getKey(),
-                        job.getId()
+                        job.getId(),
+                        object.getQuestionSeq(),
+                        object.getQuestionOwnerSeq()
                 );
                     techScreeningQuestionRepository.save(techScreeningQuestion);
             });
@@ -1521,6 +1527,64 @@ public class JobService extends AbstractAccessControl implements IJobService {
         jobFromDb.setExpectedAnswer(requestJob.getExpectedAnswer());
 
         jobRepository.save(jobFromDb);
+    }
+
+    @Override
+    public JobWorspaceResponseBean getJobTemplateList(Long companyId) throws Exception {
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        companyId = validateCompanyId(loggedInUser,companyId);
+        JobWorspaceResponseBean responseBean = new JobWorspaceResponseBean();
+        Company company = new Company();
+        company.setId(companyId);
+        List<Job> listOfJobs = jobRepository.findJobByCompanyIdAndTemplateTrue(company);
+        responseBean.setListOfJobs(listOfJobs);
+
+        return responseBean;
+    }
+    public void createJobByJobTemplate(Long jobId) throws Exception{
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Job job = jobRepository.getOne(jobId);
+        validateLoggedInUser(loggedInUser,job);
+        if(!job.isTemplate()){
+            String error = "error creating new job : "+job.getId()+" is not marked as a template";
+            log.error(error);
+            throw new WebException(error,HttpStatus.BAD_REQUEST);
+        }
+        job.setId(null);
+        job.setTemplate(false);
+        job.setCreatedBy(loggedInUser);
+        job.setCreatedOn(new Date());
+        job.setStatus(IConstant.JobStatus.DRAFT.getValue());
+
+        job = jobRepository.save(job);
+        Long newJobId = job.getId();
+
+        job.getJobRoleList().stream().forEach(role->{
+            role.setId(null);
+            role.setJobId(newJobId);
+            jobRoleRepository.save(role);
+        });
+        job.getJobSkillsAttributesList().stream().forEach(skill->{
+            skill.setId(null);
+            skill.setJobId(newJobId);
+            jobSkillsAttributesRepository.save(skill);
+        });
+        job.getJobScreeningQuestionsList().stream().forEach(question->{
+            TechScreeningQuestion techQuestion = question.getTechScreeningQuestionId();
+            question.setId(null);
+            question.setJobId(newJobId);
+            if( null != techQuestion){
+                techQuestion.setId(null);
+                techQuestion.setJobId(newJobId);
+                techQuestion = techScreeningQuestionRepository.save(techQuestion);
+                question.setTechScreeningQuestionId(techQuestion);
+            }
+            
+            jobScreeningQuestionsRepository.save(question);
+        });
+
+        saveJobHistory(job.getId(),"job created from job template : "+jobId,loggedInUser);
+        publishJob(job);
     }
 
     private void setHMForTechQuestionSelection(Job job,Job oldJob){
