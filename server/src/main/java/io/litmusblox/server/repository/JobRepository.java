@@ -96,6 +96,6 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     List<Job> findJobByDeepQuestionSelectedByAndStatus(Long hmId, String jobStatus);
 
-    @Query(value = "select * from job where company_id=:companyId and template=:template",nativeQuery = true)
-    List<Job> getJobByCompanyIdAndTemplate(Long companyId, boolean template);
+    @Transactional(readOnly = true)
+    List<Job> findJobByCompanyIdAndTemplateTrue(Company companyId);
 }

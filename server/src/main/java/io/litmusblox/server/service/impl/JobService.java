@@ -895,7 +895,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         if(null == jobFromDb.getDeepQuestionSelectedOn()   && !jobFromDb.isQuickQuestion() && null != jobFromDb.getDeepQuestionSelectedBy()){
             throw new WebException("You will be notified once the hiring manager has selected the questions for deep screening. You can then publish the job. Until then the job will remain in a draft state",HttpStatus.BAD_REQUEST);
         }
-        Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite(),null,null,job.isTemplate());
+        Job publishedJob = changeJobStatus(job.getId(),IConstant.JobStatus.PUBLISHED.getValue(), job.isVisibleToCareerPage(), job.isAutoInvite(),null,null);
         log.info("Completed publishing job with id: " + job.getId());
         if (null != publishedJob.getCompanyId().getShortName() && !publishedJob.getCompanyId().isSubdomainCreated()) {
             log.info("Subdomain does not exist for company: {}. Creating one.", publishedJob.getCompanyId().getCompanyName());
@@ -918,7 +918,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             throw new WebException("Archive Status Null for job with Id " + jobId, HttpStatus.UNPROCESSABLE_ENTITY );
         if(archiveStatus.equals("No Success") && (Util.isNull(archiveReason) || !IConstant.ArchiveReason.containsValue(archiveReason)))
             throw new WebException("Archive Reason Null for job with Id " + jobId, HttpStatus.UNPROCESSABLE_ENTITY);
-        changeJobStatus(jobId, IConstant.JobStatus.ARCHIVED.getValue(), null, null, archiveStatus, archiveReason,false);
+        changeJobStatus(jobId, IConstant.JobStatus.ARCHIVED.getValue(), null, null, archiveStatus, archiveReason);
         log.info("Completed archiving job with id: " + jobId);
     }
 
@@ -931,7 +931,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
     //@Caching(evict = {@CacheEvict(cacheNames = "job", key = "#jobId"), @CacheEvict("singleJobViewByStatus"), @CacheEvict("singleJobView"), @CacheEvict(cacheNames = "jobs")})
     public void unarchiveJob(Long jobId) throws Exception {
         log.info("Received request to unarchive job with id: " + jobId);
-        changeJobStatus(jobId,null, null, null, null, null,false);
+        changeJobStatus(jobId,null, null, null, null, null);
         log.info("Completed unarchiving job with id: " + jobId);
     }
 
@@ -940,7 +940,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
      * @param jobId the job on which the operation is to be performed
      * @param status the status to be set. If the job is being unarchived, the status will be sent as null
      */
-    private Job changeJobStatus(Long jobId, String status, Boolean visibleToCareerPage, Boolean autoInvite, String archiveStatus, String archiveReason,boolean isTemplate)  {
+    private Job changeJobStatus(Long jobId, String status, Boolean visibleToCareerPage, Boolean autoInvite, String archiveStatus, String archiveReason)  {
         Job job = jobRepository.getOne(jobId);
         if (null == job) {
             throw new WebException("Job with id " + jobId + "does not exist", HttpStatus.UNPROCESSABLE_ENTITY);
@@ -973,7 +973,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 job.setAutoInvite(autoInvite);
                 job.setVisibleToCareerPage(visibleToCareerPage);
                 job.setDatePublished(new Date());
-                job.setTemplate(isTemplate);
             }
             job.setStatus(status);
         }
@@ -1534,7 +1533,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         companyId = validateCompanyId(loggedInUser,companyId);
         JobWorspaceResponseBean responseBean = new JobWorspaceResponseBean();
-        List<Job> listOfJobs = jobRepository.getJobByCompanyIdAndTemplate(companyId,true);
+        Company company = new Company();
+        company.setId(companyId);
+        List<Job> listOfJobs = jobRepository.findJobByCompanyIdAndTemplateTrue(company);
         responseBean.setListOfJobs(listOfJobs);
 
         return responseBean;
