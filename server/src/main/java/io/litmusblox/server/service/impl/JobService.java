@@ -570,7 +570,6 @@ public class JobService extends AbstractAccessControl implements IJobService {
             if(null != jdParseSkillList && jdParseSkillList.size()>0)
                 job.setJobSkills(jdParseSkillList.stream().collect(Collectors.toSet()));
 
-            Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
             //Call search engine api to get neighbouring skills
             Map<String, List<String>> searchEngineNeighbourSkillMap = new HashMap<>();
             try {
