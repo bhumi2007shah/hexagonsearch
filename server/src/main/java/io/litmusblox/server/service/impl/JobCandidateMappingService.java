@@ -898,15 +898,17 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             validateloggedInUser(receiverUser, jcm.getJob().getCompanyId().getId());
             Set<JcmProfileSharingDetails> detailsSet = new HashSet<>(requestBean.getJcmId().size());
             requestBean.getJcmId().forEach(jcmId ->{
-                JcmProfileSharingDetails jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.save(new JcmProfileSharingDetails(jcmId, loggedInUser.getId(), receiverUser.getId(), receiverUser.getDisplayName()));
-                HiringManagerWorkspace hiringManagerWorkspace = hiringManagerWorkspaceRepository.findByJcmIdAndUserId(jcmId, receiverUser.getId());
-                if(null == hiringManagerWorkspace)
-                    hiringManagerWorkspaceRepository.save(new HiringManagerWorkspace(jcmId, receiverUser.getId(), jcmProfileSharingDetails.getId(), null));
-                else if (hiringManagerWorkspace.getShareProfileId() == null)
-                    hiringManagerWorkspaceRepository.updateProfileShareId(jcmProfileSharingDetails.getId(), hiringManagerWorkspace.getId());
-                else
-                    log.info("Profile already shared for Jcm id {} with hiring manager {}", jcmId, receiverUser.getEmail());
-
+                JcmProfileSharingDetails jcmProfileSharingDetailsFromDb = jcmProfileSharingDetailsRepository.getProfileSharedByJcmIdAndUserId(jcmId, receiverUser.getId());
+                if(null == jcmProfileSharingDetailsFromDb){
+                    JcmProfileSharingDetails jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.save(new JcmProfileSharingDetails(jcmId, loggedInUser.getId(), receiverUser.getId(), receiverUser.getDisplayName()));
+                    HiringManagerWorkspace hiringManagerWorkspace = hiringManagerWorkspaceRepository.findByJcmIdAndUserId(jcmId, receiverUser.getId());
+                    if(null == hiringManagerWorkspace)
+                        hiringManagerWorkspaceRepository.save(new HiringManagerWorkspace(jcmId, receiverUser.getId(), jcmProfileSharingDetails.getId(), null));
+                    else if (hiringManagerWorkspace.getShareProfileId() == null)
+                        hiringManagerWorkspaceRepository.updateProfileShareId(jcmProfileSharingDetails.getId(), hiringManagerWorkspace.getId());
+                    else
+                        log.info("Profile already shared for Jcm id {} with hiring manager {}", jcmId, receiverUser.getEmail());
+                }
             });
             receiverEmails.add(receiverUser.getEmail());
         }
