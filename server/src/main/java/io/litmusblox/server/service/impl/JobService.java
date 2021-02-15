@@ -571,6 +571,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 job.setJobSkills(jdParseSkillList.stream().collect(Collectors.toSet()));
 
             //Call search engine api to get neighbouring skills
+            Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
             Map<String, List<String>> searchEngineNeighbourSkillMap = new HashMap<>();
             try {
                 String searchEngineNeighbourSkillResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(jdParseSkillList), searchEngineBaseUrl + searchEngineNeighbourSkill, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null, Optional.of(userDetails)).getResponseBody();
