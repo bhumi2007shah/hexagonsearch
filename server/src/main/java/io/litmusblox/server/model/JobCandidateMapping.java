@@ -4,10 +4,7 @@
 
 package io.litmusblox.server.model;
 
-import com.fasterxml.jackson.annotation.JsonFilter;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import com.vladmihalcea.hibernate.type.array.StringArrayType;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import lombok.AllArgsConstructor;
@@ -217,6 +214,7 @@ public class JobCandidateMapping implements Serializable {
     @Column(name="OFFER_BY")
     private String offerBy;
 
+    @JsonManagedReference
     @OneToOne(mappedBy = "jcmId")
     private JcmOfferDetails offerDetails;
 
