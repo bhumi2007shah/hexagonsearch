@@ -406,7 +406,7 @@ String REF_ID_MATCH_REGEX = "[a-fA-F0-9]{8}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-
     //value for rest call timeout
     Integer REST_READ_TIME_OUT = 10000;
     Integer REST_READ_TIME_OUT_FOR_CV_TEXT = 90000;
-    Integer REST_READ_TIME_OUT_FOR_GET_QUESTION = 25000;
+    Integer REST_READ_TIME_OUT_FOR_GET_QUESTION = 90000;
     Integer REST_CONNECTION_TIME_OUT = 1000;
 
     //List of date formats for Naukri files

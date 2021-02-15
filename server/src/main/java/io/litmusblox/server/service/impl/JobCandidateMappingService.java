@@ -599,8 +599,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         Map<String, String> candidateChatbotResponse = jcmFromDb.getCandidateChatbotResponse();
         if (jcmFromDb.getChatbotStatus().equals(IConstant.ChatbotStatus.COMPLETE.getValue())) {
             long updateCandidateResponseStartTime = System.currentTimeMillis();
-            log.info("Updating Candidate Details based on Candidate Chatbot Resposne. Chatbot uuid is {}", uuid);
-            updateCandidateResponse(jcmFromDb, candidateChatbotResponse);
+            //log.info("Updating Candidate Details based on Candidate Chatbot Resposne. Chatbot uuid is {}", uuid);
+            //updateCandidateResponse(jcmFromDb, candidateChatbotResponse);
             jobCandidateMappingRepository.save(jcmFromDb);
             Map<String, Long> stageIdMap = MasterDataBean.getInstance().getStageStepMasterMap();
             jobCandidateMappingRepository.setScreenedByAndOn(

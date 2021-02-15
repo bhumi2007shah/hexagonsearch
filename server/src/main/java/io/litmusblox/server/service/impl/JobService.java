@@ -570,26 +570,11 @@ public class JobService extends AbstractAccessControl implements IJobService {
             //Generate tech questions for jd parse skills
             Map<String, List<SearchEngineQuestionsResponseBean>>  questionMap = new HashMap<>();
             Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
-            try {
-                TechQuestionsRequestBean techQueRequestBean = new TechQuestionsRequestBean();
-                TechQuestionsRequestBean.Roles roles = new TechQuestionsRequestBean.Roles();
-                TechQuestionsRequestBean.Attributes attributes = new TechQuestionsRequestBean.Attributes();
-                TechQuestionsRequestBean.Functions functions = new TechQuestionsRequestBean.Functions();
-                TechQuestionsRequestBean.Industry industry = new TechQuestionsRequestBean.Industry();
-                //industry.setIndustryName(job.getJobIndustry().getIndustry());
-                techQueRequestBean.setRoles(roles);
-                techQueRequestBean.setAttributes(attributes);
-                techQueRequestBean.setFunctions(functions);
-                techQueRequestBean.setCompanyId(job.getCompanyId().getId());
-                techQueRequestBean.setIndustry(industry);
-                techQueRequestBean.setSkills(jdParseSkillList);
-                //techQueRequestBean.getSkills().addAll(job.getUserEnteredKeySkill());
-                log.info("Calling SearchEngine API to generate tech questions for job: {}, request : {}", job.getId(), techQueRequestBean.toString());
-                String searchEngineQuestionResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, Optional.of(IConstant.REST_READ_TIME_OUT_FOR_GET_QUESTION), Optional.of(userDetails)).getResponseBody();
-                questionMap = objectMapper.readValue(searchEngineQuestionResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
-            }catch (Exception e){
-                log.error("Error while getting questions from search engine : {}",e.getMessage());
-                Util.getStackTrace(e);
+
+            if(null != jdParseSkillList && jdParseSkillList.size()>0){
+                jdParseSkillList.forEach(skill -> {
+                    questionMap.put(skill, null);
+                });
             }
             if(questionMap.size()>0)
                 job.setSearchEngineSkillQuestionMap(questionMap);
@@ -1478,7 +1463,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
         log.info("Calling SearchEngine API to generate tech questions for job: {}, request : {}", job.getId(), techQueRequestBean.toString());
         try {
-            searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null, Optional.of(userDetails)).getResponseBody();
+            searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, Optional.of(IConstant.REST_READ_TIME_OUT_FOR_GET_QUESTION), Optional.of(userDetails)).getResponseBody();
             searchEngineResponseBean = mapper.readValue(searchEngineResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
             log.info("Search engine rest call response : {}", searchEngineResponse);
 
