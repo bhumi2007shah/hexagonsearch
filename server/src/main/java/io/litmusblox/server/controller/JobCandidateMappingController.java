@@ -172,6 +172,7 @@ public class JobCandidateMappingController {
                     put("CvRating", Arrays.asList("overallRating"));
                     put("JobStageStep", new ArrayList<>(0));
                     put("JobRole", Arrays.asList("role"));
+                    put("JcmOfferDetails",new ArrayList<>(0));
                 }},
                 new HashMap<String, List<String>>() {{
                     put("Job",Arrays.asList("id", "createdBy","createdOn","updatedBy","updatedOn","jobTitle","noOfPositions","jobDescription","mlDataAvailable","datePublished","status","scoringEngineJobAvailable","function","education","expertise","jobKeySkillsList","userEnteredKeySkill"));
@@ -191,7 +192,6 @@ public class JobCandidateMappingController {
                     put("JobScreeningQuestions", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("MasterData", new ArrayList<>(0));
                     put("CompanyAddress", new ArrayList<>(0));
-                    put("JcmOfferDetails",Arrays.asList("jcmId"));
                 }});
         log.info("Completed processing fetch candidate profile request in " + (System.currentTimeMillis()-startTime) + "ms.");
         return response;

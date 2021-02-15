@@ -9,6 +9,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 import java.util.Date;
 
 @Data
@@ -16,7 +18,7 @@ import java.util.Date;
 @Table(name = "JCM_OFFER_DETAILS")
 @JsonFilter(value = "JcmOfferDetails")
 @NoArgsConstructor
-public class JcmOfferDetails {
+public class JcmOfferDetails implements Serializable {
     private static final long serialVersionUID = 6868521896546285046L;
 
     @Id
@@ -31,6 +33,7 @@ public class JcmOfferDetails {
     @Column(name = "OFFERED_COMPENSATION")
     private int offeredCompensation;
 
+    @NotNull
     @Column(name = "OFFERED_ON")
     private Date offeredOn;
 
