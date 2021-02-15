@@ -24,4 +24,6 @@ public class SearchEngineQuestionsResponseBean {
     private String scoringType;
     private String answerSelection;
     private String questionTag;
+    private String questionSeq;
+    private String questionOwnerSeq;
 }

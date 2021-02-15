@@ -68,6 +68,12 @@ public class TechScreeningQuestion implements Serializable {
     @Column(name = "QUESTION_TAG")
     private String questionTag;
 
+    @Column(name = "QUESTION_SEQ")
+    private String questionSeq;
+
+    @Column(name = "QUESTION_OWNER_SEQ")
+    private String questionOwnerSeq;
+
     public TechScreeningQuestion(
             String techQuestion,
             String[] options,
@@ -78,7 +84,9 @@ public class TechScreeningQuestion implements Serializable {
             String questionTag,
             String multiLevelOptions,
             String questionCategory,
-            Long jobId
+            Long jobId,
+            String questionSeq,
+            String questionOwnerSeq
     ) {
         this.techQuestion = techQuestion;
         this.options = options;
@@ -90,5 +98,7 @@ public class TechScreeningQuestion implements Serializable {
         this.multiLevelOptions = multiLevelOptions;
         this.questionCategory = questionCategory;
         this.jobId = jobId;
+        this.questionSeq = questionSeq;
+        this.questionOwnerSeq = questionOwnerSeq;
     }
 }
