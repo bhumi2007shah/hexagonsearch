@@ -156,7 +156,7 @@ job_candidate_mapping.rejected_on,
 job_candidate_mapping.candidate_quick_question_response,
 jcm_offer_details.offered_compensation,
 jcm_offer_details.offered_on as offer_details_offered_on,
-jcm_offer_details.joining_on
+jcm_offer_details.joining_on,
 (CASE WHEN (job_candidate_mapping.cv_file_type!='') THEN
 (CONCAT('CandidateCv/',job_candidate_mapping.job_id, '/', job_candidate_mapping.candidate_id, job_candidate_mapping.cv_file_type))
 else null
