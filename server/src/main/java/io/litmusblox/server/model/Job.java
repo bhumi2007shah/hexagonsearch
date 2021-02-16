@@ -251,7 +251,7 @@ public class Job implements Serializable {
 
     @Transient
     @JsonInclude
-    private List<String> userEnteredKeySkill=new ArrayList<>();
+    private Set<String> jobSkills =new HashSet<>();
 
     @Transient
     private List<User> usersForCompany=new ArrayList<>();
