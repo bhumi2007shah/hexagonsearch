@@ -142,6 +142,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
     @Value("${searchEngineBaseUrl}")
     String searchEngineBaseUrl;
 
+    @Value("${searchEngineNeighbourSkill}")
+    String searchEngineNeighbourSkill;
+
     /**
      * Fetch details of currently logged in user and
      * query the repository to find the list of all jobs
@@ -517,7 +520,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             //make a call to ML api to obtain skills and capabilities
             if(MasterDataBean.getInstance().getConfigSettings().getMlCall()==1) {
                 try {
-                    JdParserRequestBean jdParserRequestBean = new JdParserRequestBean(Util.removeHtmlTags(job.getJobDescription()),true, false,job.getCompanyId().getId());
+                    JdParserRequestBean jdParserRequestBean = new JdParserRequestBean(Util.removeHtmlTags(job.getJobDescription()),true, false,job.getCompanyId().getId(), MasterDataBean.getInstance().getVerifiedSkills());
                     callJdParser(jdParserRequestBean, oldJob.getId(), job);
                     if(null == oldJob) {
                         jobRepository.save(job);
@@ -551,7 +554,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             log.info("Sending request to JdParser for LB job id : {}",jobId);
             long searchEngineApiStartTime = System.currentTimeMillis();
-            String jdParserResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonJdParserUrl"), HttpMethod.POST, JwtTokenUtil.getAuthToken(),null,null,Optional.of(headerInformation)).getResponseBody();
+            String jdParserResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBean), environment.getProperty("parserBaseUrl")+environment.getProperty("pythonJdParserUrl"), HttpMethod.POST, JwtTokenUtil.getAuthToken(),null, null,Optional.of(headerInformation)).getResponseBody();
             log.info("For jobId : {}, Jd Parser response received: {}", jobId, jdParserResponse);
             log.info("Getting response from JdParser for LB job id : {} in {}ms",jobId,System.currentTimeMillis()-searchEngineApiStartTime);
             long startTime = System.currentTimeMillis();
@@ -560,13 +563,47 @@ public class JobService extends AbstractAccessControl implements IJobService {
             breadCrumb.put("Job Id: ", String.valueOf(jobId));
             breadCrumb.put("Request", requestBean.toString());
             breadCrumb.put("Response", jdParserResponse);
-            JdParserResponseBean jdParserResponseBean = objectMapper.readValue(jdParserResponse, JdParserResponseBean.class);
+            List<String> jdParseSkillList = objectMapper.readValue(jdParserResponse, new TypeReference<List<String>>(){});
             log.info("Time taken to process JD in {}ms ",(System.currentTimeMillis() - startTime) + "ms.");
-            if(jdParserResponseBean.getQuestionMap().size()>0)
-                job.setSearchEngineSkillQuestionMap(jdParserResponseBean.getQuestionMap());
 
-            if(jdParserResponseBean.getNeighbourSkillMap().size()>0)
-                job.setNeighbourSkillsMap(jdParserResponseBean.getNeighbourSkillMap());
+            //Generate tech questions for jd parse skills
+            Map<String, List<SearchEngineQuestionsResponseBean>>  questionMap = new HashMap<>();
+            Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
+            try {
+                TechQuestionsRequestBean techQueRequestBean = new TechQuestionsRequestBean();
+                TechQuestionsRequestBean.Roles roles = new TechQuestionsRequestBean.Roles();
+                TechQuestionsRequestBean.Attributes attributes = new TechQuestionsRequestBean.Attributes();
+                TechQuestionsRequestBean.Functions functions = new TechQuestionsRequestBean.Functions();
+                TechQuestionsRequestBean.Industry industry = new TechQuestionsRequestBean.Industry();
+                //industry.setIndustryName(job.getJobIndustry().getIndustry());
+                techQueRequestBean.setRoles(roles);
+                techQueRequestBean.setAttributes(attributes);
+                techQueRequestBean.setFunctions(functions);
+                techQueRequestBean.setCompanyId(job.getCompanyId().getId());
+                techQueRequestBean.setIndustry(industry);
+                techQueRequestBean.setSkills(jdParseSkillList);
+                //techQueRequestBean.getSkills().addAll(job.getUserEnteredKeySkill());
+                log.info("Calling SearchEngine API to generate tech questions for job: {}, request : {}", job.getId(), techQueRequestBean.toString());
+                String searchEngineQuestionResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, Optional.of(IConstant.REST_READ_TIME_OUT_FOR_GET_QUESTION), Optional.of(userDetails)).getResponseBody();
+                questionMap = objectMapper.readValue(searchEngineQuestionResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
+            }catch (Exception e){
+                log.error("Error while getting questions from search engine : {}",e.getMessage());
+                Util.getStackTrace(e);
+            }
+            if(questionMap.size()>0)
+                job.setSearchEngineSkillQuestionMap(questionMap);
+
+            //Call search engine api to get neighbouring skills
+            Map<String, List<String>> searchEngineNeighbourSkillMap = new HashMap<>();
+            try {
+                String searchEngineNeighbourSkillResponse = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(jdParseSkillList), searchEngineBaseUrl + searchEngineNeighbourSkill, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null, Optional.of(userDetails)).getResponseBody();
+                searchEngineNeighbourSkillMap = objectMapper.readValue(searchEngineNeighbourSkillResponse, new TypeReference<Map<String, List<String>>>(){});
+            }catch (Exception e){
+                log.error("Error while getting neighbouring skills from search engine : {}",e.getMessage());
+                Util.getStackTrace(e);
+            }
+            if(searchEngineNeighbourSkillMap.size()>0)
+                job.setNeighbourSkillsMap(searchEngineNeighbourSkillMap);
 
         }catch(Exception e) {
             log.error("Error While Parse jd : "+Util.getStackTrace(e));
@@ -1439,7 +1476,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
         log.info("Calling SearchEngine API to generate tech questions for job: {}, request : {}", job.getId(), techQueRequestBean.toString());
         try {
-            searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, null, Optional.of(userDetails)).getResponseBody();
+            searchEngineResponse = RestClient.getInstance().consumeRestApi(mapper.writeValueAsString(techQueRequestBean), searchEngineBaseUrl + searchEngineGenerateTechQuestionSuffix, HttpMethod.POST, JwtTokenUtil.getAuthToken(), null, Optional.of(IConstant.REST_READ_TIME_OUT_FOR_GET_QUESTION), Optional.of(userDetails)).getResponseBody();
             searchEngineResponseBean = mapper.readValue(searchEngineResponse, new TypeReference<Map<String, List<SearchEngineQuestionsResponseBean>>>(){});
             log.info("Search engine rest call response : {}", searchEngineResponse);
 

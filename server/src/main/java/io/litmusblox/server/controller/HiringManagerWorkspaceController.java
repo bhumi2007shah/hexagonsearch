@@ -115,7 +115,7 @@ public class HiringManagerWorkspaceController {
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("companyId","createdBy","hiringManager","minSalary","maxSalary","resubmitHrChatbot","scoringEngineJobAvailable",
-                            "visibleToCareerPage","jobShortCode","jobReferenceId","hrQuestionAvailable","customizedChatbot","currency","autoInvite",
+                            "visibleToCareerPage","jobShortCode","companyJobId","hrQuestionAvailable","customizedChatbot","currency","autoInvite",
                             "interviewLocation","jobIndustry","recruiter","jobLocation","jobFunction"));
                     put("JobScreeningQuestions",new ArrayList<>(0));
                     put("ScreeningQuestions",new ArrayList<>(0));

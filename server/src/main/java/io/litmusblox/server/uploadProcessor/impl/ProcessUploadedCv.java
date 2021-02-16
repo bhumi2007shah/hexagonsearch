@@ -15,6 +15,7 @@ import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.service.CvParserResponseBean;
 import io.litmusblox.server.service.IJobCandidateMappingService;
+import io.litmusblox.server.service.MasterDataBean;
 import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.service.impl.CvRatingRequestBean;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
@@ -383,7 +384,7 @@ public class ProcessUploadedCv implements IProcessUploadedCV {
         queryString.append("?file=");
         queryString.append(filename);
         long apiCallStartTime = System.currentTimeMillis();
-        RestClientResponseBean restResponseBean = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(new CvRatingRequestBean(neighbourSkillMap)), queryString.toString(), HttpMethod.POST, null,null,java.util.Optional.of(IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT),Optional.of(headerInformation));
+        RestClientResponseBean restResponseBean = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(new CvRatingRequestBean(neighbourSkillMap, MasterDataBean.getInstance().getVerifiedSkills())), queryString.toString(), HttpMethod.POST, null,null,java.util.Optional.of(IConstant.REST_READ_TIME_OUT_FOR_CV_TEXT),Optional.of(headerInformation));
         log.info("Time taken to parse the resume {} is {} ms",filename,System.currentTimeMillis()-apiCallStartTime);
         return restResponseBean;
     }
