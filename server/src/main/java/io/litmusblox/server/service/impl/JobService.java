@@ -1534,7 +1534,12 @@ public class JobService extends AbstractAccessControl implements IJobService {
     }
     public void createJobByJobTemplate(Long jobId) throws Exception{
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Job job = jobRepository.getOne(jobId);
+        Job job = jobRepository.findById(jobId).orElse(null);
+        if(null == job ){
+            String error = "job with job Id : "+jobId+" does not exist";
+            log.error(error);
+            throw new WebException(error,HttpStatus.BAD_REQUEST);
+        }
         validateLoggedInUser(loggedInUser,job);
         if(!job.isTemplate()){
             String error = "error creating new job : "+job.getId()+" is not marked as a template";

@@ -49,9 +49,6 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Query(value = "select count(candidate_id) from job_candidate_mapping where id in (Select jcm_id from hiring_manager_workspace_details where user_id=:userId and job_id=:jobId) and rejected is true", nativeQuery = true)
     int findRejectedCandidateCountForHiringManager(Long userId, Long jobId) throws Exception;
 
-    @Transactional(readOnly = true)
-    boolean existsById(Long id);
-
     //find count of candidates per stage
     @Transactional
     @Query(value = "select job_candidate_mapping.job_id, stage_step_master.stage, count(candidate_id) from job_candidate_mapping, stage_step_master\n" +

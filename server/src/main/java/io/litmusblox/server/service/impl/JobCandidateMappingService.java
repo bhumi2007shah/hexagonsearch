@@ -2577,14 +2577,14 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         log.info("inside save offerDetails");
         String error;
         Long jcmId = jcmOfferDetails.getJcmId().getId();
+        JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(jcmId).orElse(null);
 
-        if(!jobCandidateMappingRepository.existsById(jcmId)){
+        if(null == jcmFromDb){
             error = "jcmId : "+ jcmId+" does not exist";
             log.error(error);
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
 
-        JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.getOne(jcmId);
         String stage = jcmFromDb.getStage().getStage();
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -2596,11 +2596,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
 
-        JcmOfferDetails jcmOfferFromDb = jcmOfferDetailsRepository.findByJcmId(jcmId);
+        JcmOfferDetails jcmOfferFromDb = jcmOfferDetailsRepository.findByJcmId(jcmFromDb);
         if(null != jcmOfferFromDb)
             jcmOfferDetails.setId(jcmOfferFromDb.getId());
 
-        jcmOfferDetails.setOfferedOn(new Date());
         jcmOfferDetailsRepository.save(jcmOfferDetails);
         jcmHistoryRepository.save(new JcmHistory(jcmFromDb,"Offer details added",jcmOfferDetails.getOfferedOn(),loggedInUser,jcmFromDb.getStage(),false));
         log.info("offer details saved successfully!");
