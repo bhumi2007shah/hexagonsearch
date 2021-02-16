@@ -154,6 +154,9 @@ job_candidate_mapping.hired_on,
 job_candidate_mapping.rejected_by,
 job_candidate_mapping.rejected_on,
 job_candidate_mapping.candidate_quick_question_response,
+jcm_offer_details.offered_compensation,
+jcm_offer_details.offered_on as offer_details_offered_on,
+jcm_offer_details.joining_on
 (CASE WHEN (job_candidate_mapping.cv_file_type!='') THEN
 (CONCAT('CandidateCv/',job_candidate_mapping.job_id, '/', job_candidate_mapping.candidate_id, job_candidate_mapping.cv_file_type))
 else null
@@ -161,6 +164,7 @@ END) as cv_location,
 job_candidate_mapping.cv_file_type as cv_file_type
 from users,job_candidate_mapping
 left join candidate_details on candidate_details.candidate_id = job_candidate_mapping.candidate_id
+left join  jcm_offer_details on jcm_offer_details.jcm_id = job_candidate_mapping.id
 left join
 	(select ccd.company_name, ccd.designation, ccd.candidate_id, master_data.value as notice_period
 	from candidate_company_details ccd
