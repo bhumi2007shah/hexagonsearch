@@ -78,6 +78,9 @@ public class JCMAllDetails {
     Date hiredOn;
     String rejectedBy;
     Date rejectedOn;
+    Long offeredCompensation;
+    Date offerDetailsOfferedOn;
+    Date joiningOn;
 
     @Transient
     @JsonProperty

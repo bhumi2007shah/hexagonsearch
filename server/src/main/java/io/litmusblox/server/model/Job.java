@@ -246,9 +246,12 @@ public class Job implements Serializable {
     @Column(name = "SKIP_TECH_QUESTIONS")
     private boolean skipTechQuestions;
 
+    @Column(name = "TEMPLATE")
+    private boolean template;
+
     @Transient
     @JsonInclude
-    private List<String> userEnteredKeySkill=new ArrayList<>();
+    private Set<String> jobSkills =new HashSet<>();
 
     @Transient
     private List<User> usersForCompany=new ArrayList<>();

@@ -185,6 +185,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     @Resource
     TechScreeningQuestionRepository techScreeningQuestionRepository;
 
+    @Resource
+    JcmOfferDetailsRepository jcmOfferDetailsRepository;
+
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
         return jobRepository.findById(jobId).isPresent()?jobRepository.findById(jobId).get():null;
@@ -898,15 +901,17 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             validateloggedInUser(receiverUser, jcm.getJob().getCompanyId().getId());
             Set<JcmProfileSharingDetails> detailsSet = new HashSet<>(requestBean.getJcmId().size());
             requestBean.getJcmId().forEach(jcmId ->{
-                JcmProfileSharingDetails jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.save(new JcmProfileSharingDetails(jcmId, loggedInUser.getId(), receiverUser.getId(), receiverUser.getDisplayName()));
-                HiringManagerWorkspace hiringManagerWorkspace = hiringManagerWorkspaceRepository.findByJcmIdAndUserId(jcmId, receiverUser.getId());
-                if(null == hiringManagerWorkspace)
-                    hiringManagerWorkspaceRepository.save(new HiringManagerWorkspace(jcmId, receiverUser.getId(), jcmProfileSharingDetails.getId(), null));
-                else if (hiringManagerWorkspace.getShareProfileId() == null)
-                    hiringManagerWorkspaceRepository.updateProfileShareId(jcmProfileSharingDetails.getId(), hiringManagerWorkspace.getId());
-                else
-                    log.info("Profile already shared for Jcm id {} with hiring manager {}", jcmId, receiverUser.getEmail());
-
+                JcmProfileSharingDetails jcmProfileSharingDetailsFromDb = jcmProfileSharingDetailsRepository.getProfileSharedByJcmIdAndUserId(jcmId, receiverUser.getId());
+                if(null == jcmProfileSharingDetailsFromDb){
+                    JcmProfileSharingDetails jcmProfileSharingDetails = jcmProfileSharingDetailsRepository.save(new JcmProfileSharingDetails(jcmId, loggedInUser.getId(), receiverUser.getId(), receiverUser.getDisplayName()));
+                    HiringManagerWorkspace hiringManagerWorkspace = hiringManagerWorkspaceRepository.findByJcmIdAndUserId(jcmId, receiverUser.getId());
+                    if(null == hiringManagerWorkspace)
+                        hiringManagerWorkspaceRepository.save(new HiringManagerWorkspace(jcmId, receiverUser.getId(), jcmProfileSharingDetails.getId(), null));
+                    else if (hiringManagerWorkspace.getShareProfileId() == null)
+                        hiringManagerWorkspaceRepository.updateProfileShareId(jcmProfileSharingDetails.getId(), hiringManagerWorkspace.getId());
+                    else
+                        log.info("Profile already shared for Jcm id {} with hiring manager {}", jcmId, receiverUser.getEmail());
+                }
             });
             receiverEmails.add(receiverUser.getEmail());
         }
@@ -2565,5 +2570,38 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         });
         log.info("Time taken to upload candidates by harvester in : {}ms.", startTime-System.currentTimeMillis());
         return responseBeanList;
+    }
+
+    @Override
+    public void saveOfferDetails(JcmOfferDetails jcmOfferDetails) {
+        log.info("inside save offerDetails");
+        String error;
+        Long jcmId = jcmOfferDetails.getJcmId().getId();
+        JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(jcmId).orElse(null);
+
+        if(null == jcmFromDb){
+            error = "jcmId : "+ jcmId+" does not exist";
+            log.error(error);
+            throw new WebException(error,HttpStatus.BAD_REQUEST);
+        }
+
+        String stage = jcmFromDb.getStage().getStage();
+
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        validateLoggedInUser(loggedInUser, jcmFromDb.getJob());
+
+        if(!Arrays.asList( IConstant.Stage.MakeOffer.getValue() ,IConstant.Stage.Offer.getValue(),IConstant.Stage.Join.getValue()).contains(stage) ){
+            error = "cannot set offer details for jcmId :"+jcmId+" from "+stage+" stage";
+            log.error(error);
+            throw new WebException(error,HttpStatus.BAD_REQUEST);
+        }
+
+        JcmOfferDetails jcmOfferFromDb = jcmOfferDetailsRepository.findByJcmId(jcmFromDb);
+        if(null != jcmOfferFromDb)
+            jcmOfferDetails.setId(jcmOfferFromDb.getId());
+
+        jcmOfferDetailsRepository.save(jcmOfferDetails);
+        jcmHistoryRepository.save(new JcmHistory(jcmFromDb,"Offer details added",jcmOfferDetails.getOfferedOn(),loggedInUser,jcmFromDb.getStage(),false));
+        log.info("offer details saved successfully!");
     }
 }

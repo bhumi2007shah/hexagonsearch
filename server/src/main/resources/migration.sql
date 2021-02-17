@@ -3233,3 +3233,19 @@ values
 INSERT into master_data(type, value)
 values
 ('location','Bogota');
+
+ALTER TABLE TECH_SCREENING_QUESTION
+    ADD COLUMN QUESTION_SEQ varchar(5),
+    ADD COLUMN QUESTION_OWNER_SEQ varchar(5);
+
+ALTER TABLE JOB ADD COLUMN TEMPLATE BOOLEAN NOT NULL default 'f';
+
+--for ticket #762
+CREATE TABLE JCM_OFFER_DETAILS (
+    ID serial PRIMARY KEY NOT NULL,
+    JCM_ID INTEGER REFERENCES JOB_CANDIDATE_MAPPING(ID) NOT NULL,
+    OFFERED_COMPENSATION INTEGER,
+    OFFERED_ON TIMESTAMP,
+    JOINING_ON TIMESTAMP
+);
+insert into jcm_offer_details(jcm_id,offered_on)  select id as jcm_id ,offer_on as offered_on from job_candidate_mapping where offer_on is not null;
