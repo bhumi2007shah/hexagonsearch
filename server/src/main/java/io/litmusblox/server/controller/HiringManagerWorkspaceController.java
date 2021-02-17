@@ -4,12 +4,15 @@
 
 package io.litmusblox.server.controller;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.model.JcmProfileSharingDetails;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.service.IHiringManagerWorkspaceService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
-import io.litmusblox.server.service.impl.HiringManagerWorkspaceService;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -165,8 +168,13 @@ public class HiringManagerWorkspaceController {
 
 
     @PostMapping(value = "/addTechQuestions")
-    void addTechQuestionsForJob(@RequestBody Job job) throws Exception{
+    void addTechQuestionsForJob(@RequestBody String jobStr) throws Exception{
         long startTime = System.currentTimeMillis();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, true);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+        Job job = mapper.readValue(jobStr, Job.class);
         log.info("received request to add tech question for jobId : {}",job.getId());
         hiringManagerWorkspaceService.setTechQuestionForJob(job);
         log.info("Successfully added JobScreening questions from user Id  : {} in : {}ms",job.getDeepQuestionSelectedBy(),( System.currentTimeMillis() - startTime));
