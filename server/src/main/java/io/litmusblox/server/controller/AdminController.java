@@ -66,7 +66,7 @@ public class AdminController {
     @ResponseBody
     @ResponseStatus(value = HttpStatus.OK)
     List<UserWorkspaceBean> fetchUsers(@RequestParam Long companyId) throws Exception {
-        return userDetailsService.fetchUsers(companyId);
+        return userDetailsService.fetchUsers(companyId,true);
     }
 
     @PutMapping(value = "/createSubdomains")
