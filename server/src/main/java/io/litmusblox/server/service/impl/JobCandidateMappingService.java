@@ -2585,6 +2585,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
 
+        if(null != jcmOfferDetails.getOfferedCompensation() && !jcmOfferDetails.getOfferedCompensation().toString().matches(IConstant.OFFER_COMPENSATION)){
+            log.error("Offer compensation : {} not valid for jcm : {}", jcmOfferDetails.getOfferedCompensation(), jcmId);
+            throw new WebException("Offer compensation : "+jcmOfferDetails.getOfferedCompensation()+" not valid for jcm : "+jcmId,HttpStatus.BAD_REQUEST);
+        }
+
         String stage = jcmFromDb.getStage().getStage();
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();

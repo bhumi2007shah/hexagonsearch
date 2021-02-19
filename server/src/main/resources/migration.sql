@@ -3249,3 +3249,6 @@ CREATE TABLE JCM_OFFER_DETAILS (
     JOINING_ON TIMESTAMP
 );
 insert into jcm_offer_details(jcm_id,offered_on)  select id as jcm_id ,offer_on as offered_on from job_candidate_mapping where offer_on is not null;
+
+ALTER TABLE JCM_OFFER_DETAILS
+ALTER COLUMN OFFERED_COMPENSATION TYPE DOUBLE PRECISION
