@@ -365,4 +365,10 @@ public class JobCandidateMappingController {
         jobCandidateMappingService.saveOfferDetails(jcmOfferDetails);
     }
 
+    @PostMapping(value = "/addCandidatesByXml")
+    @ResponseStatus(value = HttpStatus.OK)
+    void addCandidateByXml(@RequestBody String candidateXml){
+        jobCandidateMappingService.addCandidatesByXml(candidateXml);
+    }
+
 }

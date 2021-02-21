@@ -17,12 +17,13 @@ import io.litmusblox.server.uploadProcessor.CsvFileProcessorService;
 import io.litmusblox.server.uploadProcessor.ExcelFileProcessorService;
 import io.litmusblox.server.uploadProcessor.IUploadDataProcessService;
 import io.litmusblox.server.uploadProcessor.NaukriExcelFileProcessorService;
-import io.litmusblox.server.utils.SentryUtil;
-import io.litmusblox.server.utils.StoreFileUtil;
-import io.litmusblox.server.utils.Util;
-import io.litmusblox.server.utils.ZipFileProcessUtil;
+import io.litmusblox.server.utils.*;
 import lombok.extern.log4j.Log4j2;
 import org.apache.poi.util.IOUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.XML;
+import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -2608,5 +2609,76 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         jcmOfferDetailsRepository.save(jcmOfferDetails);
         jcmHistoryRepository.save(new JcmHistory(jcmFromDb,"Offer details added",jcmOfferDetails.getOfferedOn(),loggedInUser,jcmFromDb.getStage(),false));
         log.info("offer details saved successfully!");
+    }
+    private List<CompanyCandidateBean> parseXML(String candidatesXml){
+        List<CompanyCandidateBean> candidates = new ArrayList<>(0);
+        try {
+            JSONObject jsonXMLObject = XML.toJSONObject(candidatesXml);
+            jsonXMLObject = jsonXMLObject.getJSONObject("soapenv:Envelope")
+                    .getJSONObject("soapenv:Body")
+                    .getJSONObject("ns1:getDocumentByKeyResponse")
+                    .getJSONObject("Document")
+                    .getJSONObject("Content")
+                    .getJSONObject("ExportXML");
+
+            JSONArray records = jsonXMLObject.getJSONArray("record");
+
+            for(int i = 0;i<records.length();i++){
+                CompanyCandidateBean companyCandidateBean = new CompanyCandidateBean();
+                jsonXMLObject = records.getJSONObject(i);
+                JSONArray fields = jsonXMLObject.getJSONArray("field");
+                for(int j =0;j<fields.length();j++){
+                    JSONObject temp = fields.getJSONObject(j);
+                    String field = temp.getString("name");
+
+                    if(IConstant.CandidateXMLFieldsMapping.candidateFirstName.get().equals(field)){
+                        companyCandidateBean.setCandidateFirstName(temp.getString("content"));
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateLastName.get().equals(field)){
+                        companyCandidateBean.setCandidateLastName(temp.getString("content"));
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateCity.get().equals(field)){
+                        companyCandidateBean.setCandidateCity(temp.getString("content"));
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateEmail.get().equals(field)){
+                        companyCandidateBean.setCandidateEmail(temp.getString("content"));
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateMobileNumber.get().equals(field)){
+                        companyCandidateBean.setMobileNumber(temp.getString("content"));
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.fileContent.get().equals(field)){
+                        companyCandidateBean.setFileContent(temp.getString("content"));
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.fileName.get().equals((field))){
+                        companyCandidateBean.setFileName(temp.getString("content"));
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.jobId.get().equals(field)){
+                        companyCandidateBean.setJobId(temp.getLong("content"));
+                    }
+                }
+                candidates.add(companyCandidateBean);
+            }
+        }catch (Exception ex){
+            String error = "error parsing xml file";
+            log.error(error);
+            throw new WebException(error,HttpStatus.BAD_REQUEST);
+        }
+        return candidates;
+    }
+    public void addCandidatesByXml(String candidatesXml){
+       List<CompanyCandidateBean>companyCandidates =  parseXML(candidatesXml);
+        CandidateMapper mapper = Mappers.getMapper(CandidateMapper.class);
+        companyCandidates.forEach(companyCandidate -> {
+           Long jobId = companyCandidate.getJobId();
+           if(!jobRepository.existsById(jobId)){
+               String error = "job Id : " + jobId + " does not exist";
+               log.error(error);
+               throw new WebException(error,HttpStatus.BAD_REQUEST);
+           }
+           Candidate candidate ;
+
+           candidate = mapper.companyCandidateToCandidate(companyCandidate);
+           // ToDo
+       });
     }
 }

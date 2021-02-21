@@ -113,6 +113,26 @@ public interface IConstant {
         overview, screeningQuestions, keySkills, capabilities, jobDetail, hiringTeam, expertise, preview, jobScreening, setHiringManager, skipTechQuestions;
     }
 
+    enum CandidateXMLFieldsMapping{
+        jobId("Requisition,ContestNumber"),
+        jobTitle("Requisition,JobInformation,Title"),
+        primarySkills("Requisition,JobInformation,Primary Skill"),
+        recruiterEmail("Requisition,JobInformation,RecruiterOwner,CorrespondenceEmail"),
+        openPositions("Requisition,JobInformation,NumberToHire"),
+        jobDescription("Requisition,JobInformation,Job Type,Description"),
+        candidateFirstName("Candidate,FirstName"),
+        candidateLastName("Candidate,LastName"),
+        candidateEmail("Candidate,EmailAddress"),
+        candidateMobileNumber("Candidate,MobilePhone"),
+        candidateCity("Candidate,City"),
+        fileName("Candidate,AttachedFiles,FileName"),
+        fileContent("Candidate,AttachedFiles,FileContent");
+
+        private String value;
+        CandidateXMLFieldsMapping(String val){this.value = val; }
+        public  String get(){return this.value; }
+    }
+
     enum JobStatus {
         DRAFT("Draft"), PUBLISHED("Live"), ARCHIVED("Archived");
         private String value;
