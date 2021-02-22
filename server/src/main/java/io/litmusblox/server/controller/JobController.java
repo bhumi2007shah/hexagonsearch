@@ -99,7 +99,7 @@ public class JobController {
      * @param companyId
      * @return response bean with list of jobs with job title, company job id & job id
      */
-    @GetMapping(value = "getJobTemplateList/")
+        @GetMapping(value = "/getJobTemplateList")
     String getJobTemplateList( @NonNull @RequestParam("companyId")Long companyId) throws Exception{
 
         return Util.stripExtraInfoFromResponseBean(jobService.getJobTemplateList(companyId),
