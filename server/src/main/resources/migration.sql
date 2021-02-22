@@ -3249,3 +3249,8 @@ CREATE TABLE JCM_OFFER_DETAILS (
     JOINING_ON TIMESTAMP
 );
 insert into jcm_offer_details(jcm_id,offered_on)  select id as jcm_id ,offer_on as offered_on from job_candidate_mapping where offer_on is not null;
+
+-- increase column length to accomodate larger question category name.
+ALTER TABLE TECH_SCREENING_QUESTION
+ALTER COLUMN QUESTION_CATEGORY TYPE VARCHAR (70),
+ALTER COLUMN QUESTION_TAG TYPE VARCHAR (70);
