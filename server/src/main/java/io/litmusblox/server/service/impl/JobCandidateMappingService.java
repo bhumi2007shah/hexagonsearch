@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
@@ -2610,75 +2611,93 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         jcmHistoryRepository.save(new JcmHistory(jcmFromDb,"Offer details added",jcmOfferDetails.getOfferedOn(),loggedInUser,jcmFromDb.getStage(),false));
         log.info("offer details saved successfully!");
     }
-    private List<CompanyCandidateBean> parseXML(String candidatesXml){
+
+    private List<CompanyCandidateBean> parseXml(String candidatesXml)throws Exception{
         List<CompanyCandidateBean> candidates = new ArrayList<>(0);
-        try {
-            JSONObject jsonXMLObject = XML.toJSONObject(candidatesXml);
-            jsonXMLObject = jsonXMLObject.getJSONObject("soapenv:Envelope")
-                    .getJSONObject("soapenv:Body")
-                    .getJSONObject("ns1:getDocumentByKeyResponse")
-                    .getJSONObject("Document")
-                    .getJSONObject("Content")
-                    .getJSONObject("ExportXML");
 
-            JSONArray records = jsonXMLObject.getJSONArray("record");
+        try{
+            String json = XML.toJSONObject(candidatesXml).toString();
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode records =
+                    mapper.readTree(json)
+                            .get("soapenv:Envelope")
+                            .get("soapenv:Body")
+                            .get("ns1:getDocumentByKeyResponse")
+                            .get("Document")
+                            .get("Content")
+                            .get("ExportXML")
+                            .get("record");
 
-            for(int i = 0;i<records.length();i++){
+            for(int i = 0;i<records.size();i++){
+                JsonNode fields = records.get(i).get("field");
                 CompanyCandidateBean companyCandidateBean = new CompanyCandidateBean();
-                jsonXMLObject = records.getJSONObject(i);
-                JSONArray fields = jsonXMLObject.getJSONArray("field");
-                for(int j =0;j<fields.length();j++){
-                    JSONObject temp = fields.getJSONObject(j);
-                    String field = temp.getString("name");
+                for(int j = 0;j<fields.size();j++){
+                    JsonNode field = fields.get(j);
+                    String fieldName = field.get("name").asText();
+                    JsonNode temp = field.get("content");
+                    String content = null == temp ? null:temp.asText();
 
-                    if(IConstant.CandidateXMLFieldsMapping.candidateFirstName.get().equals(field)){
-                        companyCandidateBean.setCandidateFirstName(temp.getString("content"));
+                    if(IConstant.CandidateXMLFieldsMapping.candidateFirstName.get().equals(fieldName)){
+                        companyCandidateBean.setCandidateFirstName(content);
                     }
-                    else if(IConstant.CandidateXMLFieldsMapping.candidateLastName.get().equals(field)){
-                        companyCandidateBean.setCandidateLastName(temp.getString("content"));
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateLastName.get().equals(fieldName)){
+                        companyCandidateBean.setCandidateLastName(content);
                     }
-                    else if(IConstant.CandidateXMLFieldsMapping.candidateCity.get().equals(field)){
-                        companyCandidateBean.setCandidateCity(temp.getString("content"));
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateCity.get().equals(fieldName)){
+                        companyCandidateBean.setCandidateCity(content);
                     }
-                    else if(IConstant.CandidateXMLFieldsMapping.candidateEmail.get().equals(field)){
-                        companyCandidateBean.setCandidateEmail(temp.getString("content"));
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateEmail.get().equals(fieldName)){
+                        companyCandidateBean.setCandidateEmail(content);
                     }
-                    else if(IConstant.CandidateXMLFieldsMapping.candidateMobileNumber.get().equals(field)){
-                        companyCandidateBean.setMobileNumber(temp.getString("content"));
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateMobileNumber.get().equals(fieldName)){
+                        companyCandidateBean.setMobileNumber(content);
                     }
-                    else if(IConstant.CandidateXMLFieldsMapping.fileContent.get().equals(field)){
-                        companyCandidateBean.setFileContent(temp.getString("content"));
+                    else if(IConstant.CandidateXMLFieldsMapping.fileContent.get().equals(fieldName)){
+                        companyCandidateBean.setFileContent(content);
                     }
-                    else if(IConstant.CandidateXMLFieldsMapping.fileName.get().equals((field))){
-                        companyCandidateBean.setFileName(temp.getString("content"));
+                    else if(IConstant.CandidateXMLFieldsMapping.fileName.get().equals((fieldName))){
+                        companyCandidateBean.setFileName(content);
                     }
-                    else if(IConstant.CandidateXMLFieldsMapping.jobId.get().equals(field)){
-                        companyCandidateBean.setJobId(temp.getLong("content"));
+                    else if(IConstant.CandidateXMLFieldsMapping.jobId.get().equals(fieldName)){
+                        companyCandidateBean.setCompanyJobId(content);
                     }
                 }
+                companyCandidateBean.setCandidateFullName(companyCandidateBean.getCandidateFirstName()+" "+companyCandidateBean.getCandidateLastName());
                 candidates.add(companyCandidateBean);
             }
+
         }catch (Exception ex){
+            log.error(ex.toString());
             String error = "error parsing xml file";
             log.error(error);
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
+
         return candidates;
+
     }
-    public void addCandidatesByXml(String candidatesXml){
-       List<CompanyCandidateBean>companyCandidates =  parseXML(candidatesXml);
+    public void addCandidatesByXml(String candidatesXml,Company companyId) throws Exception{
+       List<CompanyCandidateBean>companyCandidates =  parseXml(candidatesXml);
         CandidateMapper mapper = Mappers.getMapper(CandidateMapper.class);
         companyCandidates.forEach(companyCandidate -> {
-           Long jobId = companyCandidate.getJobId();
-           if(!jobRepository.existsById(jobId)){
-               String error = "job Id : " + jobId + " does not exist";
+           String companyJobId = companyCandidate.getCompanyJobId();
+           Job job = jobRepository.findJobByCompanyIdAndCompanyJobId(companyId,companyJobId);
+           if(null == job){
+               String error = "company job Id : " + companyJobId + " does not exist";
                log.error(error);
                throw new WebException(error,HttpStatus.BAD_REQUEST);
            }
-           Candidate candidate ;
+           Candidate candidate = mapper.companyCandidateToCandidate(companyCandidate);
+           candidate.setCandidateSource(IConstant.CandidateSource.XMLUpload.getValue());
+           MultipartFile candidateCv = FileService.convertBase64ToMultipart(companyCandidate.getFileContent(),environment.getProperty("repoLocation")+companyCandidate.getFileName());
+            try {
+                uploadCandidateFromPlugin(candidate,job.getId(),candidateCv,Optional.empty());
+            }catch (WebException ex){
+                throw ex;
+            }
+            catch (Exception e) {
 
-           candidate = mapper.companyCandidateToCandidate(companyCandidate);
-           // ToDo
-       });
+            }
+        });
     }
 }

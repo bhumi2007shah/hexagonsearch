@@ -29,55 +29,23 @@ import java.util.zip.GZIPInputStream;
 
 @Service
 @Log4j2
-public class FileService implements IFileService {
-    @Override
-    public ResponseEntity<Resource> convertToFile(MultipartFile multipartFile) throws Exception {
-        ByteArrayResource decodedFile = null;
-        HttpHeaders headers = new HttpHeaders();
+public class FileService  {
+    public static MultipartFile convertBase64ToMultipart(String fileContent,String fileName)  {
+        MultipartFile decodedFile = null;
+
         try{
-            if(!multipartFile.isEmpty()){
-                byte [] fileBytes = multipartFile.getBytes();
-                String completeData = new String(fileBytes);
-                String [] rows = completeData.split("[\n|\r]");
+            if(!fileContent.isEmpty()){
+                byte [] decodedFileBytes = Base64Util.decode(fileContent);
 
-                for ( long i=0; i<rows.length; ++i){
-                    if(i>0){
-                        String [] columns = rows[(int) i].split(",");
-                        String fileName = columns[2];
-                        String fileContent = columns[3];
-                        String attachmentType = columns[4];
-                        String fileExtension = Util.getFileExtension(fileName);
-
-                        byte [] decodedFileBytes = Base64Util.decode(fileContent);
-
-                        try(GZIPInputStream gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(decodedFileBytes))){
-                            byte [] decodedBytes = gzipInputStream.readAllBytes();
-                            decodedFile = new ByteArrayResource(decodedBytes){
-                                @Override
-                                public String getFilename() {
-                                    return (fileName);
-                                }
-
-                                @Override
-                                public long contentLength() {
-                                    return decodedBytes.length;
-                                }
-                            };
-
-                        }
-                        catch (Exception e){
-                            e.printStackTrace();
-                        }
-
-                        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""+fileName+"\"");
-                    }
+                try(GZIPInputStream gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(decodedFileBytes))){
+                    byte [] decodedBytes = gzipInputStream.readAllBytes();
+                   decodedFile = Util.convertByteStreamToMultipartFile(decodedBytes,fileName);
+                }
+                catch (Exception e){
+                    e.printStackTrace();
                 }
             }
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .contentLength(decodedFile.contentLength())
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(decodedFile);
+            return decodedFile;
         }catch (Exception e){
             e.printStackTrace();
         }

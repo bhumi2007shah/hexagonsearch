@@ -67,9 +67,7 @@ public class NoAuthController {
 
     @Autowired
     ICompanyService companyService;
-
-    @Autowired
-    IFileService fileService;
+    
 
     @Value("${scoringEngineIpAddress}")
     private String scoringEngineIpAddress;
@@ -343,13 +341,6 @@ public class NoAuthController {
         return responseEntity;
     }
 
-    @PostMapping(
-            value = "/convertToFile",
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE
-    )
-    ResponseEntity<Resource> convertToFile(@RequestParam("file") MultipartFile multipartFile) throws Exception {
-        return fileService.convertToFile(multipartFile);
-    }
 }
 
 
