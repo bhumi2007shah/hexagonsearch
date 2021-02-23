@@ -6,18 +6,16 @@ package io.litmusblox.server.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import io.litmusblox.server.model.User;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -31,6 +29,18 @@ import java.util.Map;
 @Log4j2
 public class FileSanitization {
 
+    private static String parserBase;
+    private static String sanitizeUrl;
+
+    @Value("${parserBaseUrl}")
+    public void setParserBase(String parserBase){
+        FileSanitization.parserBase = parserBase;
+    }
+
+    @Value("${pythonFilSanitizationUrl}")
+    public void setSanitizeUrl(String sanitizeUrl){
+        FileSanitization.sanitizeUrl = sanitizeUrl;
+    }
 
     public static String sanitizePdf(MultipartFile multipartFile) {
 
@@ -76,7 +86,7 @@ public class FileSanitization {
             RestTemplate restTemplate = new RestTemplate();
             try {
                 ResponseEntity<String> responseEntity = restTemplate.postForEntity(
-                        "http://localhost:5000/sanitizeFile",
+                        parserBase+sanitizeUrl,
                         requestEntity,
                         String.class
                         );
