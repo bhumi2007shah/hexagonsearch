@@ -364,8 +364,8 @@ public class JobCandidateMappingController {
 
     @PostMapping(value = "/addCandidatesByXml")
     @ResponseStatus(value = HttpStatus.OK)
-    void addCandidateByXml(@RequestBody String candidateXml,@RequestParam Company companyId) throws Exception{
-        jobCandidateMappingService.addCandidatesByXml(candidateXml,companyId);
+    void addCandidateByXml(@RequestParam("file") MultipartFile candidatesXml,@RequestParam Company companyId) throws Exception{
+        jobCandidateMappingService.addCandidatesByXml(candidatesXml,companyId);
     }
 
 }

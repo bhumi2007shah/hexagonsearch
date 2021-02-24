@@ -8,6 +8,8 @@ import lombok.Data;
 
 @Data
 public class CompanyCandidateBean {
+    private String candidateNumber;
+
     private String companyJobId;
     private String numberToHire;
     private String jobTitle;
@@ -29,4 +31,6 @@ public class CompanyCandidateBean {
     private String recruiterName;
     private String recruiterEmail;
     private String hmName;
+
+    private String comments;
 }

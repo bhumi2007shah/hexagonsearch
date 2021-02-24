@@ -126,7 +126,8 @@ public interface IConstant {
         candidateMobileNumber("Candidate,MobilePhone"),
         candidateCity("Candidate,City"),
         fileName("Candidate,AttachedFiles,FileName"),
-        fileContent("Candidate,AttachedFiles,FileContent");
+        fileContent("Candidate,AttachedFiles,FileContent"),
+        candidateNumber("Candidate,Number");
 
         private String value;
         CandidateXMLFieldsMapping(String val){this.value = val; }

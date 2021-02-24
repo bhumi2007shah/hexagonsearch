@@ -6,6 +6,7 @@ package io.litmusblox.server.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.opencsv.CSVWriter;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
@@ -41,6 +42,8 @@ import static java.util.stream.Collectors.groupingBy;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.text.ParseException;
 import java.time.LocalDate;
@@ -2661,6 +2664,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     else if(IConstant.CandidateXMLFieldsMapping.jobId.get().equals(fieldName)){
                         companyCandidateBean.setCompanyJobId(content);
                     }
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateNumber.get().equals(fieldName)){
+                        companyCandidateBean.setCandidateNumber(content);
+                    }
                 }
                 companyCandidateBean.setCandidateFullName(companyCandidateBean.getCandidateFirstName()+" "+companyCandidateBean.getCandidateLastName());
                 candidates.add(companyCandidateBean);
@@ -2674,11 +2680,32 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         }
 
         return candidates;
-
     }
-    public void addCandidatesByXml(String candidatesXml,Company companyId) throws Exception{
-       List<CompanyCandidateBean>companyCandidates =  parseXml(candidatesXml);
+
+    private void generateCsv(List<CompanyCandidateBean>candidates) throws IOException {
+        log.info("inside generate CSV for add candidates by xml");
+        //TODO change CSV file location
+        CSVWriter writer = new CSVWriter(new FileWriter("output.csv"));
+
+        //write CSV heading
+        writer.writeNext( new String[]{"Number","Contest Number","FileName","Comments"});
+        candidates.forEach(candidate->{
+            writer.writeNext(new String[]{candidate.getCandidateNumber(),candidate.getCompanyJobId(),candidate.getFileName(),candidate.getComments()});
+        });
+        writer.close();
+        log.info("successfully completed CSV generation for add candidates by xml");
+    }
+
+    public void addCandidatesByXml(MultipartFile candidatesXml,Company companyId) throws Exception{
+        if(candidatesXml.isEmpty()){
+            String error = "XML file is empty";
+            log.error(error);
+            throw new WebException(error,HttpStatus.BAD_REQUEST);
+        }
+        String xmlContent = new String(candidatesXml.getBytes());
+       List<CompanyCandidateBean>companyCandidates =  parseXml(xmlContent);
         CandidateMapper mapper = Mappers.getMapper(CandidateMapper.class);
+
         companyCandidates.forEach(companyCandidate -> {
            String companyJobId = companyCandidate.getCompanyJobId();
            Job job = jobRepository.findJobByCompanyIdAndCompanyJobId(companyId,companyJobId);
@@ -2691,13 +2718,19 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
            candidate.setCandidateSource(IConstant.CandidateSource.XMLUpload.getValue());
            MultipartFile candidateCv = FileService.convertBase64ToMultipart(companyCandidate.getFileContent(),environment.getProperty("repoLocation")+companyCandidate.getFileName());
             try {
-                uploadCandidateFromPlugin(candidate,job.getId(),candidateCv,Optional.empty());
-            }catch (WebException ex){
-                throw ex;
-            }
-            catch (Exception e) {
+                UploadResponseBean result = uploadCandidateFromPlugin(candidate,job.getId(),candidateCv,Optional.empty());
 
+                if(result.getSuccessCount() == 1)
+                    companyCandidate.setComments("Success");
+                else if(result.getFailureCount() == 1)
+                    companyCandidate.setComments("Failed : "+result.getFailedCandidates().get(0).getUploadErrorMessage());
+            }catch (WebException | ValidationException ex){
+                throw ex;
+            } catch (Exception e) {
+                log.error(e);
             }
         });
+        generateCsv(companyCandidates);
     }
+
 }
