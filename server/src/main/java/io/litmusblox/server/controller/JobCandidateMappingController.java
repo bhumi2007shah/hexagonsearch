@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Candidate;
 import io.litmusblox.server.model.InterviewDetails;
+import io.litmusblox.server.model.JcmOfferDetails;
 import io.litmusblox.server.model.JobCandidateMapping;
 import io.litmusblox.server.repository.UserRepository;
 import io.litmusblox.server.service.*;
@@ -171,6 +172,7 @@ public class JobCandidateMappingController {
                     put("CvRating", Arrays.asList("overallRating"));
                     put("JobStageStep", new ArrayList<>(0));
                     put("JobRole", Arrays.asList("role"));
+                    put("JcmOfferDetails",new ArrayList<>(0));
                 }},
                 new HashMap<String, List<String>>() {{
                     put("Job",Arrays.asList("id", "createdBy","createdOn","updatedBy","updatedOn","jobTitle","noOfPositions","jobDescription","mlDataAvailable","datePublished","status","scoringEngineJobAvailable","function","education","expertise","jobKeySkillsList","userEnteredKeySkill"));
@@ -355,6 +357,12 @@ public class JobCandidateMappingController {
     @ResponseStatus(value = HttpStatus.OK)
     List<InterviewsResponseBean> getInterviewForCompany(@PathVariable Long companyId) throws Exception {
         return jobCandidateMappingService.getInterviewsForCompany(companyId);
+    }
+
+    @PostMapping(value = "/offerDetails")
+    @ResponseStatus(value = HttpStatus.OK)
+    void saveOfferDetails(@RequestBody JcmOfferDetails jcmOfferDetails){
+        jobCandidateMappingService.saveOfferDetails(jcmOfferDetails);
     }
 
 }
