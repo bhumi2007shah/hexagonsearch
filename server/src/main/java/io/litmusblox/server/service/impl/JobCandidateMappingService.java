@@ -2584,12 +2584,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             log.error(error);
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
-
-        if(null != jcmOfferDetails.getOfferedCompensation() && !jcmOfferDetails.getOfferedCompensation().toString().matches(IConstant.OFFER_COMPENSATION)){
-            log.error("Offer compensation : {} not valid for jcm : {}", jcmOfferDetails.getOfferedCompensation(), jcmId);
-            throw new WebException("Offer compensation : "+jcmOfferDetails.getOfferedCompensation()+" not valid for jcm : "+jcmId,HttpStatus.BAD_REQUEST);
-        }
-
         String stage = jcmFromDb.getStage().getStage();
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -2605,7 +2599,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if(null != jcmOfferFromDb)
             jcmOfferDetails.setId(jcmOfferFromDb.getId());
 
-        jcmOfferDetailsRepository.save(jcmOfferDetails);
+        try {
+            jcmOfferDetailsRepository.save(jcmOfferDetails);
+        }catch (Exception e){
+            log.error("Offer compensation not valid for jcmId : {}",jcmOfferDetails.getJcmId());
+            throw new WebException("Offer compensation not valid for jcmId : "+jcmOfferDetails.getJcmId(), HttpStatus.BAD_REQUEST);
+        }
         jcmHistoryRepository.save(new JcmHistory(jcmFromDb,"Offer details added",jcmOfferDetails.getOfferedOn(),loggedInUser,jcmFromDb.getStage(),false));
         log.info("offer details saved successfully!");
     }

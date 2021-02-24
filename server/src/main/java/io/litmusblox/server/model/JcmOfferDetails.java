@@ -32,6 +32,7 @@ public class JcmOfferDetails implements Serializable {
     @JoinColumn(name = "JCM_ID")
     private JobCandidateMapping jcmId;
 
+    @NotNull
     @Column(name = "OFFERED_COMPENSATION")
     private Double offeredCompensation;
 
