@@ -2584,16 +2584,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             log.error(error);
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
-        String stage = jcmFromDb.getStage().getStage();
+
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         validateLoggedInUser(loggedInUser, jcmFromDb.getJob());
 
-        if(!Arrays.asList( IConstant.Stage.MakeOffer.getValue() ,IConstant.Stage.Offer.getValue(),IConstant.Stage.Join.getValue()).contains(stage) ){
-            error = "cannot set offer details for jcmId :"+jcmId+" from "+stage+" stage";
-            log.error(error);
-            throw new WebException(error,HttpStatus.BAD_REQUEST);
-        }
 
         JcmOfferDetails jcmOfferFromDb = jcmOfferDetailsRepository.findByJcmId(jcmFromDb);
         if(null != jcmOfferFromDb)
