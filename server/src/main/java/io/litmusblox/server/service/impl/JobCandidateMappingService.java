@@ -2600,6 +2600,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             log.error("Offer compensation not valid for jcmId : {}",jcmOfferDetails.getJcmId());
             throw new WebException("Offer compensation not valid for jcmId : "+jcmOfferDetails.getJcmId(), HttpStatus.BAD_REQUEST);
         }
+
         jcmHistoryRepository.save(new JcmHistory(jcmFromDb,"Offer details added",new Date(),loggedInUser,jcmFromDb.getStage(),false));
         log.info("offer details saved successfully!");
     }
