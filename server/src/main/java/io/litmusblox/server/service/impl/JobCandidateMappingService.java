@@ -2590,28 +2590,23 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
 
-        if(null != jcmOfferDetails.getOfferedCompensation() && !jcmOfferDetails.getOfferedCompensation().toString().matches(IConstant.OFFER_COMPENSATION)){
-            log.error("Offer compensation : {} not valid for jcm : {}", jcmOfferDetails.getOfferedCompensation(), jcmId);
-            throw new WebException("Offer compensation : "+jcmOfferDetails.getOfferedCompensation()+" not valid for jcm : "+jcmId,HttpStatus.BAD_REQUEST);
-        }
-
-        String stage = jcmFromDb.getStage().getStage();
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         validateLoggedInUser(loggedInUser, jcmFromDb.getJob());
 
-        if(!Arrays.asList( IConstant.Stage.MakeOffer.getValue() ,IConstant.Stage.Offer.getValue(),IConstant.Stage.Join.getValue()).contains(stage) ){
-            error = "cannot set offer details for jcmId :"+jcmId+" from "+stage+" stage";
-            log.error(error);
-            throw new WebException(error,HttpStatus.BAD_REQUEST);
-        }
 
         JcmOfferDetails jcmOfferFromDb = jcmOfferDetailsRepository.findByJcmId(jcmFromDb);
         if(null != jcmOfferFromDb)
             jcmOfferDetails.setId(jcmOfferFromDb.getId());
 
-        jcmOfferDetailsRepository.save(jcmOfferDetails);
-        jcmHistoryRepository.save(new JcmHistory(jcmFromDb,"Offer details added",jcmOfferDetails.getOfferedOn(),loggedInUser,jcmFromDb.getStage(),false));
+        try {
+            jcmOfferDetailsRepository.save(jcmOfferDetails);
+        }catch (Exception e){
+            log.error("Offer compensation not valid for jcmId : {}",jcmOfferDetails.getJcmId());
+            throw new WebException("Offer compensation not valid for jcmId : "+jcmOfferDetails.getJcmId(), HttpStatus.BAD_REQUEST);
+        }
+
+        jcmHistoryRepository.save(new JcmHistory(jcmFromDb,"Offer details added",new Date(),loggedInUser,jcmFromDb.getStage(),false));
         log.info("offer details saved successfully!");
     }
 

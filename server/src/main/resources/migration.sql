@@ -3256,4 +3256,6 @@ ALTER COLUMN QUESTION_CATEGORY TYPE VARCHAR (70),
 ALTER COLUMN QUESTION_TAG TYPE VARCHAR (70);
 
 ALTER TABLE JCM_OFFER_DETAILS
-ALTER COLUMN OFFERED_COMPENSATION TYPE DOUBLE PRECISION
+ALTER COLUMN OFFERED_COMPENSATION TYPE NUMERIC(14,2);
+
+update statements_block_master_data set options = '{"No Experience","Trained but not used in practice","Hands on practice; need some help for complex job","Hands on; Totally independent at work","Expert / Guru who trains others"}' where statement_block = 'Expertise Level';
