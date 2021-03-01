@@ -5,16 +5,24 @@
 package io.litmusblox.server.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.litmusblox.server.error.ValidationException;
+import io.litmusblox.server.model.*;
+import io.litmusblox.server.repository.CandidateEmailHistoryRepository;
+import io.litmusblox.server.repository.CandidateMobileHistoryRepository;
 import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.ISearchEngineService;
 import io.litmusblox.server.service.ImportDataResponseBean;
+import io.litmusblox.server.service.JobAnalytics.CandidateSearchBean;
 import io.litmusblox.server.service.MasterDataBean;
 import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.LoggedInUserInfoUtil;
 import io.litmusblox.server.utils.RestClientResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
+import org.apache.tomcat.util.json.JSONParser;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpMethod;
@@ -24,7 +32,10 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
+import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service to handle all search engine realted operations
@@ -35,22 +46,138 @@ import java.util.*;
  * Project Name : server
  */
 
+
 @Log4j2
 @Service
 public class SearchEngineService implements ISearchEngineService {
 
     @Value("${searchEngineBaseUrl}")
     String searchEngineBaseUrl;
+    @Resource
+    CandidateEmailHistoryRepository candidateEmailHistoryRepository ;
+    @Resource
+    CandidateMobileHistoryRepository candidateMobileHistoryRepository ;
 
     public String candidateSearch(String jsonData, String authToken) throws Exception{
         log.info("Inside candidateSearch method");
         Long startTime = System.currentTimeMillis();
         Map<String, Object> headerInformation = LoggedInUserInfoUtil.getLoggedInUserInformation();
+        String responseData = new String();
+
         if(jsonData == null)
             throw new ValidationException("Invalid request", HttpStatus.BAD_REQUEST);
-        String responseData = RestClient.getInstance().consumeRestApi(jsonData, searchEngineBaseUrl+"candidate/search", HttpMethod.POST, authToken, null, null, Optional.of(headerInformation)).getResponseBody();
-        log.info("Completed execution of Candidate search method in {} ms", System.currentTimeMillis() - startTime);
-        return responseData;
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        CandidateSearchBean candidateSearchBean = objectMapper.readValue(jsonData, CandidateSearchBean.class);
+
+
+
+        if (candidateSearchBean.getEmail()!=null)
+        {
+            String email=candidateSearchBean.getEmail();
+            CandidateEmailHistory candidateEmailHistory= candidateEmailHistoryRepository.findByEmail(email);
+
+            if (candidateEmailHistory!=null)
+            {
+                List<CandidateSearchBean> candidateSearchBeanList = new ArrayList<>();
+                 candidateSearchBean=new CandidateSearchBean();
+                List<CandidateMobileHistory> candidateMobileHistoryList=candidateMobileHistoryRepository.findByCandidateIdOrderByIdDesc(candidateEmailHistory.getCandidate().getId());
+                candidateSearchBean.setMobile(candidateMobileHistoryList.get(0).getMobile());
+                candidateSearchBean.setCompanyId(candidateEmailHistory.getCandidate().getCandidateCompanyDetails().get(0).getId());
+                candidateSearchBean.setCandidateName(candidateEmailHistory.getCandidate().getFirstName()+" "+candidateEmailHistory.getCandidate().getLastName());
+                candidateSearchBean.setCandidateId(candidateEmailHistory.getCandidate().getId());
+                candidateSearchBean.setEmail(candidateEmailHistory.getEmail());
+                String location=candidateEmailHistory.getCandidate().getCandidateDetails().getLocation();
+                Set<String> LocationSet = new HashSet<String>();
+                LocationSet.add(location);
+                candidateSearchBean.setLocations(LocationSet);
+
+                candidateSearchBean.setExperienceFromDb(candidateEmailHistory.getCandidate().getCandidateDetails().getRelevantExperience());
+                candidateSearchBean.setMaxExperience(candidateEmailHistory.getCandidate().getCandidateDetails().getTotalExperience());
+
+                Set<String> Skillset = candidateEmailHistory.getCandidate().getCandidateSkillDetails().stream().map(CandidateSkillDetails::getSkill).collect(Collectors.toSet());
+                candidateSearchBean.setSkills(Skillset);
+
+
+
+                Set<String> Qualifications = candidateEmailHistory.getCandidate().getCandidateEducationDetails().stream().map(CandidateEducationDetails::getDegree).collect(Collectors.toSet());
+                candidateSearchBean.setQualifications(Qualifications);
+                candidateSearchBean.setNoticePeriod(0L);
+                try {
+                    candidateSearchBean.setNoticePeriod(Long.parseLong(candidateEmailHistory.getCandidate().getCandidateCompanyDetails().get(0).getNoticePeriod()));
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+               candidateSearchBean.setCompanyName(candidateEmailHistory.getCandidate().getCandidateCompanyDetails().get(0).getCompanyName());
+                candidateSearchBeanList.add(candidateSearchBean);
+                objectMapper = new ObjectMapper();
+                objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+                String ListToJson = objectMapper.writeValueAsString(candidateSearchBeanList);
+                System.out.println("Convert List to JSON :");
+                System.out.println(ListToJson);
+                 responseData=ListToJson;
+                log.info("Completed execution of Candidate search method by email in {} ms", System.currentTimeMillis() - startTime);
+                return responseData;
+
+            }
+
+        }
+        else if (candidateSearchBean.getMobile()!=null)
+        {
+            String mobile=candidateSearchBean.getMobile();
+            CandidateMobileHistory candidateMobileHistory=candidateMobileHistoryRepository.findByMobileAndCountryCode(mobile,"+91");
+            if (candidateMobileHistory!=null)
+            {
+                List<CandidateEmailHistory> candidateEmailHistoryList=candidateEmailHistoryRepository.findByCandidateIdOrderByIdDesc(candidateMobileHistory.getCandidate().getId());
+
+                List<CandidateSearchBean> candidateSearchBeanList = new ArrayList<>();
+                candidateSearchBean = new CandidateSearchBean();
+                candidateSearchBean.setCandidateName(candidateMobileHistory.getCandidate().getFirstName() + " " + candidateMobileHistory.getCandidate().getLastName());
+                candidateSearchBean.setCandidateId(candidateMobileHistory.getCandidate().getId());
+                candidateSearchBean.setEmail(candidateEmailHistoryList.get(0).getEmail());
+                String location = candidateMobileHistory.getCandidate().getCandidateDetails().getLocation();
+                Set<String> LocationSet = new HashSet<String>();
+                LocationSet.add(location);
+                candidateSearchBean.setLocations(LocationSet);
+
+                candidateSearchBean.setExperienceFromDb(candidateMobileHistory.getCandidate().getCandidateDetails().getRelevantExperience());
+                candidateSearchBean.setMaxExperience(candidateMobileHistory.getCandidate().getCandidateDetails().getTotalExperience());
+
+                Set<String> Skillset = candidateMobileHistory.getCandidate().getCandidateSkillDetails().stream().map(CandidateSkillDetails::getSkill).collect(Collectors.toSet());
+                candidateSearchBean.setSkills(Skillset);
+
+                candidateSearchBean.setMobile(candidateMobileHistory.getMobile());
+
+                Set<String> Qualifications = candidateMobileHistory.getCandidate().getCandidateEducationDetails().stream().map(CandidateEducationDetails::getDegree).collect(Collectors.toSet());
+                candidateSearchBean.setQualifications(Qualifications);
+                try {
+                    candidateSearchBean.setNoticePeriod(Long.parseLong(candidateMobileHistory.getCandidate().getCandidateCompanyDetails().get(0).getNoticePeriod()));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                candidateSearchBean.setCompanyName(candidateMobileHistory.getCandidate().getCandidateCompanyDetails().get(0).getCompanyName());
+                candidateSearchBeanList.add(candidateSearchBean);
+                objectMapper = new ObjectMapper();
+                objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+                String ListToJson = objectMapper.writeValueAsString(candidateSearchBeanList);
+                System.out.println("Convert List to JSON :");
+                System.out.println(ListToJson);
+                responseData = ListToJson;
+                log.info("Completed execution of Candidate search method by mobile in {} ms", System.currentTimeMillis() - startTime);
+                return responseData;
+            }
+
+        }
+        else {
+            responseData = RestClient.getInstance().consumeRestApi(jsonData, searchEngineBaseUrl + "candidate/search", HttpMethod.POST, authToken, null, null, Optional.of(headerInformation)).getResponseBody();
+            log.info("Completed execution of Candidate search method in {} ms", System.currentTimeMillis() - startTime);
+        }
+
+
+            return responseData;
+
     }
 
     public String getUnverifiedNodes(String authToken) throws Exception{
