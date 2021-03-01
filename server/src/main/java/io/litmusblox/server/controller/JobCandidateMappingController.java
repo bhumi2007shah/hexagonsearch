@@ -368,4 +368,9 @@ public class JobCandidateMappingController {
         jobCandidateMappingService.addCandidatesByXml(candidatesXml,companyId);
     }
 
+    @GetMapping(value = "/thymeleaf")
+    String thymeleaf(){
+        return jobCandidateMappingService.generateCandidatePDF(2L);
+    }
+
 }

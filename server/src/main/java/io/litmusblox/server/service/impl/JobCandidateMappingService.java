@@ -27,6 +27,7 @@ import org.json.JSONObject;
 import org.json.XML;
 import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.thymeleaf.context.Context;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -99,6 +100,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
     @Autowired
     CustomQueryExecutor customQueryExecutor;
+
+    @Autowired
+    ThymeLeafConfig thymeLeaf;
 
     @Resource
     CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
@@ -2731,6 +2735,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             }
         });
         generateCsv(companyCandidates);
+    }
+
+    public String generateCandidatePDF(Long jcm){
+        Context context = new Context();
+        context.setVariable("test","null");
+        return thymeLeaf.templateEngineHTML().process("candidateProfile",context);
     }
 
 }
