@@ -111,7 +111,7 @@ public class CompanyDataController {
     @ResponseStatus(HttpStatus.OK)
     List<UserWorkspaceBean> findUserList(@RequestParam Long companyId) throws Exception {
        //we already have a method in LbUserDetailsService.java which returns list of users for a company with extra data like no. of jobs created. reusing that.
-       return lbUserDetailsService.fetchUsers(companyId);
+       return lbUserDetailsService.fetchUsers(companyId,false);
     }
 
 

@@ -202,6 +202,9 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Query(nativeQuery = true, value = "select distinct(job_id) from job_candidate_mapping where id in :jcmList")
     List<Long> findDistinctJobIdByJcmID(List<Long> jcmList);
 
+    @Transactional(readOnly = true)
+    JobCandidateMapping findByEmailAndJobId(String email,Long jobId);
+
     @Transactional
     @Query(value = "select * from job_candidate_mapping where IS_CREATED_ON_SEARCHENGINE='f' order by ID asc limit 100", nativeQuery = true)
         List<JobCandidateMapping> findJcmNotInSearchEngine();

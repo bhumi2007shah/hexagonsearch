@@ -98,4 +98,7 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     @Transactional(readOnly = true)
     List<Job> findJobByCompanyIdAndTemplateTrue(Company companyId);
+
+    @Transactional(readOnly = true)
+    Job findJobByCompanyIdAndCompanyJobId(Company companyId,String companyJobId);
 }

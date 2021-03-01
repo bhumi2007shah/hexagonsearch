@@ -516,6 +516,17 @@ public class Util {
         }
         return createMultipartFile(file);
     }
+    public static MultipartFile convertByteStreamToMultipartFile(byte[] inputStream, String filePath) throws IOException {
+        File file = new File(filePath);
+        try(OutputStream outputStream = new FileOutputStream(file)){
+           outputStream.write(inputStream);
+        } catch (Exception e) {
+            throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,e);
+        }
+        MultipartFile result = createMultipartFile(file);
+        file.delete();
+        return result;
+    }
 
     //This method is used for comparing interview date with current date time
     public static String getDateWithTimezone(TimeZone timeZone, Date date){

@@ -8,10 +8,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
-import io.litmusblox.server.model.Candidate;
-import io.litmusblox.server.model.InterviewDetails;
-import io.litmusblox.server.model.JcmOfferDetails;
-import io.litmusblox.server.model.JobCandidateMapping;
+import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.UserRepository;
 import io.litmusblox.server.service.*;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
@@ -363,6 +360,12 @@ public class JobCandidateMappingController {
     @ResponseStatus(value = HttpStatus.OK)
     void saveOfferDetails(@RequestBody JcmOfferDetails jcmOfferDetails){
         jobCandidateMappingService.saveOfferDetails(jcmOfferDetails);
+    }
+
+    @PostMapping(value = "/addCandidatesByXml")
+    @ResponseStatus(value = HttpStatus.OK)
+    void addCandidateByXml(@RequestParam("file") MultipartFile candidatesXml,@RequestParam Company companyId) throws Exception{
+        jobCandidateMappingService.addCandidatesByXml(candidatesXml,companyId);
     }
 
 }

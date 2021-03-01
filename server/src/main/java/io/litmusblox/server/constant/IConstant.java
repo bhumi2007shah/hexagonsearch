@@ -112,6 +112,27 @@ public interface IConstant {
         overview, screeningQuestions, keySkills, capabilities, jobDetail, hiringTeam, expertise, preview, jobScreening, setHiringManager, skipTechQuestions;
     }
 
+    enum CandidateXMLFieldsMapping{
+        jobId("Requisition,ContestNumber"),
+        jobTitle("Requisition,JobInformation,Title"),
+        primarySkills("Requisition,JobInformation,Primary Skill"),
+        recruiterEmail("Requisition,JobInformation,RecruiterOwner,CorrespondenceEmail"),
+        openPositions("Requisition,JobInformation,NumberToHire"),
+        jobDescription("Requisition,JobInformation,Job Type,Description"),
+        candidateFirstName("Candidate,FirstName"),
+        candidateLastName("Candidate,LastName"),
+        candidateEmail("Candidate,EmailAddress"),
+        candidateMobileNumber("Candidate,MobilePhone"),
+        candidateCity("Candidate,City"),
+        fileName("Candidate,AttachedFiles,FileName"),
+        fileContent("Candidate,AttachedFiles,FileContent"),
+        candidateNumber("Candidate,Number");
+
+        private String value;
+        CandidateXMLFieldsMapping(String val){this.value = val; }
+        public  String get(){return this.value; }
+    }
+
     enum JobStatus {
         DRAFT("Draft"), PUBLISHED("Live"), ARCHIVED("Archived");
         private String value;
@@ -143,7 +164,7 @@ public interface IConstant {
     }
 
     enum CandidateSource {
-        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriMassMail("NaukriMassMail"), NaukriJobPosting("NaukriJobPosting"), EmployeeReferral("EmployeeReferral"), CareerPage("CareerPage"), JobPosting("JobPosting"), GenericEmail("GenericEmail"), LBHarvester("LBHarvester");
+        SingleCandidateUpload("Individual"), File("File"), Naukri("Naukri"), LinkedIn("LinkedIn"), IIMJobs("IIMJobs"), DragDropCv("DragDropCv"), NaukriMassMail("NaukriMassMail"), NaukriJobPosting("NaukriJobPosting"), EmployeeReferral("EmployeeReferral"), CareerPage("CareerPage"), JobPosting("JobPosting"), GenericEmail("GenericEmail"), LBHarvester("LBHarvester"),XMLUpload("XML file Upload");
         private String value;
 
         CandidateSource(String val) {

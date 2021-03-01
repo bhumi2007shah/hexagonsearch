@@ -4,7 +4,9 @@
 
 package io.litmusblox.server.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.opencsv.CSVWriter;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
@@ -17,12 +19,13 @@ import io.litmusblox.server.uploadProcessor.CsvFileProcessorService;
 import io.litmusblox.server.uploadProcessor.ExcelFileProcessorService;
 import io.litmusblox.server.uploadProcessor.IUploadDataProcessService;
 import io.litmusblox.server.uploadProcessor.NaukriExcelFileProcessorService;
-import io.litmusblox.server.utils.SentryUtil;
-import io.litmusblox.server.utils.StoreFileUtil;
-import io.litmusblox.server.utils.Util;
-import io.litmusblox.server.utils.ZipFileProcessUtil;
+import io.litmusblox.server.utils.*;
 import lombok.extern.log4j.Log4j2;
 import org.apache.poi.util.IOUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.XML;
+import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -39,6 +42,8 @@ import static java.util.stream.Collectors.groupingBy;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.text.ParseException;
 import java.time.LocalDate;
@@ -2604,4 +2609,123 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         jcmHistoryRepository.save(new JcmHistory(jcmFromDb,"Offer details added",new Date(),loggedInUser,jcmFromDb.getStage(),false));
         log.info("offer details saved successfully!");
     }
+
+    private List<CompanyCandidateBean> parseXml(String candidatesXml)throws Exception{
+        List<CompanyCandidateBean> candidates = new ArrayList<>(0);
+
+        try{
+            String json = XML.toJSONObject(candidatesXml).toString();
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode records =
+                    mapper.readTree(json)
+                            .get("soapenv:Envelope")
+                            .get("soapenv:Body")
+                            .get("ns1:getDocumentByKeyResponse")
+                            .get("Document")
+                            .get("Content")
+                            .get("ExportXML")
+                            .get("record");
+
+            for(int i = 0;i<records.size();i++){
+                JsonNode fields = records.get(i).get("field");
+                CompanyCandidateBean companyCandidateBean = new CompanyCandidateBean();
+                for(int j = 0;j<fields.size();j++){
+                    JsonNode field = fields.get(j);
+                    String fieldName = field.get("name").asText();
+                    JsonNode temp = field.get("content");
+                    String content = null == temp ? null:temp.asText();
+
+                    if(IConstant.CandidateXMLFieldsMapping.candidateFirstName.get().equals(fieldName)){
+                        companyCandidateBean.setCandidateFirstName(content);
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateLastName.get().equals(fieldName)){
+                        companyCandidateBean.setCandidateLastName(content);
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateCity.get().equals(fieldName)){
+                        companyCandidateBean.setCandidateCity(content);
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateEmail.get().equals(fieldName)){
+                        companyCandidateBean.setCandidateEmail(content);
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateMobileNumber.get().equals(fieldName)){
+                        companyCandidateBean.setMobileNumber(content);
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.fileContent.get().equals(fieldName)){
+                        companyCandidateBean.setFileContent(content);
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.fileName.get().equals((fieldName))){
+                        companyCandidateBean.setFileName(content);
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.jobId.get().equals(fieldName)){
+                        companyCandidateBean.setCompanyJobId(content);
+                    }
+                    else if(IConstant.CandidateXMLFieldsMapping.candidateNumber.get().equals(fieldName)){
+                        companyCandidateBean.setCandidateNumber(content);
+                    }
+                }
+                companyCandidateBean.setCandidateFullName(companyCandidateBean.getCandidateFirstName()+" "+companyCandidateBean.getCandidateLastName());
+                candidates.add(companyCandidateBean);
+            }
+
+        }catch (Exception ex){
+            log.error(ex.toString());
+            String error = "error parsing xml file";
+            log.error(error);
+            throw new WebException(error,HttpStatus.BAD_REQUEST);
+        }
+
+        return candidates;
+    }
+
+    private void generateCsv(List<CompanyCandidateBean>candidates) throws IOException {
+        log.info("inside generate CSV for add candidates by xml");
+        //TODO change CSV file location
+        CSVWriter writer = new CSVWriter(new FileWriter("output.csv"));
+
+        //write CSV heading
+        writer.writeNext( new String[]{"Number","Contest Number","FileName","Comments"});
+        candidates.forEach(candidate->{
+            writer.writeNext(new String[]{candidate.getCandidateNumber(),candidate.getCompanyJobId(),candidate.getFileName(),candidate.getComments()});
+        });
+        writer.close();
+        log.info("successfully completed CSV generation for add candidates by xml");
+    }
+
+    public void addCandidatesByXml(MultipartFile candidatesXml,Company companyId) throws Exception{
+        if(candidatesXml.isEmpty()){
+            String error = "XML file is empty";
+            log.error(error);
+            throw new WebException(error,HttpStatus.BAD_REQUEST);
+        }
+        String xmlContent = new String(candidatesXml.getBytes());
+       List<CompanyCandidateBean>companyCandidates =  parseXml(xmlContent);
+        CandidateMapper mapper = Mappers.getMapper(CandidateMapper.class);
+
+        companyCandidates.forEach(companyCandidate -> {
+           String companyJobId = companyCandidate.getCompanyJobId();
+           Job job = jobRepository.findJobByCompanyIdAndCompanyJobId(companyId,companyJobId);
+           if(null == job){
+               String error = "company job Id : " + companyJobId + " does not exist";
+               log.error(error);
+               throw new WebException(error,HttpStatus.BAD_REQUEST);
+           }
+           Candidate candidate = mapper.companyCandidateToCandidate(companyCandidate);
+           candidate.setCandidateSource(IConstant.CandidateSource.XMLUpload.getValue());
+           MultipartFile candidateCv = FileService.convertBase64ToMultipart(companyCandidate.getFileContent(),environment.getProperty("repoLocation")+companyCandidate.getFileName());
+            try {
+                UploadResponseBean result = uploadCandidateFromPlugin(candidate,job.getId(),candidateCv,Optional.empty());
+
+                if(result.getSuccessCount() == 1)
+                    companyCandidate.setComments("Success");
+                else if(result.getFailureCount() == 1)
+                    companyCandidate.setComments("Failed : "+result.getFailedCandidates().get(0).getUploadErrorMessage());
+            }catch (WebException | ValidationException ex){
+                throw ex;
+            } catch (Exception e) {
+                log.error(e);
+            }
+        });
+        generateCsv(companyCandidates);
+    }
+
 }

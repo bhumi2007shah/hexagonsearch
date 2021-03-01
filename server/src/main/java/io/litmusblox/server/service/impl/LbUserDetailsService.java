@@ -503,7 +503,7 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
      * @return list of all users for the company
      * @throws Exception
      */
-    public List<UserWorkspaceBean> fetchUsers(Long companyId) throws Exception {
+    public List<UserWorkspaceBean> fetchUsers(Long companyId,boolean setCount) throws Exception {
         log.info("Received request to get list of users");
         long startTime = System.currentTimeMillis();
         User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -516,14 +516,18 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
         List<UserWorkspaceBean> responseBeans = new ArrayList<>(userList.size());
         userList.forEach(user->{
             UserWorkspaceBean workspaceBean = new UserWorkspaceBean(user.getId(), user.getDisplayName(), user.getStatus(), user.getCompanyAddressId(), user.getCompanyBuId(), user.getEmail(), user.getMobile(), user.getRole());
-            workspaceBean.setNumberOfJobsCreated(jobRepository.countByCreatedBy(user));
-            workspaceBean.setNumOfInvites(jobCandidateMappingRepository.getInviteCount(user.getId()));
-            List<Object[]> object = jobCandidateMappingRepository.getChatbotCountCompletedAndInCompleted(user.getId());
-            if(null != (object.get(0))[0]){
-                workspaceBean.setIncompleteChatbotCount(Integer.parseInt((object.get(0))[1].toString()));
-                workspaceBean.setCompletedChatbotCount(Integer.parseInt((object.get(0))[0].toString()));
+            if(setCount)
+            {
+                workspaceBean.setNumberOfJobsCreated(jobRepository.countByCreatedBy(user));
+                workspaceBean.setNumOfInvites(jobCandidateMappingRepository.getInviteCount(user.getId()));
+                List<Object[]> object = jobCandidateMappingRepository.getChatbotCountCompletedAndInCompleted(user.getId());
+                if(null != (object.get(0))[0]){
+                    workspaceBean.setIncompleteChatbotCount(Integer.parseInt((object.get(0))[1].toString()));
+                    workspaceBean.setCompletedChatbotCount(Integer.parseInt((object.get(0))[0].toString()));
+                }
+                workspaceBean.setAnalyticsSharedCount(jcmProfileSharingDetailsRepository.getProfileSharingCount(user.getId()));
             }
-            workspaceBean.setAnalyticsSharedCount(jcmProfileSharingDetailsRepository.getProfileSharingCount(user.getId()));
+            
             responseBeans.add(workspaceBean);
         });
 
