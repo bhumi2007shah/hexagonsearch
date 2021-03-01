@@ -1,45 +1,35 @@
 package io.litmusblox.server.utils;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Configuration;
 import org.thymeleaf.spring5.SpringTemplateEngine;
 import org.thymeleaf.spring5.templateresolver.SpringResourceTemplateResolver;
-import org.thymeleaf.templatemode.TemplateMode;
-import org.thymeleaf.templateresolver.ITemplateResolver;
+import org.thymeleaf.spring5.view.ThymeleafViewResolver;
 
-@Component
-public class ThymeLeafConfig implements ApplicationContextAware {
+@Configuration
+public class ThymeLeafConfig{
 
-    private ApplicationContext applicationContext;
-
-    public ThymeLeafConfig(){
-        super();
-    }
-
-    public void setApplicationContext(final ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
+    @Bean
+    public SpringResourceTemplateResolver templateResolver() {
+        SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
+        templateResolver.setCacheable(false);
+        templateResolver.setPrefix("classpath:/templates/");
+        templateResolver.setSuffix(".html");
+        return templateResolver;
     }
 
     @Bean
-    public SpringTemplateEngine templateEngineHTML() {
-        SpringTemplateEngine templateEngineHTML = new SpringTemplateEngine();
-        templateEngineHTML.addTemplateResolver(templateResolver());
-        return templateEngineHTML;
+    public SpringTemplateEngine templateEngine() {
+        SpringTemplateEngine springTemplateEngine = new SpringTemplateEngine();
+        springTemplateEngine.addTemplateResolver(templateResolver());
+        return springTemplateEngine;
     }
 
-    /**
-     * For conversion of email template
-     * @return
-     */
-    private ITemplateResolver templateResolver() {
-        SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
-        templateResolver.setApplicationContext(applicationContext);
-        //TODO: Populate path from MasterData
-        templateResolver.setPrefix("/templates/");
-        templateResolver.setSuffix(".html");
-        templateResolver.setTemplateMode(TemplateMode.HTML);
-        return templateResolver;
+    @Bean
+    public ThymeleafViewResolver viewResolver() {
+        ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
+        viewResolver.setTemplateEngine(templateEngine());
+        viewResolver.setOrder(1);
+        return viewResolver;
     }
 }

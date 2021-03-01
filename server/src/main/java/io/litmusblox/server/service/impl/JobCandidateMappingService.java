@@ -22,12 +22,9 @@ import io.litmusblox.server.uploadProcessor.NaukriExcelFileProcessorService;
 import io.litmusblox.server.utils.*;
 import lombok.extern.log4j.Log4j2;
 import org.apache.poi.util.IOUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.json.XML;
 import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.thymeleaf.context.Context;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,8 +35,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.thymeleaf.context.Context;
 
-import static java.util.stream.Collectors.groupingBy;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileInputStream;
@@ -2740,7 +2737,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     public String generateCandidatePDF(Long jcm){
         Context context = new Context();
         context.setVariable("test","null");
-        return thymeLeaf.templateEngineHTML().process("candidateProfile",context);
+        return thymeLeaf.viewResolver().getTemplateEngine().process("candidateProfile",context);
     }
 
 }
