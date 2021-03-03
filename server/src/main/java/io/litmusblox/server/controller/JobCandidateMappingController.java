@@ -11,6 +11,7 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.UserRepository;
 import io.litmusblox.server.service.*;
+import io.litmusblox.server.service.UnverifiedSkillsService;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
@@ -31,7 +32,7 @@ import java.util.*;
  * Date : 16/7/19
  * Time : 4:39 PM
  * Class Name : JobCandidateMappingController
- * Project Name : server
+ * Project Name : serverisCreatedOnSearchEngine
  */
 @CrossOrigin(origins = "*", methods = {RequestMethod.POST, RequestMethod.GET, RequestMethod.PUT, RequestMethod.OPTIONS}, allowedHeaders = {"Content-Type", "Authorization","X-Requested-With", "accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"}, exposedHeaders = {"Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"})
 @RestController
@@ -44,6 +45,10 @@ public class JobCandidateMappingController {
 
     @Autowired
     IJobCandidateMappingService jobCandidateMappingService;
+
+
+    @Autowired
+    iUnverifiedSkillsService unverifiedSkillsService;
 
     @Autowired
     IProcessUploadedCV processUploadedCV;
@@ -367,5 +372,15 @@ public class JobCandidateMappingController {
     void addCandidateByXml(@RequestParam("file") MultipartFile candidatesXml,@RequestParam Company companyId) throws Exception{
         jobCandidateMappingService.addCandidatesByXml(candidatesXml,companyId);
     }
-
+    @GetMapping(value = {"/getUnverifiedSkills"})
+    @ResponseStatus(value = HttpStatus.OK)
+    List<UnverifiedSkills> getUnverifiedSkillList() throws Exception
+    {
+        return unverifiedSkillsService.getUnverifiedSkillList();
+    }
+    @PostMapping(value = "/CurateSkills")
+    @ResponseStatus(value = HttpStatus.OK)
+    void curateUnverifiedSkills(@RequestBody List<UnverifiedSkills> unverifiedSkillsList) throws Exception{
+        unverifiedSkillsService.curateUnverifiedSkills(unverifiedSkillsList);
+    }
 }
