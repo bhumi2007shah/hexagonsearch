@@ -49,7 +49,6 @@ public interface IConstant {
     String REGEX_TO_VALIDATE_JOB_SHORT_CODE = "[A-Z]{2}[0-9]{6}$";
     String LB_JOB_CODE_REGEX = "[a-zA-Z]{2}\\d{6}";
     String REGEX_TO_FIND_SCIENTIFIC_NOTATION_MOBILE = "\\d\\.\\d+E\\+?\\d+";
-    String OFFER_COMPENSATION = "[0-9]{1,10}(\\.)?[0-9]{0,2}";
 
     // lengths
     Integer TITLE_MAX_LENGTH = 100;
@@ -444,4 +443,7 @@ String REF_ID_MATCH_REGEX = "[a-fA-F0-9]{8}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-
     String OTHERS = "Other (Other)";
 
     String NO_EXPERIENCE_TECH = "I have no experience";
+    String algorithmType = "AES";
+    int encryptionSize = 256;
+    int ivSpecSize = 16;
 }

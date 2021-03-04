@@ -21,6 +21,7 @@ import io.litmusblox.server.uploadProcessor.IUploadDataProcessService;
 import io.litmusblox.server.uploadProcessor.NaukriExcelFileProcessorService;
 import io.litmusblox.server.utils.*;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.poi.util.IOUtils;
 import org.json.XML;
 import org.mapstruct.factory.Mappers;
@@ -36,6 +37,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.context.Context;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -43,6 +45,8 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -2591,28 +2595,23 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
 
-        if(null != jcmOfferDetails.getOfferedCompensation() && !jcmOfferDetails.getOfferedCompensation().toString().matches(IConstant.OFFER_COMPENSATION)){
-            log.error("Offer compensation : {} not valid for jcm : {}", jcmOfferDetails.getOfferedCompensation(), jcmId);
-            throw new WebException("Offer compensation : "+jcmOfferDetails.getOfferedCompensation()+" not valid for jcm : "+jcmId,HttpStatus.BAD_REQUEST);
-        }
-
-        String stage = jcmFromDb.getStage().getStage();
 
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         validateLoggedInUser(loggedInUser, jcmFromDb.getJob());
 
-        if(!Arrays.asList( IConstant.Stage.MakeOffer.getValue() ,IConstant.Stage.Offer.getValue(),IConstant.Stage.Join.getValue()).contains(stage) ){
-            error = "cannot set offer details for jcmId :"+jcmId+" from "+stage+" stage";
-            log.error(error);
-            throw new WebException(error,HttpStatus.BAD_REQUEST);
-        }
 
         JcmOfferDetails jcmOfferFromDb = jcmOfferDetailsRepository.findByJcmId(jcmFromDb);
         if(null != jcmOfferFromDb)
             jcmOfferDetails.setId(jcmOfferFromDb.getId());
 
-        jcmOfferDetailsRepository.save(jcmOfferDetails);
-        jcmHistoryRepository.save(new JcmHistory(jcmFromDb,"Offer details added",jcmOfferDetails.getOfferedOn(),loggedInUser,jcmFromDb.getStage(),false));
+        try {
+            jcmOfferDetailsRepository.save(jcmOfferDetails);
+        }catch (Exception e){
+            log.error("Offer compensation not valid for jcmId : {}",jcmOfferDetails.getJcmId());
+            throw new WebException("Offer compensation not valid for jcmId : "+jcmOfferDetails.getJcmId(), HttpStatus.BAD_REQUEST);
+        }
+
+        jcmHistoryRepository.save(new JcmHistory(jcmFromDb,"Offer details added",new Date(),loggedInUser,jcmFromDb.getStage(),false));
         log.info("offer details saved successfully!");
     }
 
@@ -2717,10 +2716,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
            }
            Candidate candidate = mapper.companyCandidateToCandidate(companyCandidate);
            candidate.setCandidateSource(IConstant.CandidateSource.XMLUpload.getValue());
-           MultipartFile candidateCv = FileService.convertBase64ToMultipart(companyCandidate.getFileContent(),environment.getProperty("repoLocation")+companyCandidate.getFileName());
+           MultipartFile candidateCv = FileService.convertBase64ToMultipart(companyCandidate.getFileContent(),companyCandidate.getFileName());
             try {
                 UploadResponseBean result = uploadCandidateFromPlugin(candidate,job.getId(),candidateCv,Optional.empty());
-
                 if(result.getSuccessCount() == 1)
                     companyCandidate.setComments("Success");
                 else if(result.getFailureCount() == 1)
@@ -2731,13 +2729,55 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 log.error(e);
             }
         });
+        File file = new File(environment.getProperty(IConstant.REPO_LOCATION)+File.separator+"Candidates"+File.separator+candidatesXml.getOriginalFilename());
+        Files.copy(candidatesXml.getInputStream(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
         generateCsv(companyCandidates);
     }
 
-    public String generateCandidatePDF(Long jcm){
-        Context context = new Context();
-        context.setVariable("test","null");
-        return thymeLeaf.viewResolver().getTemplateEngine().process("candidateProfile",context);
-    }
+    /**
+     * Method to fetch candidateXmlDirectories and process them.
+     */
+    public void xmlFileProcessor(){
+        String xmlDirecory = environment.getProperty(IConstant.TEMP_REPO_LOCATION)+"xmlData/";
 
+        File directory = new File(xmlDirecory);
+
+        if(!directory.exists()){
+            log.error("Directory does not exist {}", xmlDirecory);
+            return;
+        }
+
+        File [] files = directory.listFiles();
+
+        log.info("Found {} xml files for processing", files.length);
+        for(File file : files){
+            if(file.isFile()) {
+                String companyShortName = file.getName().split("_")[0];
+                Company companyFromDB = companyRepository.findByShortNameIgnoreCase(companyShortName);
+
+                if (null != companyFromDB) {
+                    try {
+                        addCandidatesByXml(
+                                new CommonsMultipartFile(
+                                        new DiskFileItem(
+                                                "file",
+                                                "application/xml",
+                                                false,
+                                                file.getName(),
+                                                (int)file.length(),
+                                                file.getParentFile()
+                                        )
+                                ), companyFromDB
+                        );
+                    }catch (Exception e){
+                        log.error(e.getMessage(), e.getCause());
+                    }
+                    file.delete();
+                }
+            }
+            else{
+                log.error("{} is not a file.", file.getAbsoluteFile());
+            }
+        }
+    }
 }

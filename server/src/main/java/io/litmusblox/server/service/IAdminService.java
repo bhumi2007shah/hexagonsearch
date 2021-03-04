@@ -24,4 +24,11 @@ public interface IAdminService {
      */
     void addCompanyCandidateOnSearchEngine(Long companyId) throws Exception;
 
+    /**
+     * Service method to add ftp details to a company
+     * @param ftpRequestBean
+     * @throws Exception
+     */
+    void addCompanyFtpDetails(FtpRequestBean ftpRequestBean) throws Exception;
+
 }

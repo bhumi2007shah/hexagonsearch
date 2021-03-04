@@ -78,7 +78,7 @@ public class JCMAllDetails {
     Date hiredOn;
     String rejectedBy;
     Date rejectedOn;
-    Long offeredCompensation;
+    Double offeredCompensation;
     Date offerDetailsOfferedOn;
     Date joiningOn;
 
