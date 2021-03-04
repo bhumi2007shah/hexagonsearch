@@ -297,5 +297,5 @@ public interface IJobCandidateMappingService {
 
     void addCandidatesByXml(MultipartFile candidatesXml,Company companyId) throws Exception;
 
-    String generateCandidatePDF(Long jcmId);
+    void xmlFileProcessor();
 }

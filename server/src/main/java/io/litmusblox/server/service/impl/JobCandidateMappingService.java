@@ -2738,12 +2738,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * Method to fetch candidateXmlDirectories and process them.
      */
     public void xmlFileProcessor(){
-        String xmlDirecory = environment.getProperty(IConstant.TEMP_REPO_LOCATION)+"xmlData/";
+        String xmlDirectory = environment.getProperty(IConstant.TEMP_REPO_LOCATION)+"xmlData/";
 
-        File directory = new File(xmlDirecory);
+        File directory = new File(xmlDirectory);
 
         if(!directory.exists()){
-            log.error("Directory does not exist {}", xmlDirecory);
+            log.error("Directory does not exist {}", xmlDirectory);
             return;
         }
 
