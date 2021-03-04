@@ -64,7 +64,7 @@ public class ScheduledTasks {
         log.info("completed to update cv rating. Thread: {}", Thread.currentThread().getId());
     }
 
-    @Scheduled(cron = "0 0 11-6 * * *", zone = "IST")
+    @Scheduled(cron = "0 0 23,0-6 * * *", zone = "IST")
     public void createCandidateOnSearchEngine(){
         log.info("started create existing candidate on search engine. Thread {}", Thread.currentThread().getId());
         jobCandidateMappingService.createExistingCandidateOnSearchEngine();
