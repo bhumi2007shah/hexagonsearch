@@ -296,4 +296,6 @@ public interface IJobCandidateMappingService {
     void saveOfferDetails(JcmOfferDetails jcmOfferDetails);
 
     void addCandidatesByXml(MultipartFile candidatesXml,Company companyId) throws Exception;
+
+    void xmlFileProcessor();
 }

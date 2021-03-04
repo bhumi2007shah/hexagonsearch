@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.scheduler;
 
+import io.litmusblox.server.service.IFtpService;
 import io.litmusblox.server.service.IJobCandidateMappingService;
 import io.litmusblox.server.service.impl.FetchEmailService;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
@@ -22,7 +23,7 @@ import org.springframework.stereotype.Component;
  * Class Name : ScheduledTasks
  * Project Name : server
  */
-@Profile({"prod","testServer"})
+@Profile({"dev", "prod","testServer"})
 @Component
 @Log4j2
 public class ScheduledTasks {
@@ -35,6 +36,9 @@ public class ScheduledTasks {
 
     @Autowired
     IJobCandidateMappingService jobCandidateMappingService;
+
+    @Autowired
+    IFtpService ftpService;
 
     @Scheduled(fixedDelay = 300000, initialDelay = 5000)
     public void parseAndProcessCv() {
@@ -69,5 +73,18 @@ public class ScheduledTasks {
         log.info("started create existing candidate on searchengne. Thread {}", Thread.currentThread().getId());
         jobCandidateMappingService.createExistingCandidateOnSearchEngine();
         log.info("Completed process for create existing candidate on searchengne. Thread {}", Thread.currentThread().getId());
+    }
+
+    @Scheduled(fixedDelay = 20000, initialDelay = 2000)
+    public void fetchCandidateXmlFiles(){
+        log.info("Started Fetching candidate xml files using FTP Service. Thread {}", Thread.currentThread().getId());
+        ftpService.fetchCandidateXmlFiles();
+        log.info("Completed fetching candidate xml files. Thread {}", Thread.currentThread().getId());
+    }
+
+    public void processCandidateXmlFiles(){
+        log.info("Started processing candidate xml files. Thread {}", Thread.currentThread().getId());
+        jobCandidateMappingService.xmlFileProcessor();
+        log.info("Completed processing candidate xml files. Thread {}", Thread.currentThread().getId());
     }
 }

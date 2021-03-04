@@ -233,7 +233,20 @@
 			<artifactId>fr.opensagres.poi.xwpf.converter.pdf</artifactId>
 			<version>2.0.2</version>
 		</dependency>
+		<!-- Dependency to do ftp operations from within Java -->
+		<dependency>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.55</version>
+		</dependency>
 	</dependencies>
+
+	<repositories>
+		<repository>
+			<id>Jsch</id>
+			<url>http://jsch.sf.net/maven2/</url>
+		</repository>
+	</repositories>
 
 	<dependencyManagement>
 		<dependencies>

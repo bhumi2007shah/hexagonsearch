@@ -443,4 +443,7 @@ String REF_ID_MATCH_REGEX = "[a-fA-F0-9]{8}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-
     String OTHERS = "Other (Other)";
 
     String NO_EXPERIENCE_TECH = "I have no experience";
+    String algorithmType = "AES";
+    int encryptionSize = 256;
+    int ivSpecSize = 16;
 }
