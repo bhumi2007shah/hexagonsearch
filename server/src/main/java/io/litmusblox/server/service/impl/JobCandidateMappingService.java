@@ -2470,7 +2470,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
     public void createExistingCandidateOnSearchEngine(){
         long apiCallStartTime = System.currentTimeMillis();
-        if(IConstant.SYSTEM_IDEAL_LOAD_AVG < Util.getSystemLoadAverage()){
+        if(IConstant.SYSTEM_IDEAL_LOAD_AVG > Util.getSystemLoadAverage()){
             log.info("Current system load avg is: {}",Util.getSystemLoadAverage());
             List<JobCandidateMapping> jobCandidateMappingList = jobCandidateMappingRepository.findJcmNotInSearchEngine();
             jobCandidateMappingList.forEach(jobCandidateMapping -> {
