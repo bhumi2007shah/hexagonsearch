@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> 
+
+    <title>LB Candidate Profile</title>
+
+    <link href="CandidateProfile.css" rel="stylesheet" type="text/css" />
+    <link href="index.css" rel="stylesheet" type="text/css" />    
+
+
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+</head>
+<body>
+    <!--Complete Page-->
+    <div class = "container-main">
+        <!--Left Controls-->
+    
+
+        <!--Main Content-->
+        <div id="main-content" class="container-fluid mx-auto justify-content-center">
+            <!--Navigation-->
+          
+
+            <!--Dashboard-->
+            <div class = "row overview">
+                <!--Candidate Details-->
+                <div class = "row overview-details">
+                    <div class = " p-0 overview-info-shortcuts">
+                        <div class="display-picture">
+                            <p class="candidate-initial-new m-0" th:text="${jcm.candidateFirstName.charAt(0)}"></p>
+                        </div>
+                      
+                    </div>
+                    <div class = " p-0 overview-info-details">
+                        <h1 class="candidate-name" th:text="${jcm.candidateFirstName}+' ' +${jcm.candidateLastName} "></h1>
+                        <div class = "row candidate-contact">
+                            <div class = "p-0 candidate-phone">
+                                <img src = "img/smartphone-icon.svg" alt="Phone Icon"/>
+                                <span th:text="${jcm.mobile}">mobile</span>
+                            </div>
+                            <div class = " p-0 candidate-mail">
+                                <img src = "img/email-icon.svg" alt="Mail Icon"/>
+                                <span th:text="${jcm.email}">email</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    <div class="row mt-3 candidate-detail-container">
+                        <span class="  p-0 candidate-detail-heading">Candidate Details</span>
+                        <div class="row mt-3 detail__container">
+                            <div class="col-lg-6 p-0 detail__left__section" th:each="question, iStat : ${overviewValues}">
+                                <div class="row left__section__row">
+                                    <div class="col-lg-4 left__section__question" th:text="${question.key}"> </div>
+                                    <div class="col-lg-8 left__section__answer">
+                                        <div th:text="${question.value}"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 p-0 detail__right__section">
+
+                            </div>
+                        </div>
+                   
+              
+               
+                <!--Candidate Review-->
+                <div class = "row overview-review">
+                    <div class = "col-lg-6 m-0 p-0 overview-rating">
+                        <span class="keyskill-heading">Key Skills Strength</span>
+                        <div class="overview-rating-stars"  >
+                            <img th:each="i : ${#numbers.sequence( 1, keySkills)}" class="expand-icon" src="img/star-icon-new.svg" alt="star-icon"/>
+                            <img  th:each="i : ${#numbers.sequence( 1, (5-keySkills))}" class="expand-icon" src="img/star-border-icon.svg" alt="star-icon"/>
+                        </div>
+                    </div>
+                   
+                    <div class = "overview-review-message">
+                        <span>(based on resume)</span>
+                    </div>
+                    <div class = "row m-0 mt-4 p-0 overview-review-skills">
+                        <div class = "col-4 m-0 p-0 review-skills-strong">
+                            <span class = "skills-heading-strong">Strong Skills Match</span>
+                            <div class="skills mt-3">
+                                <span class="skill"  th:each="skill : ${strongSkills}" th:text="${skill.key}"></span>
+                            </div>
+                        </div>
+                        <div class = "col-4 m-0 p-0 review-skills-weak">
+                            <span class="skills-heading-weak">Weak Skills Match</span>
+                            <div class="skills mt-3">
+                                <span class="skill"  th:each="skill : ${weakSkills}" th:text="${skill.key}"></span>
+                            </div>
+                        </div>
+                        <div class = "col-4 m-0 p-0 review-skills-no">
+                            <span class="skills-heading-no">No Skills Match</span>
+                            <div class="skills mt-3">
+                                <span class="skill"  th:each="skill : ${noSkills}" th:text="${skill.key}"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+         </div>
+
+            <!--Litmus Heatmap-->
+            <div class = "row litmus-heatmap">
+                <div class = "row heatmap-header">
+                    <div class = "col-6 p-0">
+                        <span class="litmus-heatmap-header">Litmus Heatmap</span>
+                    </div>
+                    <div class = "col-6">
+                       <div class = "row heatmap-expertise">
+                            <div class = "col-3">
+                                <span class="expertise">
+                                    <span class="expertise-btn--strong">&nbsp;</span>
+                                    Strong Expertise
+                                </span>
+                            </div>
+                            <div class = "col-3">
+                                <span class="expertise">
+                                    <span class="expertise-btn--good">&nbsp;</span>
+                                    Good Expertise
+                                </span>
+                            </div>
+                            <div class = "col-3">
+                                <span class="expertise">
+                                    <span class="expertise-btn--less">&nbsp;</span>
+                                    Less Expertise
+                                </span>
+                            </div>
+                            <div class = "col-3">
+                                <span class="expertise">
+                                    <span class="expertise-btn--no">&nbsp;</span>
+                                    No Expertise
+                                    </span>
+                            </div>
+                       </div>
+                    </div>
+                </div>
+                <div class = "row m-0 heatmap-columns">
+                    <div class = "heatmap-columns--categories">
+                        <span class="heatmap-column-header--text">SECTION</span>
+                    </div>
+                    <div class = "heatmap-columns--skills">
+                        <span class="heatmap-column-header--text">AREA</span>
+                    </div>
+                </div>
+
+                <div class = "row m-0 heatmap-columns">
+                    <div class = "heatmap-columns--categories">
+                        <span class="heatmap-header-column--block">
+                            Front end
+                        </span>
+                    </div>
+                    <div class = "heatmap-columns--skills">
+                        <span class="heatmap-header-column--blocks less">
+                            Type of website
+                        </span>
+                        <span class="heatmap-header-column--blocks strong">
+                            Development techniques
+                        </span>
+                        <span class="heatmap-header-column--blocks strong">
+                            Security
+                        </span>
+                        <span class="heatmap-header-column--blocks strong">
+                            Accessibility
+                        </span>
+                    </div>
+                </div>
+                <div class = "row m-0 heatmap-columns">
+                    <div class = "heatmap-columns--categories">
+                        <span class="heatmap-header-column--block">
+                            Javascript
+                        </span>
+                    </div>
+                    <div class = "heatmap-columns--skills" style="flex-wrap: wrap;">
+                        <span class="heatmap-header-column--blocks strong">
+                            Variation
+                        </span>
+                        <span class="heatmap-header-column--blocks good">
+                            Basic Concepts
+                        </span>
+                        <span class="heatmap-header-column--blocks strong">
+                            DOM Concepts
+                        </span>
+                        <span class="heatmap-header-column--blocks good">
+                            Frameworks
+                        </span>
+                        <span class="heatmap-header-column--blocks strong">
+                            Engine
+                        </span>
+                        <span class="heatmap-header-column--blocks good">
+                            Events
+                        </span>
+                    </div>
+                </div>
+                <div class = "row m-0 heatmap-columns">
+                    <div class = "heatmap-columns--categories">
+                        <span class="heatmap-header-column--block">
+                            HTML
+                        </span>
+                    </div>
+                    <div class = "heatmap-columns--skills">
+                        <span class="heatmap-header-column--blocks strong">
+                            Version
+                        </span>
+                        <span class="heatmap-header-column--blocks less">
+                            Frameworks
+                        </span>
+                        <span class="heatmap-header-column--blocks no">
+                            Dev tools
+                        </span>
+                        <span class="heatmap-header-column--blocks less">
+                            Libraries
+                        </span>
+                    </div>
+                </div>
+                <div class = "row m-0 heatmap-columns">
+                    <div class = "heatmap-columns--categories">
+                        <span class="heatmap-header-column--block">
+                            CSS
+                        </span>
+                    </div>
+                    <div class = "heatmap-columns--skills">
+                        <span class="heatmap-header-column--blocks strong">
+                            Libraries
+                        </span>
+                        <span class="heatmap-header-column--blocks less">
+                            Preprocessors
+                        </span>
+                        <span class="heatmap-header-column--blocks strong">
+                            Features (Layout)
+                        </span>
+                        <span class="heatmap-header-column--blocks no">
+                            CSS3 (New)
+                        </span>
+                        <span class="heatmap-header-column--blocks less">
+                            Versions
+                        </span>
+                    </div>
+                </div>
+                <div class = "row m-0 heatmap-columns">
+                    <div class = "heatmap-columns--categories">
+                        <span class="heatmap-header-column--block">
+                            jQuery
+                        </span>
+                    </div>
+                    <div class = "heatmap-columns--skills">
+                        <span class="heatmap-header-column--blocks less">
+                            Type of Jquery code used
+                        </span>
+                        <span class="heatmap-header-column--blocks less">
+                            jQuery Capabilities
+                        </span>
+                        <span class="heatmap-header-column--blocks good">
+                            jQuery data format
+                        </span>
+                    </div>
+                </div>
+                <div class = "row m-0 heatmap-columns">
+                    <div class = "heatmap-columns--categories">
+                        <span class="heatmap-header-column--block">
+                            Angular
+                        </span>
+                    </div>
+                    <div class = "heatmap-columns--skills">
+                        <span class="heatmap-header-column--blocks good">
+                            Angular Version
+                        </span>
+                        <span class="heatmap-header-column--blocks no">
+                            Angular Directives
+                        </span>
+                        <span class="heatmap-header-column--blocks less">
+                            Angular Capabilities
+                        </span>
+                        <span class="heatmap-header-column--blocks good">
+                            Angular Libraries
+                        </span>
+                    </div>
+                </div>
+                <div class = "row m-0 heatmap-columns">
+                    <div class = "heatmap-columns--categories">
+                        <span class="heatmap-header-column--block">
+                            React
+                        </span>
+                    </div>
+                    <div class = "heatmap-columns--skills">
+                        <span class="heatmap-header-column--blocks good">
+                            React JS features
+                        </span>
+                        <span class="heatmap-header-column--blocks less">
+                            React Hooks
+                        </span>
+                        <span class="heatmap-header-column--blocks less">
+                            Lifecycle events
+                        </span>
+                    </div>
+                </div>
+                <div class = "row m-0 heatmap-columns">
+                    <div class = "heatmap-columns--categories">
+                        <span class="heatmap-header-column--block">
+                            Bootstrap
+                        </span>
+                    </div>
+                    <div class = "heatmap-columns--skills">
+                        <span class="heatmap-header-column--blocks good">
+                            Version
+                        </span>
+                        <span class="heatmap-header-column--blocks good">
+                            Features
+                        </span>
+                        <span class="heatmap-header-column--blocks less">
+                            Static UI
+                        </span>
+                        <span class="heatmap-header-column--blocks less">
+                            Dynamic UI
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+             <!--Questions-->
+             <div class = "row Questions">
+                <div class="Questions-heading">
+                    <div class = "row m-0 question-categories">
+                        <div class = "col-6 m-0 screening-questions--heading">
+                            <span>Job Screening Questions (<span th:text="${tech.size()}"></span>)</span>
+                        </div>
+                        
+                    </div>
+                </div>
+                <div class = "row column-definitions">
+                    <div class = "col-6 p-0 column-question">
+                        <span class="column-question-heading">Questions</span>
+                    </div>
+                    <div class = "col-6 p-0 column-answer">
+                        <span class="column-answer-heading">Answers</span>
+                    </div>
+                </div>
+                <div class = "row column-definitions" th:each="question,stat : ${tech}">
+                    <span class="questions" th:text="${stat.index+1+'. '+question.key}">
+                        question
+                    </span>
+                    <span class="answers" th:text="${question.value}">
+                       Answer
+                    </span>
+                </div>
+
+                
+            </div>
+
+                <div class = "row Questions">
+                    <div class="Questions-heading">
+                        <div class = "row m-0 question-categories">
+                            <div class = "col-6 m-0 screening-questions--heading">
+                                <span>HR Screening Questions (<span th:text="${master.size()}"></span>)</span>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class = "row column-definitions">
+                        <div class = "col-6 p-0 column-question">
+                            <span class="column-question-heading">Questions</span>
+                        </div>
+                        <div class = "col-6 p-0 column-answer">
+                            <span class="column-answer-heading">Answers</span>
+                        </div>
+                    </div>
+                    <div class = "row column-definitions" th:each="question ,stat: ${master}">
+                    <span class="questions" th:text="${stat.index+1+'. '+question.key}">
+                        question
+                    </span>
+                        <span class="answers" th:text="${question.value}">
+                       Answer
+                    </span>
+                    </div>
+
+
+                </div>
+
+                <div class = "row Questions">
+                    <div class="Questions-heading">
+                        <div class = "row m-0 question-categories">
+                            <div class = "col-6 m-0 screening-questions--heading">
+                                <span>Custom Screening Questions (<span th:text="${custom.size()}"></span>)</span>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class = "row column-definitions">
+                        <div class = "col-6 p-0 column-question">
+                            <span class="column-question-heading">Questions</span>
+                        </div>
+                        <div class = "col-6 p-0 column-answer">
+                            <span class="column-answer-heading">Answers</span>
+                        </div>
+                    </div>
+                    <div class = "row column-definitions" th:each="question,stat : ${custom}">
+                    <span class="questions" th:text="${stat.index+1+'. '+question.key}">
+                        question
+                    </span>
+                        <span class="answers" th:text="${question.value}">
+                       Answer
+                    </span>
+                    </div>
+
+
+                </div>
+
+
+
+                <!---Quick screening heat map-->
+               <div class = "row Questions">
+                <div class="heatmap-header-qs">
+                    <div class = "row m-0 question-categories">
+                        <div class = "col-6 m-0 screenin-qsg-questions--heading">
+                            <span class="litmus-heatmap-header">Job Screening</span>
+                        </div>
+                        
+                    </div>
+                </div>
+            
+                  <div class="heatmap__container">
+                    <div class="statementBlock-question">What is your skill level on this?</div>
+
+                    <div class="skll-outer ">
+                        <div class="col-3 " style="border-bottom: 1px solid rgb(156, 163, 169);">
+                            <p class="statementBlock">Skill Usage</p></div>
+                            <div class="col-9" style="border-bottom: 1px solid rgb(156, 163, 169);">
+                                <div class="row" style="margin-left: 20px;">
+                                    <p class="statement">Not aware</p>
+                                    <p class="statement">Trained but not used</p>
+                                    <p class="statement">Used this in the past</p>
+                                    <p class="statement">Moderately used in present job</p>
+                                    <p class="statement">Extensively used in present job</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+
+                            <div class="row" style="border-bottom: 1px solid rgb(156, 163, 169);">
+                                <div class="col-3" style="border-right: 1px solid rgb(156, 163, 169);">
+                                    <p class="heatmap__skillname"> CSS</p></div>
+                                    <div class="col-9" style="margin: auto;">
+                                        <div style="margin-left: -30px;"> <div>
+                                            <div class="bar-orange progress" style="background-color: rgb(255, 255, 255);">
+                                                <div role="progressbar" class="progress-bar" aria-valuenow="34" aria-valuemin="0" aria-valuemax="100" style="width: 10%">
+                                                    
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="border-bottom: 1px solid rgb(156, 163, 169);">
+                                <div class="col-3" style="border-right: 1px solid rgb(156, 163, 169);">
+                                    <p class="heatmap__skillname"> J2EE</p>
+                                </div>
+                                <div class="col-9" style="margin: auto;">
+                                    <div style="margin-left: -30px;"> 
+                                        <div>
+                                            <div class="bar-yellow progress" style="background-color: rgb(255, 255, 255);">
+                                                <div role="progressbar" class="progress-bar" aria-valuenow="52" aria-valuemin="0" aria-valuemax="100" style="width: 10%">
+                                                    
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="border-bottom: 1px solid rgb(156, 163, 169);">
+                                <div class="col-3" style="border-right: 1px solid rgb(156, 163, 169);">
+                                    <p class="heatmap__skillname"> Agile</p>
+                                </div><div class="col-9" style="margin: auto;">
+                                    <div style="margin-left: -30px;">
+                                     <div>
+                                        <div class="bar-lightgreen progress" style="background-color: rgb(255, 255, 255);">
+                                            <div role="progressbar" class="progress-bar" aria-valuenow="73" aria-valuemin="0" aria-valuemax="100" style="width: 10%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" style="border-bottom: 1px solid rgb(156, 163, 169);">
+                            <div class="col-3" style="border-right: 1px solid rgb(156, 163, 169);">
+                                <p class="heatmap__skillname"> aws</p>
+                            </div>
+                            <div class="col-9" style="margin: auto;">
+                                <div style="margin-left: -30px;">
+                                 <div>
+                                    <div class="bar-darkgreen progress" style="background-color: rgb(255, 255, 255);">
+                                        <div role="progressbar" class="progress-bar" aria-valuenow="91" aria-valuemin="0" aria-valuemax="100" style="width: 10%" ></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="border-bottom: 1px solid rgb(156, 163, 169);">
+                        <div class="col-3" style="border-right: 1px solid rgb(156, 163, 169);">
+                            <p class="heatmap__skillname"> GIT</p>
+                        </div>
+                        <div class="col-9" style="margin: auto;">
+                            <div style="margin-left: -30px;"> 
+                                <div>
+                                    <div class="bar-orange progress" style="background-color: rgb(255, 255, 255);">
+                                        <div role="progressbar" class="progress-bar" aria-valuenow="34" aria-valuemin="0" aria-valuemax="100" ></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="border-bottom: 1px solid rgb(156, 163, 169);">
+                        <div class="col-3" style="border-right: 1px solid rgb(156, 163, 169);">
+                            <p class="heatmap__skillname"> HTML</p>
+                        </div>
+                        <div class="col-9" style="margin: auto;">
+                            <div style="margin-left: -30px;"> 
+                                <div>
+                                    <div class="bar-yellow progress" style="background-color: rgb(255, 255, 255);">
+                                        <div role="progressbar" class="progress-bar" aria-valuenow="52" aria-valuemin="0" aria-valuemax="100" ></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="border-bottom: 1px solid rgb(156, 163, 169);">
+                        <div class="col-3" style="border-right: 1px solid rgb(156, 163, 169);">
+                            <p class="heatmap__skillname"> java</p>
+                        </div><div class="col-9" style="margin: auto;">
+                            <div style="margin-left: -30px;">
+                             <div>
+                                <div class="bar-lightgreen progress" style="background-color: rgb(255, 255, 255);">
+                                    <div role="progressbar" class="progress-bar" aria-valuenow="73" aria-valuemin="0" aria-valuemax="100" >
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="border-bottom: 1px solid rgb(156, 163, 169);">
+                    <div class="col-3" style="border-right: 1px solid rgb(156, 163, 169);">
+                        <p class="heatmap__skillname"> javascript</p>
+                    </div><div class="col-9" style="margin: auto;">
+                        <div style="margin-left: -30px;"> 
+                            <div>
+                                <div class="bar-pink progress" style="background-color: rgb(255, 255, 255);">
+                                    <div role="progressbar" class="progress-bar" aria-valuenow="13" aria-valuemin="0" aria-valuemax="100" >
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="border-bottom: 1px solid rgb(156, 163, 169);">
+                    <div class="col-3" style="border-right: 1px solid rgb(156, 163, 169);">
+                        <p class="heatmap__skillname"> MySQL</p>
+                    </div>
+                    <div class="col-9" style="margin: auto;">
+                        <div style="margin-left: -30px;"> 
+                            <div>
+                                <div class="bar-lightgreen progress" style="background-color: rgb(255, 255, 255);">
+                                    <div role="progressbar" class="progress-bar" aria-valuenow="73" aria-valuemin="0" aria-valuemax="100" >
+                                        
+                                    </div></div></div></div></div></div></div></div>
+            </div>
+
+        
+        </div>
+        </div>
+    </div>    
+</body>
+</html>
