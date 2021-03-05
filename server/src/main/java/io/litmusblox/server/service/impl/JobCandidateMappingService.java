@@ -2790,16 +2790,13 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         Map<String,String>response = new HashMap<>();
         screeningQuestions.forEach(question->{
             Long questionId = question.getId();
-            response.put(question.getQuestionCategory().getValue(),"-");
-
             if(null == screeningQuestionsResponse ) return;
-
             screeningQuestionsResponse.forEach(candidateResponse->{
                 ScreeningQuestions masterScreeningQuestion = candidateResponse.getMasterScreeningQuestionId();
                 if(null == masterScreeningQuestion)
                     return;
                 if(questionId.equals(masterScreeningQuestion.getId())){
-                    response.replace(question.getQuestionCategory().getValue(),String.join(" ,",candidateResponse.getCandidateResponse()));
+                    response.put(question.getQuestionCategory().getValue(),String.join(" ,",candidateResponse.getCandidateResponse()));
                 }
             });
         });
@@ -2860,7 +2857,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         context.setVariable("company",candidateCompanyDetails);
         context.setVariable("candidate",jcm.getCandidate());
         context.setVariable("overviewValues",getOverviewQuestionsAndTheirResponse(screeningQuestionsResponse,screeningQuestions));
-        context.setVariable("keySkills",jcm.getOverallRating());
+        context.setVariable("keySkills",null == jcm.getOverallRating()?0:jcm.getOverallRating());
 
         context.setVariable("custom",jobQuestions.get("custom"));
         context.setVariable("tech",jobQuestions.get("tech"));

@@ -1,6 +1,7 @@
     .container-main{
-    width: 100%;
-    display: flex;
+    width: 800px;
+    display: block;
+    margin-left:-50px;
 }
 
 .left-controls{
@@ -52,7 +53,7 @@
 }
 
 #main-content{
-  background-color: #EEEEEE;
+  background-color: #fff;
   font-family: Roboto;
 }
 
@@ -89,8 +90,6 @@
     width: auto;
     height: auto;
     background-color: #FFFFFF;
-
-    margin: 30px;
 
     box-shadow: 0px 4px 6px #0000000D;
     border-radius: 10px;
@@ -223,13 +222,14 @@
 }
 
 .candidate-mail{
-    display: flex;
+    display: inline-block;
 }
 
 .candidate-mail img {
     width: 22px;
     height: 22px;
     margin-right: 5px;
+      float:left;
 }
 
 .candidate-mail span {
@@ -605,20 +605,19 @@
 }
 
 .skills{
-    display: flex;
-    flex-wrap: wrap;
+    display: inline-block;
+    float: left;
 }
 
 .skill {
-    border: 1px solid #33475B;
-    height: 22px;
-    padding: 0px 10px;
-    margin: 7px 10px 0px 0px;
+
+
+    margin: 5px;
     color: #33475B;
     font-size: 12px;
     justify-content: center;
     align-items: center;
-    display: flex;
+    display: inline;
 }
 
 .more-skill{
@@ -626,7 +625,7 @@
     background-color:#33475B;
     padding: 3px 6px;
     margin-right: 10px;
-    margin-top: 10px;
+    margin-top: 20px;
     border-radius: 50%;
 }
 
@@ -635,6 +634,8 @@
     font-weight: bold;
     color:#33475B;
     border-bottom: 5px solid #29B500;
+       float: left;
+    display: inline-block;
 }
 
 .skills-heading-weak{
@@ -642,6 +643,8 @@
     font-weight: bold;
     color:#33475B;
     border-bottom: 5px solid #F67738;
+        float: left;
+    display: inline-block;
 }
 
 .skills-heading-no{
@@ -649,11 +652,13 @@
     font-weight: bold;
     color:#33475B;
     border-bottom: 5px solid #F02727;
+        float: left;
+    display: inline-block;
 }
 /*Candidate Details*/
 
 .candidate-detail-heading {
-    width:1030px;
+    width:800px;
     font-size: 16px;
     font-weight: bold;
     margin-right: 5px;
@@ -667,7 +672,7 @@
       float:left;
 }
 .detail__left__section {
-    width:50%;
+    width:700px;
     border-top: 1px solid #E5E5E5;
     border-right: 1px solid #E5E5E5;
     float:left;
@@ -682,7 +687,7 @@
     border-right: 1px solid #E5E5E5;
     padding-right: 0px !important;
      float:left;
-     width:48%;
+     width:300px;
      padding-left: 10px;
 }
 .left__section__answer {
@@ -693,13 +698,13 @@
     overflow: hidden;
     line-height: 25px;
      float:left;
-     width:48%;
+     width:398px;
      padding-left: 10px;
 }
 .detail__right__section {
     border-top: 1px solid #E5E5E5;
       float:left;
-        width:49%;
+        width:460px;
 }
 .right__section__row {
     border-bottom: 1px solid #E5E5E5;
@@ -708,7 +713,7 @@
     float:left;
 }
 .right__section__question {
-    width:48%;
+    width:200px;
      padding-left: 10px;
     float:left;
     font-size: 12px;
@@ -733,7 +738,7 @@
 
 }
 .right__section__answer {
-     width:48%;
+     width:260px;
      padding-left: 10px;
     float:left;
     font-size: 14px;
@@ -746,7 +751,7 @@
 }
 
 /*Key Skills cols*/
-.col-4{width:33%;
+.col-4{width:250px;
     float:left;}
 /*Litmus Heatmap*/
 .litmus-heatmap{
@@ -966,8 +971,9 @@
 
 .column-question{
     display: block;
-    width:500px;
+    width:400px;
     border-right: 1px solid transparent;
+    float: left;
 }
 
 .column-question-heading{
@@ -997,7 +1003,8 @@
 .column-answer{
     display: block;
     flex-direction: column;
-    width: 500px;
+    width: 400px;
+    float: left;
 }
 
 .column-answer-heading{
@@ -1035,7 +1042,7 @@
     float: left;
 }
 .col-3{
-    width:20%;
+    width:200px;
      float: left;
      display: inline-block;
 }
@@ -1075,7 +1082,7 @@
     padding-bottom: 10px;
 }
 .col-9{
-    width:75%;
+    width:650px;
     float:left;
     display: inline-block;
 }

@@ -580,9 +580,7 @@ public class Util {
             outputStream = new FileOutputStream(outputFolder);
             ConverterProperties converterProperties = new ConverterProperties();
 
-            MediaDeviceDescription mediaDeviceDescription = new MediaDeviceDescription(MediaType.PRINT);
-            mediaDeviceDescription.setWidth(PageSize.A4.getWidth());
-            mediaDeviceDescription.setOrientation("LANDSCAPE");
+            MediaDeviceDescription mediaDeviceDescription = new MediaDeviceDescription(MediaType.ALL,PageSize.A1.getWidth(),PageSize.A1.getHeight());
             converterProperties.setMediaDeviceDescription(mediaDeviceDescription);
             converterProperties.setBaseUri("./src/main/resources/templates/");
 
