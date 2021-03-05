@@ -43,7 +43,7 @@ public class ScoreService implements IScoreService {
 
                     if(null != question.getTechScreeningQuestionId()){
                         Long optionCount = null != question.getTechScreeningQuestionId().getAnswerSelection()?
-                                Long.parseLong(question.getTechScreeningQuestionId().getAnswerSelection()):null;
+                                Long.parseLong(question.getTechScreeningQuestionId().getAnswerSelection().replaceAll("[^0-9]", "")):null;
 
                         String [] candidateResponse = null != jcm.getCandidateChatbotResponse() && null != jcm.getCandidateChatbotResponse().get(question.getId().toString())?(jcm.getCandidateChatbotResponse().get(question.getId().toString()).split("%$")): null;
 

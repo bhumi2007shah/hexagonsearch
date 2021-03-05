@@ -37,8 +37,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.thymeleaf.context.Context;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
+import org.thymeleaf.context.Context;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -2866,15 +2866,21 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         context.setVariable("tech",jobQuestions.get("tech"));
         context.setVariable("master",jobQuestions.get("master"));
 
-        context.setVariable("noSkills",jcm.getCvSkillRatingJson().get("1"));
-        context.setVariable("weakSkills",jcm.getCvSkillRatingJson().get("2"));
-        context.setVariable("strongSkills",jcm.getCvSkillRatingJson().get("3"));
+        if(null != jcm.getCvSkillRatingJson()) {
+            context.setVariable("noSkills", jcm.getCvSkillRatingJson().get("1"));
+            context.setVariable("weakSkills", jcm.getCvSkillRatingJson().get("2"));
+            context.setVariable("strongSkills", jcm.getCvSkillRatingJson().get("3"));
+        }
         Map<String,Map> score = scoreService.scoreJcm(jcm.getJob(),jcm);
 
         //Quick Screening
 
-        String html =  thymeLeaf.viewResolver().getTemplateEngine().process("CandidateProfile",context);
-        Util.convertToPdf(html);
+        try {
+            String html = thymeLeaf.viewResolver().getTemplateEngine().process("CandidateProfile", context);
+            Util.convertToPdf(html);
+        }catch (Exception e){
+            log.error(e.getMessage(), e.getCause());
+        }
         return "done";
     }
 }
