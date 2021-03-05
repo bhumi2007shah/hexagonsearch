@@ -1540,7 +1540,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             log.error(error);
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
-        validateLoggedInUser(loggedInUser,job);
+        validateCompanyId(loggedInUser,job.getCompanyId().getId());
         if(!job.isTemplate()){
             String error = "error creating new job : "+job.getId()+" is not marked as a template";
             log.error(error);
