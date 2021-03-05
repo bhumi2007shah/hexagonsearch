@@ -11,6 +11,7 @@ import io.litmusblox.server.model.JobScreeningQuestions;
 import io.litmusblox.server.service.IScoreService;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 
@@ -21,6 +22,7 @@ import java.util.*;
  * Class Name : ScoreService
  * Project Name : server
  */
+@Service
 @Log4j2
 public class ScoreService implements IScoreService {
 

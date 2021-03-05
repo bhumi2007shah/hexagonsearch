@@ -10,6 +10,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+import com.itextpdf.html2pdf.ConverterProperties;
+import com.itextpdf.html2pdf.HtmlConverter;
+import com.itextpdf.styledxmlparser.css.media.MediaDeviceDescription;
+import com.itextpdf.styledxmlparser.css.media.MediaType;
+import com.itextpdf.text.FontFactoryImp;
+import com.itextpdf.text.FontProvider;
+import com.itextpdf.text.PageSize;
+import com.lowagie.text.DocumentException;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
@@ -30,6 +38,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
+import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import java.io.*;
 import java.nio.file.FileSystem;
@@ -566,6 +575,26 @@ public class Util {
     public static String removeHtmlTags(String htmlString){
         log.info("Remove Html tag's from string");
         return Jsoup.parse(htmlString).text();
+    }
+
+    public static void convertToPdf(String html) {
+        String outputFolder = "/home/suraj/Desktop/" + File.separator + "candidateProfile.pdf";
+        OutputStream outputStream = null;
+        try {
+            outputStream = new FileOutputStream(outputFolder);
+            ConverterProperties converterProperties = new ConverterProperties();
+
+            MediaDeviceDescription mediaDeviceDescription = new MediaDeviceDescription(MediaType.PRINT);
+            mediaDeviceDescription.setWidth(PageSize.A4.getWidth());
+            mediaDeviceDescription.setOrientation("LANDSCAPE");
+            converterProperties.setMediaDeviceDescription(mediaDeviceDescription);
+            converterProperties.setBaseUri("./src/main/resources/templates/");
+
+            HtmlConverter.convertToPdf(html,outputStream,converterProperties);
+            outputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

@@ -15,6 +15,7 @@ import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.*;
+import io.litmusblox.server.service.impl.Scoring.ScoreService;
 import io.litmusblox.server.uploadProcessor.CsvFileProcessorService;
 import io.litmusblox.server.uploadProcessor.ExcelFileProcessorService;
 import io.litmusblox.server.uploadProcessor.IUploadDataProcessService;
@@ -104,6 +105,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
     @Autowired
     ThymeLeafConfig thymeLeaf;
+
+    @Autowired
+    ScoreService scoreService;
 
     @Resource
     CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
@@ -2779,5 +2783,98 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 log.error("{} is not a file.", file.getAbsoluteFile());
             }
         }
+    }
+
+    private Map<String,String> getOverviewQuestionsAndTheirResponse(List<JobScreeningQuestions> screeningQuestionsResponse,List<ScreeningQuestions> screeningQuestions){
+
+        Map<String,String>response = new HashMap<>();
+        screeningQuestions.forEach(question->{
+            Long questionId = question.getId();
+            response.put(question.getQuestionCategory().getValue(),"-");
+
+            if(null == screeningQuestionsResponse ) return;
+
+            screeningQuestionsResponse.forEach(candidateResponse->{
+                ScreeningQuestions masterScreeningQuestion = candidateResponse.getMasterScreeningQuestionId();
+                if(null == masterScreeningQuestion)
+                    return;
+                if(questionId.equals(masterScreeningQuestion.getId())){
+                    response.replace(question.getQuestionCategory().getValue(),String.join(" ,",candidateResponse.getCandidateResponse()));
+                }
+            });
+        });
+        return  response;
+    }
+    private Map<String,Map<String,String>> getQuestionsAndTheirResponses(List<JobScreeningQuestions> questions,Map<String,String> chatbotResponse){
+        Map<String,Map<String,String>> response = new HashMap<>();
+        Map<String,String> master,custom,tech;
+        master =  new HashMap<>();
+        custom  = new HashMap<>();
+        tech = new HashMap<>();
+
+        questions.forEach(question->{
+            String questionId = question.getId().toString();
+            AtomicReference<String> candidateResponse = new AtomicReference<>("-");
+            chatbotResponse.forEach((String id,String answer)->{
+                if(questionId.equals(id)){
+                    candidateResponse.set(answer.replaceAll("%$",", "));
+                    return;
+                }
+            });
+            if(null != question.getMasterScreeningQuestionId()){
+                ScreeningQuestions temp = question.getMasterScreeningQuestionId();
+                master.put(temp.getQuestion(),candidateResponse.get());
+
+            }
+            if(null != question.getTechScreeningQuestionId()){
+                TechScreeningQuestion temp = question.getTechScreeningQuestionId();
+                tech.put(temp.getTechQuestion(),candidateResponse.get());
+            }
+            if(null != question.getUserScreeningQuestionId()){
+                UserScreeningQuestion temp = question.getUserScreeningQuestionId();
+                custom.put(temp.getQuestion(),candidateResponse.get());
+            }
+        });
+        response.put("master",master);
+        response.put("custom",custom);
+        response.put("tech",tech);
+
+        return response;
+    }
+    public String generateCandidatePDF(Long jcmId){
+        JobCandidateMapping jcm = jobCandidateMappingRepository.findById(jcmId).orElse(null);
+        if(null == jcm)
+            throw new ValidationException("No job candidate mapping found for id: " + jcmId, HttpStatus.UNPROCESSABLE_ENTITY);
+        setJcmForCandidateProfile(jcm);
+
+        CandidateCompanyDetails candidateCompanyDetails = new CandidateCompanyDetails();;
+        if(jcm.getCandidate().getCandidateCompanyDetails().size()>0)
+            candidateCompanyDetails =  jcm.getCandidate().getCandidateCompanyDetails().get(0);
+
+        List<ScreeningQuestions> screeningQuestions= screeningQuestionsRepository.findByCountryIdAndQuestionCategory(3L);
+        List<JobScreeningQuestions> screeningQuestionsResponse = jcm.getCandidate().getScreeningQuestionResponses();
+        Map<String,Map<String,String>> jobQuestions = getQuestionsAndTheirResponses(jcm.getJob().getJobScreeningQuestionsList(),jcm.getCandidateChatbotResponse());
+
+        Context context = new Context();
+        context.setVariable("jcm",jcm);
+        context.setVariable("company",candidateCompanyDetails);
+        context.setVariable("candidate",jcm.getCandidate());
+        context.setVariable("overviewValues",getOverviewQuestionsAndTheirResponse(screeningQuestionsResponse,screeningQuestions));
+        context.setVariable("keySkills",jcm.getOverallRating());
+
+        context.setVariable("custom",jobQuestions.get("custom"));
+        context.setVariable("tech",jobQuestions.get("tech"));
+        context.setVariable("master",jobQuestions.get("master"));
+
+        context.setVariable("noSkills",jcm.getCvSkillRatingJson().get("1"));
+        context.setVariable("weakSkills",jcm.getCvSkillRatingJson().get("2"));
+        context.setVariable("strongSkills",jcm.getCvSkillRatingJson().get("3"));
+        Map<String,Map> score = scoreService.scoreJcm(jcm.getJob(),jcm);
+
+        //Quick Screening
+
+        String html =  thymeLeaf.viewResolver().getTemplateEngine().process("CandidateProfile",context);
+        Util.convertToPdf(html);
+        return "done";
     }
 }

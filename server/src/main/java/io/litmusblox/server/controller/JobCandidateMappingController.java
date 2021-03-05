@@ -370,9 +370,9 @@ public class JobCandidateMappingController {
         jobCandidateMappingService.addCandidatesByXml(candidatesXml,companyId);
     }
 
-    @GetMapping(value = "/thymeleaf")
-    String thymeleaf(){
-        return jobCandidateMappingService.generateCandidatePDF(2L);
+    @GetMapping(value = "/thymeleaf/{jcmId}")
+    String thymeleaf(@PathVariable Long jcmId){
+        return jobCandidateMappingService.generateCandidatePDF(jcmId);
     }
 
 }
