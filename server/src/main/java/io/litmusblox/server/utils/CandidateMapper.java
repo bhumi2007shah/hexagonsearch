@@ -17,7 +17,8 @@ public interface CandidateMapper {
             @Mapping(target = "lastName", source = "entity.candidateLastName"),
             @Mapping(target = "candidateName",source = "entity.candidateFullName"),
             @Mapping(target = "mobile",source = "entity.mobileNumber"),
-            @Mapping(target = "email",source = "entity.candidateEmail")
+            @Mapping(target = "email",source = "entity.candidateEmail"),
+            @Mapping(target = "candidateNumber", source = "entity.candidateNumber")
     })
     Candidate companyCandidateToCandidate(CompanyCandidateBean entity);
 }

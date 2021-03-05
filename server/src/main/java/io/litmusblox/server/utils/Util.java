@@ -573,8 +573,7 @@ public class Util {
         return Jsoup.parse(htmlString).text();
     }
 
-    public static void convertToPdf(String html) {
-        String outputFolder = "/home/suraj/Desktop/" + File.separator + "candidateProfile.pdf";
+    public static void convertToPdf(String html, String outputFolder) {
         OutputStream outputStream = null;
         try {
             outputStream = new FileOutputStream(outputFolder);

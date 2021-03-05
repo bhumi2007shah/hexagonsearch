@@ -232,6 +232,9 @@ public class JobCandidateMapping implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date rejectedOn;
 
+    @Column(name = "CANDIDATE_NUMBER")
+    private String candidateNumber;
+
     @Type(type = "hstore")
     @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "hstore")
     private Map<String, String> candidateChatbotResponse = new HashMap<>();
@@ -292,7 +295,7 @@ public class JobCandidateMapping implements Serializable {
         return candidateFirstName + " " + candidateLastName;
     }
 
-    public JobCandidateMapping(@NotNull Job job, @NotNull Candidate candidate, @NotNull StageStepMaster stage, @NotNull String candidateSource, @NotNull boolean autosourced, @NotNull Date createdOn, @NotNull User createdBy, UUID chatbotUuid, String candidateFirstName, String candidateLastName, String cvFileType) {
+    public JobCandidateMapping(@NotNull Job job, @NotNull Candidate candidate, @NotNull StageStepMaster stage, @NotNull String candidateSource, @NotNull boolean autosourced, @NotNull Date createdOn, @NotNull User createdBy, UUID chatbotUuid, String candidateFirstName, String candidateLastName, String cvFileType, String candidateNumber) {
         this.job = job;
         this.candidate = candidate;
         this.stage = stage;
@@ -308,6 +311,7 @@ public class JobCandidateMapping implements Serializable {
         this.candidateFirstName = candidateFirstName;
         this.candidateLastName = candidateLastName;
         this.cvFileType = cvFileType;
+        this.candidateNumber = candidateNumber;
     }
 
     public JobCandidateMapping(Long id) {

@@ -22,13 +22,13 @@ import io.litmusblox.server.uploadProcessor.IUploadDataProcessService;
 import io.litmusblox.server.uploadProcessor.NaukriExcelFileProcessorService;
 import io.litmusblox.server.utils.*;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.poi.util.IOUtils;
 import org.json.XML;
 import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.scheduling.annotation.Async;
@@ -37,10 +37,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.thymeleaf.context.Context;
 
 import javax.annotation.Resource;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -202,6 +203,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     @Resource
     JcmOfferDetailsRepository jcmOfferDetailsRepository;
 
+    @Resource
+    CompanyFtpDetailsRepository companyFtpDetailsRepository;
+
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
         return jobRepository.findById(jobId).isPresent()?jobRepository.findById(jobId).get():null;
@@ -221,7 +225,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
         //verify that the job is live before processing candidates
         Job job = jobRepository.getOne(jobId);
-        if(null!=createdBy && !isCallFromNoAuth && !createdBy.isPresent()) {
+        if(createdBy.isEmpty() && !isCallFromNoAuth) {
             User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             validateLoggedInUser(loggedInUser, job);
         }
@@ -636,7 +640,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
-   // @Caching(evict = {@CacheEvict(cacheNames = "jcm"), @CacheEvict(cacheNames = "singleJobView"), @CacheEvict(cacheNames = "singleJobViewByStatus"), @CacheEvict(cacheNames = "exportData"), @CacheEvict(cacheNames = "harvesterCandidateProfile"), @CacheEvict(cacheNames = "jcmCommDetails", key = "#jcmFromDb.id")})
+    // @Caching(evict = {@CacheEvict(cacheNames = "jcm"), @CacheEvict(cacheNames = "singleJobView"), @CacheEvict(cacheNames = "singleJobViewByStatus"), @CacheEvict(cacheNames = "exportData"), @CacheEvict(cacheNames = "harvesterCandidateProfile"), @CacheEvict(cacheNames = "jcmCommDetails", key = "#jcmFromDb.id")})
     public void saveScreeningQuestionResponse(UUID uuid, ScreeningQuestionRequestBean screeningQuestionRequestBean, JobCandidateMapping jcmFromDb, String userAgent) throws Exception {
         log.info("Saving chatbot response for uuid : {}, jobId : {} and jcmId : {}", uuid, jcmFromDb.getJob().getId(), jcmFromDb.getId());
         Map<String, String> breadCrumb = new HashMap<>();
@@ -1150,7 +1154,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      */
     @Transactional
     @Override
-   // @Caching(evict = {@CacheEvict(cacheNames = "jcm", key = "#jobCandidateMapping.id"),@CacheEvict(cacheNames = "jcmHistory", key = "#jobCandidateMapping.id"), @CacheEvict(cacheNames = "singleJobView"), @CacheEvict(cacheNames = "singleJobViewByStatus"), @CacheEvict(cacheNames = "exportData"), @CacheEvict(cacheNames = "TechRoleCompetency", key = "#jobCandidateMapping.job.id"), @CacheEvict(cacheNames = "harvesterCandidateProfile")})
+    // @Caching(evict = {@CacheEvict(cacheNames = "jcm", key = "#jobCandidateMapping.id"),@CacheEvict(cacheNames = "jcmHistory", key = "#jobCandidateMapping.id"), @CacheEvict(cacheNames = "singleJobView"), @CacheEvict(cacheNames = "singleJobViewByStatus"), @CacheEvict(cacheNames = "exportData"), @CacheEvict(cacheNames = "TechRoleCompetency", key = "#jobCandidateMapping.job.id"), @CacheEvict(cacheNames = "harvesterCandidateProfile")})
     public void editCandidate(JobCandidateMapping jobCandidateMapping) {
         User loggedInUser = (null != SecurityContextHolder.getContext().getAuthentication())?(User)SecurityContextHolder.getContext().getAuthentication().getPrincipal():jobCandidateMapping.getCreatedBy();
         JobCandidateMapping jcmFromDb = jobCandidateMappingRepository.findById(jobCandidateMapping.getId()).orElse(null);
@@ -1882,15 +1886,15 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         if(Util.isNotNull(comment)) comment = comment.trim();
 
         if( Util.isNotNull(callOutCome)) {
-                List<MasterData> callOutcomeFromDb = (masterDataRepository.findByTypeAndValue("callOutCome",callOutCome));
-                if(callOutcomeFromDb.size() == 0)
-                    throw new ValidationException(callOutCome+" is not a valid callOutCome", HttpStatus.BAD_REQUEST);
+            List<MasterData> callOutcomeFromDb = (masterDataRepository.findByTypeAndValue("callOutCome",callOutCome));
+            if(callOutcomeFromDb.size() == 0)
+                throw new ValidationException(callOutCome+" is not a valid callOutCome", HttpStatus.BAD_REQUEST);
 
-                String valueToUse = callOutcomeFromDb.get(0).getValueToUSe();
-                if(Util.isNull(comment) &&  "1".equals(valueToUse) ){
-                    throw new ValidationException("Comment is mandatory for "+callOutCome, HttpStatus.BAD_REQUEST);
-                }
+            String valueToUse = callOutcomeFromDb.get(0).getValueToUSe();
+            if(Util.isNull(comment) &&  "1".equals(valueToUse) ){
+                throw new ValidationException("Comment is mandatory for "+callOutCome, HttpStatus.BAD_REQUEST);
             }
+        }
 
 
         jcmHistoryRepository.save(new JcmHistory(jobCandidateMapping, comment, callOutCome, false, new Date(), jobCandidateMapping.getStage(), loggedInUser));
@@ -2379,7 +2383,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-   // @Caching(evict = {@CacheEvict(cacheNames = "jcm", key = "#jobCandidateMapping.id"), @CacheEvict(cacheNames = "singleJobView"), @CacheEvict(cacheNames = "singleJobViewByStatus"), @CacheEvict(cacheNames = "exportData"), @CacheEvict(cacheNames = "harvesterCandidateProfile")})
+    // @Caching(evict = {@CacheEvict(cacheNames = "jcm", key = "#jobCandidateMapping.id"), @CacheEvict(cacheNames = "singleJobView"), @CacheEvict(cacheNames = "singleJobViewByStatus"), @CacheEvict(cacheNames = "exportData"), @CacheEvict(cacheNames = "harvesterCandidateProfile")})
     public void updateCandidateResponse(JobCandidateMapping jobCandidateMapping, Map<String, String> candidateResponse) throws Exception {
         CandidateDetails candidateDetails = new CandidateDetails();
         CandidateCompanyDetails companyDetails = new CandidateCompanyDetails();
@@ -2493,7 +2497,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @return JobCandidateMapping - last updated JCM details
      */
     @Transactional
-   // @Cacheable(cacheNames = "harvesterCandidateProfile", key = "#candidateId.concat('-').concat(#companyId)")
+    // @Cacheable(cacheNames = "harvesterCandidateProfile", key = "#candidateId.concat('-').concat(#companyId)")
     public JobCandidateMapping getCandidateProfileForHarvester(Long candidateId, Long companyId) {
         long startTime = System.currentTimeMillis();
         log.info("Get candidate profile based on last updated jcm for candidateId : {}, companyId : {}", candidateId, companyId);
@@ -2686,10 +2690,18 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         return candidates;
     }
 
-    private void generateCsv(List<CompanyCandidateBean>candidates) throws IOException {
+    /**
+     *
+     *
+     * @param candidates
+     * @param jobId
+     * @return absolute path of generated csv
+     * @throws IOException
+     */
+    private String generateCsv(List<CompanyCandidateBean>candidates, Long jobId) throws IOException {
         log.info("inside generate CSV for add candidates by xml");
-        //TODO change CSV file location
-        CSVWriter writer = new CSVWriter(new FileWriter("output.csv"));
+        String outputDirectry = environment.getProperty(IConstant.REPO_LOCATION)+"/Candidates/"+jobId+"/"+"candidates_"+new Date()+".csv";
+        CSVWriter writer = new CSVWriter(new FileWriter(outputDirectry));
 
         //write CSV heading
         writer.writeNext( new String[]{"Number","Contest Number","FileName","Comments"});
@@ -2698,6 +2710,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         });
         writer.close();
         log.info("successfully completed CSV generation for add candidates by xml");
+        return outputDirectry;
     }
 
     public void addCandidatesByXml(MultipartFile candidatesXml,Company companyId) throws Exception{
@@ -2707,22 +2720,23 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
         String xmlContent = new String(candidatesXml.getBytes());
-       List<CompanyCandidateBean>companyCandidates =  parseXml(xmlContent);
+        List<CompanyCandidateBean>companyCandidates =  parseXml(xmlContent);
         CandidateMapper mapper = Mappers.getMapper(CandidateMapper.class);
 
         companyCandidates.forEach(companyCandidate -> {
-           String companyJobId = companyCandidate.getCompanyJobId();
-           Job job = jobRepository.findJobByCompanyIdAndCompanyJobId(companyId,companyJobId);
-           if(null == job){
-               String error = "company job Id : " + companyJobId + " does not exist";
-               log.error(error);
-               throw new WebException(error,HttpStatus.BAD_REQUEST);
-           }
-           Candidate candidate = mapper.companyCandidateToCandidate(companyCandidate);
-           candidate.setCandidateSource(IConstant.CandidateSource.XMLUpload.getValue());
-           MultipartFile candidateCv = FileService.convertBase64ToMultipart(companyCandidate.getFileContent(),companyCandidate.getFileName());
+            String companyJobId = companyCandidate.getCompanyJobId();
+            Job job = jobRepository.findJobByCompanyIdAndCompanyJobId(companyId,companyJobId);
+            if(null == job){
+                String error = "company job Id : " + companyJobId + " does not exist";
+                log.error(error);
+                throw new WebException(error,HttpStatus.BAD_REQUEST);
+            }
+            Candidate candidate = mapper.companyCandidateToCandidate(companyCandidate);
+            candidate.setCandidateSource(IConstant.CandidateSource.XMLUpload.getValue());
+            MultipartFile candidateCv = FileService.convertBase64ToMultipart(companyCandidate.getFileContent(),companyCandidate.getFileName());
             try {
-                UploadResponseBean result = uploadCandidateFromPlugin(candidate,job.getId(),candidateCv,Optional.empty());
+                Optional<User> createdBy = Optional.ofNullable(job.getCreatedBy());
+                UploadResponseBean result = uploadCandidateFromPlugin(candidate,job.getId(),candidateCv,createdBy);
                 if(result.getSuccessCount() == 1)
                     companyCandidate.setComments("Success");
                 else if(result.getFailureCount() == 1)
@@ -2735,7 +2749,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         });
         File file = new File(environment.getProperty(IConstant.REPO_LOCATION)+File.separator+"Candidates"+File.separator+candidatesXml.getOriginalFilename());
         Files.copy(candidatesXml.getInputStream(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        generateCsv(companyCandidates);
     }
 
     /**
@@ -2761,18 +2774,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
                 if (null != companyFromDB) {
                     try {
-                        addCandidatesByXml(
-                                new CommonsMultipartFile(
-                                        new DiskFileItem(
-                                                "file",
-                                                "application/xml",
-                                                false,
-                                                file.getName(),
-                                                (int)file.length(),
-                                                file.getParentFile()
-                                        )
-                                ), companyFromDB
-                        );
+                        addCandidatesByXml(new MockMultipartFile("file", file.getName(), MediaType.APPLICATION_XML_VALUE, new FileInputStream(file)), companyFromDB);
                     }catch (Exception e){
                         log.error(e.getMessage(), e.getCause());
                     }
@@ -2841,10 +2843,18 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
         return response;
     }
+
+    /**
+     * Method to create a pdf file from candidate profile.
+     * @param jcmId
+     * @return Absolute file path of generated Pdf of candidate profile
+     */
     public String generateCandidatePDF(Long jcmId){
         JobCandidateMapping jcm = jobCandidateMappingRepository.findById(jcmId).orElse(null);
         if(null == jcm)
             throw new ValidationException("No job candidate mapping found for id: " + jcmId, HttpStatus.UNPROCESSABLE_ENTITY);
+
+        String outFileName = null;
         setJcmForCandidateProfile(jcm);
 
         CandidateCompanyDetails candidateCompanyDetails = new CandidateCompanyDetails();;
@@ -2867,20 +2877,94 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         context.setVariable("master",jobQuestions.get("master"));
 
         if(null != jcm.getCvSkillRatingJson()) {
-            context.setVariable("noSkills", jcm.getCvSkillRatingJson().get("1"));
-            context.setVariable("weakSkills", jcm.getCvSkillRatingJson().get("2"));
-            context.setVariable("strongSkills", jcm.getCvSkillRatingJson().get("3"));
+            //context.setVariable("noSkills", jcm.getCvSkillRatingJson().get("1"));
+            //context.setVariable("weakSkills", jcm.getCvSkillRatingJson().get("2"));
+            //context.setVariable("strongSkills", jcm.getCvSkillRatingJson().get("3"));
         }
         Map<String,Map> score = scoreService.scoreJcm(jcm.getJob(),jcm);
 
         //Quick Screening
 
         try {
+            outFileName = environment.getProperty(IConstant.REPO_LOCATION)+"/Candidates/"+jcm.getJob().getId()+"/TaleoLbIntegration_"+jcm.getCandidateNumber()+".pdf";
             String html = thymeLeaf.viewResolver().getTemplateEngine().process("CandidateProfile", context);
-            Util.convertToPdf(html);
+            Util.convertToPdf(html, outFileName);
+            return outFileName;
         }catch (Exception e){
             log.error(e.getMessage(), e.getCause());
         }
-        return "done";
+        return outFileName;
     }
+
+    /**
+     * Method to upload candidates csv to logged in users company ftp server.
+     * @param jcmIds
+     */
+    public void sendCandidatesToFtpServer(List<Long> jcmIds){
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Company company = companyRepository.getOne(loggedInUser.getCompany().getId());
+        CompanyFtpDetails loggedInUserCompanyFtpDetail = companyFtpDetailsRepository.findByCompanyId(loggedInUser.getCompany().getId());
+
+        if(null == loggedInUserCompanyFtpDetail){
+            throw new WebException("Company FTP detail does not exists.", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        List<JobCandidateMapping> jobCandidateMappings = jobCandidateMappingRepository.findAllById(jcmIds);
+        Long jobId = null;
+        SFTPService sftpService = null;
+        String remoteFileUploadPath = null;
+
+        if(jobCandidateMappings.size()==0){
+            log.error("No jcm is found with any id in {}", jcmIds);
+        }else{
+            jobId = jobCandidateMappings.get(0).getJob().getId();
+            try {
+                SecretKey secretKey = new SecretKeySpec(company.getEKey(), IConstant.algorithmType);
+                remoteFileUploadPath = AESEncryptorDecryptor.decrypt(loggedInUserCompanyFtpDetail.getRemoteFileUploadPath(), secretKey);
+                sftpService = new SFTPService(
+                        AESEncryptorDecryptor.decrypt(loggedInUserCompanyFtpDetail.getHost(), secretKey),
+                        AESEncryptorDecryptor.decrypt(loggedInUserCompanyFtpDetail.getUserName(), secretKey),
+                        AESEncryptorDecryptor.decrypt(loggedInUserCompanyFtpDetail.getPassword(), secretKey),
+                        Integer.parseInt(AESEncryptorDecryptor.decrypt(loggedInUserCompanyFtpDetail.getPort(), secretKey))
+                );
+                sftpService.connect();
+            }catch(Exception e){
+                log.error(e.getMessage(), e.getCause());
+            }
+
+            if(null != sftpService && sftpService.getChannelSftp().isConnected()) {
+                SFTPService finalSftpService = sftpService;
+                String finalRemoteFileUploadPath = remoteFileUploadPath;
+                jobCandidateMappings.forEach(jobCandidateMapping -> {
+                    String generatedPdfFilePath = generateCandidatePDF(jobCandidateMapping.getId());
+                    File file = new File(generatedPdfFilePath);
+                    if(file.exists()) {
+                        finalSftpService.uploadFile(generatedPdfFilePath, finalRemoteFileUploadPath);
+                    }
+                });
+                List<CompanyCandidateBean> companyCandidateBeans = jobCandidateMappings.stream()
+                        .map(jcm -> {
+                            return new CompanyCandidateBean(
+                                    jcm.getCandidateNumber(),
+                                    jcm.getJob().getCompanyJobId(),
+                                    "TaleoLbIntegration_" + jcm.getCandidateNumber() + ".pdf", // Pdf file location goes here
+                                    jcm.getComments()
+                            );
+                        })
+                        .collect(
+                                Collectors.toList()
+                        );
+                try {
+                    String generatedCsvPath = generateCsv(companyCandidateBeans, jobId);
+                    sftpService.uploadFile(generatedCsvPath, remoteFileUploadPath);
+                    sftpService.disconnect();
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e.getCause());
+                }
+            }
+            else{
+                throw new WebException("FTP connection cannot be established with company "+loggedInUser.getCompany().getCompanyName(), HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+        }
+    };
 }
