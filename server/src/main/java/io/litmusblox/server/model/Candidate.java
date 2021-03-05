@@ -163,6 +163,10 @@ public class Candidate implements Serializable {
     @Transient
     private CvParsingDetails cvParsingDetails;
 
+    @JsonProperty
+    @Transient
+    private String candidateNumber;
+
     public Candidate(String displayName, String email, String mobile) {
         this.displayName = displayName;
         this.email = email;

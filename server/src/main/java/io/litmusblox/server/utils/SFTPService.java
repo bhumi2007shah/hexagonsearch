@@ -78,7 +78,7 @@ public class SFTPService {
         }
     }
 
-    public void sendFile(String localPath, String remotePath){
+    public void uploadFile(String localPath, String remotePath){
         try {
             this.getChannelSftp().put(localPath, remotePath);
         }catch (Exception e){

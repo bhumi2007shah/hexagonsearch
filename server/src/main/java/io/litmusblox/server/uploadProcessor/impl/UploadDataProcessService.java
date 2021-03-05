@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -262,7 +261,7 @@ public class UploadDataProcessService implements IUploadDataProcessService {
 
             StageStepMaster stageStepForSource = stageStepMasterRepository.findByStage(IConstant.Stage.Source.getValue());
 
-            JobCandidateMapping savedObj = jobCandidateMappingRepository.save(new JobCandidateMapping(job,candidateObjToUse,stageStepForSource, candidate.getCandidateSource(), IConstant.AUTOSOURCED_TYPE.contains(candidateObjToUse.getCandidateSource()), new Date(),loggedInUser, UUID.randomUUID(), candidate.getFirstName(), candidate.getLastName(), (null != candidate.getCandidateDetails())?candidate.getCandidateDetails().getCvFileType():null));
+            JobCandidateMapping savedObj = jobCandidateMappingRepository.save(new JobCandidateMapping(job,candidateObjToUse,stageStepForSource, candidate.getCandidateSource(), IConstant.AUTOSOURCED_TYPE.contains(candidateObjToUse.getCandidateSource()), new Date(),loggedInUser, UUID.randomUUID(), candidate.getFirstName(), candidate.getLastName(), (null != candidate.getCandidateDetails())?candidate.getCandidateDetails().getCvFileType():null, null != candidate.getCandidateNumber()? candidate.getCandidateNumber():null));
 
             if(savedObj.getCandidateSource().equals(IConstant.CandidateSource.EmployeeReferral.getValue())){
                 candidateReferralDetailRepository.save(new CandidateReferralDetail(savedObj, candidate.getEmployeeReferrer(), candidate.getEmployeeReferrer().getReferrerRelation(), candidate.getEmployeeReferrer().getReferrerContactDuration()));

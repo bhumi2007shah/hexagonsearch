@@ -120,7 +120,12 @@ public class FtpService implements IFtpService {
                                     .append(Util.getFileExtension(lsEntry.getFilename()));
                             log.info("Downloading file {} from {}", fileName, company.getCompanyName());
                             long startTime = System.currentTimeMillis();
-                            finalSftpService.downloadFile(fileName, saveFileName.toString());
+                            finalSftpService.downloadFile(fileName, xmlDirectory);
+                            File downloadedFile = new File(xmlDirectory+lsEntry.getFilename());
+                            if(downloadedFile.exists()){
+                                downloadedFile.renameTo(new File(saveFileName.toString()));
+                            }
+
                             log.info("Download file to {} in {}ms", xmlDirectory, System.currentTimeMillis()-startTime);
                             try{
                                 log.info("Moving file {} to processed directory on remote server", fileName);

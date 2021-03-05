@@ -17,6 +17,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -373,6 +374,14 @@ public class JobCandidateMappingController {
     @GetMapping(value = "/thymeleaf/{jcmId}")
     String thymeleaf(@PathVariable Long jcmId){
         return jobCandidateMappingService.generateCandidatePDF(jcmId);
+    }
+
+    @PostMapping(value = "sendtoftp")
+    void sendCandidatesToFtpServer(@RequestBody List<Long> jcmIds){
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        log.info("Rceived request to send Candidate csv of Jcm Ids{} to {} ftp server by user {}", jcmIds, loggedInUser.getCompany().getCompanyName(), loggedInUser.getEmail());
+        jobCandidateMappingService.sendCandidatesToFtpServer(jcmIds);
+        log.info("Completed sending candidates {} to {} ftp server by {}", jcmIds, loggedInUser.getCompany().getCompanyName(), loggedInUser.getEmail());
     }
 
 }

@@ -300,4 +300,10 @@ public interface IJobCandidateMappingService {
     void xmlFileProcessor();
 
     String generateCandidatePDF(Long jcmId);
+
+    /**
+     * Method to upload candidates csv to logged in users company ftp server.
+     * @param jcmIds
+     */
+    void sendCandidatesToFtpServer(List<Long> jcmIds);
 }
