@@ -1546,6 +1546,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
             log.error(error);
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
+        job = setRecruiterArray(job, loggedInUser);
         job.setId(null);
         job.setTemplate(false);
         job.setCreatedBy(loggedInUser);
