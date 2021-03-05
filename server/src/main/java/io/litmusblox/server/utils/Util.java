@@ -32,6 +32,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import java.io.*;
+import com.sun.management.OperatingSystemMXBean;
+import java.lang.management.ManagementFactory;
 import java.nio.file.FileSystem;
 import java.nio.file.*;
 import java.text.ParseException;
@@ -568,4 +570,8 @@ public class Util {
         return Jsoup.parse(htmlString).text();
     }
 
+    public static Double getSystemLoadAverage() {
+        OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+        return osBean.getSystemLoadAverage();
+    }
 }

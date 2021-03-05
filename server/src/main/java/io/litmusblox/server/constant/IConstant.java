@@ -49,6 +49,7 @@ public interface IConstant {
     String REGEX_TO_VALIDATE_JOB_SHORT_CODE = "[A-Z]{2}[0-9]{6}$";
     String LB_JOB_CODE_REGEX = "[a-zA-Z]{2}\\d{6}";
     String REGEX_TO_FIND_SCIENTIFIC_NOTATION_MOBILE = "\\d\\.\\d+E\\+?\\d+";
+    Double SYSTEM_IDEAL_LOAD_AVG = 1.5;
 
     // lengths
     Integer TITLE_MAX_LENGTH = 100;
