@@ -63,7 +63,7 @@ public class SearchEngineService implements ISearchEngineService {
         log.info("Inside candidateSearch method");
         Long startTime = System.currentTimeMillis();
         Map<String, Object> headerInformation = LoggedInUserInfoUtil.getLoggedInUserInformation();
-        String responseData = new String();
+        String responseData = "[]";
 
         if(jsonData == null)
             throw new ValidationException("Invalid request", HttpStatus.BAD_REQUEST);
