@@ -36,7 +36,7 @@ public class UnverifiedSkills implements Serializable
     public UnverifiedSkills(String skill, Long[] CANDIDATE_ID) {
         this.id = id;
         this.skill = skill;
-        this.CANDIDATEIDS = CANDIDATE_ID;
+        this.candiateIds = CANDIDATE_ID;
     }
 
     @NotNull
@@ -46,5 +46,5 @@ public class UnverifiedSkills implements Serializable
 
     @Type(type = "list-array")
     @Column(name="CANDIDATE_IDS",columnDefinition = "Long[]")
-    private Long[] CANDIDATEIDS;
+    private Long[] candiateIds;
 }

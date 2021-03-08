@@ -8,7 +8,7 @@ import io.litmusblox.server.model.UnverifiedSkills;
 
 import java.util.List;
 
-public interface iUnverifiedSkillsService
+public interface IunverifiedSkillsService
 {
      List<UnverifiedSkills> getUnverifiedSkillList() throws Exception;
      void curateUnverifiedSkills(List<UnverifiedSkills> unverifiedSkillsList);
