@@ -21,9 +21,8 @@ import io.litmusblox.server.uploadProcessor.IUploadDataProcessService;
 import io.litmusblox.server.uploadProcessor.NaukriExcelFileProcessorService;
 import io.litmusblox.server.utils.*;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.poi.util.IOUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.json.XML;
 import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,14 +36,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
-import static java.util.stream.Collectors.groupingBy;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -2469,11 +2470,15 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
     public void createExistingCandidateOnSearchEngine(){
         long apiCallStartTime = System.currentTimeMillis();
-        List<JobCandidateMapping> jobCandidateMappingList = jobCandidateMappingRepository.findJcmNotInSearchEngine();
-        jobCandidateMappingList.forEach(jobCandidateMapping -> {
-            log.info("Candidate : {} creating on search engine", jobCandidateMapping.getCandidate().getId());
-            candidateService.createCandidateOnSearchEngine(jobCandidateMapping.getCandidate(), jobCandidateMapping,null);
-        });
+        if(IConstant.SYSTEM_IDEAL_LOAD_AVG > Util.getSystemLoadAverage()){
+            log.info("Current system load avg is: {}",Util.getSystemLoadAverage());
+            List<JobCandidateMapping> jobCandidateMappingList = jobCandidateMappingRepository.findJcmNotInSearchEngine();
+            jobCandidateMappingList.forEach(jobCandidateMapping -> {
+                log.info("Candidate : {} creating on search engine", jobCandidateMapping.getCandidate().getId());
+                candidateService.createCandidateOnSearchEngine(jobCandidateMapping.getCandidate(), jobCandidateMapping,null);
+            });
+        }else
+            log.info("Current system load avg: {} is greater than the ideal load avg: {}, so the scheduled task was skipped for now.",Util.getSystemLoadAverage(),IConstant.SYSTEM_IDEAL_LOAD_AVG);
         log.info("Time taken to creating existing candidate on search engine in : {}ms.", apiCallStartTime-System.currentTimeMillis());
     }
 
@@ -2711,10 +2716,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
            }
            Candidate candidate = mapper.companyCandidateToCandidate(companyCandidate);
            candidate.setCandidateSource(IConstant.CandidateSource.XMLUpload.getValue());
-           MultipartFile candidateCv = FileService.convertBase64ToMultipart(companyCandidate.getFileContent(),environment.getProperty("repoLocation")+companyCandidate.getFileName());
+           MultipartFile candidateCv = FileService.convertBase64ToMultipart(companyCandidate.getFileContent(),companyCandidate.getFileName());
             try {
                 UploadResponseBean result = uploadCandidateFromPlugin(candidate,job.getId(),candidateCv,Optional.empty());
-
                 if(result.getSuccessCount() == 1)
                     companyCandidate.setComments("Success");
                 else if(result.getFailureCount() == 1)
@@ -2725,7 +2729,55 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 log.error(e);
             }
         });
+        File file = new File(environment.getProperty(IConstant.REPO_LOCATION)+File.separator+"Candidates"+File.separator+candidatesXml.getOriginalFilename());
+        Files.copy(candidatesXml.getInputStream(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
         generateCsv(companyCandidates);
     }
 
+    /**
+     * Method to fetch candidateXmlDirectories and process them.
+     */
+    public void xmlFileProcessor(){
+        String xmlDirecory = environment.getProperty(IConstant.TEMP_REPO_LOCATION)+"xmlData/";
+
+        File directory = new File(xmlDirecory);
+
+        if(!directory.exists()){
+            log.error("Directory does not exist {}", xmlDirecory);
+            return;
+        }
+
+        File [] files = directory.listFiles();
+
+        log.info("Found {} xml files for processing", files.length);
+        for(File file : files){
+            if(file.isFile()) {
+                String companyShortName = file.getName().split("_")[0];
+                Company companyFromDB = companyRepository.findByShortNameIgnoreCase(companyShortName);
+
+                if (null != companyFromDB) {
+                    try {
+                        addCandidatesByXml(
+                                new CommonsMultipartFile(
+                                        new DiskFileItem(
+                                                "file",
+                                                "application/xml",
+                                                false,
+                                                file.getName(),
+                                                (int)file.length(),
+                                                file.getParentFile()
+                                        )
+                                ), companyFromDB
+                        );
+                    }catch (Exception e){
+                        log.error(e.getMessage(), e.getCause());
+                    }
+                    file.delete();
+                }
+            }
+            else{
+                log.error("{} is not a file.", file.getAbsoluteFile());
+            }
+        }
+    }
 }

@@ -4,15 +4,9 @@
 
 package io.litmusblox.server.service.impl;
 
-import io.litmusblox.server.service.IFileService;
 import io.litmusblox.server.utils.Base64Util;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,10 +39,9 @@ public class FileService  {
                     e.printStackTrace();
                 }
             }
-            return decodedFile;
         }catch (Exception e){
             e.printStackTrace();
         }
-        return null;
+        return decodedFile;
     }
 }

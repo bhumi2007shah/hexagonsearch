@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.scheduler;
 
+import io.litmusblox.server.service.IFtpService;
 import io.litmusblox.server.service.IJobCandidateMappingService;
 import io.litmusblox.server.service.impl.FetchEmailService;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
@@ -36,6 +37,9 @@ public class ScheduledTasks {
     @Autowired
     IJobCandidateMappingService jobCandidateMappingService;
 
+    @Autowired
+    IFtpService ftpService;
+
     @Scheduled(fixedDelay = 300000, initialDelay = 5000)
     public void parseAndProcessCv() {
         log.info("started parse and process cv. Thread: {}", Thread.currentThread().getId());
@@ -64,10 +68,23 @@ public class ScheduledTasks {
         log.info("completed to update cv rating. Thread: {}", Thread.currentThread().getId());
     }
 
-    //@Scheduled(cron = "0 0 * ? * *")
+    @Scheduled(cron = "0 */30 * ? * *")
     public void createCandidateOnSearchEngine(){
-        log.info("started create existing candidate on searchengne. Thread {}", Thread.currentThread().getId());
+        log.info("started create existing candidate on search engine. Thread {}", Thread.currentThread().getId());
         jobCandidateMappingService.createExistingCandidateOnSearchEngine();
-        log.info("Completed process for create existing candidate on searchengne. Thread {}", Thread.currentThread().getId());
+        log.info("Completed process for create existing candidate on search engine. Thread {}", Thread.currentThread().getId());
+    }
+
+    @Scheduled(fixedDelay = 20000, initialDelay = 2000)
+    public void fetchCandidateXmlFiles(){
+        log.info("Started Fetching candidate xml files using FTP Service. Thread {}", Thread.currentThread().getId());
+        ftpService.fetchCandidateXmlFiles();
+        log.info("Completed fetching candidate xml files. Thread {}", Thread.currentThread().getId());
+    }
+
+    public void processCandidateXmlFiles(){
+        log.info("Started processing candidate xml files. Thread {}", Thread.currentThread().getId());
+        jobCandidateMappingService.xmlFileProcessor();
+        log.info("Completed processing candidate xml files. Thread {}", Thread.currentThread().getId());
     }
 }

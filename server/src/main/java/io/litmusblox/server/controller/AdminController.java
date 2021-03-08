@@ -112,4 +112,11 @@ public class AdminController {
             adminService.addCompanyCandidateOnSearchEngine();
         }
     }
+
+    @PostMapping(value = "/addftpdetail")
+    @PreAuthorize("hasRole('"+IConstant.UserRole.Names.SUPER_ADMIN+"')")
+    @ResponseStatus(value = HttpStatus.OK)
+    void addCompanyFtpDetails (@RequestBody FtpRequestBean ftpRequestBean) throws Exception {
+        adminService.addCompanyFtpDetails(ftpRequestBean);
+    }
 }

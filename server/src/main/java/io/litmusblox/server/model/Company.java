@@ -131,6 +131,9 @@ public class Company implements Serializable {
     @Column(name = "send_communication")
     private boolean sendCommunication = true;
 
+    @Column(name = "EKEY")
+    private byte[] eKey;
+
     @Transient
     private Set<String> newCompanyBu;
 

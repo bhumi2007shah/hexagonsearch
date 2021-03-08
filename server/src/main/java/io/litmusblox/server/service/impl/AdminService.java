@@ -5,18 +5,22 @@
 package io.litmusblox.server.service.impl;
 
 import io.litmusblox.server.constant.IConstant;
+import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
 import io.litmusblox.server.security.JwtTokenUtil;
+import io.litmusblox.server.service.FtpRequestBean;
 import io.litmusblox.server.service.IAdminService;
+import io.litmusblox.server.utils.AESEncryptorDecryptor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Arrays;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,6 +59,9 @@ public class AdminService implements IAdminService {
 
     @Resource
     JcmProfileSharingDetailsRepository jcmProfileSharingDetailsRepository;
+
+    @Resource
+    CompanyFtpDetailsRepository companyFtpDetailsRepository;
 
     /**
      * service method to call search engine to add candidates and companies.
@@ -130,5 +137,75 @@ public class AdminService implements IAdminService {
             log.error("company not found {}", companyId);
         }
         log.info("Finished adding company and candidates on search engine in {}ms", System.currentTimeMillis()-startTime);
+    }
+
+    /**
+     * Service method to add ftp details to a company
+     *
+     * @param ftpRequestBean
+     * @throws Exception
+     */
+    public void addCompanyFtpDetails(FtpRequestBean ftpRequestBean) throws Exception {
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        long startTime = System.currentTimeMillis();
+        log.info("Received request to update company with tp details by {}", loggedInUser.getEmail());
+
+        Company company = companyRepository.getOne(ftpRequestBean.getCompanyId());
+
+        if(null == company){
+            throw new WebException("No company found with id:"+ftpRequestBean.getCompanyId(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        if(null == company.getEKey()){
+            company.setEKey(AESEncryptorDecryptor.generateKey(IConstant.encryptionSize));
+            companyRepository.save(company);
+        }
+
+        String encryptedHost = null;
+        String encryptedUser = null;
+        String encryptedPass = null;
+        String encryptedPort = null;
+        String encryptedRemoteFileDownloadPath = null;
+        String encryptedRemoteFileProcessedPath = null;
+
+        SecretKey secretKey = new SecretKeySpec(company.getEKey(), IConstant.algorithmType);
+
+        try{
+            encryptedHost = AESEncryptorDecryptor.encrypt(ftpRequestBean.getHost(), secretKey);
+            encryptedUser = AESEncryptorDecryptor.encrypt(ftpRequestBean.getUsername(), secretKey);
+            encryptedPass = AESEncryptorDecryptor.encrypt(ftpRequestBean.getPassword(), secretKey);
+            encryptedPort = AESEncryptorDecryptor.encrypt(String.valueOf(ftpRequestBean.getPort()), secretKey);
+            encryptedRemoteFileDownloadPath = AESEncryptorDecryptor.encrypt(ftpRequestBean.getRemoteFileDownloadPath(), secretKey);
+            encryptedRemoteFileProcessedPath = AESEncryptorDecryptor.encrypt(ftpRequestBean.getRemoteFileProcessedPath(), secretKey);
+        }catch (Exception e){
+            log.error(e.getMessage(), e.getCause());
+        }
+
+        CompanyFtpDetails companyFtpDetailsFromDb = companyFtpDetailsRepository.findByCompanyId(ftpRequestBean.getCompanyId());
+
+        if(null!=companyFtpDetailsFromDb){
+            companyFtpDetailsFromDb.setHost(encryptedHost);
+            companyFtpDetailsFromDb.setUserName(encryptedUser);
+            companyFtpDetailsFromDb.setPassword(encryptedPass);
+            companyFtpDetailsFromDb.setPort(encryptedPort);
+            companyFtpDetailsFromDb.setRemoteFileDownloadPath(encryptedRemoteFileDownloadPath);
+            companyFtpDetailsFromDb.setRemoteFileProcessedPath(encryptedRemoteFileProcessedPath);
+
+            companyFtpDetailsRepository.save(companyFtpDetailsFromDb);
+        }else {
+            companyFtpDetailsRepository.save(
+                    new CompanyFtpDetails(
+                            ftpRequestBean.getCompanyId(),
+                            encryptedHost,
+                            encryptedUser,
+                            encryptedPass,
+                            encryptedRemoteFileDownloadPath,
+                            encryptedRemoteFileProcessedPath,
+                            encryptedPort
+                    )
+            );
+        }
+
+        log.info("Completed updating FTP details for company {} by user:{} in {}ms", ftpRequestBean.getCompanyId(), loggedInUser.getEmail(), System.currentTimeMillis()-startTime);
     }
 }
