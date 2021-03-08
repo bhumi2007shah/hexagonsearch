@@ -51,7 +51,7 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     Company findByIdAndRecruitmentAgencyId(Long companyId, Long agencyId);
 
     @Transactional
-    @Query(nativeQuery = true, value = "select * from company where id = (select company_id from job where id = (select job_id from job_candidate_mapping where candidate_id=:CandidateId limit 1))")
-    Company findCompanyByCandidateId(long CandidateId);
+    @Query(nativeQuery = true, value = "select * from company where id = (select company_id from job where id = (select job_id from job_candidate_mapping where candidate_id=:candidateId limit 1))")
+    Company findCompanyByCandidateId(long candidateId);
 
 }
