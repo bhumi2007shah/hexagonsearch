@@ -18,8 +18,8 @@ import io.litmusblox.server.service.ISearchEngineService;
 import io.litmusblox.server.service.ImportDataResponseBean;
 import io.litmusblox.server.service.JobAnalytics.CandidateSearchBean;
 import io.litmusblox.server.service.MasterDataBean;
-import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.LoggedInUserInfoUtil;
+import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.RestClientResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
@@ -74,43 +74,35 @@ public class SearchEngineService implements ISearchEngineService {
 
 
 
-        if (candidateSearchBean.getEmail()!=null)
+        if (Util.isNotNull(candidateSearchBean.getEmail()))
         {
             String email=candidateSearchBean.getEmail();
             CandidateEmailHistory candidateEmailHistory= candidateEmailHistoryRepository.findByEmail(email);
 
-            if (candidateEmailHistory!=null)
-            {
-                 responseData=SearchCandidatebyEmailorMobile(candidateEmailHistory.getCandidate());
+            if (candidateEmailHistory!=null) {
+                 responseData = searchCandidateByEmailOrMobile(candidateEmailHistory.getCandidate());
                 log.info("Completed execution of Candidate search method by email in {} ms", System.currentTimeMillis() - startTime);
-
             }
 
         }
-        else if (candidateSearchBean.getMobile()!=null)
+        else if (Util.isNotNull(candidateSearchBean.getMobile()))
         {
             String mobile=candidateSearchBean.getMobile();
             CandidateMobileHistory candidateMobileHistory=candidateMobileHistoryRepository.findByMobileAndCountryCode(mobile,"+91");
-            if (candidateMobileHistory!=null)
-            {
-                responseData=SearchCandidatebyEmailorMobile(candidateMobileHistory.getCandidate());
-
+            if (candidateMobileHistory!=null) {
+                responseData = searchCandidateByEmailOrMobile(candidateMobileHistory.getCandidate());
                 log.info("Completed execution of Candidate search method by mobile in {} ms", System.currentTimeMillis() - startTime);
             }
-
         }
         else {
             responseData = RestClient.getInstance().consumeRestApi(jsonData, searchEngineBaseUrl + "candidate/search", HttpMethod.POST, authToken, null, null, Optional.of(headerInformation)).getResponseBody();
             log.info("Completed execution of Candidate search method in {} ms", System.currentTimeMillis() - startTime);
         }
-
-
-            return responseData;
-
+     return responseData;
     }
 
 
-    private String SearchCandidatebyEmailorMobile(Candidate candidate) throws JsonProcessingException {
+    private String searchCandidateByEmailOrMobile(Candidate candidate) throws JsonProcessingException {
         List<CandidateSearchBean> candidateSearchBeanList = new ArrayList<>();
         CandidateSearchBean candidateSearchBean=new CandidateSearchBean();
         List<CandidateEmailHistory> candidateEmailHistoryList=candidateEmailHistoryRepository.findByCandidateIdOrderByIdDesc(candidate.getId());
