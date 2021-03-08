@@ -2898,18 +2898,18 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         log.info("{}",score);
 
         try {
-            String outFileName = outputDirectory+"TaleoLbIntegration_"+jcm.getCandidateNumber()+".pdf";
+            outFileName = outputDirectory+"TaleoLbIntegration_"+jcm.getCandidateNumber()+".pdf";
             File file = new File(outputDirectory);
             if(!file.exists()){
                 file.mkdirs();
             }
             String html = thymeLeaf.viewResolver().getTemplateEngine().process("CandidateProfile", context);
             Util.convertToPdf(html, outFileName);
-            return outFileName;
+
         }catch (Exception e){
             log.error(e.getMessage(), e.getCause());
         }
-        return outFileName;
+
     }
 
     /**
