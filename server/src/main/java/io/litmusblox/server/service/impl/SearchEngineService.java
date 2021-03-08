@@ -22,9 +22,6 @@ import io.litmusblox.server.utils.LoggedInUserInfoUtil;
 import io.litmusblox.server.utils.RestClientResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
-import org.apache.tomcat.util.json.JSONParser;
-import org.apache.xmlbeans.impl.xb.xsdschema.Public;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpMethod;
@@ -116,18 +113,20 @@ public class SearchEngineService implements ISearchEngineService {
         List<CandidateEmailHistory> candidateEmailHistoryList=candidateEmailHistoryRepository.findByCandidateIdOrderByIdDesc(candidate.getId());
         List<CandidateMobileHistory> candidateMobileHistoryList=candidateMobileHistoryRepository.findByCandidateIdOrderByIdDesc(candidate.getId());
         candidateSearchBean.setMobile(candidateMobileHistoryList.get(0).getMobile());
-        candidateSearchBean.setCompanyId(candidate.getCandidateCompanyDetails().get(0).getId());
+
         candidateSearchBean.setCandidateName(candidate.getFirstName()+" "+candidate.getLastName());
         candidateSearchBean.setCandidateId(candidate.getId());
         candidateSearchBean.setEmail(candidateEmailHistoryList.get(0).getEmail());
-        String location=candidate.getCandidateDetails().getLocation();
-        Set<String> LocationSet = new HashSet<String>();
-        LocationSet.add(location);
-        candidateSearchBean.setLocations(LocationSet);
+        if(null!=candidate.getCandidateDetails())
+        {
+            String location = candidate.getCandidateDetails().getLocation();
+            Set<String> LocationSet = new HashSet<String>();
+            LocationSet.add(location);
+            candidateSearchBean.setLocations(LocationSet);
 
-        candidateSearchBean.setExperienceFromDb(candidate.getCandidateDetails().getRelevantExperience());
-        candidateSearchBean.setMaxExperience(candidate.getCandidateDetails().getTotalExperience());
-
+            candidateSearchBean.setExperienceFromDb(candidate.getCandidateDetails().getRelevantExperience());
+            candidateSearchBean.setMaxExperience(candidate.getCandidateDetails().getTotalExperience());
+        }
         Set<String> Skillset = candidate.getCandidateSkillDetails().stream().map(CandidateSkillDetails::getSkill).collect(Collectors.toSet());
         candidateSearchBean.setSkills(Skillset);
 
@@ -135,19 +134,28 @@ public class SearchEngineService implements ISearchEngineService {
 
         Set<String> Qualifications = candidate.getCandidateEducationDetails().stream().map(CandidateEducationDetails::getDegree).collect(Collectors.toSet());
         candidateSearchBean.setQualifications(Qualifications);
-        candidateSearchBean.setNoticePeriod(0L);
-        if (null!=candidate.getCandidateCompanyDetails().get(0) && null!=candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()) {
-            candidateSearchBean.setNoticePeriod(Long.parseLong(candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()));
+        if (!candidate.getCandidateCompanyDetails().isEmpty())
+        {
+            if (null!=candidate.getCandidateCompanyDetails().get(0) && null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb().getValue())
+            {
+                String filtered_notice_period = candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb().getValue().replaceAll("[A-Za-z]", "").trim();
+                if (filtered_notice_period != null)
+                {
+
+                    candidateSearchBean.setNoticePeriod(Long.valueOf(filtered_notice_period));
+
+
+                }
+
+
+            }
+            candidateSearchBean.setCompanyId(candidate.getCandidateCompanyDetails().get(0).getId());
             candidateSearchBean.setCompanyName(candidate.getCandidateCompanyDetails().get(0).getCompanyName());
         }
         candidateSearchBeanList.add(candidateSearchBean);
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        String ListToJson = objectMapper.writeValueAsString(candidateSearchBeanList);
-        System.out.println("Convert List to JSON :");
-        System.out.println(ListToJson);
-        String responseData=ListToJson;
-
+        String responseData= objectMapper.writeValueAsString(candidateSearchBeanList);
         return responseData;
     }
 
