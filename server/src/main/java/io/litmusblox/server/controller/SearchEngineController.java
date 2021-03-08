@@ -55,7 +55,7 @@ public class SearchEngineController{
      * @throws Exception
      */
     @PostMapping(value="candidate/search")
-    String  candidateSearch(@RequestBody(required = false) String jsonData) throws Exception{
+    String  candidateSearch(@RequestBody String jsonData) throws Exception{
         return searchEngineService.candidateSearch(jsonData, JwtTokenUtil.getAuthToken());
     }
 

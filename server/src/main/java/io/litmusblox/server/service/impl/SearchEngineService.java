@@ -12,6 +12,7 @@ import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.CandidateEmailHistoryRepository;
 import io.litmusblox.server.repository.CandidateMobileHistoryRepository;
+import io.litmusblox.server.repository.CompanyRepository;
 import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.ISearchEngineService;
 import io.litmusblox.server.service.ImportDataResponseBean;
@@ -56,6 +57,8 @@ public class SearchEngineService implements ISearchEngineService {
     CandidateEmailHistoryRepository candidateEmailHistoryRepository ;
     @Resource
     CandidateMobileHistoryRepository candidateMobileHistoryRepository ;
+    @Resource
+    CompanyRepository companyRepository;
 
     public String candidateSearch(String jsonData, String authToken) throws Exception{
         log.info("Inside candidateSearch method");
@@ -123,34 +126,29 @@ public class SearchEngineService implements ISearchEngineService {
             Set<String> LocationSet = new HashSet<String>();
             LocationSet.add(location);
             candidateSearchBean.setLocations(LocationSet);
-
             candidateSearchBean.setExperienceFromDb(candidate.getCandidateDetails().getRelevantExperience());
             candidateSearchBean.setMaxExperience(candidate.getCandidateDetails().getTotalExperience());
         }
         Set<String> Skillset = candidate.getCandidateSkillDetails().stream().map(CandidateSkillDetails::getSkill).collect(Collectors.toSet());
         candidateSearchBean.setSkills(Skillset);
 
-
-
         Set<String> Qualifications = candidate.getCandidateEducationDetails().stream().map(CandidateEducationDetails::getDegree).collect(Collectors.toSet());
         candidateSearchBean.setQualifications(Qualifications);
-        if (!candidate.getCandidateCompanyDetails().isEmpty())
+        if (null!= candidate.getCandidateCompanyDetails() && !candidate.getCandidateCompanyDetails().isEmpty())
         {
-            if (null!=candidate.getCandidateCompanyDetails().get(0) && null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb().getValue())
+            if (null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb())
             {
                 String filtered_notice_period = candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb().getValue().replaceAll("[A-Za-z]", "").trim();
-                if (filtered_notice_period != null)
-                {
-
+                if (null != filtered_notice_period)
                     candidateSearchBean.setNoticePeriod(Long.valueOf(filtered_notice_period));
-
-
-                }
-
-
             }
-            candidateSearchBean.setCompanyId(candidate.getCandidateCompanyDetails().get(0).getId());
-            candidateSearchBean.setCompanyName(candidate.getCandidateCompanyDetails().get(0).getCompanyName());
+
+        }
+       Company company= companyRepository.findCompanyByCandidateId(candidate.getId());
+        if (null!=company)
+        {
+            candidateSearchBean.setCompanyId(company.getId());
+            candidateSearchBean.setCompanyName(company.getCompanyName());
         }
         candidateSearchBeanList.add(candidateSearchBean);
         ObjectMapper objectMapper = new ObjectMapper();

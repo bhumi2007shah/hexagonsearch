@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.repository;
 
+import io.litmusblox.server.model.Candidate;
 import io.litmusblox.server.model.Company;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -48,4 +49,9 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     @Transactional(readOnly = true)
     Company findByIdAndRecruitmentAgencyId(Long companyId, Long agencyId);
+
+    @Transactional
+    @Query(nativeQuery = true, value = "select * from company where id = (select company_id from job where id = (select job_id from job_candidate_mapping where candidate_id=:CandidateId limit 1))")
+    Company findCompanyByCandidateId(long CandidateId);
+
 }
