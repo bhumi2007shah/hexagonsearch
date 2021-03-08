@@ -373,14 +373,15 @@ public class JobCandidateMappingController {
 
     @GetMapping(value = "/thymeleaf/{jcmId}")
     String thymeleaf(@PathVariable Long jcmId){
-        return jobCandidateMappingService.generateCandidatePDF(jcmId);
+        // return jobCandidateMappingService.generateCandidatePDF(jcmId);
+        return null;
     }
 
     @PostMapping(value = "sendtoftp")
     void sendCandidatesToFtpServer(@RequestBody List<Long> jcmIds){
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Rceived request to send Candidate csv of Jcm Ids{} to {} ftp server by user {}", jcmIds, loggedInUser.getCompany().getCompanyName(), loggedInUser.getEmail());
-        jobCandidateMappingService.sendCandidatesToFtpServer(jcmIds);
+        jobCandidateMappingService.sendCandidatesToFtpServer(jcmIds, loggedInUser);
         log.info("Completed sending candidates {} to {} ftp server by {}", jcmIds, loggedInUser.getCompany().getCompanyName(), loggedInUser.getEmail());
     }
 

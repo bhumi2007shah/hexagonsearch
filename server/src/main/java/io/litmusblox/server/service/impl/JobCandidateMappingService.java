@@ -6,6 +6,7 @@ package io.litmusblox.server.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jcraft.jsch.SftpATTRS;
 import com.opencsv.CSVWriter;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
@@ -2698,10 +2699,14 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @return absolute path of generated csv
      * @throws IOException
      */
-    private String generateCsv(List<CompanyCandidateBean>candidates, Long jobId) throws IOException {
+    private String generateCsv(List<CompanyCandidateBean>candidates, Long jobId, String outputDirectory) throws IOException {
         log.info("inside generate CSV for add candidates by xml");
-        String outputDirectry = environment.getProperty(IConstant.REPO_LOCATION)+"/Candidates/"+jobId+"/"+"candidates_"+new Date()+".csv";
-        CSVWriter writer = new CSVWriter(new FileWriter(outputDirectry));
+        String outputFilePath = outputDirectory+"candidates_"+new Date()+".csv";
+        File file = new File(outputDirectory);
+        if(!file.exists()){
+            file.mkdirs();
+        }
+        CSVWriter writer = new CSVWriter(new FileWriter(outputFilePath));
 
         //write CSV heading
         writer.writeNext( new String[]{"Number","Contest Number","FileName","Comments"});
@@ -2710,7 +2715,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         });
         writer.close();
         log.info("successfully completed CSV generation for add candidates by xml");
-        return outputDirectry;
+        return outputFilePath;
     }
 
     public void addCandidatesByXml(MultipartFile candidatesXml,Company companyId) throws Exception{
@@ -2846,12 +2851,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @param jcmId
      * @return Absolute file path of generated Pdf of candidate profile
      */
-    public String generateCandidatePDF(Long jcmId){
+    public void generateCandidatePDF(Long jcmId, String outputDirectory, User loggedInUser){
         JobCandidateMapping jcm = jobCandidateMappingRepository.findById(jcmId).orElse(null);
         if(null == jcm)
             throw new ValidationException("No job candidate mapping found for id: " + jcmId, HttpStatus.UNPROCESSABLE_ENTITY);
 
-        String outFileName = null;
         setJcmForCandidateProfile(jcm);
 
         CandidateCompanyDetails candidateCompanyDetails = new CandidateCompanyDetails();;
@@ -2881,22 +2885,24 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         Map<String,Map> score = scoreService.scoreJcm(jcm.getJob(),jcm);
 
         try {
-            outFileName = environment.getProperty(IConstant.REPO_LOCATION)+"/Candidates/"+jcm.getJob().getId()+"/TaleoLbIntegration_"+jcm.getCandidateNumber()+".pdf";
+            String outFileName = outputDirectory+"TaleoLbIntegration_"+jcm.getCandidateNumber()+".pdf";
+            File file = new File(outputDirectory);
+            if(!file.exists()){
+                file.mkdirs();
+            }
             String html = thymeLeaf.viewResolver().getTemplateEngine().process("CandidateProfile", context);
             Util.convertToPdf(html, outFileName);
-            return outFileName;
         }catch (Exception e){
             log.error(e.getMessage(), e.getCause());
         }
-        return outFileName;
     }
 
     /**
      * Method to upload candidates csv to logged in users company ftp server.
      * @param jcmIds
      */
-    public void sendCandidatesToFtpServer(List<Long> jcmIds){
-        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    @Async
+    public void sendCandidatesToFtpServer(List<Long> jcmIds, User loggedInUser){
         Company company = companyRepository.getOne(loggedInUser.getCompany().getId());
         CompanyFtpDetails loggedInUserCompanyFtpDetail = companyFtpDetailsRepository.findByCompanyId(loggedInUser.getCompany().getId());
 
@@ -2913,6 +2919,28 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             log.error("No jcm is found with any id in {}", jcmIds);
         }else{
             jobId = jobCandidateMappings.get(0).getJob().getId();
+            String loggedinUserDirectory = loggedInUser.getDisplayName()+"_"+loggedInUser.getId()+"_"+new Date();
+            String outputDirectory = environment.getProperty(IConstant.REPO_LOCATION)+"/Candidates/"+jobId+"/"+loggedinUserDirectory+"/";
+            jobCandidateMappings.forEach(jobCandidateMapping -> {
+                generateCandidatePDF(jobCandidateMapping.getId(), outputDirectory, loggedInUser);
+            });
+            List<CompanyCandidateBean> companyCandidateBeans = jobCandidateMappings.stream()
+                    .map(jcm -> {
+                        return new CompanyCandidateBean(
+                                jcm.getCandidateNumber(),
+                                jcm.getJob().getCompanyJobId(),
+                                "TaleoLbIntegration_" + jcm.getCandidateNumber() + ".pdf", // Pdf file location goes here
+                                jcm.getComments()
+                        );
+                    })
+                    .collect(
+                            Collectors.toList()
+                    );
+            try {
+                generateCsv(companyCandidateBeans, jobId, outputDirectory);
+            } catch (Exception e) {
+                log.error(e.getMessage(), e.getCause());
+            }
             try {
                 SecretKey secretKey = new SecretKeySpec(company.getEKey(), IConstant.algorithmType);
                 remoteFileUploadPath = AESEncryptorDecryptor.decrypt(loggedInUserCompanyFtpDetail.getRemoteFileUploadPath(), secretKey);
@@ -2923,42 +2951,33 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                         Integer.parseInt(AESEncryptorDecryptor.decrypt(loggedInUserCompanyFtpDetail.getPort(), secretKey))
                 );
                 sftpService.connect();
+
+                if(null != sftpService && sftpService.getChannelSftp().isConnected()) {
+
+                    // Get list of files from local directory
+                    File[] files = new File(outputDirectory).listFiles();
+
+                    // Check if directory exists on remote server or not, if not create a directory first with same name as local.
+                    SftpATTRS attrs;
+                    try {
+                        attrs = sftpService.getChannelSftp().stat(remoteFileUploadPath + loggedinUserDirectory);
+                    } catch (Exception e) {
+                        log.info("Directory not found {}, creating directory on remote server {}", (remoteFileUploadPath + loggedinUserDirectory), (remoteFileUploadPath + loggedinUserDirectory));
+                        sftpService.getChannelSftp().mkdir(remoteFileUploadPath + loggedinUserDirectory);
+                    }
+
+                    // Upload eah file from local directory to newly created Folder on remote server.
+                    for (File file : files) {
+                        sftpService.uploadFile(file.getAbsolutePath(), remoteFileUploadPath + loggedinUserDirectory);
+                    }
+
+                    sftpService.disconnect();
+
+                } else{
+                    throw new WebException("FTP connection cannot be established with company "+loggedInUser.getCompany().getCompanyName(), HttpStatus.UNPROCESSABLE_ENTITY);
+                }
             }catch(Exception e){
                 log.error(e.getMessage(), e.getCause());
-            }
-
-            if(null != sftpService && sftpService.getChannelSftp().isConnected()) {
-                SFTPService finalSftpService = sftpService;
-                String finalRemoteFileUploadPath = remoteFileUploadPath;
-                jobCandidateMappings.forEach(jobCandidateMapping -> {
-                    String generatedPdfFilePath = generateCandidatePDF(jobCandidateMapping.getId());
-                    File file = new File(generatedPdfFilePath);
-                    if(file.exists()) {
-                        finalSftpService.uploadFile(generatedPdfFilePath, finalRemoteFileUploadPath);
-                    }
-                });
-                List<CompanyCandidateBean> companyCandidateBeans = jobCandidateMappings.stream()
-                        .map(jcm -> {
-                            return new CompanyCandidateBean(
-                                    jcm.getCandidateNumber(),
-                                    jcm.getJob().getCompanyJobId(),
-                                    "TaleoLbIntegration_" + jcm.getCandidateNumber() + ".pdf", // Pdf file location goes here
-                                    jcm.getComments()
-                            );
-                        })
-                        .collect(
-                                Collectors.toList()
-                        );
-                try {
-                    String generatedCsvPath = generateCsv(companyCandidateBeans, jobId);
-                    sftpService.uploadFile(generatedCsvPath, remoteFileUploadPath);
-                    sftpService.disconnect();
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e.getCause());
-                }
-            }
-            else{
-                throw new WebException("FTP connection cannot be established with company "+loggedInUser.getCompany().getCompanyName(), HttpStatus.UNPROCESSABLE_ENTITY);
             }
         }
     };
