@@ -5,14 +5,14 @@
 package io.litmusblox.server.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.CandidateEmailHistoryRepository;
 import io.litmusblox.server.repository.CandidateMobileHistoryRepository;
-import io.litmusblox.server.repository.CompanyRepository;
+import io.litmusblox.server.repository.JobCandidateMappingRepository;
 import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.ISearchEngineService;
 import io.litmusblox.server.service.ImportDataResponseBean;
@@ -33,7 +33,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -58,7 +57,7 @@ public class SearchEngineService implements ISearchEngineService {
     @Resource
     CandidateMobileHistoryRepository candidateMobileHistoryRepository ;
     @Resource
-    CompanyRepository companyRepository;
+    JobCandidateMappingRepository jobCandidateMappingRepository;
 
     public String candidateSearch(String jsonData, String authToken) throws Exception{
         log.info("Inside candidateSearch method");
@@ -70,6 +69,7 @@ public class SearchEngineService implements ISearchEngineService {
             throw new ValidationException("Invalid request", HttpStatus.BAD_REQUEST);
 
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         CandidateSearchBean candidateSearchBean = objectMapper.readValue(jsonData, CandidateSearchBean.class);
 
 
@@ -144,11 +144,12 @@ public class SearchEngineService implements ISearchEngineService {
             }
 
         }
-       Company company= companyRepository.findCompanyByCandidateId(candidate.getId());
-        if (null!=company)
+        JobCandidateMapping latestJcmFromDb = jobCandidateMappingRepository.getUpdatedJcm(candidate.getId());
+        if (null != latestJcmFromDb && null!=latestJcmFromDb.getJob().getCompanyId())
         {
-            candidateSearchBean.setCompanyId(company.getId());
-            candidateSearchBean.setCompanyName(company.getCompanyName());
+            candidateSearchBean.setCompanyId(latestJcmFromDb.getJob().getCompanyId().getId());
+            candidateSearchBean.setCompanyName(latestJcmFromDb.getJob().getCompanyId().getCompanyName());
+            candidateSearchBean.setSourcedOn(latestJcmFromDb.getCreatedOn());
         }
         candidateSearchBeanList.add(candidateSearchBean);
         ObjectMapper objectMapper = new ObjectMapper();

@@ -222,7 +222,11 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
             "inner join jcm_profile_sharing_details jpsd on jpsd.id = hmw.share_profile_id\n" +
             "where jcm.job_id in :jobIds and jcm.stage = ssm.id and j.status in ('Draft', 'Live') and jpsd.receiver_id =:hiringManagerId and jcm.rejected =:rejected group by jcm.job_id, ssm.stage order by jcm.job_id;", nativeQuery = true)
     List<Object[]> findCandidateCountByStageJobIdsForHmw(List<Long> jobIds, boolean rejected, Long hiringManagerId) throws Exception;
+
     @Transactional
     List<JobCandidateMapping> findByCandidateId(Long candidateId);
+
+    @Query(value = "select * from job_candidate_mapping where candidate_id=:candidateId order by id desc limit 1", nativeQuery = true)
+    JobCandidateMapping getUpdatedJcm(Long candidateId);
 
 }
