@@ -2802,7 +2802,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 if(null == masterScreeningQuestion)
                     return;
                 if(questionId.equals(masterScreeningQuestion.getId())){
-                    response.put(question.getQuestionCategory().getValue(),String.join(" ,",candidateResponse.getCandidateResponse()));
+
+                    List<String> answers = candidateResponse.getCandidateResponse();
+                    String answer = answers.size() == 0? "-" :  String.join(", ",answers).replaceAll("%\\$",", ");
+                    response.put(question.getQuestionCategory().getValue(),answer);
                 }
             });
         });
@@ -2818,27 +2821,30 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         questions.forEach(question->{
             String questionId = question.getId().toString();
             AtomicReference<String> candidateResponse = new AtomicReference<>("-");
-            chatbotResponse.forEach((String id,String answer)->{
-                if(questionId.equals(id)){
-                    candidateResponse.set(answer.replaceAll("%$",", "));
-                    return;
-                }
-            });
+
+            if(null != chatbotResponse) {
+                chatbotResponse.forEach((String id, String answer) -> {
+                    if (questionId.equals(id)) {
+                        candidateResponse.set(answer.replaceAll("%\\$", ", "));
+                        return;
+                    }
+                });
+            }
             if(null != question.getMasterScreeningQuestionId()){
+
                 ScreeningQuestions temp = question.getMasterScreeningQuestionId();
-                master.put(temp.getQuestion(),candidateResponse.get());
+                master.put(Util.removeHtmlTags(temp.getQuestion()),candidateResponse.get());
 
             }
             if(null != question.getTechScreeningQuestionId()){
                 TechScreeningQuestion temp = question.getTechScreeningQuestionId();
-                tech.put(temp.getTechQuestion(),candidateResponse.get());
+                tech.put(Util.removeHtmlTags(temp.getTechQuestion()),candidateResponse.get());
             }
             if(null != question.getUserScreeningQuestionId()){
                 UserScreeningQuestion temp = question.getUserScreeningQuestionId();
-                custom.put(temp.getQuestion(),candidateResponse.get());
+                custom.put(Util.removeHtmlTags(temp.getQuestion()),candidateResponse.get());
             }
         });
-        response.put("master",master);
         response.put("custom",custom);
         response.put("tech",tech);
 
@@ -2854,6 +2860,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         JobCandidateMapping jcm = jobCandidateMappingRepository.findById(jcmId).orElse(null);
         if(null == jcm)
             throw new ValidationException("No job candidate mapping found for id: " + jcmId, HttpStatus.UNPROCESSABLE_ENTITY);
+
 
         String outFileName = null;
         setJcmForCandidateProfile(jcm);
@@ -2875,7 +2882,6 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
         context.setVariable("custom",jobQuestions.get("custom"));
         context.setVariable("tech",jobQuestions.get("tech"));
-        context.setVariable("master",jobQuestions.get("master"));
 
         if(null != jcm.getCvSkillRatingJson()) {
             context.setVariable("noSkills", jcm.getCvSkillRatingJson().get("1"));
@@ -2883,6 +2889,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             context.setVariable("strongSkills", jcm.getCvSkillRatingJson().get("3"));
         }
         Map<String,Map> score = scoreService.scoreJcm(jcm.getJob(),jcm);
+        log.info("{}",score);
 
         try {
             outFileName = environment.getProperty(IConstant.REPO_LOCATION)+"/Candidates/"+jcm.getJob().getId()+"/TaleoLbIntegration_"+jcm.getCandidateNumber()+".pdf";

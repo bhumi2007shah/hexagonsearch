@@ -98,7 +98,7 @@
 
 .overview-details{
     width: 96%;
-       margin: 30px 28px 0px 28px!important;
+       margin: 0px 28px 0px 28px!important;
        float:left;
        border-bottom: 1px solid #B0BEC5;
 }
@@ -186,7 +186,7 @@
 
 .overview-info-details{
     
-    margin-bottom: 25px;
+    margin-bottom: 0px;
     position: relative;
     float:left;
     width:1079px;
@@ -196,6 +196,7 @@
     font-size: 24px;
     font-weight: bold;
     color:#33475B;
+    margin:0px;
 }
 
 .candidate-contact {
@@ -205,7 +206,7 @@
 
 .candidate-phone{
     margin-bottom: 12px;
-    width:280px;
+    width:150px;
     float:left;
 }
 
@@ -605,14 +606,16 @@
 }
 
 .skills{
+    width: 240px;
     display: inline-block;
     float: left;
+
 }
 
 .skill {
 
 
-    margin: 5px;
+       margin:0px;
     color: #33475B;
     font-size: 12px;
     justify-content: center;
@@ -633,27 +636,31 @@
     font-size: 16px;
     font-weight: bold;
     color:#33475B;
-    border-bottom: 5px solid #29B500;
        float: left;
-    display: inline-block;
+    display: block;
+    width:100%;
+    margin:0px;
 }
 
 .skills-heading-weak{
     font-size: 16px;
     font-weight: bold;
     color:#33475B;
-    border-bottom: 5px solid #F67738;
         float: left;
-    display: inline-block;
+    display: block;
+     width:100%;
+         margin:0px;
 }
 
 .skills-heading-no{
     font-size: 16px;
     font-weight: bold;
     color:#33475B;
-    border-bottom: 5px solid #F02727;
         float: left;
-    display: inline-block;
+    display: block;
+    margin-right: 50px;
+     width:95%;
+         margin:0px;
 }
 /*Candidate Details*/
 
@@ -685,10 +692,12 @@
     padding-top: 13px;
     border-left: 1px solid #E5E5E5;
     border-right: 1px solid #E5E5E5;
+     border-bottom: 1px solid #E5E5E5;
     padding-right: 0px !important;
      float:left;
      width:300px;
      padding-left: 10px;
+
 }
 .left__section__answer {
     font-size: 14px;
@@ -700,6 +709,7 @@
      float:left;
      width:398px;
      padding-left: 10px;
+      border-bottom: 1px solid #E5E5E5;
 }
 .detail__right__section {
     border-top: 1px solid #E5E5E5;
@@ -707,7 +717,7 @@
         width:460px;
 }
 .right__section__row {
-    border-bottom: 1px solid #E5E5E5;
+   
     margin: auto;
     width:100%;
     float:left;
@@ -731,7 +741,7 @@
     float: left;
 }
 .left__section__row {
-    border-bottom: 1px solid #E5E5E5;
+   
     margin: auto;
     float:left;
     width:100%;
@@ -773,7 +783,6 @@
     margin-bottom: 20px;
     padding-top: 10px;
     padding-bottom: 10px;
-    padding-left: 20px;
     border-bottom: 1px solid #B0BEC5;
 }
 
@@ -790,9 +799,10 @@
 .expertise{
     color:#33475B;
     font-size: 12px;
-    display: flex;
+    display: inline-block;
     align-items: center;
     margin-top: 10px;
+    float: left;
 }
 
 .expertise-btn--strong{
@@ -918,8 +928,7 @@
 
 .Questions-heading{
     width: 100%;
-    padding-left: 30px;
-    margin-bottom: 45px;
+    margin-bottom: 30px;
     border-bottom: 1px solid #B0BEC5;
     float: left;
 }
@@ -934,6 +943,7 @@
     padding-left: 0;
     padding-bottom: 10px;
     border-bottom: 5px solid #2164F4;
+    border-left-margin:20px;
 }
 
 .screening-questions span{
@@ -963,10 +973,10 @@
 
 .column-definitions{
    width: 96%;
-    margin: 0px 28px!important;
+    margin: 10px 28px!important;
     padding-bottom: 0px!important;
     float:left;
-    display: block;
+    display: inline-flex;
 }
 
 .column-question{
@@ -986,10 +996,7 @@
 
 .questions{
     background-color: #F8F8F8;
-    padding-left: 15px;
-    padding-top: 14px;
-    padding-bottom: 14px;
-    margin-bottom: 10px;
+    padding:13px 20px;
     margin-right: 0px;
     color:#33475B;
     border-left: 5px solid #33475B;
@@ -1018,7 +1025,6 @@
 .answers{
     background-color: #EEEEEE;
     padding: 13px 20px;
-    margin: 0px 0px 15px 0px;
     color:#33475B;
     font-size: 14px;
     width: 400px;
@@ -1042,14 +1048,14 @@
     float: left;
 }
 .col-3{
-    width:200px;
+    width:120px;
      float: left;
      display: inline-block;
 }
 /*Quick screening heat map*/
 .heatmap-header-qs {
     width: 100%;
-    padding: 10px 20px 10px 20px;
+    padding: 10px 20px 10px 0px;
     border-bottom: 1px solid #B0BEC5;
     float: left;
 }
@@ -1068,8 +1074,8 @@
 .statementBlock-question{
     font-size: 16px;
     font-weight: bold;
-    margin-top: 29px;
-    margin-bottom: 47px;
+    margin-top: 30px;
+    margin-bottom: 30px;
     color:#212529;
     float:left;
 }

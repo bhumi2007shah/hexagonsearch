@@ -36,11 +36,11 @@
                     <div class="row candidate-contact">
                         <div class="p-0 candidate-phone">
                             <img src="img/smartphone-icon.svg" alt="Phone Icon"/>
-                            <span th:text="${jcm.countryCode+' ' +jcm.mobile}">mobile</span>
+                            <span th:text="${jcm.mobile} ?${jcm.countryCode+' '+jcm.mobile}: 'Not Available'"></span>
                         </div>
                         <div class=" p-0 candidate-mail">
                             <img src="img/email-icon.svg" alt="Mail Icon"/>
-                            <span th:text="${jcm.email}">email</span>
+                            <span th:text="${jcm.email}?:'Not Available'">email</span>
                         </div>
                     </div>
                 </div>
@@ -77,21 +77,28 @@
                 </div>
                 <div class="row m-0 mt-4 p-0 overview-review-skills">
                     <div class="col-4 m-0 p-0 review-skills-strong">
-                        <p class="skills-heading-strong">Strong Skills Match</p>
+                        <p class="skills-heading-strong">Strong Skills Match
+                        <p style="width: 129px;border-bottom: 5px solid #29B500;float:left;margin:0px"></p>
+
+                        </p>
                         <div class="skills mt-3">
-                            <span class="skill" th:each="skill : ${strongSkills}" th:text="${skill.key} +' ,'"></span>
+                            <span class="skill" th:each="skill : ${strongSkills}" th:text="${skill.key} +','"></span>
                         </div>
                     </div>
                     <div class="col-4 m-0 p-0 review-skills-weak">
-                        <p class="skills-heading-weak">Weak Skills Match</p>
+                        <p class="skills-heading-weak">Weak Skills Match
+                            <p style="width: 129px;border-bottom: 5px solid #F67738;float:left;margin:0px"></p>
+                        </p>
                         <div class="skills mt-3">
-                            <span class="skill" th:each="skill : ${weakSkills}" th:text="${skill.key} +' ,'"></span>
+                            <span class="skill" th:each="skill : ${weakSkills}" th:text="${skill.key} +','"></span>
                         </div>
                     </div>
                     <div class="col-4 m-0 p-0 review-skills-no">
-                        <p class="skills-heading-no">No Skills Match</p>
+                        <p class="skills-heading-no">No Skills Match
+                            <p style="width: 129px;border-bottom: 5px solid #F02727;float:left; margin:0px"></p>
+                        </p>
                         <div class="skills mt-3">
-                            <span class="skill" th:each="skill : ${noSkills}" th:text="${skill.key}+' ,'"></span>
+                            <span class="skill" th:each="skill : ${noSkills}" th:text="${skill.key}+','"></span>
                         </div>
                     </div>
                 </div>
@@ -118,63 +125,17 @@
                         <span class="column-answer-heading">Answers</span>
                     </div>
                 </div>
-                <table width="850px">
-                    <tr class="row column-definitions" th:each="question,stat : ${tech}">
-                        <td class="questions">
-                        <span th:text="${stat.index+1+'. '+question.key}">
+                <div class = "row column-definitions" style="width:90%" th:each="question,stat : ${tech}">
+                    <span class="col-6 questions" style="margin-left:-20px;" th:text="${stat.index+1+'. '+question.key}">
                         question
                     </span>
-                        </td>
-                        <td class="answers">
-                      <span th:text="${question.value}">
-                       Answer
+                    <span class="col-6 answers" th:text="${question.value}">
+                       answer
                     </span>
-                        </td>
-                    </tr>
-
-                </table>
+                </div>
 
             </div>
         </th:block>
-
-        <!--- Hr Questions -->
-        <th:block th:if="${master.size() != 0}">
-            <div class="row Questions">
-                <div class="Questions-heading">
-                    <div class="row m-0 question-categories">
-                        <div class="col-6 m-0 screening-questions--heading">
-                            <span>HR Screening Questions (<span th:text="${master.size()}"></span>)</span>
-                        </div>
-
-                    </div>
-                </div>
-                <div class="row column-definitions">
-                    <div class=" p-0 column-question">
-                        <span class="column-question-heading">Questions</span>
-                    </div>
-                    <div class=" p-0 column-answer">
-                        <span class="column-answer-heading">Answers</span>
-                    </div>
-                </div>
-                <table width="850px">
-                    <tr class="row column-definitions" th:each="question,stat : ${master}">
-                        <td class="questions">
-                        <span th:text="${stat.index+1+'. '+question.key}">
-                        question
-                    </span>
-                        </td>
-                        <td class="answers">
-                      <span th:text="${question.value}">
-                       Answer
-                    </span>
-                        </td>
-                    </tr>
-
-                </table>
-
-            </div>
-        </th:block>
-
         <!---Custom Questions-->
         <th:block th:if="${custom.size() != 0}">
             <div class="row Questions">
@@ -194,22 +155,19 @@
                         <span class="column-answer-heading">Answers</span>
                     </div>
                 </div>
-                <table width="850px">
-                    <tr class="row column-definitions" th:each="question,stat : ${custom}">
-                        <td class="questions">
-                        <span th:text="${stat.index+1+'. '+question.key}">
+                <div class = "row column-definitions" style="width:90%" th:each="question,stat : ${custom}">
+                    <span class="col-6 questions" style="margin-left:-20px;"
+
+
+
+
+                          th:text="${stat.index+1+'. '+question.key}">
                         question
                     </span>
-                        </td>
-                        <td class="answers">
-                      <span th:text="${question.value}">
-                       Answer
+                    <span class="col-6 answers" th:text="${question.value}">
+                       answer
                     </span>
-                        </td>
-                    </tr>
-
-                </table>
-
+                </div>
             </div>
         </th:block>
 
