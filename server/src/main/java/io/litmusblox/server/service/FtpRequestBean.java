@@ -21,5 +21,6 @@ public class FtpRequestBean {
     private String password;
     private String remoteFileDownloadPath;
     private String remoteFileProcessedPath;
+    private String remoteFileUploadPath;
     private int port;
 }

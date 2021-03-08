@@ -115,6 +115,9 @@ public class JobService extends AbstractAccessControl implements IJobService {
     @Resource
     StatementsBlockMasterDataRepository statementsBlockMasterDataRepository;
 
+    @Resource
+    CompanyScreeningQuestionsRepository companyScreeningQuestionsRepository;
+
     @Autowired
     ICompanyService companyService;
 
@@ -765,7 +768,8 @@ public class JobService extends AbstractAccessControl implements IJobService {
         oldJob.setFunction(functions.stream().toArray(Integer[]::new));
     }
 
-    private void addJobDetail(Job job, Job oldJob, User loggedInUser, boolean isNewAddJobFlow) {//add job details
+    private void addJobDetail(Job job, Job oldJob, User loggedInUser, boolean isNewAddJobFlow)
+    {//add job details
 
         MasterDataBean masterDataBean = MasterDataBean.getInstance();
 
@@ -1584,6 +1588,8 @@ public class JobService extends AbstractAccessControl implements IJobService {
         publishJob(job);
     }
 
+
+
     private void setHMForTechQuestionSelection(Job job,Job oldJob){
         String errorMessage;
         Long hmUserId = job.getDeepQuestionSelectedBy();
@@ -1604,5 +1610,38 @@ public class JobService extends AbstractAccessControl implements IJobService {
         oldJob.setSkipTechQuestions(job.isSkipTechQuestions());
         jobRepository.save(oldJob);
     }
+    @Override
+    public void addCustomQuestion(List<TechScreeningQuestion> techScreeningQuestions) {
+        if (techScreeningQuestions != null) {
+            for (TechScreeningQuestion techScreeningQuestion :
+                    techScreeningQuestions)
+            {
 
+                if (techScreeningQuestionRepository.findByJobId(techScreeningQuestion.getJobId())!=null)
+                {
+                    techScreeningQuestionRepository.save(techScreeningQuestion);
+                }
+
+                if (techScreeningQuestion.getCompanyQuestion())
+                {
+                    CompanyScreeningQuestion companyScreeningQuestion=new CompanyScreeningQuestion();
+                    companyScreeningQuestion.setQuestion(techScreeningQuestion.getTechQuestion());
+                    companyScreeningQuestion.setQuestionSeq(techScreeningQuestion.getQuestionSeq());
+                    companyScreeningQuestion.setQuestionType(techScreeningQuestion.getQuestionType());
+                    companyScreeningQuestion.setQuestionTag(techScreeningQuestion.getQuestionTag());
+                    companyScreeningQuestion.setQuestionOwnerSeq(techScreeningQuestion.getQuestionOwnerSeq());
+                    companyScreeningQuestion.setQuestionCategory(techScreeningQuestion.getQuestionCategory());
+                    companyScreeningQuestion.setAnswerSelection(techScreeningQuestion.getAnswerSelection());
+                    companyScreeningQuestion.setDefaultAnswers(techScreeningQuestion.getDefaultAnswers());
+                    companyScreeningQuestion.setScoringType(techScreeningQuestion.getScoringType());
+                    companyScreeningQuestionsRepository.save(companyScreeningQuestion);
+
+
+                }
+
+
+            }
+
+        }
+    }
 }

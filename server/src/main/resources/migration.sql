@@ -3260,6 +3260,12 @@ ALTER COLUMN OFFERED_COMPENSATION TYPE NUMERIC(14,2);
 
 update statements_block_master_data set options = '{"No Experience","Trained but not used in practice","Hands on practice; need some help for complex job","Hands on; Totally independent at work","Expert / Guru who trains others"}' where statement_block = 'Expertise Level';
 
+CREATE TABLE UNVERIFIED_SKILLS(
+ID serial PRIMARY KEY NOT NULL,
+SKILL VARCHAR (100) NOT NULL,
+CANDIDATE_IDS BIGINT[]
+)
+
 -- #786
 DROP TABLE IF EXISTS COMPANY_FTP_DETAILS;
 CREATE TABLE COMPANY_FTP_DETAILS(

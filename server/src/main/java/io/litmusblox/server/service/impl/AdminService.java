@@ -178,7 +178,7 @@ public class AdminService implements IAdminService {
             encryptedPort = AESEncryptorDecryptor.encrypt(String.valueOf(ftpRequestBean.getPort()), secretKey);
             encryptedRemoteFileDownloadPath = AESEncryptorDecryptor.encrypt(ftpRequestBean.getRemoteFileDownloadPath(), secretKey);
             encryptedRemoteFileProcessedPath = AESEncryptorDecryptor.encrypt(ftpRequestBean.getRemoteFileProcessedPath(), secretKey);
-            encryptedRemoteFileUploadPath = AESEncryptorDecryptor.encrypt(ftpRequestBean.getRemoteFileProcessedPath(), secretKey);
+            encryptedRemoteFileUploadPath = AESEncryptorDecryptor.encrypt(ftpRequestBean.getRemoteFileUploadPath(), secretKey);
         }catch (Exception e){
             log.error(e.getMessage(), e.getCause());
         }
@@ -202,10 +202,10 @@ public class AdminService implements IAdminService {
                             encryptedHost,
                             encryptedUser,
                             encryptedPass,
+                            encryptedPort,
                             encryptedRemoteFileDownloadPath,
                             encryptedRemoteFileProcessedPath,
-                            encryptedRemoteFileUploadPath,
-                            encryptedPort
+                            encryptedRemoteFileUploadPath
                     )
             );
         }

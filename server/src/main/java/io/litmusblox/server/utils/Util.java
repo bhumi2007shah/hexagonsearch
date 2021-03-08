@@ -575,6 +575,10 @@ public class Util {
         return Jsoup.parse(htmlString).text();
     }
 
+    public static Double getSystemLoadAverage() {
+        OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+        return osBean.getSystemLoadAverage();
+    }
     public static void convertToPdf(String html, String outputFolder) {
         OutputStream outputStream = null;
         try {

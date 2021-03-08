@@ -11,6 +11,7 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.UserRepository;
 import io.litmusblox.server.service.*;
+import io.litmusblox.server.service.UnverifiedSkillsService;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
@@ -47,6 +48,10 @@ public class JobCandidateMappingController {
 
     @Autowired
     IJobCandidateMappingService jobCandidateMappingService;
+
+
+    @Autowired
+    iUnverifiedSkillsService unverifiedSkillsService;
 
     @Autowired
     IProcessUploadedCV processUploadedCV;
@@ -370,17 +375,29 @@ public class JobCandidateMappingController {
     void addCandidateByXml(@RequestParam("file") MultipartFile candidatesXml,@RequestParam Company companyId) throws Exception{
         jobCandidateMappingService.addCandidatesByXml(candidatesXml,companyId);
     }
+    @GetMapping(value = {"/getUnverifiedSkills"})
+    @ResponseStatus(value = HttpStatus.OK)
+    List<UnverifiedSkills> getUnverifiedSkillList() throws Exception
+    {
+        return unverifiedSkillsService.getUnverifiedSkillList();
+    }
+    @PostMapping(value = "/CurateSkills")
+    @ResponseStatus(value = HttpStatus.OK)
+    void curateUnverifiedSkills(@RequestBody List<UnverifiedSkills> unverifiedSkillsList) throws Exception{
+        unverifiedSkillsService.curateUnverifiedSkills(unverifiedSkillsList);
+    }
 
     @GetMapping(value = "/thymeleaf/{jcmId}")
     String thymeleaf(@PathVariable Long jcmId){
-        return jobCandidateMappingService.generateCandidatePDF(jcmId);
+        // return jobCandidateMappingService.generateCandidatePDF(jcmId);
+        return null;
     }
 
     @PostMapping(value = "sendtoftp")
     void sendCandidatesToFtpServer(@RequestBody List<Long> jcmIds){
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Rceived request to send Candidate csv of Jcm Ids{} to {} ftp server by user {}", jcmIds, loggedInUser.getCompany().getCompanyName(), loggedInUser.getEmail());
-        jobCandidateMappingService.sendCandidatesToFtpServer(jcmIds);
+        jobCandidateMappingService.sendCandidatesToFtpServer(jcmIds, loggedInUser);
         log.info("Completed sending candidates {} to {} ftp server by {}", jcmIds, loggedInUser.getCompany().getCompanyName(), loggedInUser.getEmail());
     }
 

@@ -66,4 +66,30 @@ public class CompanyScreeningQuestion implements Serializable {
 
     @Column(name="UPDATED_BY")
     private Long updatedBy;
+
+    @Column(name = "QUESTION_CATEGORY")
+    private String questionCategory;
+
+
+    @Column(name = "SCORING_TYPE")
+    private String scoringType;
+
+    @Column(name = "DEFAULT_ANSWERS", columnDefinition = "varchar[]")
+    @Type(type = "com.vladmihalcea.hibernate.type.array.StringArrayType")
+    private String[] defaultAnswers;
+
+    @Column(name = "ANSWER_SELECTION")
+    private String answerSelection;
+
+    @Column(name = "QUESTION_TAG")
+    private String questionTag;
+
+    @Column(name = "QUESTION_SEQ")
+    private String questionSeq;
+
+    @Column(name = "QUESTION_OWNER_SEQ")
+    private String questionOwnerSeq;
+
+
+
 }

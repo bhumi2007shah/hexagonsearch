@@ -299,11 +299,11 @@ public interface IJobCandidateMappingService {
 
     void xmlFileProcessor();
 
-    String generateCandidatePDF(Long jcmId);
+    void generateCandidatePDF(Long jcmId, String outputDirectory, User loggedInUser);
 
     /**
      * Method to upload candidates csv to logged in users company ftp server.
      * @param jcmIds
      */
-    void sendCandidatesToFtpServer(List<Long> jcmIds);
+    void sendCandidatesToFtpServer(List<Long> jcmIds, User loggedInUser);
 }
