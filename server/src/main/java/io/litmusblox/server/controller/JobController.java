@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.TechScreeningQuestion;
+import io.litmusblox.server.model.UnverifiedSkills;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
@@ -394,6 +395,12 @@ public class JobController {
         long startTime = System.currentTimeMillis();
         jobService.saveExpectedAnswer(requestJob);
         log.info("Saved expected answer in {}ms", System.currentTimeMillis()-startTime);
+    }
+
+    @PostMapping(value = "/addCustomQuestion")
+    @ResponseStatus(HttpStatus.OK)
+    void addCustomQuestion(@RequestParam List <TechScreeningQuestion> techScreeningQuestions) throws Exception{
+        jobService.addCustomQuestion(techScreeningQuestions);
     }
 
 }

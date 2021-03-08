@@ -2483,11 +2483,15 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
     public void createExistingCandidateOnSearchEngine(){
         long apiCallStartTime = System.currentTimeMillis();
-        List<JobCandidateMapping> jobCandidateMappingList = jobCandidateMappingRepository.findJcmNotInSearchEngine();
-        jobCandidateMappingList.forEach(jobCandidateMapping -> {
-            log.info("Candidate : {} creating on search engine", jobCandidateMapping.getCandidate().getId());
-            candidateService.createCandidateOnSearchEngine(jobCandidateMapping.getCandidate(), jobCandidateMapping,null);
-        });
+        if(IConstant.SYSTEM_IDEAL_LOAD_AVG > Util.getSystemLoadAverage()){
+            log.info("Current system load avg is: {}",Util.getSystemLoadAverage());
+            List<JobCandidateMapping> jobCandidateMappingList = jobCandidateMappingRepository.findJcmNotInSearchEngine();
+            jobCandidateMappingList.forEach(jobCandidateMapping -> {
+                log.info("Candidate : {} creating on search engine", jobCandidateMapping.getCandidate().getId());
+                candidateService.createCandidateOnSearchEngine(jobCandidateMapping.getCandidate(), jobCandidateMapping,null);
+            });
+        }else
+            log.info("Current system load avg: {} is greater than the ideal load avg: {}, so the scheduled task was skipped for now.",Util.getSystemLoadAverage(),IConstant.SYSTEM_IDEAL_LOAD_AVG);
         log.info("Time taken to creating existing candidate on search engine in : {}ms.", apiCallStartTime-System.currentTimeMillis());
     }
 
