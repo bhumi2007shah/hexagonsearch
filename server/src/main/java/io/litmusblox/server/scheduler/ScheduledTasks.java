@@ -82,7 +82,6 @@ public class ScheduledTasks {
         log.info("Completed fetching candidate xml files. Thread {}", Thread.currentThread().getId());
     }
 
-    @Scheduled(fixedDelay = 20000, initialDelay = 2000)
     public void processCandidateXmlFiles(){
         log.info("Started processing candidate xml files. Thread {}", Thread.currentThread().getId());
         jobCandidateMappingService.xmlFileProcessor();
