@@ -2784,10 +2784,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 if (null != companyFromDB) {
                     try {
                         addCandidatesByXml(new MockMultipartFile("file", file.getName(), MediaType.APPLICATION_XML_VALUE, new FileInputStream(file)), companyFromDB);
+                        file.delete();
                     }catch (Exception e){
+                        e.getStackTrace();
                         log.error(e.getMessage(), e.getCause());
                     }
-                    file.delete();
                 }
             }
             else{
