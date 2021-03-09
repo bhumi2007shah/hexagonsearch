@@ -697,12 +697,17 @@ public class JobService extends AbstractAccessControl implements IJobService {
             jobScreeningQuestionsRepository.flush();
         }
 
-        job.getJobScreeningQuestionsList().forEach(n -> {
-            n.setCreatedBy(loggedInUser.getId());
-            n.setCreatedOn(new Date());
-            n.setJobId(job.getId());
-            n.setUpdatedOn(new Date());
-            n.setUpdatedBy(loggedInUser.getId());
+        job.getJobScreeningQuestionsList().forEach(jobScreeningQuestions -> {
+            if(null != jobScreeningQuestions.getTechScreeningQuestionId()){
+                jobScreeningQuestions.setTechScreeningQuestionId(techScreeningQuestionRepository.save(jobScreeningQuestions.getTechScreeningQuestionId()));
+                if(null != jobScreeningQuestions.getTechScreeningQuestionId().getCompanyQuestion() && jobScreeningQuestions.getTechScreeningQuestionId().getCompanyQuestion())
+                    addCustomQuestion(jobScreeningQuestions.getTechScreeningQuestionId(), job.getCompanyId().getId(), loggedInUser);
+            }
+            jobScreeningQuestions.setCreatedBy(loggedInUser.getId());
+            jobScreeningQuestions.setCreatedOn(new Date());
+            jobScreeningQuestions.setJobId(job.getId());
+            jobScreeningQuestions.setUpdatedOn(new Date());
+            jobScreeningQuestions.setUpdatedBy(loggedInUser.getId());
         });
 
         oldJob.setJobScreeningQuestionsList(job.getJobScreeningQuestionsList());
@@ -1610,38 +1615,12 @@ public class JobService extends AbstractAccessControl implements IJobService {
         oldJob.setSkipTechQuestions(job.isSkipTechQuestions());
         jobRepository.save(oldJob);
     }
-    @Override
-    public void addCustomQuestion(List<TechScreeningQuestion> techScreeningQuestions) {
-        if (techScreeningQuestions != null) {
-            for (TechScreeningQuestion techScreeningQuestion :
-                    techScreeningQuestions)
-            {
 
-                if (techScreeningQuestionRepository.findByJobId(techScreeningQuestion.getJobId())!=null)
-                {
-                    techScreeningQuestionRepository.save(techScreeningQuestion);
-                }
-
-                if (techScreeningQuestion.getCompanyQuestion())
-                {
-                    CompanyScreeningQuestion companyScreeningQuestion=new CompanyScreeningQuestion();
-                    companyScreeningQuestion.setQuestion(techScreeningQuestion.getTechQuestion());
-                    companyScreeningQuestion.setQuestionSeq(techScreeningQuestion.getQuestionSeq());
-                    companyScreeningQuestion.setQuestionType(techScreeningQuestion.getQuestionType());
-                    companyScreeningQuestion.setQuestionTag(techScreeningQuestion.getQuestionTag());
-                    companyScreeningQuestion.setQuestionOwnerSeq(techScreeningQuestion.getQuestionOwnerSeq());
-                    companyScreeningQuestion.setQuestionCategory(techScreeningQuestion.getQuestionCategory());
-                    companyScreeningQuestion.setAnswerSelection(techScreeningQuestion.getAnswerSelection());
-                    companyScreeningQuestion.setDefaultAnswers(techScreeningQuestion.getDefaultAnswers());
-                    companyScreeningQuestion.setScoringType(techScreeningQuestion.getScoringType());
-                    companyScreeningQuestionsRepository.save(companyScreeningQuestion);
-
-
-                }
-
-
-            }
-
-        }
+    //HM add tech question in company screening question
+    private void addCustomQuestion(TechScreeningQuestion techScreeningQuestions, Long companyId, User loggedInUser) {
+        CompanyScreeningQuestion companyScreeningQuestion=new CompanyScreeningQuestion(techScreeningQuestions.getTechQuestion(), techScreeningQuestions.getOptions(), companyId, techScreeningQuestions.getQuestionType(), new Date(), loggedInUser.getId(),
+                techScreeningQuestions.getQuestionCategory(), techScreeningQuestions.getScoringType(), techScreeningQuestions.getDefaultAnswers(), techScreeningQuestions.getAnswerSelection(), techScreeningQuestions.getQuestionTag(),
+                techScreeningQuestions.getQuestionSeq(), techScreeningQuestions.getQuestionOwnerSeq());
+        companyScreeningQuestionsRepository.save(companyScreeningQuestion);
     }
 }
