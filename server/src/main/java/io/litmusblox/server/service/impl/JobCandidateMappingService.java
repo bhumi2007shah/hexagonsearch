@@ -2889,13 +2889,15 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         context.setVariable("tech",jobQuestions.get("tech"));
         context.setVariable("master",jobQuestions.get("master"));
 
+        context.setVariable("isQuickQuestion",jcm.getJob().isQuickQuestion());
+
         if(null != jcm.getCvSkillRatingJson()) {
             context.setVariable("noSkills", jcm.getCvSkillRatingJson().get("1"));
             context.setVariable("weakSkills", jcm.getCvSkillRatingJson().get("2"));
             context.setVariable("strongSkills", jcm.getCvSkillRatingJson().get("3"));
         }
         Map<String,Map> score = scoreService.scoreJcm(jcm.getJob(),jcm);
-        log.info("{}",score);
+        context.setVariable("score",score);
 
         try {
             outFileName = outputDirectory+"TaleoLbIntegration_"+jcm.getCandidateNumber()+".pdf";
