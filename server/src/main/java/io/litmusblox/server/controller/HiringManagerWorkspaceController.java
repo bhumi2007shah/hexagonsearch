@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.litmusblox.server.model.CompanyScreeningQuestion;
 import io.litmusblox.server.model.JcmProfileSharingDetails;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobCandidateMapping;
@@ -178,6 +179,17 @@ public class HiringManagerWorkspaceController {
         log.info("received request to add tech question for jobId : {}",job.getId());
         hiringManagerWorkspaceService.setTechQuestionForJob(job);
         log.info("Successfully added JobScreening questions from user Id  : {} in : {}ms",job.getDeepQuestionSelectedBy(),( System.currentTimeMillis() - startTime));
+    }
+
+    @GetMapping(value = "/getCompanyScreeningQuestions/{companyId}")
+    String getCompanyQuestions(@PathVariable("companyId") Long companyId) throws Exception {
+        return Util.stripExtraInfoFromResponseBean(
+                hiringManagerWorkspaceService.getCompanyQuestions(companyId),
+                null,
+                (new HashMap<String, List<String>>(){{
+                    put("CompanyScreeningQuestion",new ArrayList<>(0));
+                }})
+        );
     }
 
 }

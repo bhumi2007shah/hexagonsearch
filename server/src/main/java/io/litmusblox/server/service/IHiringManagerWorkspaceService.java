@@ -4,6 +4,7 @@
 
 package io.litmusblox.server.service;
 
+import io.litmusblox.server.model.CompanyScreeningQuestion;
 import io.litmusblox.server.model.JcmProfileSharingDetails;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobCandidateMapping;
@@ -59,4 +60,5 @@ public interface IHiringManagerWorkspaceService {
 
     void setTechQuestionForJob(Job job) throws Exception;
 
+    List<CompanyScreeningQuestion> getCompanyQuestions(Long companyId);
 }
