@@ -419,7 +419,7 @@ String REF_ID_MATCH_REGEX = "[a-fA-F0-9]{8}\\-[a-fA-F0-9]{4}\\-[a-fA-F0-9]{4}\\-
     int OTP_EXPIRY_SECONDS = 90;
 
     enum ASYNC_OPERATIONS {
-        FileUpload, InviteCandidates, DragDrop
+        FileUpload, InviteCandidates, DragDrop, AddCandidateFromXml
     }
 
     String LB_SHORT_CODE = "LB";

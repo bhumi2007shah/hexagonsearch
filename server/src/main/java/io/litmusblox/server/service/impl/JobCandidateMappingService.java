@@ -226,7 +226,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
         //verify that the job is live before processing candidates
         Job job = jobRepository.getOne(jobId);
-        if(createdBy.isEmpty() && !isCallFromNoAuth) {
+        if(null!=createdBy && !isCallFromNoAuth && !createdBy.isPresent()) {
             User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             validateLoggedInUser(loggedInUser, job);
         }
@@ -2724,13 +2724,19 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
     public void addCandidatesByXml(MultipartFile candidatesXml,Company companyId) throws Exception{
         if(candidatesXml.isEmpty()){
-            String error = "XML file is empty";
+            String error = "XML file is empty "+candidatesXml.getName();
             log.error(error);
+            AsyncOperationsErrorRecords asyncOperationsErrorRecord = new AsyncOperationsErrorRecords();
+            asyncOperationsErrorRecord.setAsyncOperation(IConstant.ASYNC_OPERATIONS.AddCandidateFromXml.name());
+            asyncOperationsErrorRecord.setErrorMessage(error);
+            asyncOperationsErrorRecordsRepository.save(asyncOperationsErrorRecord);
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
         String xmlContent = new String(candidatesXml.getBytes());
         List<CompanyCandidateBean>companyCandidates =  parseXml(xmlContent);
         CandidateMapper mapper = Mappers.getMapper(CandidateMapper.class);
+
+        Map<Long, List<Candidate>> failedCandidatesByJob = new HashMap<>();
 
         companyCandidates.forEach(companyCandidate -> {
             String companyJobId = companyCandidate.getCompanyJobId();
@@ -2738,26 +2744,52 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             if(null == job){
                 String error = "company job Id : " + companyJobId + " does not exist";
                 log.error(error);
+                AsyncOperationsErrorRecords asyncOperationsErrorRecord = new AsyncOperationsErrorRecords();
+                asyncOperationsErrorRecord.setAsyncOperation(IConstant.ASYNC_OPERATIONS.AddCandidateFromXml.name());
+                asyncOperationsErrorRecord.setErrorMessage(error);
+                asyncOperationsErrorRecordsRepository.save(asyncOperationsErrorRecord);
                 throw new WebException(error,HttpStatus.BAD_REQUEST);
             }
-            Candidate candidate = mapper.companyCandidateToCandidate(companyCandidate);
-            candidate.setCandidateSource(IConstant.CandidateSource.XMLUpload.getValue());
-            MultipartFile candidateCv = FileService.convertBase64ToMultipart(companyCandidate.getFileContent(),companyCandidate.getFileName());
+            Candidate candidate = null;
             try {
-                Optional<User> createdBy = Optional.ofNullable(job.getCreatedBy());
-                UploadResponseBean result = uploadCandidateFromPlugin(candidate,job.getId(),candidateCv,createdBy);
-                if(result.getSuccessCount() == 1)
-                    companyCandidate.setComments("Success");
-                else if(result.getFailureCount() == 1)
-                    companyCandidate.setComments("Failed : "+result.getFailedCandidates().get(0).getUploadErrorMessage());
-            }catch (WebException | ValidationException ex){
-                throw ex;
-            } catch (Exception e) {
-                log.error(e);
+                candidate = mapper.companyCandidateToCandidate(companyCandidate);
+                candidate.setCandidateSource(IConstant.CandidateSource.XMLUpload.getValue());
+            }catch (Exception e){
+                AsyncOperationsErrorRecords asyncOperationsErrorRecord = new AsyncOperationsErrorRecords();
+                asyncOperationsErrorRecord.setAsyncOperation(IConstant.ASYNC_OPERATIONS.AddCandidateFromXml.name());
+                asyncOperationsErrorRecord.setErrorMessage("Failed to create Cndidate from XML Data");
+            }
+            if(null != candidate) {
+                MultipartFile candidateCv = null;
+                try {
+                    candidateCv = FileService.convertBase64ToMultipart(companyCandidate.getFileContent(), companyCandidate.getFileName());
+                } catch (Exception e) {
+                    AsyncOperationsErrorRecords asyncOperationsErrorRecord = new AsyncOperationsErrorRecords();
+                    asyncOperationsErrorRecord.setAsyncOperation(IConstant.ASYNC_OPERATIONS.AddCandidateFromXml.name());
+                    asyncOperationsErrorRecord.setErrorMessage("Failed to create Resume from base64 String for candidate"+companyCandidate.getCandidateEmail());
+                }
+                try {
+                    Optional<User> createdBy = Optional.ofNullable(job.getCreatedBy());
+                    UploadResponseBean result = uploadCandidateFromPlugin(candidate, job.getId(), candidateCv, createdBy);
+                    if (result.getSuccessCount() == 1)
+                        companyCandidate.setComments("Success");
+                    else if (result.getFailureCount() == 1) {
+                        companyCandidate.setComments("Failed : " + result.getFailedCandidates().get(0).getUploadErrorMessage());
+                        failedCandidatesByJob.computeIfAbsent(job.getId(), jobId -> new ArrayList<>());
+                        failedCandidatesByJob.get(job.getId()).add(candidate);
+                    }
+                } catch (WebException | ValidationException ex) {
+                    throw ex;
+                } catch (Exception e) {
+                    log.error(e);
+                }
             }
         });
         File file = new File(environment.getProperty(IConstant.REPO_LOCATION)+File.separator+"Candidates"+File.separator+candidatesXml.getOriginalFilename());
         Files.copy(candidatesXml.getInputStream(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        failedCandidatesByJob.forEach((jobId, candidates) -> {
+            handleErrorRecords(candidates, null, IConstant.ASYNC_OPERATIONS.AddCandidateFromXml.name(), null, jobId, candidatesXml.getName());
+        });
     }
 
     /**
@@ -2785,8 +2817,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                     try {
                         addCandidatesByXml(new MockMultipartFile("file", file.getName(), MediaType.APPLICATION_XML_VALUE, new FileInputStream(file)), companyFromDB);
                         file.delete();
+                    }catch (WebException e){
+                        log.error(e.getErrorMessage(), e.getErrorCode());
                     }catch (Exception e){
-                        e.getStackTrace();
                         log.error(e.getMessage(), e.getCause());
                     }
                 }
@@ -2890,13 +2923,15 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         context.setVariable("tech",jobQuestions.get("tech"));
         context.setVariable("master",jobQuestions.get("master"));
 
+        context.setVariable("isQuickQuestion",jcm.getJob().isQuickQuestion());
+
         if(null != jcm.getCvSkillRatingJson()) {
             context.setVariable("noSkills", jcm.getCvSkillRatingJson().get("1"));
             context.setVariable("weakSkills", jcm.getCvSkillRatingJson().get("2"));
             context.setVariable("strongSkills", jcm.getCvSkillRatingJson().get("3"));
         }
         Map<String,Map> score = scoreService.scoreJcm(jcm.getJob(),jcm);
-        log.info("{}",score);
+        context.setVariable("score",score);
 
         try {
             outFileName = outputDirectory+"TaleoLbIntegration_"+jcm.getCandidateNumber()+".pdf";

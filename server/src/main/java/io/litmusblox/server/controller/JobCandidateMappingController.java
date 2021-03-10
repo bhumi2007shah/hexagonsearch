@@ -386,9 +386,11 @@ public class JobCandidateMappingController {
         unverifiedSkillsService.curateUnverifiedSkills(unverifiedSkillsList);
     }
 
+    //Temporary route to test candidate profile pdf
     @GetMapping(value = "/thymeleaf/{jcmId}")
     String thymeleaf(@PathVariable Long jcmId){
-        // return jobCandidateMappingService.generateCandidatePDF(jcmId);
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        jobCandidateMappingService.generateCandidatePDF(jcmId,"Desktop/",loggedInUser);
         return null;
     }
 

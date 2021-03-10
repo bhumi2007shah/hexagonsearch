@@ -56,14 +56,14 @@ public class ScoreService implements IScoreService {
                         if("Flat".equals(question.getTechScreeningQuestionId().getScoringType()) && null != optionCount){
 
                             if(null == candidateResponse){
-                                score.setScore(null);
+                                score.setScore("Greyed");
                             }
                             else if(Arrays.stream(candidateResponse).anyMatch(s -> s.contains("no experience") || s.contains("I wish not to answer"))){
                                 score.setScore("Missing");
                             }
                             else if(optionCount == candidateResponse.length) {
                                 if (Arrays.asList(score.getExpectedAnswer()).containsAll(Arrays.asList(candidateResponse))) {
-                                    score.setScore("At Par");
+                                    score.setScore("At_Par");
                                 } else {
                                     score.setScore("Weaker");
                                 }
@@ -79,7 +79,7 @@ public class ScoreService implements IScoreService {
                                     score.setScore("Stronger");
                                 }
                                 else {
-                                    score.setScore("At Par");
+                                    score.setScore("At_Par");
                                 }
                             }
                             else if(optionCount>candidateResponse.length){
@@ -102,14 +102,14 @@ public class ScoreService implements IScoreService {
                                     score.setScore("Weaker");
                                 }
                                 else if( answerIndex == expectedAnswerIndex ){
-                                    score.setScore("At Par");
+                                    score.setScore("At_Par");
                                 }
                                 else{
                                     score.setScore("Stronger");
                                 }
                             }
                             else{
-                                score.setScore(null);
+                                score.setScore("Greyed");
                             }
                         }
 
