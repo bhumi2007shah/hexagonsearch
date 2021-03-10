@@ -2724,8 +2724,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
     public void addCandidatesByXml(MultipartFile candidatesXml,Company companyId) throws Exception{
         if(candidatesXml.isEmpty()){
-            String error = "XML file is empty";
+            String error = "XML file is empty "+candidatesXml.getName();
             log.error(error);
+            AsyncOperationsErrorRecords asyncOperationsErrorRecord = new AsyncOperationsErrorRecords();
+            asyncOperationsErrorRecord.setAsyncOperation(IConstant.ASYNC_OPERATIONS.AddCandidateFromXml.name());
+            asyncOperationsErrorRecord.setErrorMessage(error);
+            asyncOperationsErrorRecordsRepository.save(asyncOperationsErrorRecord);
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
         String xmlContent = new String(candidatesXml.getBytes());
@@ -2740,6 +2744,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             if(null == job){
                 String error = "company job Id : " + companyJobId + " does not exist";
                 log.error(error);
+                AsyncOperationsErrorRecords asyncOperationsErrorRecord = new AsyncOperationsErrorRecords();
+                asyncOperationsErrorRecord.setAsyncOperation(IConstant.ASYNC_OPERATIONS.AddCandidateFromXml.name());
+                asyncOperationsErrorRecord.setErrorMessage(error);
+                asyncOperationsErrorRecordsRepository.save(asyncOperationsErrorRecord);
                 throw new WebException(error,HttpStatus.BAD_REQUEST);
             }
             Candidate candidate = mapper.companyCandidateToCandidate(companyCandidate);
