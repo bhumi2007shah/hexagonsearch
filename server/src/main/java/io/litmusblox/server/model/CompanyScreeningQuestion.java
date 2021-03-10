@@ -7,6 +7,7 @@ package io.litmusblox.server.model;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
@@ -26,13 +27,14 @@ import java.util.Date;
 @Table(name = "COMPANY_SCREENING_QUESTION")
 @JsonFilter("CompanyScreeningQuestion")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
+@NoArgsConstructor
 public class CompanyScreeningQuestion implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
 
     @Id
     @Column(name = "ID")
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
@@ -90,6 +92,19 @@ public class CompanyScreeningQuestion implements Serializable {
     @Column(name = "QUESTION_OWNER_SEQ")
     private String questionOwnerSeq;
 
-
-
+    public CompanyScreeningQuestion(@NotNull String question, String[] options, Long companyId, @NotNull MasterData questionType, @NotNull Date createdOn, @NotNull Long createdBy, String questionCategory, String scoringType, String[] defaultAnswers, String answerSelection, String questionTag, String questionSeq, String questionOwnerSeq) {
+        this.question = question;
+        this.options = options;
+        this.companyId = companyId;
+        this.questionType = questionType;
+        this.createdOn = createdOn;
+        this.createdBy = createdBy;
+        this.questionCategory = questionCategory;
+        this.scoringType = scoringType;
+        this.defaultAnswers = defaultAnswers;
+        this.answerSelection = answerSelection;
+        this.questionTag = questionTag;
+        this.questionSeq = questionSeq;
+        this.questionOwnerSeq = questionOwnerSeq;
+    }
 }
