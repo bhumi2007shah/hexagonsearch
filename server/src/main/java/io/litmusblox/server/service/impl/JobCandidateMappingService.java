@@ -2750,23 +2750,39 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 asyncOperationsErrorRecordsRepository.save(asyncOperationsErrorRecord);
                 throw new WebException(error,HttpStatus.BAD_REQUEST);
             }
-            Candidate candidate = mapper.companyCandidateToCandidate(companyCandidate);
-            candidate.setCandidateSource(IConstant.CandidateSource.XMLUpload.getValue());
-            MultipartFile candidateCv = FileService.convertBase64ToMultipart(companyCandidate.getFileContent(),companyCandidate.getFileName());
+            Candidate candidate = null;
             try {
-                Optional<User> createdBy = Optional.ofNullable(job.getCreatedBy());
-                UploadResponseBean result = uploadCandidateFromPlugin(candidate,job.getId(),candidateCv,createdBy);
-                if(result.getSuccessCount() == 1)
-                    companyCandidate.setComments("Success");
-                else if(result.getFailureCount() == 1) {
-                    companyCandidate.setComments("Failed : " + result.getFailedCandidates().get(0).getUploadErrorMessage());
-                    failedCandidatesByJob.computeIfAbsent(job.getId(), jobId -> new ArrayList<>());
-                    failedCandidatesByJob.get(job.getId()).add(candidate);
+                candidate = mapper.companyCandidateToCandidate(companyCandidate);
+                candidate.setCandidateSource(IConstant.CandidateSource.XMLUpload.getValue());
+            }catch (Exception e){
+                AsyncOperationsErrorRecords asyncOperationsErrorRecord = new AsyncOperationsErrorRecords();
+                asyncOperationsErrorRecord.setAsyncOperation(IConstant.ASYNC_OPERATIONS.AddCandidateFromXml.name());
+                asyncOperationsErrorRecord.setErrorMessage("Failed to create Cndidate from XML Data");
+            }
+            if(null != candidate) {
+                MultipartFile candidateCv = null;
+                try {
+                    candidateCv = FileService.convertBase64ToMultipart(companyCandidate.getFileContent(), companyCandidate.getFileName());
+                } catch (Exception e) {
+                    AsyncOperationsErrorRecords asyncOperationsErrorRecord = new AsyncOperationsErrorRecords();
+                    asyncOperationsErrorRecord.setAsyncOperation(IConstant.ASYNC_OPERATIONS.AddCandidateFromXml.name());
+                    asyncOperationsErrorRecord.setErrorMessage("Failed to create Resume from base64 String for candidate"+companyCandidate.getCandidateEmail());
                 }
-            }catch (WebException | ValidationException ex){
-                throw ex;
-            } catch (Exception e) {
-                log.error(e);
+                try {
+                    Optional<User> createdBy = Optional.ofNullable(job.getCreatedBy());
+                    UploadResponseBean result = uploadCandidateFromPlugin(candidate, job.getId(), candidateCv, createdBy);
+                    if (result.getSuccessCount() == 1)
+                        companyCandidate.setComments("Success");
+                    else if (result.getFailureCount() == 1) {
+                        companyCandidate.setComments("Failed : " + result.getFailedCandidates().get(0).getUploadErrorMessage());
+                        failedCandidatesByJob.computeIfAbsent(job.getId(), jobId -> new ArrayList<>());
+                        failedCandidatesByJob.get(job.getId()).add(candidate);
+                    }
+                } catch (WebException | ValidationException ex) {
+                    throw ex;
+                } catch (Exception e) {
+                    log.error(e);
+                }
             }
         });
         File file = new File(environment.getProperty(IConstant.REPO_LOCATION)+File.separator+"Candidates"+File.separator+candidatesXml.getOriginalFilename());
