@@ -10,6 +10,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+import com.itextpdf.html2pdf.ConverterProperties;
+import com.itextpdf.html2pdf.HtmlConverter;
+import com.itextpdf.styledxmlparser.css.media.MediaDeviceDescription;
+import com.itextpdf.styledxmlparser.css.media.MediaType;
+import com.itextpdf.text.PageSize;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
@@ -568,6 +573,23 @@ public class Util {
     public static String removeHtmlTags(String htmlString){
         log.info("Remove Html tag's from string");
         return Jsoup.parse(htmlString).text();
+    }
+
+    public static void convertToPdf(String html, String outputFolder) {
+        OutputStream outputStream = null;
+        try {
+            outputStream = new FileOutputStream(outputFolder);
+            ConverterProperties converterProperties = new ConverterProperties();
+
+            MediaDeviceDescription mediaDeviceDescription = new MediaDeviceDescription(MediaType.ALL,PageSize.A1.getWidth(),PageSize.A1.getHeight());
+            converterProperties.setMediaDeviceDescription(mediaDeviceDescription);
+            converterProperties.setBaseUri("./src/main/resources/templates/");
+
+            HtmlConverter.convertToPdf(html,outputStream,converterProperties);
+            outputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static Double getSystemLoadAverage() {

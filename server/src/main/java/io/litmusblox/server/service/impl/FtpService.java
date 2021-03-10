@@ -90,18 +90,17 @@ public class FtpService implements IFtpService {
                     log.info("Connecting to FTP server of company {}", company.getCompanyName());
                     sftpService.connect();
                     log.info("Connected to FTP server of company {}", company.getCompanyName());
-                    Vector<ChannelSftp.LsEntry> fileNames = null;
+                    Vector<ChannelSftp.LsEntry> fileNames = new Vector<>();
                     try {
                         log.info("Fetching List of files from download directory of company {}", company.getCompanyName());
                         if(null != sftpService.getChannelSftp()) {
                             fileNames = sftpService.getChannelSftp().ls(remoteFileDownloadPath);
                         }
-                        log.info("{} files available to download", fileNames.size()-2);
+                        log.info("{} files available to download", fileNames.size());
                     } catch (SftpException e) {
                         log.error(e.getMessage(), e.getCause());
                     }
-                    fileNames.remove(fileNames.firstElement());
-                    fileNames.remove(fileNames.firstElement());
+                    fileNames.removeIf(lsEntry -> lsEntry.getFilename().equals(".") || lsEntry.getFilename().equals(".."));
                     if(fileNames.size()>0){
                         SFTPService finalSftpService = sftpService;
                         String finalRemoteFileDownloadPath = remoteFileDownloadPath;
@@ -120,7 +119,12 @@ public class FtpService implements IFtpService {
                                     .append(Util.getFileExtension(lsEntry.getFilename()));
                             log.info("Downloading file {} from {}", fileName, company.getCompanyName());
                             long startTime = System.currentTimeMillis();
-                            finalSftpService.downloadFile(fileName, saveFileName.toString());
+                            finalSftpService.downloadFile(fileName, xmlDirectory);
+                            File downloadedFile = new File(xmlDirectory+lsEntry.getFilename());
+                            if(downloadedFile.exists()){
+                                downloadedFile.renameTo(new File(saveFileName.toString()));
+                            }
+
                             log.info("Download file to {} in {}ms", xmlDirectory, System.currentTimeMillis()-startTime);
                             try{
                                 log.info("Moving file {} to processed directory on remote server", fileName);

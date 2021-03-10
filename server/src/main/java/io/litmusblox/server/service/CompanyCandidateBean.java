@@ -4,12 +4,15 @@
 
 package io.litmusblox.server.service;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CompanyCandidateBean {
     private String candidateNumber;
-
     private String companyJobId;
     private String numberToHire;
     private String jobTitle;
@@ -33,4 +36,11 @@ public class CompanyCandidateBean {
     private String hmName;
 
     private String comments;
+
+    public CompanyCandidateBean(String candidateNumber, String companyJobId, String pdfFileName, String comments) {
+        this.candidateNumber = candidateNumber;
+        this.companyJobId = companyJobId;
+        this.fileName = pdfFileName;
+        this.comments = comments;
+    }
 }

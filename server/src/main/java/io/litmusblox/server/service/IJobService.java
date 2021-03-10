@@ -194,5 +194,4 @@ public interface IJobService {
 
     void createJobByJobTemplate(Long jobId) throws Exception;
 
-    void addCustomQuestion( List <TechScreeningQuestion> techScreeningQuestions);
 }

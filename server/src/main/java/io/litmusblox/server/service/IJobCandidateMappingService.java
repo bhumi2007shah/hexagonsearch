@@ -298,4 +298,12 @@ public interface IJobCandidateMappingService {
     void addCandidatesByXml(MultipartFile candidatesXml,Company companyId) throws Exception;
 
     void xmlFileProcessor();
+
+    void generateCandidatePDF(Long jcmId, String outputDirectory, User loggedInUser);
+
+    /**
+     * Method to upload candidates csv to logged in users company ftp server.
+     * @param jcmIds
+     */
+    void sendCandidatesToFtpServer(List<Long> jcmIds, User loggedInUser);
 }

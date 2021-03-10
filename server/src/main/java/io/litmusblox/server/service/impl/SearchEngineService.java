@@ -5,21 +5,21 @@
 package io.litmusblox.server.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.CandidateEmailHistoryRepository;
 import io.litmusblox.server.repository.CandidateMobileHistoryRepository;
-import io.litmusblox.server.repository.CompanyRepository;
+import io.litmusblox.server.repository.JobCandidateMappingRepository;
 import io.litmusblox.server.security.JwtTokenUtil;
 import io.litmusblox.server.service.ISearchEngineService;
 import io.litmusblox.server.service.ImportDataResponseBean;
 import io.litmusblox.server.service.JobAnalytics.CandidateSearchBean;
 import io.litmusblox.server.service.MasterDataBean;
-import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.LoggedInUserInfoUtil;
+import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.RestClientResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
@@ -33,7 +33,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -58,59 +57,52 @@ public class SearchEngineService implements ISearchEngineService {
     @Resource
     CandidateMobileHistoryRepository candidateMobileHistoryRepository ;
     @Resource
-    CompanyRepository companyRepository;
+    JobCandidateMappingRepository jobCandidateMappingRepository;
 
     public String candidateSearch(String jsonData, String authToken) throws Exception{
         log.info("Inside candidateSearch method");
         Long startTime = System.currentTimeMillis();
         Map<String, Object> headerInformation = LoggedInUserInfoUtil.getLoggedInUserInformation();
-        String responseData = new String();
+        String responseData = "[]";
 
         if(jsonData == null)
             throw new ValidationException("Invalid request", HttpStatus.BAD_REQUEST);
 
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         CandidateSearchBean candidateSearchBean = objectMapper.readValue(jsonData, CandidateSearchBean.class);
 
 
 
-        if (candidateSearchBean.getEmail()!=null)
+        if (Util.isNotNull(candidateSearchBean.getEmail()))
         {
             String email=candidateSearchBean.getEmail();
             CandidateEmailHistory candidateEmailHistory= candidateEmailHistoryRepository.findByEmail(email);
 
-            if (candidateEmailHistory!=null)
-            {
-                 responseData=SearchCandidatebyEmailorMobile(candidateEmailHistory.getCandidate());
+            if (candidateEmailHistory!=null) {
+                 responseData = searchCandidateByEmailOrMobile(candidateEmailHistory.getCandidate());
                 log.info("Completed execution of Candidate search method by email in {} ms", System.currentTimeMillis() - startTime);
-
             }
 
         }
-        else if (candidateSearchBean.getMobile()!=null)
+        else if (Util.isNotNull(candidateSearchBean.getMobile()))
         {
             String mobile=candidateSearchBean.getMobile();
             CandidateMobileHistory candidateMobileHistory=candidateMobileHistoryRepository.findByMobileAndCountryCode(mobile,"+91");
-            if (candidateMobileHistory!=null)
-            {
-                responseData=SearchCandidatebyEmailorMobile(candidateMobileHistory.getCandidate());
-
+            if (candidateMobileHistory!=null) {
+                responseData = searchCandidateByEmailOrMobile(candidateMobileHistory.getCandidate());
                 log.info("Completed execution of Candidate search method by mobile in {} ms", System.currentTimeMillis() - startTime);
             }
-
         }
         else {
             responseData = RestClient.getInstance().consumeRestApi(jsonData, searchEngineBaseUrl + "candidate/search", HttpMethod.POST, authToken, null, null, Optional.of(headerInformation)).getResponseBody();
             log.info("Completed execution of Candidate search method in {} ms", System.currentTimeMillis() - startTime);
         }
-
-
-            return responseData;
-
+     return responseData;
     }
 
 
-    private String SearchCandidatebyEmailorMobile(Candidate candidate) throws JsonProcessingException {
+    private String searchCandidateByEmailOrMobile(Candidate candidate) throws JsonProcessingException {
         List<CandidateSearchBean> candidateSearchBeanList = new ArrayList<>();
         CandidateSearchBean candidateSearchBean=new CandidateSearchBean();
         List<CandidateEmailHistory> candidateEmailHistoryList=candidateEmailHistoryRepository.findByCandidateIdOrderByIdDesc(candidate.getId());
@@ -144,11 +136,12 @@ public class SearchEngineService implements ISearchEngineService {
             }
 
         }
-       Company company= companyRepository.findCompanyByCandidateId(candidate.getId());
-        if (null!=company)
+        JobCandidateMapping latestJcmFromDb = jobCandidateMappingRepository.getUpdatedJcm(candidate.getId());
+        if (null != latestJcmFromDb && null!=latestJcmFromDb.getJob().getCompanyId())
         {
-            candidateSearchBean.setCompanyId(company.getId());
-            candidateSearchBean.setCompanyName(company.getCompanyName());
+            candidateSearchBean.setCompanyId(latestJcmFromDb.getJob().getCompanyId().getId());
+            candidateSearchBean.setCompanyName(latestJcmFromDb.getJob().getCompanyId().getCompanyName());
+            candidateSearchBean.setSourcedOn(latestJcmFromDb.getCreatedOn());
         }
         candidateSearchBeanList.add(candidateSearchBean);
         ObjectMapper objectMapper = new ObjectMapper();

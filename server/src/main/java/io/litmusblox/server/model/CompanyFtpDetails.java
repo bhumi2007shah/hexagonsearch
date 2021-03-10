@@ -65,7 +65,8 @@ public class CompanyFtpDetails implements Serializable {
             String encrypterPass,
             String encryptedPort,
             String remoteFileDownloadPath,
-            String remoteFileProcessedPath
+            String remoteFileProcessedPath,
+            String remoteFileUploadPath
     ) {
         this.companyId = companyId;
         this.userName = encrypterUser;
@@ -74,5 +75,6 @@ public class CompanyFtpDetails implements Serializable {
         this.port = encryptedPort;
         this.remoteFileDownloadPath = remoteFileDownloadPath;
         this.remoteFileProcessedPath = remoteFileProcessedPath;
+        this.remoteFileUploadPath = remoteFileUploadPath;
     }
 }

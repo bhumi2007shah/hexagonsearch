@@ -167,6 +167,7 @@ public class AdminService implements IAdminService {
         String encryptedPort = null;
         String encryptedRemoteFileDownloadPath = null;
         String encryptedRemoteFileProcessedPath = null;
+        String encryptedRemoteFileUploadPath = null;
 
         SecretKey secretKey = new SecretKeySpec(company.getEKey(), IConstant.algorithmType);
 
@@ -177,6 +178,7 @@ public class AdminService implements IAdminService {
             encryptedPort = AESEncryptorDecryptor.encrypt(String.valueOf(ftpRequestBean.getPort()), secretKey);
             encryptedRemoteFileDownloadPath = AESEncryptorDecryptor.encrypt(ftpRequestBean.getRemoteFileDownloadPath(), secretKey);
             encryptedRemoteFileProcessedPath = AESEncryptorDecryptor.encrypt(ftpRequestBean.getRemoteFileProcessedPath(), secretKey);
+            encryptedRemoteFileUploadPath = AESEncryptorDecryptor.encrypt(ftpRequestBean.getRemoteFileUploadPath(), secretKey);
         }catch (Exception e){
             log.error(e.getMessage(), e.getCause());
         }
@@ -190,6 +192,7 @@ public class AdminService implements IAdminService {
             companyFtpDetailsFromDb.setPort(encryptedPort);
             companyFtpDetailsFromDb.setRemoteFileDownloadPath(encryptedRemoteFileDownloadPath);
             companyFtpDetailsFromDb.setRemoteFileProcessedPath(encryptedRemoteFileProcessedPath);
+            companyFtpDetailsFromDb.setRemoteFileUploadPath(encryptedRemoteFileUploadPath);
 
             companyFtpDetailsRepository.save(companyFtpDetailsFromDb);
         }else {
@@ -199,9 +202,10 @@ public class AdminService implements IAdminService {
                             encryptedHost,
                             encryptedUser,
                             encryptedPass,
+                            encryptedPort,
                             encryptedRemoteFileDownloadPath,
                             encryptedRemoteFileProcessedPath,
-                            encryptedPort
+                            encryptedRemoteFileUploadPath
                     )
             );
         }
