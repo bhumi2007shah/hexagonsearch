@@ -11,7 +11,6 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.UserRepository;
 import io.litmusblox.server.service.*;
-import io.litmusblox.server.service.UnverifiedSkillsService;
 import io.litmusblox.server.uploadProcessor.IProcessUploadedCV;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
@@ -51,7 +50,7 @@ public class JobCandidateMappingController {
 
 
     @Autowired
-    iUnverifiedSkillsService unverifiedSkillsService;
+    IunverifiedSkillsService unverifiedSkillsService;
 
     @Autowired
     IProcessUploadedCV processUploadedCV;

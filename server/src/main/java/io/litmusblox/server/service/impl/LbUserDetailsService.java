@@ -504,40 +504,29 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
      * @return list of all users for the company
      * @throws Exception
      */
-    public List<UserWorkspaceBean> fetchUsers(Long companyId,Boolean setCount ) throws Exception {
+    public List<UserWorkspaceBean> fetchUsers(Long companyId, boolean setCount) throws Exception {
         log.info("Received request to get list of users");
         long startTime = System.currentTimeMillis();
-        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Long validCompanyId = validateCompanyId(loggedInUser, companyId);
-        if(!validCompanyId.equals(companyId))
+        if (!validCompanyId.equals(companyId))
             log.error("Given company id : {} and valid company id : {} both are mismatched", companyId, validCompanyId);
-
-
-
         List<UserWorkspaceBean> responseBeans = userRepository.findWorkspaceData(validCompanyId);
-        setCount=true;
-            if(setCount)
+        if (setCount) {
+            responseBeans.forEach(userWorkspaceBean ->
             {
-                responseBeans.forEach(userWorkspaceBean ->
-                {
-                    User user=new User();
-                    user.setId(userWorkspaceBean.getUserId());
-                    userWorkspaceBean.setNumberOfJobsCreated(jobRepository.countByCreatedBy(user));
-                    userWorkspaceBean.setNumOfInvites(jobCandidateMappingRepository.getInviteCount(user.getId()));
-                    List<Object[]> object = jobCandidateMappingRepository.getChatbotCountCompletedAndInCompleted(user.getId());
-                    if (null != (object.get(0))[0]) {
-                        userWorkspaceBean.setIncompleteChatbotCount(Integer.parseInt((object.get(0))[1].toString()));
-                        userWorkspaceBean.setCompletedChatbotCount(Integer.parseInt((object.get(0))[0].toString()));
-                    }
-                    userWorkspaceBean.setAnalyticsSharedCount(jcmProfileSharingDetailsRepository.getProfileSharingCount(user.getId()));
-
-
-                });
-            }
-
-
-
+                User user = new User();
+                user.setId(userWorkspaceBean.getUserId());
+                userWorkspaceBean.setNumberOfJobsCreated(jobRepository.countByCreatedBy(user));
+                userWorkspaceBean.setNumOfInvites(jobCandidateMappingRepository.getInviteCount(user.getId()));
+                List<Object[]> object = jobCandidateMappingRepository.getChatbotCountCompletedAndInCompleted(user.getId());
+                if (null != (object.get(0))[0]) {
+                    userWorkspaceBean.setIncompleteChatbotCount(Integer.parseInt((object.get(0))[1].toString()));
+                    userWorkspaceBean.setCompletedChatbotCount(Integer.parseInt((object.get(0))[0].toString()));
+                }
+                userWorkspaceBean.setAnalyticsSharedCount(jcmProfileSharingDetailsRepository.getProfileSharingCount(user.getId()));
+            });
+        }
         log.info("Completed processing list of users in " + (System.currentTimeMillis() - startTime) + "ms.");
         return responseBeans;
     }
