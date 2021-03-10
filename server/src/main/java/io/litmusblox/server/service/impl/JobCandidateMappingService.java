@@ -226,7 +226,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
         //verify that the job is live before processing candidates
         Job job = jobRepository.getOne(jobId);
-        if(createdBy.isEmpty() && !isCallFromNoAuth) {
+        if(null!=createdBy && !isCallFromNoAuth && !createdBy.isPresent()) {
             User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             validateLoggedInUser(loggedInUser, job);
         }
