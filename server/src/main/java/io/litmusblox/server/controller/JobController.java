@@ -396,11 +396,4 @@ public class JobController {
         jobService.saveExpectedAnswer(requestJob);
         log.info("Saved expected answer in {}ms", System.currentTimeMillis()-startTime);
     }
-
-    @PostMapping(value = "/addCustomQuestion")
-    @ResponseStatus(HttpStatus.OK)
-    void addCustomQuestion(@RequestParam List <TechScreeningQuestion> techScreeningQuestions) throws Exception{
-        jobService.addCustomQuestion(techScreeningQuestions);
-    }
-
 }
