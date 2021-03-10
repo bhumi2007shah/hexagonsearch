@@ -35,35 +35,27 @@ public class UnverifiedSkillsService implements IunverifiedSkillsService
 
     }
 
-    public void curateUnverifiedSkills(List<UnverifiedSkills> unverifiedSkillsList)
-    {
-        for (UnverifiedSkills unverifiedSkills:unverifiedSkillsList)
+    public void curateUnverifiedSkills(List<UnverifiedSkills> unverifiedSkillsList) {
+        unverifiedSkillsList.forEach(unverifiedSkills ->
         {
-            if (skillMasterRepository.findBySkillNameIgnoreCase(unverifiedSkills.getSkill())==null) {
+            if (null == skillMasterRepository.findBySkillNameIgnoreCase(unverifiedSkills.getSkill())) {
                 SkillsMaster skillsMaster = new SkillsMaster(unverifiedSkills.getSkill());
                 skillMasterRepository.save(skillsMaster);
             }
-            for (Long candidateId:
-                     unverifiedSkills.getCandiateIds())
-                {
-                    if (candidateSkillDetailsRepository.findByCandidateId(candidateId) != null) {
-                        CandidateSkillDetails candidateSkillDetails = new CandidateSkillDetails(candidateId, unverifiedSkills.getSkill());
-                        candidateSkillDetailsRepository.save(candidateSkillDetails);
-                    }
-                    List<JobCandidateMapping> jobCandidateMappingList = jobCandidateMappingRepository.findByCandidateId(candidateId);
-                    if (jobCandidateMappingList != null) {
-                        jobCandidateMappingList.get(0).setCreatedOnSearchEngine(false);
-                        jobCandidateMappingRepository.save(jobCandidateMappingList.get(0));
-                    }
+            for (Long candidateId :
+                    unverifiedSkills.getCandiateIds()) {
+                if (null != candidateSkillDetailsRepository.findByCandidateId(candidateId)) {
+                    CandidateSkillDetails candidateSkillDetails = new CandidateSkillDetails(candidateId, unverifiedSkills.getSkill());
+                    candidateSkillDetailsRepository.save(candidateSkillDetails);
                 }
-
+                List<JobCandidateMapping> jobCandidateMappingList = jobCandidateMappingRepository.findByCandidateId(candidateId);
+                if (null != jobCandidateMappingList) {
+                    jobCandidateMappingList.get(0).setCreatedOnSearchEngine(false);
+                    jobCandidateMappingRepository.save(jobCandidateMappingList.get(0));
+                }
+            }
             unverifiedSkillsRepository.delete(unverifiedSkills);
 
-
-
-        }
-
-
-
+        });
     }
 }

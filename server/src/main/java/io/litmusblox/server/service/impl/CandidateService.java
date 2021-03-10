@@ -371,58 +371,51 @@ public class CandidateService implements ICandidateService {
         candidateSkillDetailsRepository.deleteByCandidateId(candidate.getId());
         List<CandidateSkillDetails> skillList = new ArrayList<CandidateSkillDetails>(candidateSkillDetails.stream().collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(CandidateSkillDetails::getSkill)))));
         //insert new ones
-
-
-
         skillList.forEach(obj -> {
 
             SkillsMaster skillsMaster=skillMasterRepository.findBySkillNameIgnoreCase(obj.getSkill());
-            if(obj.getSkill().equals(skillsMaster.getSkillName()))
-                {
-                    if(!Util.isNull(obj.getSkill()) && obj.getSkill().length() > IConstant.MAX_FIELD_LENGTHS.SKILL.getValue()) {
-                    obj.setSkill(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL.name(), IConstant.MAX_FIELD_LENGTHS.SKILL.getValue(), obj.getSkill()));
-                }
-                if(!Util.isNull(obj.getVersion()) && obj.getVersion().length() > IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.getValue()) {
-                    obj.setVersion(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.name(), IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.getValue(), obj.getVersion()));
-                }
-                obj.setCandidateId(candidate.getId());
-                CandidateSkillDetails newCandidateSkillDetails = new CandidateSkillDetails(obj.getCandidateId(), obj.getSkill(), obj.getLastUsed(), obj.getExpInMonths(), obj.getVersion());
-                candidateSkillDetailsRepository.save(newCandidateSkillDetails);
+            if(null!=skillsMaster)
+                addCandidateSkill(obj,candidate);
 
-            }
             else
                 {
                     Set<String> skillMasterSet=MasterDataBean.getInstance().getVerifiedSkills();
                     if (skillMasterSet.contains(obj.getSkill()))
                     {
-                        if(!Util.isNull(obj.getSkill()) && obj.getSkill().length() > IConstant.MAX_FIELD_LENGTHS.SKILL.getValue()) {
-                            obj.setSkill(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL.name(), IConstant.MAX_FIELD_LENGTHS.SKILL.getValue(), obj.getSkill()));
-                        }
-                        if(!Util.isNull(obj.getVersion()) && obj.getVersion().length() > IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.getValue()) {
-                            obj.setVersion(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.name(), IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.getValue(), obj.getVersion()));
-                        }
-                        obj.setCandidateId(candidate.getId());
-                        CandidateSkillDetails newCandidateSkillDetails = new CandidateSkillDetails(obj.getCandidateId(), obj.getSkill(), obj.getLastUsed(), obj.getExpInMonths(), obj.getVersion());
-                        candidateSkillDetailsRepository.save(newCandidateSkillDetails);
-
+                       addCandidateSkill(obj,candidate);
                         skillsMaster = new SkillsMaster(obj.getSkill());
                         skillMasterRepository.save(skillsMaster);
-
                     }
                     else {
                         UnverifiedSkills unverifiedSkills=unverifiedSkillsRepository.findBySkillIgnoreCase(obj.getSkill());
-                        if (unverifiedSkills.getSkill().equals(obj.getSkill()))
+                        if (null!=unverifiedSkills)
                         {
-                            unverifiedSkills.setCandiateIds(new Long[]{obj.getCandidateId()});
-                            unverifiedSkillsRepository.saveAndFlush(unverifiedSkills);
+                                Long[] candiateIds=unverifiedSkills.getCandiateIds();
+                                ArrayList<Long> candidateIDList = new ArrayList<Long>(Arrays.asList(candiateIds));
+                                candidateIDList.add(obj.getCandidateId());
+                                candiateIds = candidateIDList.toArray(candiateIds);
+                                 unverifiedSkills.setCandiateIds(candiateIds);
+
                         }
-                        else {
+                        else
                             unverifiedSkills = new UnverifiedSkills(obj.getSkill(), new Long[]{obj.getCandidateId()});
-                            unverifiedSkillsRepository.save(unverifiedSkills);
-                        }
+                             unverifiedSkillsRepository.save(unverifiedSkills);
                     }
             }
           });
+    }
+
+    private void addCandidateSkill(CandidateSkillDetails obj, Candidate candidate)
+    {
+        if(!Util.isNull(obj.getSkill()) && obj.getSkill().length() > IConstant.MAX_FIELD_LENGTHS.SKILL.getValue()) {
+            obj.setSkill(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL.name(), IConstant.MAX_FIELD_LENGTHS.SKILL.getValue(), obj.getSkill()));
+        }
+        if(!Util.isNull(obj.getVersion()) && obj.getVersion().length() > IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.getValue()) {
+            obj.setVersion(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.name(), IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.getValue(), obj.getVersion()));
+        }
+        obj.setCandidateId(candidate.getId());
+        CandidateSkillDetails newCandidateSkillDetails = new CandidateSkillDetails(obj.getCandidateId(), obj.getSkill(), obj.getLastUsed(), obj.getExpInMonths(), obj.getVersion());
+        candidateSkillDetailsRepository.save(newCandidateSkillDetails);
     }
 
     @Transactional
