@@ -132,7 +132,7 @@ order by jobPublishedOn desc, jobId asc;
 drop view if exists job_candidate_mapping_all_details;
 create view job_candidate_mapping_all_details
 as select
-job_candidate_mapping.id, job_candidate_mapping.job_id, job_candidate_mapping.candidate_id, job_candidate_mapping.email,
+distinct job_candidate_mapping.id, job_candidate_mapping.job_id, job_candidate_mapping.candidate_id, job_candidate_mapping.email,
 job_candidate_mapping.mobile, job_candidate_mapping.country_code, job_candidate_mapping.stage,
 (select stage from stage_step_master where id = job_candidate_mapping.stage) as stage_name,
 job_candidate_mapping.created_on, job_candidate_mapping.candidate_first_name, job_candidate_mapping.candidate_last_name,
