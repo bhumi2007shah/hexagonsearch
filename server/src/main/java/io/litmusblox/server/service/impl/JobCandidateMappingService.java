@@ -226,7 +226,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
         //verify that the job is live before processing candidates
         Job job = jobRepository.getOne(jobId);
-        if(createdBy.isEmpty() && !isCallFromNoAuth) {
+        if(null!=createdBy && !isCallFromNoAuth && !createdBy.isPresent()) {
             User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             validateLoggedInUser(loggedInUser, job);
         }
@@ -2724,13 +2724,19 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
     public void addCandidatesByXml(MultipartFile candidatesXml,Company companyId) throws Exception{
         if(candidatesXml.isEmpty()){
-            String error = "XML file is empty";
+            String error = "XML file is empty "+candidatesXml.getName();
             log.error(error);
+            AsyncOperationsErrorRecords asyncOperationsErrorRecord = new AsyncOperationsErrorRecords();
+            asyncOperationsErrorRecord.setAsyncOperation(IConstant.ASYNC_OPERATIONS.AddCandidateFromXml.name());
+            asyncOperationsErrorRecord.setErrorMessage(error);
+            asyncOperationsErrorRecordsRepository.save(asyncOperationsErrorRecord);
             throw new WebException(error,HttpStatus.BAD_REQUEST);
         }
         String xmlContent = new String(candidatesXml.getBytes());
         List<CompanyCandidateBean>companyCandidates =  parseXml(xmlContent);
         CandidateMapper mapper = Mappers.getMapper(CandidateMapper.class);
+
+        Map<Long, List<Candidate>> failedCandidatesByJob = new HashMap<>();
 
         companyCandidates.forEach(companyCandidate -> {
             String companyJobId = companyCandidate.getCompanyJobId();
@@ -2738,6 +2744,10 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             if(null == job){
                 String error = "company job Id : " + companyJobId + " does not exist";
                 log.error(error);
+                AsyncOperationsErrorRecords asyncOperationsErrorRecord = new AsyncOperationsErrorRecords();
+                asyncOperationsErrorRecord.setAsyncOperation(IConstant.ASYNC_OPERATIONS.AddCandidateFromXml.name());
+                asyncOperationsErrorRecord.setErrorMessage(error);
+                asyncOperationsErrorRecordsRepository.save(asyncOperationsErrorRecord);
                 throw new WebException(error,HttpStatus.BAD_REQUEST);
             }
             Candidate candidate = mapper.companyCandidateToCandidate(companyCandidate);
@@ -2748,8 +2758,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 UploadResponseBean result = uploadCandidateFromPlugin(candidate,job.getId(),candidateCv,createdBy);
                 if(result.getSuccessCount() == 1)
                     companyCandidate.setComments("Success");
-                else if(result.getFailureCount() == 1)
-                    companyCandidate.setComments("Failed : "+result.getFailedCandidates().get(0).getUploadErrorMessage());
+                else if(result.getFailureCount() == 1) {
+                    companyCandidate.setComments("Failed : " + result.getFailedCandidates().get(0).getUploadErrorMessage());
+                    failedCandidatesByJob.computeIfAbsent(job.getId(), jobId -> new ArrayList<>());
+                    failedCandidatesByJob.get(job.getId()).add(candidate);
+                }
             }catch (WebException | ValidationException ex){
                 throw ex;
             } catch (Exception e) {
@@ -2758,6 +2771,9 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         });
         File file = new File(environment.getProperty(IConstant.REPO_LOCATION)+File.separator+"Candidates"+File.separator+candidatesXml.getOriginalFilename());
         Files.copy(candidatesXml.getInputStream(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        failedCandidatesByJob.forEach((jobId, candidates) -> {
+            handleErrorRecords(candidates, null, IConstant.ASYNC_OPERATIONS.AddCandidateFromXml.name(), null, jobId, candidatesXml.getName());
+        });
     }
 
     /**
@@ -2784,10 +2800,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 if (null != companyFromDB) {
                     try {
                         addCandidatesByXml(new MockMultipartFile("file", file.getName(), MediaType.APPLICATION_XML_VALUE, new FileInputStream(file)), companyFromDB);
+                        file.delete();
+                    }catch (WebException e){
+                        log.error(e.getErrorMessage(), e.getErrorCode());
                     }catch (Exception e){
                         log.error(e.getMessage(), e.getCause());
                     }
-                    file.delete();
                 }
             }
             else{
