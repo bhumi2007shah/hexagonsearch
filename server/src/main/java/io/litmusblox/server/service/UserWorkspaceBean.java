@@ -25,31 +25,16 @@ import javax.persistence.*;
  */
 @Data
 @NoArgsConstructor
-
 public class UserWorkspaceBean
 {
-
     Long userId;
-
-
     String userName;
-
-
     String status;
-
     Long companyAddressId;
-
-
     Long companyBuId;
-
     String email;
-
-
     String mobile;
-
-
     String userRole;
-
     int completedChatbotCount=0;
     int incompleteChatbotCount=0;
     int analyticsSharedCount=0;
