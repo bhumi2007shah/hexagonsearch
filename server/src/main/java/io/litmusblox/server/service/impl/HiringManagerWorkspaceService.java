@@ -75,6 +75,9 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
     @Resource
     CandidateScreeningQuestionResponseRepository candidateScreeningQuestionResponseRepository;
 
+    @Resource
+    CompanyScreeningQuestionsRepository companyScreeningQuestionsRepository;
+
     /**
      * Service to fetch jcmList for stage and job id
      * @param stage stage for which details is required
@@ -286,6 +289,11 @@ public class HiringManagerWorkspaceService extends AbstractAccessControl impleme
         jobService.addJobScreeningQuestions(job,oldJob,loggedInUser,true);
     }
 
+    @Override
+    public List<CompanyScreeningQuestion> getCompanyQuestions(Long companyId)
+    {
+        return companyScreeningQuestionsRepository.findByCompanyId(companyId);
+    }
 
     private void getCandidateCountByStage(List<Job> jobs, Long hiringManagerId) {
         if(jobs != null & jobs.size() > 0) {

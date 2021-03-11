@@ -9,13 +9,14 @@ import io.litmusblox.server.repository.CandidateSkillDetailsRepository;
 import io.litmusblox.server.repository.JobCandidateMappingRepository;
 import io.litmusblox.server.repository.SkillMasterRepository;
 import io.litmusblox.server.repository.UnverifiedSkillsRepository;
+import lombok.extern.log4j.Log4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
 
 @Service
-public class UnverifiedSkillsService implements iUnverifiedSkillsService
+public class UnverifiedSkillsService implements IunverifiedSkillsService
 {
     @Resource
     UnverifiedSkillsRepository unverifiedSkillsRepository;
@@ -29,49 +30,32 @@ public class UnverifiedSkillsService implements iUnverifiedSkillsService
 
     public List<UnverifiedSkills> getUnverifiedSkillList() throws Exception
     {
-        System.out.println("data");
+
         return  unverifiedSkillsRepository.findAll();
 
     }
 
-    public void curateUnverifiedSkills(List<UnverifiedSkills> unverifiedSkillsList)
-    {
-        for (UnverifiedSkills unverifiedSkills:unverifiedSkillsList)
+    public void curateUnverifiedSkills(List<UnverifiedSkills> unverifiedSkillsList) {
+        unverifiedSkillsList.forEach(unverifiedSkills ->
         {
-            if (skillMasterRepository.findBySkillNameIgnoreCase(unverifiedSkills.getSkill())==null) {
-
+            if (null == skillMasterRepository.findBySkillNameIgnoreCase(unverifiedSkills.getSkill())) {
                 SkillsMaster skillsMaster = new SkillsMaster(unverifiedSkills.getSkill());
                 skillMasterRepository.save(skillsMaster);
             }
-            for (int i=0;i<unverifiedSkills.getCANDIDATEIDS().length;i++)
-            {
-
-                System.out.println("inside loop");
-                if(candidateSkillDetailsRepository.findByCandidateId(unverifiedSkills.getCANDIDATEIDS()[i])!=null)
-                {
-                    System.out.println("inside if");
-                    CandidateSkillDetails candidateSkillDetails=new CandidateSkillDetails(unverifiedSkills.getCANDIDATEIDS()[i],unverifiedSkills.getSkill());
+            for (Long candidateId :
+                    unverifiedSkills.getCandiateIds()) {
+                if (null != candidateSkillDetailsRepository.findByCandidateId(candidateId)) {
+                    CandidateSkillDetails candidateSkillDetails = new CandidateSkillDetails(candidateId, unverifiedSkills.getSkill());
                     candidateSkillDetailsRepository.save(candidateSkillDetails);
                 }
-                List<JobCandidateMapping> jobCandidateMappingList= jobCandidateMappingRepository.findByCandidateId(unverifiedSkills.getCANDIDATEIDS()[i]);
-                if (jobCandidateMappingList!=null) {
+                List<JobCandidateMapping> jobCandidateMappingList = jobCandidateMappingRepository.findByCandidateId(candidateId);
+                if (null != jobCandidateMappingList) {
                     jobCandidateMappingList.get(0).setCreatedOnSearchEngine(false);
                     jobCandidateMappingRepository.save(jobCandidateMappingList.get(0));
                 }
-
             }
-
-
-
-
-
             unverifiedSkillsRepository.delete(unverifiedSkills);
 
-
-
-        }
-
-
-
+        });
     }
 }
