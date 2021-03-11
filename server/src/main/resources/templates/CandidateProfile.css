@@ -772,6 +772,7 @@
     padding-bottom: 20px;
     box-shadow: 0px 4px 6px #0000000D;
     border-radius: 10px;
+    max-width:95%;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -896,7 +897,7 @@
     background-color:#069F00;
 }
 
-.Missing{
+.Weaker{
     background-color: #F5B900;
 }
 
@@ -904,7 +905,7 @@
     background-color:#7FD300;
 }
 
-.Weaker{
+.Missing{
     background-color: #F93571;
 }
 .Greyed {
