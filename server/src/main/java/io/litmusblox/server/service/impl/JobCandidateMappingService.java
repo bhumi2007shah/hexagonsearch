@@ -207,6 +207,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     @Resource
     CompanyFtpDetailsRepository companyFtpDetailsRepository;
 
+
     @Transactional(readOnly = true)
     Job getJob(long jobId) {
         return jobRepository.findById(jobId).isPresent()?jobRepository.findById(jobId).get():null;
@@ -3031,5 +3032,12 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 log.error(e.getMessage(), e.getCause());
             }
         }
-    };
+    }
+
+    @Override
+    public List<JcmOfferDetails> getOfferDetailsList()
+    {
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return jcmOfferDetailsRepository.findByCompanyId(loggedInUser.getCompany().getId());
+    }
 }

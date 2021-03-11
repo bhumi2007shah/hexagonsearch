@@ -306,4 +306,5 @@ public interface IJobCandidateMappingService {
      * @param jcmIds
      */
     void sendCandidatesToFtpServer(List<Long> jcmIds, User loggedInUser);
+    List<JcmOfferDetails> getOfferDetailsList();
 }
