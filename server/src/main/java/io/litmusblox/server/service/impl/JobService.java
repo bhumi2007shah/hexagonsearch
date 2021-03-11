@@ -492,6 +492,12 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 oldJob.setAutoInvite(job.isAutoInvite());
                 oldJob.setVisibleToCareerPage(job.isVisibleToCareerPage());
                 oldJob.setTemplate(job.isTemplate());
+                if(job.isTemplate() && null == job.getTemplateName())
+                    throw new ValidationException("Template name should not be null if the job saves as a template. for job id : "+oldJob.getId(),HttpStatus.BAD_REQUEST);
+                else if(!job.isTemplate())
+                    oldJob.setTemplateName(null);
+                else
+                    oldJob.setTemplateName(job.getTemplateName());
             }
             
             oldJob.setJobTitle(job.getJobTitle());
@@ -1558,6 +1564,7 @@ public class JobService extends AbstractAccessControl implements IJobService {
         job = setRecruiterArray(job, loggedInUser);
         job.setId(null);
         job.setTemplate(false);
+        job.setTemplateName(null);
         job.setCreatedBy(loggedInUser);
         job.setCreatedOn(new Date());
         job.setStatus(IConstant.JobStatus.DRAFT.getValue());

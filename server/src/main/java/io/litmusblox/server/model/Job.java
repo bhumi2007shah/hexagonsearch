@@ -249,6 +249,9 @@ public class Job implements Serializable {
     @Column(name = "TEMPLATE")
     private boolean template;
 
+    @Column(name = "TEMPLATE_NAME")
+    private String templateName;
+
     @Transient
     @JsonInclude
     private Set<String> jobSkills =new HashSet<>();
