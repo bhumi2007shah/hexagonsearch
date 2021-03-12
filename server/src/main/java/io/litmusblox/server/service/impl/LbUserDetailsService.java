@@ -140,7 +140,7 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
                 new LoginResponseBean(userDetails.getId(), token, userDetails.getDisplayName(), userDetails.getCompany(),jobCandidateMappingRepository.getUploadedCandidateCount(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()), userDetails), userDetails.getRole(), userDetails.getWorkspaceUuid()),
                 null,
                 (new HashMap<String, List<String>>(){{
-                    put("Company", Arrays.asList("eKey"));
+                    put("Company", Arrays.asList("ekey"));
                 }})
         );
 
