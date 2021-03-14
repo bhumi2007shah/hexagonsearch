@@ -73,12 +73,20 @@ public class CompanyDataController {
     @PutMapping(value = "/update",consumes = {"multipart/form-data"})
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN +"')")
-    Company updateCompany(
+    String updateCompany(
             @RequestParam(value = "logo", required = false) MultipartFile logo,
             @RequestParam("company") String companyString
     ) throws Exception {
         Company company=new ObjectMapper().readValue(companyString, Company.class);
-        return companyService.saveCompany(company, logo);
+        String response = Util.stripExtraInfoFromResponseBean(
+                companyService.saveCompany(company, logo),
+                null,
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("key"));
+                }})
+        );
+
+        return response;
     }
 
 
@@ -150,9 +158,16 @@ public class CompanyDataController {
     @GetMapping("/getCompany/{companyId}")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    Company getCompanyDetail(@PathVariable ("companyId") Long companyId){
+    String getCompanyDetail(@PathVariable ("companyId") Long companyId){
         log.info("inside getCompanyDetail method");
-        return companyService.getCompanyDetail(companyId);
+        String response = Util.stripExtraInfoFromResponseBean(
+                companyService.getCompanyDetail(companyId),
+                null,
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
+                }})
+        );
+        return response;
     }
 
     /**
@@ -162,9 +177,16 @@ public class CompanyDataController {
     @PostMapping("/createCompany")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    Company createCompany(@RequestBody Company company){
+    String createCompany(@RequestBody Company company){
         log.info("inside createCompany method");
-        return companyService.createCompanyByAgency(company);
+        String response = Util.stripExtraInfoFromResponseBean(
+                companyService.createCompanyByAgency(company),
+                null,
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
+                }})
+        );
+        return response;
     }
 
     /**
@@ -175,9 +197,16 @@ public class CompanyDataController {
     @ResponseBody
     @PreAuthorize("hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN +"') or hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN +"') or hasRole('" + IConstant.UserRole.Names.RECRUITER +"')")
     @ResponseStatus(HttpStatus.OK)
-    List<Company> getCompanyListByAgency(@PathVariable ("recruitmentAgencyId") Long recruitmentAgencyId){
+    String getCompanyListByAgency(@PathVariable ("recruitmentAgencyId") Long recruitmentAgencyId){
         log.info("inside getCompanyListByAgency method");
-        return companyService.getCompanyListByAgency(recruitmentAgencyId);
+        String response = Util.stripExtraInfoFromResponseBean(
+                companyService.getCompanyListByAgency(recruitmentAgencyId),
+                null,
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
+                }})
+        );
+        return response;
     }
 
     /**

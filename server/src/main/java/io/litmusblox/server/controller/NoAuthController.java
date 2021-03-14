@@ -17,9 +17,7 @@ import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -152,7 +150,11 @@ public class NoAuthController {
                 new HashMap<String, List<String>>() {{
                     put("Job",Arrays.asList("id","jobTitle","jobDescription", "jobLocation" , "function","jobShortCode"));
                     put("MasterData", Arrays.asList("value"));
-                }}, null);
+                }},
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
+                }})
+        );
     }
 
     /**
@@ -173,7 +175,11 @@ public class NoAuthController {
                     put("Job", Arrays.asList("id","jobTitle", "jobDescription", "jobLocation", "function", "jobReferenceId","jobType", "jobShortCode"));
                     put("CompanyAddress", Arrays.asList("address"));
                     put("MasterData", Arrays.asList("value"));
-                }}, null);
+                }},
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
+                }})
+        );
 
     }
 
@@ -207,6 +213,7 @@ public class NoAuthController {
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
                     put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
+                    put("Company", Arrays.asList("ekey"));
                 }});
     }
 
@@ -259,6 +266,7 @@ public class NoAuthController {
                     put("JobScreeningQuestions", Arrays.asList("jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("MasterData", new ArrayList<>(0));
                     put("ScreeningQuestions", new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }}
         );
         if(null != response) {
@@ -311,7 +319,9 @@ public class NoAuthController {
                     put("JobCandidateMapping", Arrays.asList("displayName", "currentInterviewDetail","job"));
                     put("Job", Arrays.asList("companyId"));
                 }}),
-                null
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
+                }})
         );
         return responseStr;
     }

@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.litmusblox.server.model.CompanyScreeningQuestion;
 import io.litmusblox.server.model.JcmProfileSharingDetails;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.JobCandidateMapping;
@@ -20,7 +19,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -96,6 +98,7 @@ public class HiringManagerWorkspaceController {
                     put("MasterData", new ArrayList<>(0));
                     put("CompanyAddress", new ArrayList<>(0));
                     put("JcmHistory", Arrays.asList("id", "jcmId", "stage"));
+                    put("Company", Arrays.asList("ekey"));
                 }});
         response = response.replaceAll(Pattern.quote("$companyName"),responseObj.getCreatedBy().getCompany().getCompanyName());
         return response;
@@ -130,6 +133,7 @@ public class HiringManagerWorkspaceController {
                     put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
                     put("StageMaster",new ArrayList<>(0));
                     put("MasterData", new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }}));
     }
 
@@ -163,6 +167,7 @@ public class HiringManagerWorkspaceController {
                             "experienceRange", "userEnteredKeySkill", "updatedOn", "updatedBy","companyId","createdBy","hiringManager","minSalary","maxSalary", "resubmitHrChatbot","scoringEngineJobAvailable","visibleToCareerPage",
                             "jobShortCode", "hrQuestionAvailable","customizedChatbot","currency","autoInvite","interviewLocation","jobIndustry", "recruiter", "jobFunction"));
                     put("MasterData", new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }})
         );
     }
