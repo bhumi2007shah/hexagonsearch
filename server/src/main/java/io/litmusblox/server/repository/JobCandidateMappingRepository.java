@@ -229,4 +229,10 @@ public interface JobCandidateMappingRepository extends JpaRepository<JobCandidat
     @Query(value = "select * from job_candidate_mapping where candidate_id=:candidateId order by id desc limit 1", nativeQuery = true)
     JobCandidateMapping getUpdatedJcm(Long candidateId);
 
+    @Query(value = "select * from job_candidate_mapping where job_id =:companyId and candidate_id in (select candidate_id from candidate_email_history where email =:email)", nativeQuery = true)
+    JobCandidateMapping findByEmailAndCompanyID(String email,Long companyId);
+
+    @Query(value = "select * from job_candidate_mapping where job_id =:companyId and candidate_id in (select candidate_id from candidate_mobile_history where mobile =:mobile)", nativeQuery = true)
+    JobCandidateMapping findByMobileAndCompanyID(String mobile,Long companyId);
+
 }
