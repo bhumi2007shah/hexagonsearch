@@ -80,16 +80,16 @@ public class SearchEngineService implements ISearchEngineService {
                 JobCandidateMapping jobCandidateMappingMobile = jobCandidateMappingRepository.findByMobileAndCompanyID(candidateSearchBean.getMobile(),candidateSearchBean.getCompanyId());
                 if (null != jobCandidateMappingEmail && null != jobCandidateMappingMobile) {
                     if (jobCandidateMappingEmail.getCandidate().getId() == jobCandidateMappingMobile.getCandidate().getId()) {
-                        responseData = searchCandidateByEmailOrMobile(jobCandidateMappingEmail, candidateSearchBean);
+                        responseData = searchCandidateByEmailOrMobile(jobCandidateMappingEmail, candidateSearchBean.getEmail(),candidateSearchBean.getMobile(), true);
                         log.info("Completed execution of Candidate search method by email in {} ms", System.currentTimeMillis() - startTime);
                     } else
-                        responseData = searchCandidateByEmailOrMobile(jobCandidateMappingEmail, candidateSearchBean) + searchCandidateByEmailOrMobile(jobCandidateMappingMobile, candidateSearchBean);
+                        responseData = searchCandidateByEmailOrMobile(jobCandidateMappingEmail,candidateSearchBean.getEmail(),candidateSearchBean.getMobile(),true)
+                                + searchCandidateByEmailOrMobile(jobCandidateMappingMobile,candidateSearchBean.getEmail(),candidateSearchBean.getMobile(), false);
                 }
             } else {
                 JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByEmailAndCompanyID(candidateSearchBean.getEmail(),candidateSearchBean.getCompanyId());
                 if (jobCandidateMapping != null) {
-                    candidateSearchBean.setMobile(jobCandidateMapping.getMobile());
-                    responseData = searchCandidateByEmailOrMobile(jobCandidateMapping, candidateSearchBean);
+                    responseData = searchCandidateByEmailOrMobile(jobCandidateMapping, candidateSearchBean.getEmail(),candidateSearchBean.getMobile(), true);
                     log.info("Completed execution of Candidate search method by email in {} ms", System.currentTimeMillis() - startTime);
                 }
             }
@@ -97,8 +97,7 @@ public class SearchEngineService implements ISearchEngineService {
         } else if (Util.isNotNull(candidateSearchBean.getMobile())) {
             JobCandidateMapping jobCandidateMapping = jobCandidateMappingRepository.findByMobileAndCompanyID(candidateSearchBean.getMobile(),candidateSearchBean.getCompanyId());
             if (null != jobCandidateMapping) {
-                candidateSearchBean.setEmail(jobCandidateMapping.getEmail());
-                responseData = searchCandidateByEmailOrMobile(jobCandidateMapping, candidateSearchBean);
+                responseData = searchCandidateByEmailOrMobile(jobCandidateMapping,candidateSearchBean.getEmail(),candidateSearchBean.getMobile(), false);
                 log.info("Completed execution of Candidate search method by mobile in {} ms", System.currentTimeMillis() - startTime);
             }
         } else {
@@ -109,14 +108,19 @@ public class SearchEngineService implements ISearchEngineService {
     }
 
 
-    private String searchCandidateByEmailOrMobile(JobCandidateMapping jobCandidateMapping, CandidateSearchBean candidateSearchBean) throws JsonProcessingException {
+    private String searchCandidateByEmailOrMobile(JobCandidateMapping jobCandidateMapping, String email, String mobile, boolean isSearchedByEmail) throws JsonProcessingException {
         List<CandidateSearchBean> candidateSearchBeanList = new ArrayList<>();
         Candidate candidate = jobCandidateMapping.getCandidate();
-        candidateSearchBean.setEmail(jobCandidateMapping.getEmail());
-        candidateSearchBean.setMobile(jobCandidateMapping.getMobile());
+        CandidateSearchBean candidateSearchBean=new CandidateSearchBean();
         candidateSearchBean.setCandidateName(candidate.getFirstName() + " " + candidate.getLastName());
         candidateSearchBean.setCandidateId(candidate.getId());
-
+        if (isSearchedByEmail) {
+            candidateSearchBean.setMobile(jobCandidateMapping.getMobile());
+            candidateSearchBean.setEmail(email);
+        } else {
+            candidateSearchBean.setEmail(jobCandidateMapping.getEmail());
+            candidateSearchBean.setMobile(mobile);
+        }
         if (null != candidate.getCandidateDetails()) {
             String location = candidate.getCandidateDetails().getLocation();
             Set<String> LocationSet = new HashSet<String>();
