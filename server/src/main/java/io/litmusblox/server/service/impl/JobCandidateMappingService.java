@@ -2844,7 +2844,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
                     List<String> answers = candidateResponse.getCandidateResponse();
                     String answer = answers.size() == 0? "-" :  String.join(", ",answers).replaceAll("%\\$",", ");
-                    if(question.getQuestionCategory().getValue().contains("Salary"))
+                    if(!("-".equals(answer)) && question.getQuestionCategory().getValue().contains("Salary"))
                         answer = job.getCurrency()+" "+answer+" "+job.getCurrencyUnit();
                     response.put(question.getQuestionCategory().getValue(),answer);
                 }
