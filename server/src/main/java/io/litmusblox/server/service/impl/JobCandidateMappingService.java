@@ -2874,7 +2874,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             if(null != question.getMasterScreeningQuestionId()){
 
                 ScreeningQuestions temp = question.getMasterScreeningQuestionId();
-                master.put(Util.removeHtmlTags(temp.getQuestion()),candidateResponse.get());
+                master.put(temp.getQuestion(),candidateResponse.get());
 
             }
             if(null != question.getTechScreeningQuestionId()){

@@ -29,7 +29,7 @@
         <!--Dashboard-->
         <div class="row overview">
             <!--Candidate Details-->
-            <div class="row overview-details">
+            <div class="row overview-details" style="width: 87%;">
 
                 <div class=" p-0 overview-info-details">
                     <h1 class="candidate-name" th:text="${jcm.candidateFirstName}+' ' +${jcm.candidateLastName} "></h1>
@@ -48,7 +48,7 @@
             <div class="row mt-3 candidate-detail-container">
                 <span class="  p-0 candidate-detail-heading">Candidate Details</span>
 
-                <div class="row mt-3 detail__container">
+                <div class="row mt-3">
                     <div class="  detail__left__section">
                         <div class="row left__section__row" th:each="question, iStat : ${overviewValues}">
                             <div class="col-lg-4 left__section__question" th:text="${question.key}"> Question</div>
@@ -203,11 +203,11 @@
 
                     </div>
                 </div>
-                <div class = "row column-definitions" style="width:90%" th:each="question,stat : ${custom}">
-                    <span class="questions" th:text="${stat.index+1+'. '+question.key}">
+                <div style="width:90%" th:each="question,stat : ${custom}">
+                    <span class="questions" th:utext="${stat.index+1+'. '+question.key}">
                         question
                     </span>
-                    <span class="answers" th:text="${question.value}">
+                    <span class="answers" th:utext="${question.value}">
                        answer
                     </span>
                 </div>
