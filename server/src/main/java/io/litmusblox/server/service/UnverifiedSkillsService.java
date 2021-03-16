@@ -9,14 +9,13 @@ import io.litmusblox.server.repository.CandidateSkillDetailsRepository;
 import io.litmusblox.server.repository.JobCandidateMappingRepository;
 import io.litmusblox.server.repository.SkillMasterRepository;
 import io.litmusblox.server.repository.UnverifiedSkillsRepository;
-import lombok.extern.log4j.Log4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
 
 @Service
-public class UnverifiedSkillsService implements IunverifiedSkillsService
+public class UnverifiedSkillsService implements IUnverifiedSkillsService
 {
     @Resource
     UnverifiedSkillsRepository unverifiedSkillsRepository;

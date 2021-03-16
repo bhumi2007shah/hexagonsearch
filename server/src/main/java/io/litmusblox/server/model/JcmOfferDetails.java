@@ -27,7 +27,6 @@ public class JcmOfferDetails implements Serializable {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
 
-    @JsonBackReference
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "JCM_ID")
     private JobCandidateMapping jcmId;

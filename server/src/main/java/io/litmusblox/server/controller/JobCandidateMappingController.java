@@ -50,7 +50,7 @@ public class JobCandidateMappingController {
 
 
     @Autowired
-    IunverifiedSkillsService unverifiedSkillsService;
+    IUnverifiedSkillsService unverifiedSkillsService;
 
     @Autowired
     IProcessUploadedCV processUploadedCV;
@@ -408,4 +408,21 @@ public class JobCandidateMappingController {
         log.info("Completed sending candidates {} to {} ftp server by {}", jcmIds, loggedInUser.getCompany().getCompanyName(), loggedInUser.getEmail());
     }
 
+    @GetMapping(value = "/getOfferDetailsList")
+    String getOfferDetailsList() {
+        return Util.stripExtraInfoFromResponseBean(
+                jobCandidateMappingService.getOfferDetailsList(),
+                (new HashMap<String, List<String>>() {{
+                    put("JobCandidateMapping", Arrays.asList("email", "mobile", "candidateFirstName", "candidateLastName", "job", "stage", "email", "mobile", "updatedBy", "candidate", "createdBy", "screeningBy"));
+                    put("Job", Arrays.asList("id", "jobTitle"));
+                    put("Candidate", Arrays.asList("candidateCompanyDetails"));
+                    put("CandidateCompanyDetails", Arrays.asList("companyName", "designation"));
+                    put("User", Arrays.asList("firstName", "lastName"));
+                    put("JcmOfferDetails", Arrays.asList("jcmId", "id", "offeredOn", "joiningOn", "offeredCompensation"));
+                }}),
+                new HashMap<String, List<String>>() {{
+                    put("JcmOfferDetails", Arrays.asList("id"));
+                }}
+        );
+    }
 }

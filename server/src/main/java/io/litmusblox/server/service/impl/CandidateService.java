@@ -373,36 +373,29 @@ public class CandidateService implements ICandidateService {
         //insert new ones
         skillList.forEach(obj -> {
 
-            SkillsMaster skillsMaster=skillMasterRepository.findBySkillNameIgnoreCase(obj.getSkill());
-            if(null!=skillsMaster)
-                addCandidateSkill(obj,candidate);
-
-            else
-                {
-                    Set<String> skillMasterSet=MasterDataBean.getInstance().getVerifiedSkills();
-                    if (skillMasterSet.contains(obj.getSkill()))
-                    {
-                       addCandidateSkill(obj,candidate);
-                        skillsMaster = new SkillsMaster(obj.getSkill());
-                        skillMasterRepository.save(skillsMaster);
-                    }
-                    else {
-                        UnverifiedSkills unverifiedSkills=unverifiedSkillsRepository.findBySkillIgnoreCase(obj.getSkill());
-                        if (null!=unverifiedSkills)
-                        {
-                                Long[] candiateIds=unverifiedSkills.getCandiateIds();
-                                ArrayList<Long> candidateIDList = new ArrayList<Long>(Arrays.asList(candiateIds));
-                                candidateIDList.add(obj.getCandidateId());
-                                candiateIds = candidateIDList.toArray(candiateIds);
-                                 unverifiedSkills.setCandiateIds(candiateIds);
-
-                        }
-                        else
-                            unverifiedSkills = new UnverifiedSkills(obj.getSkill(), new Long[]{obj.getCandidateId()});
-                             unverifiedSkillsRepository.save(unverifiedSkills);
-                    }
+            SkillsMaster skillsMaster = skillMasterRepository.findBySkillNameIgnoreCase(obj.getSkill());
+            if (null != skillsMaster)
+                addCandidateSkill(obj, candidate);
+            else {
+                Set<String> skillMasterSet = MasterDataBean.getInstance().getVerifiedSkills();
+                if (skillMasterSet.contains(obj.getSkill())) {
+                    addCandidateSkill(obj, candidate);
+                    skillsMaster = new SkillsMaster(obj.getSkill());
+                    skillMasterRepository.save(skillsMaster);
+                } else {
+                    UnverifiedSkills unverifiedSkills = unverifiedSkillsRepository.findBySkillIgnoreCase(obj.getSkill());
+                    if (null != unverifiedSkills) {
+                        Long[] candidateIds = unverifiedSkills.getCandiateIds();
+                        ArrayList<Long> candidateIDList = new ArrayList<>();
+                        candidateIDList.addAll(Arrays.asList(candidateIds));
+                        candidateIDList.add(obj.getCandidateId());
+                        unverifiedSkills.setCandiateIds(candidateIDList.toArray(candidateIds));
+                    } else
+                        unverifiedSkills = new UnverifiedSkills(obj.getSkill(), new Long[]{obj.getCandidateId()});
+                    unverifiedSkillsRepository.save(unverifiedSkills);
+                }
             }
-          });
+        });
     }
 
     private void addCandidateSkill(CandidateSkillDetails obj, Candidate candidate)

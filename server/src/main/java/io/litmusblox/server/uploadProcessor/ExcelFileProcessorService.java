@@ -88,6 +88,7 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
                             discardRow = false;
                         switch (cell.getAddress().getColumn()) {
                             case 0:
+                                if(Util.isNotNull(Util.toSentenceCase(cellValue.trim())))
                                 candidate.setFirstName(Util.toSentenceCase(cellValue.trim()));
                                 break;
                             case 1:

@@ -74,7 +74,7 @@ public class TechScreeningQuestion implements Serializable {
     @Column(name = "QUESTION_OWNER_SEQ")
     private String questionOwnerSeq;
 
-    transient
+    @Transient
     private Boolean companyQuestion;
 
     public TechScreeningQuestion(
