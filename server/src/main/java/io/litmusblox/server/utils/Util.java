@@ -31,6 +31,7 @@ import org.apache.poi.util.IOUtils;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.multipart.MultipartFile;
@@ -575,7 +576,7 @@ public class Util {
         return Jsoup.parse(htmlString).text();
     }
 
-    public static void convertToPdf(String html, String outputFolder) {
+    public static void convertToPdf(String html, String outputFolder,String baseURI) {
         OutputStream outputStream = null;
         try {
             outputStream = new FileOutputStream(outputFolder);
@@ -583,7 +584,7 @@ public class Util {
 
             MediaDeviceDescription mediaDeviceDescription = new MediaDeviceDescription(MediaType.ALL,PageSize.A1.getWidth(),PageSize.A1.getHeight());
             converterProperties.setMediaDeviceDescription(mediaDeviceDescription);
-            converterProperties.setBaseUri("./src/main/resources/templates/");
+            converterProperties.setBaseUri(baseURI);
 
             HtmlConverter.convertToPdf(html,outputStream,converterProperties);
             outputStream.close();

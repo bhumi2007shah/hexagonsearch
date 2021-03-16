@@ -9,6 +9,7 @@ import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.Company;
+import io.litmusblox.server.model.CompanyFtpDetails;
 import io.litmusblox.server.model.Country;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.repository.*;
@@ -32,7 +33,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
@@ -75,6 +75,9 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
     @Resource
     JcmProfileSharingDetailsRepository jcmProfileSharingDetailsRepository;
 
+    @Resource
+    CompanyFtpDetailsRepository companyFtpDetailsRepository;
+
     @Autowired
     JwtTokenUtil jwtTokenUtil;
 
@@ -96,7 +99,7 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
      * @throws Exception
      */
     @Transactional
-    public LoginResponseBean login(User user, boolean isOtpAvailable) throws Exception {
+    public String login(User user, boolean isOtpAvailable) throws Exception {
         log.info("Received login request from " + user.getEmail());
         long startTime = System.currentTimeMillis();
         final User userDetails = (User)loadUserByUsername(user.getEmail());
@@ -132,7 +135,16 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
 
         log.info("Completed processing login request in " + (System.currentTimeMillis() - startTime) +" ms.");
 
-        return new LoginResponseBean(userDetails.getId(), token, userDetails.getDisplayName(), userDetails.getCompany(),jobCandidateMappingRepository.getUploadedCandidateCount(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()), userDetails), userDetails.getRole(), userDetails.getWorkspaceUuid());
+
+        String response = Util.stripExtraInfoFromResponseBean(
+                new LoginResponseBean(userDetails.getId(), token, userDetails.getDisplayName(), userDetails.getCompany(),jobCandidateMappingRepository.getUploadedCandidateCount(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()), userDetails), userDetails.getRole(), userDetails.getWorkspaceUuid()),
+                null,
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
+                }})
+        );
+
+        return response;
     }
 
     @Override
@@ -141,6 +153,11 @@ public class LbUserDetailsService extends AbstractAccessControl implements UserD
         if(null == user)
             throw new UsernameNotFoundException("User not found with email: " + userName);
 
+        CompanyFtpDetails companyFtpDetails = companyFtpDetailsRepository.findByCompanyId(user.getCompany().getId());
+
+        if(null != companyFtpDetails){
+            user.getCompany().setFtpAvailable(true);
+        }
         return user;
     }
 

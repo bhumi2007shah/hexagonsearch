@@ -2941,7 +2941,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
                 file.mkdirs();
             }
             String html = thymeLeaf.viewResolver().getTemplateEngine().process("CandidateProfile", context);
-            Util.convertToPdf(html, outFileName);
+            Util.convertToPdf(html, outFileName,environment.getProperty("assetsLocation"));
 
         }catch (Exception e){
             log.error(e.getMessage(), e.getCause());

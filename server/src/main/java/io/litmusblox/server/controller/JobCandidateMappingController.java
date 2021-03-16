@@ -78,6 +78,7 @@ public class JobCandidateMappingController {
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
                     put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
+                    put("Company", Arrays.asList("ekey"));
                 }});
     }
 
@@ -122,7 +123,9 @@ public class JobCandidateMappingController {
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
                     put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
-                        }});
+                    put("Company", Arrays.asList("ekey"));
+                }}
+        );
     }
 
     /**
@@ -196,6 +199,7 @@ public class JobCandidateMappingController {
                     put("JobScreeningQuestions", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("MasterData", new ArrayList<>(0));
                     put("CompanyAddress", new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }});
         log.info("Completed processing fetch candidate profile request in " + (System.currentTimeMillis()-startTime) + "ms.");
         return response;
@@ -262,6 +266,7 @@ public class JobCandidateMappingController {
                 }},
                 new HashMap<String, List<String>>() {{
                     put("JcmHistory", Arrays.asList("id", "jcmId", "stage"));
+                    put("Company", Arrays.asList("ekey"));
                 }});
     }
 
@@ -324,6 +329,7 @@ public class JobCandidateMappingController {
                 new HashMap<String, List<String>>() {{
                     put("InterviewDetails", Arrays.asList("id", "createdOn","createdBy","updatedOn","updatedBy"));
                     put("InterviewerDetails", Arrays.asList("id", "createdOn","createdBy","updatedOn","updatedBy"));
+                    put("Company", Arrays.asList("ekey"));
                 }});
         log.info("Schedule interview for candidates " + (System.currentTimeMillis()-startTime) + "ms.");
         return response;

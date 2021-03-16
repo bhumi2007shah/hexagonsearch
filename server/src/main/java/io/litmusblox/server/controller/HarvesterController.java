@@ -70,6 +70,7 @@ public class HarvesterController {
                     put("JobScreeningQuestions", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
                     put("MasterData", new ArrayList<>(0));
                     put("CompanyAddress", new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }});
     }
 
@@ -96,6 +97,7 @@ public class HarvesterController {
                     put("Candidate", Arrays.asList("candidateDetails","candidateEducationDetails","candidateProjectDetails","candidateCompanyDetails",
                             "candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies","candidateSkillDetails"));
                     put("UploadResponseBean", Arrays.asList("fileName","processedOn", "candidateName"));
+                    put("Company", Arrays.asList("ekey"));
                 }});
     }
 

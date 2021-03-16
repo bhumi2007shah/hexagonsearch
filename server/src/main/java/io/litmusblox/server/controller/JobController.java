@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Job;
 import io.litmusblox.server.model.TechScreeningQuestion;
-import io.litmusblox.server.model.UnverifiedSkills;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
@@ -68,6 +67,7 @@ public class JobController {
                     put("CompanyAddress", new ArrayList<>(0));
                     put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
                     put("StageMaster",new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }})
         );
     }
@@ -92,6 +92,7 @@ public class JobController {
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList","jobHiringTeamList","jobDetail", "expertise", "education", "noticePeriod", "function", "experienceRange", "userEnteredKeySkill", "updatedOn", "updatedBy"));
                     put("MasterData", new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }})
         );
     }
@@ -106,8 +107,10 @@ public class JobController {
         return Util.stripExtraInfoFromResponseBean(jobService.getJobTemplateList(companyId),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("id","jobTitle","companyJobId"));
+                }}),
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
                 }})
-                ,null
         );
     }
 
@@ -157,6 +160,7 @@ public class JobController {
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateCompanyDetails", Arrays.asList("candidateId"));
                     put("JcmProfileSharingDetails", new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }})
         );
     }
@@ -195,6 +199,7 @@ public class JobController {
                     put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData", "interviewDetails", "candidateReferralDetail", "candidateSourceHistories"));
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateCompanyDetails", Arrays.asList("candidateId"));
+                    put("Company", Arrays.asList("ekey"));
                 }})
         );
 
@@ -266,6 +271,7 @@ public class JobController {
                     put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
                     put("StageMaster",new ArrayList<>(0));
                     put("MasterData", new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }}));
         //return jobService.getJobDetails(jobId);
     }
@@ -287,6 +293,7 @@ public class JobController {
                     put("CompanyScreeningQuestion",new ArrayList<>(0));
                     put("UserScreeningQuestion",new ArrayList<>(0));
                     put("MasterData", new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }}));
     }
 
@@ -320,6 +327,7 @@ public class JobController {
                     put("String", Arrays.asList("candidateProfileLink"));
                 }},
                 new HashMap<String, List<String>>() {{
+                    put("Company", Arrays.asList("ekey"));
                 }});
         log.info("Completed processing fetch Tech role competency list for job {} in {}", jobId, (System.currentTimeMillis()-startTime) + "ms.");
         return response;

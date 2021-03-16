@@ -27,7 +27,7 @@ public interface UserRepository extends JpaRepository<User, Long>
 {
     @Transactional
     @Query("SELECT  new io.litmusblox.server.service.UserWorkspaceBean(u.id,CONCAT(u.firstName, ' ', u.lastName) AS userName,u.status,u.companyAddressId,u.companyBuId,u.email," +
-            "u.mobile,u.userType)" +
+            "u.mobile,u.role)" +
             "FROM User u WHERE u.company.id=:validCompanyId")
     List<UserWorkspaceBean> findWorkspaceData(Long validCompanyId);
     List<User> findByCompanyId(Long companyId);

@@ -5,14 +5,16 @@
 package io.litmusblox.server.controller;
 
 import io.litmusblox.server.constant.IConstant;
-import io.litmusblox.server.model.Company;
 import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
+import io.litmusblox.server.utils.Util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -92,8 +94,16 @@ public class AdminController {
     @PutMapping(value = "/setCompanyUniqueId")
     @PreAuthorize("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "')")
     @ResponseStatus(value = HttpStatus.OK)
-    List<Company> setCompanyUniqueId() throws Exception {
-        return companyService.setCompanyUniqueId();
+    String setCompanyUniqueId() throws Exception {
+        String response = Util.stripExtraInfoFromResponseBean(
+                companyService.setCompanyUniqueId(),
+                null,
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
+                }})
+        );
+
+        return response;
     }
 
     /**

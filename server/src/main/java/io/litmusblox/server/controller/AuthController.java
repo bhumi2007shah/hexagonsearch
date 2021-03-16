@@ -6,7 +6,6 @@ package io.litmusblox.server.controller;
 
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.User;
-import io.litmusblox.server.service.LoginResponseBean;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
@@ -51,7 +50,7 @@ public class AuthController {
     @PostMapping(value = "/login")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    LoginResponseBean login(@RequestBody User user) throws Exception {
+    String login(@RequestBody User user) throws Exception {
         return userDetailsService.login(user, false);
     }
 
@@ -64,7 +63,7 @@ public class AuthController {
     @PostMapping(value = "/loginWithOtp")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    LoginResponseBean loginWithOtp(@RequestBody User user) throws Exception {
+    String loginWithOtp(@RequestBody User user) throws Exception {
         return userDetailsService.login(user, true);
     }
 
