@@ -82,7 +82,7 @@
 
                         </p>
                         <div class="skills mt-3">
-                            <span class="skill" th:each="skill : ${strongSkills}" th:text="${skill.key} +','"></span>
+                            <span class="skill" th:each="skill,stat: ${strongSkills}" th:text="${skill.key} + ${stat.index==stat.size-1?'.':', '}"></span>
                         </div>
                     </div>
                     <div class="col-4 m-0 p-0 review-skills-weak">
@@ -90,7 +90,7 @@
                             <p style="width: 129px;border-bottom: 5px solid #F67738;float:left;margin:0px"></p>
                         </p>
                         <div class="skills mt-3">
-                            <span class="skill" th:each="skill : ${weakSkills}" th:text="${skill.key} +','"></span>
+                            <span class="skill" th:each="skill,stat : ${weakSkills}" th:text="${skill.key} + ${stat.index==stat.size-1?'.':', '}"></span>
                         </div>
                     </div>
                     <div class="col-4 m-0 p-0 review-skills-no">
@@ -98,7 +98,7 @@
                             <p style="width: 129px;border-bottom: 5px solid #F02727;float:left; margin:0px"></p>
                         </p>
                         <div class="skills mt-3">
-                            <span class="skill" th:each="skill : ${noSkills}" th:text="${skill.key}+','"></span>
+                            <span class="skill" th:each="skill,stat : ${noSkills}" th:text="${skill.key} + ${stat.index==stat.size-1?'.':', '}"></span>
                         </div>
                     </div>
                 </div>
