@@ -214,7 +214,7 @@ public class JobCandidateMapping implements Serializable {
     @Column(name="OFFER_BY")
     private String offerBy;
 
-    @JsonManagedReference
+
     @OneToOne(mappedBy = "jcmId")
     private JcmOfferDetails offerDetails;
 

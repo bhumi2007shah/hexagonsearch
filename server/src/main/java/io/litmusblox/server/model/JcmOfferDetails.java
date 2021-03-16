@@ -6,6 +6,8 @@ package io.litmusblox.server.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFilter;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -19,6 +21,7 @@ import java.util.Date;
 @Table(name = "JCM_OFFER_DETAILS")
 @JsonFilter(value = "JcmOfferDetails")
 @NoArgsConstructor
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "jcmId")
 public class JcmOfferDetails implements Serializable {
     private static final long serialVersionUID = 6868521896546285046L;
 

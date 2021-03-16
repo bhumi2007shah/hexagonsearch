@@ -420,7 +420,6 @@ public class JobCandidateMappingController {
                     put("Candidate", Arrays.asList("candidateCompanyDetails"));
                     put("CandidateCompanyDetails", Arrays.asList("companyName", "designation"));
                     put("User", Arrays.asList("firstName", "lastName"));
-                    put("JcmOfferDetails", Arrays.asList("jcmId", "id", "offeredOn", "joiningOn", "offeredCompensation"));
                 }}),
                 new HashMap<String, List<String>>() {{
                     put("JcmOfferDetails", Arrays.asList("id"));
