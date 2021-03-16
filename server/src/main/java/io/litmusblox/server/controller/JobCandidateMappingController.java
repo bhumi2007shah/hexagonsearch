@@ -410,7 +410,9 @@ public class JobCandidateMappingController {
 
     @GetMapping(value = "/getOfferDetailsList")
     String getOfferDetailsList() {
-        return Util.stripExtraInfoFromResponseBean(
+        log.info("Received request to get offer details");
+        long startTime = System.currentTimeMillis();
+        String response = Util.stripExtraInfoFromResponseBean(
                 jobCandidateMappingService.getOfferDetailsList(),
                 (new HashMap<String, List<String>>() {{
                     put("JobCandidateMapping", Arrays.asList("email", "mobile", "candidateFirstName", "candidateLastName", "job", "stage", "email", "mobile", "updatedBy", "candidate", "createdBy", "screeningBy"));
@@ -422,7 +424,8 @@ public class JobCandidateMappingController {
                 }}),
                 new HashMap<String, List<String>>() {{
                     put("JcmOfferDetails", Arrays.asList("id"));
-                }}
-        );
+                }});
+        log.info("Completed processing list of offer details in " + (System.currentTimeMillis() - startTime) + "ms.");
+        return response;
     }
 }

@@ -3038,6 +3038,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
     public List<JcmOfferDetails> getOfferDetailsList()
     {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return jcmOfferDetailsRepository.findByCompanyId(loggedInUser.getCompany().getId());
+        List<JcmOfferDetails> jcmOfferDetailsList= jcmOfferDetailsRepository.findByCompanyId(loggedInUser.getCompany().getId());
+        log.info("Completed sending offer details with company_id {} and user_id {} ", loggedInUser.getCompany().getId(), loggedInUser.getId());
+        return  jcmOfferDetailsList;
     }
 }
