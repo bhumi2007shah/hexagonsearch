@@ -2831,7 +2831,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         }
     }
 
-    private Map<String,String> getOverviewQuestionsAndTheirResponse(List<JobScreeningQuestions> screeningQuestionsResponse,List<ScreeningQuestions> screeningQuestions){
+    private Map<String,String> getOverviewQuestionsAndTheirResponse(List<JobScreeningQuestions> screeningQuestionsResponse,List<ScreeningQuestions> screeningQuestions,Job job){
 
         Map<String,String>response = new HashMap<>();
         screeningQuestions.forEach(question->{
@@ -2845,6 +2845,8 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
                     List<String> answers = candidateResponse.getCandidateResponse();
                     String answer = answers.size() == 0? "-" :  String.join(", ",answers).replaceAll("%\\$",", ");
+                    if(!("-".equals(answer)) && question.getQuestionCategory().getValue().contains("Salary"))
+                        answer = job.getCurrency()+" "+answer+" "+job.getCurrencyUnit();
                     response.put(question.getQuestionCategory().getValue(),answer);
                 }
             });
@@ -2873,7 +2875,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             if(null != question.getMasterScreeningQuestionId()){
 
                 ScreeningQuestions temp = question.getMasterScreeningQuestionId();
-                master.put(Util.removeHtmlTags(temp.getQuestion()),candidateResponse.get());
+                master.put(temp.getQuestion(),candidateResponse.get());
 
             }
             if(null != question.getTechScreeningQuestionId()){
@@ -2917,7 +2919,7 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
         context.setVariable("jcm",jcm);
         context.setVariable("company",candidateCompanyDetails);
         context.setVariable("candidate",jcm.getCandidate());
-        context.setVariable("overviewValues",getOverviewQuestionsAndTheirResponse(screeningQuestionsResponse,screeningQuestions));
+        context.setVariable("overviewValues",getOverviewQuestionsAndTheirResponse(screeningQuestionsResponse,screeningQuestions,jcm.getJob()));
         context.setVariable("keySkills",null == jcm.getOverallRating()?0:jcm.getOverallRating());
 
         context.setVariable("custom",jobQuestions.get("custom"));

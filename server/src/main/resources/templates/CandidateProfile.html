@@ -29,7 +29,7 @@
         <!--Dashboard-->
         <div class="row overview">
             <!--Candidate Details-->
-            <div class="row overview-details">
+            <div class="row overview-details" style="width: 87%;">
 
                 <div class=" p-0 overview-info-details">
                     <h1 class="candidate-name" th:text="${jcm.candidateFirstName}+' ' +${jcm.candidateLastName} "></h1>
@@ -48,7 +48,7 @@
             <div class="row mt-3 candidate-detail-container">
                 <span class="  p-0 candidate-detail-heading">Candidate Details</span>
 
-                <div class="row mt-3 detail__container">
+                <div class="row mt-3">
                     <div class="  detail__left__section">
                         <div class="row left__section__row" th:each="question, iStat : ${overviewValues}">
                             <div class="col-lg-4 left__section__question" th:text="${question.key}"> Question</div>
@@ -82,7 +82,7 @@
 
                         </p>
                         <div class="skills mt-3">
-                            <span class="skill" th:each="skill : ${strongSkills}" th:text="${skill.key} +','"></span>
+                            <span class="skill" th:each="skill,stat: ${strongSkills}" th:text="${skill.key} + ${stat.index==stat.size-1?'.':', '}"></span>
                         </div>
                     </div>
                     <div class="col-4 m-0 p-0 review-skills-weak">
@@ -90,7 +90,7 @@
                             <p style="width: 129px;border-bottom: 5px solid #F67738;float:left;margin:0px"></p>
                         </p>
                         <div class="skills mt-3">
-                            <span class="skill" th:each="skill : ${weakSkills}" th:text="${skill.key} +','"></span>
+                            <span class="skill" th:each="skill,stat : ${weakSkills}" th:text="${skill.key} + ${stat.index==stat.size-1?'.':', '}"></span>
                         </div>
                     </div>
                     <div class="col-4 m-0 p-0 review-skills-no">
@@ -98,7 +98,7 @@
                             <p style="width: 129px;border-bottom: 5px solid #F02727;float:left; margin:0px"></p>
                         </p>
                         <div class="skills mt-3">
-                            <span class="skill" th:each="skill : ${noSkills}" th:text="${skill.key}+','"></span>
+                            <span class="skill" th:each="skill,stat : ${noSkills}" th:text="${skill.key} + ${stat.index==stat.size-1?'.':', '}"></span>
                         </div>
                     </div>
                 </div>
@@ -203,11 +203,11 @@
 
                     </div>
                 </div>
-                <div class = "row column-definitions" style="width:90%" th:each="question,stat : ${custom}">
-                    <span class="questions" th:text="${stat.index+1+'. '+question.key}">
+                <div style="width:90%" th:each="question,stat : ${custom}">
+                    <span class="questions" th:utext="${stat.index+1+'. '+question.key}">
                         question
                     </span>
-                    <span class="answers" th:text="${question.value}">
+                    <span class="answers" th:utext="${question.value}">
                        answer
                     </span>
                 </div>
