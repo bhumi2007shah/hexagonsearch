@@ -394,9 +394,9 @@ public class JobCandidateMappingController {
 
     //Temporary route to test candidate profile pdf
     @GetMapping(value = "/thymeleaf/{jcmId}")
-    String thymeleaf(@PathVariable Long jcmId){
+    String thymeleaf(@PathVariable Long jcmId) throws Exception{
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        jobCandidateMappingService.generateCandidatePDF(jcmId,"Desktop/",loggedInUser);
+        jobCandidateMappingService.generateCandidatePDF(jcmId,"/home/suraj/Desktop/",loggedInUser);
         return null;
     }
 

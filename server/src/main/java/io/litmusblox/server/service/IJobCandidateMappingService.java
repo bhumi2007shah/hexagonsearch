@@ -299,7 +299,7 @@ public interface IJobCandidateMappingService {
 
     void xmlFileProcessor();
 
-    void generateCandidatePDF(Long jcmId, String outputDirectory, User loggedInUser);
+    void generateCandidatePDF(Long jcmId, String outputDirectory, User loggedInUser) throws Exception;
 
     /**
      * Method to upload candidates csv to logged in users company ftp server.

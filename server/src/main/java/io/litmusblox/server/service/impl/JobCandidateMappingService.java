@@ -2899,7 +2899,20 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
      * @param jcmId
      * @return Absolute file path of generated Pdf of candidate profile
      */
-    public void generateCandidatePDF(Long jcmId, String outputDirectory, User loggedInUser){
+    private Map<String,String> getQuickScreeningScore(JobCandidateMapping jcm)throws Exception{
+        Map<String,String> score = new HashMap<>();
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode quickQuestionResponse = mapper.readTree(jcm.getCandidateQuickQuestionResponse());
+        jcm.getJob().getJobSkillsAttributesList().forEach(skill->{
+            if(null == quickQuestionResponse.get(skill.getId().toString()) || null == skill.getSkillId()) return;
+
+            String response = quickQuestionResponse.get(skill.getId().toString()).asText();
+            int index = Arrays.asList(jcm.getJob().getStatementBlock().getOptions()).indexOf(response);
+            score.put(skill.getSkillId().getSkillName(),"score_"+(index+1));
+        });
+        return score;
+    }
+    public void generateCandidatePDF(Long jcmId, String outputDirectory, User loggedInUser) throws Exception{
         JobCandidateMapping jcm = jobCandidateMappingRepository.findById(jcmId).orElse(null);
         if(null == jcm)
             throw new ValidationException("No job candidate mapping found for id: " + jcmId, HttpStatus.UNPROCESSABLE_ENTITY);
@@ -2928,13 +2941,21 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
 
         context.setVariable("isQuickQuestion",jcm.getJob().isQuickQuestion());
 
+        if(jcm.getJob().isQuickQuestion()){
+            context.setVariable("statementBlock",jcm.getJob().getStatementBlock());
+            context.setVariable("quickScreeningScore",getQuickScreeningScore(jcm));
+        }
+        else{
+            Map<String,Map> score = scoreService.scoreJcm(jcm.getJob(),jcm);
+            context.setVariable("deepScreeningScore",score);
+        }
+
+
         if(null != jcm.getCvSkillRatingJson()) {
             context.setVariable("noSkills", jcm.getCvSkillRatingJson().get("1"));
             context.setVariable("weakSkills", jcm.getCvSkillRatingJson().get("2"));
             context.setVariable("strongSkills", jcm.getCvSkillRatingJson().get("3"));
         }
-        Map<String,Map> score = scoreService.scoreJcm(jcm.getJob(),jcm);
-        context.setVariable("score",score);
 
         try {
             outFileName = outputDirectory+"TaleoLbIntegration_"+jcm.getCandidateNumber()+".pdf";
@@ -2976,7 +2997,11 @@ public class JobCandidateMappingService extends AbstractAccessControl implements
             String loggedinUserDirectory = loggedInUser.getDisplayName()+"_"+loggedInUser.getId()+"_"+new Date();
             String outputDirectory = environment.getProperty(IConstant.REPO_LOCATION)+"/Candidates/"+jobId+"/"+loggedinUserDirectory+"/";
             jobCandidateMappings.forEach(jobCandidateMapping -> {
-                generateCandidatePDF(jobCandidateMapping.getId(), outputDirectory, loggedInUser);
+                try {
+                    generateCandidatePDF(jobCandidateMapping.getId(), outputDirectory, loggedInUser);
+                } catch (Exception e) {
+                    log.error("error generating candidate Profile {}",e.toString());
+                }
             });
             List<CompanyCandidateBean> companyCandidateBeans = jobCandidateMappings.stream()
                     .map(jcm -> {

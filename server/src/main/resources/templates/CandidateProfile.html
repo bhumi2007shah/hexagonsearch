@@ -104,70 +104,98 @@
                 </div>
             </div>
         </div>
+        <th:block th:if="${!isQuickQuestion && 0 < deepScreeningScore.size()}">
 
-<!--        HeatMap-->
-<!--        <th:block th:if="${!isQuickQuestion}">-->
+            <div class = "row litmus-heatmap">
+                <div class = "row heatmap-header">
+                    <div style=" float:left;">
+                        <span class="litmus-heatmap-header">Litmus Heatmap</span>
+                    </div>
+                    <div style="float: right;display: inline-block;">
+                        <div class = "row heatmap-expertise">
+                            <div class = "col-3">
+                                <span class="expertise">
+                                    <span class="expertise-btn--strong">&nbsp;</span>
+                                    Strong Expertise
+                                </span>
+                            </div>
+                            <div class = "col-3">
+                                <span class="expertise">
+                                    <span class="expertise-btn--good">&nbsp;</span>
+                                    Good Expertise
+                                </span>
+                            </div>
+                            <div class = "col-3">
+                                <span class="expertise">
+                                    <span class="expertise-btn--less">&nbsp;</span>
+                                    Less Expertise
+                                </span>
+                            </div>
+                            <div class = "col-3">
+                                <span class="expertise">
+                                    <span class="expertise-btn--no">&nbsp;</span>
+                                    No Expertise
+                                    </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class = "row m-0 heatmap-columns">
+                    <div class = "heatmap-columns--categories">
+                        <span class="heatmap-column-header--text">SECTION</span>
+                    </div>
+                    <div class = "heatmap-columns--skills">
+                        <span class="heatmap-column-header--text">AREA</span>
+                    </div>
+                </div>
+                <table>
+                    <tr class = "row m-0 heatmap-columns" th:each="skill: ${deepScreeningScore}">
+                        <div class = "heatmap-columns--categories">
+                            <td class="heatmap-header-column--block" th:text="${skill.key}">
+                            </td>
+                        </div>
+                        <div class = "heatmap-columns--skills" th:each="subSkill,stat:${skill.value.questions}">
+                            <td class="" th:classappend="${'heatmap-header-column--blocks '+subSkill.score}" valign="middle" th:text="${subSkill.questionTag}"></td>
+                        </div>
+                    </tr>
+                </table>
+            </div>
 
-<!--            <div class = "row litmus-heatmap">-->
-<!--                <div class = "row heatmap-header">-->
-<!--                    <div style=" float:left;">-->
-<!--                        <span class="litmus-heatmap-header">Litmus Heatmap</span>-->
-<!--                    </div>-->
-<!--                    <div style="float: left;display: inline-block;">-->
-<!--                        <div class = "row heatmap-expertise">-->
-<!--                            <div class = "col-3">-->
-<!--                                <span class="expertise">-->
-<!--                                    <span class="expertise-btn&#45;&#45;strong">&nbsp;</span>-->
-<!--                                    Strong Expertise-->
-<!--                                </span>-->
-<!--                            </div>-->
-<!--                            <div class = "col-3">-->
-<!--                                <span class="expertise">-->
-<!--                                    <span class="expertise-btn&#45;&#45;good">&nbsp;</span>-->
-<!--                                    Good Expertise-->
-<!--                                </span>-->
-<!--                            </div>-->
-<!--                            <div class = "col-3">-->
-<!--                                <span class="expertise">-->
-<!--                                    <span class="expertise-btn&#45;&#45;less">&nbsp;</span>-->
-<!--                                    Less Expertise-->
-<!--                                </span>-->
-<!--                            </div>-->
-<!--                            <div class = "col-3">-->
-<!--                                <span class="expertise">-->
-<!--                                    <span class="expertise-btn&#45;&#45;no">&nbsp;</span>-->
-<!--                                    No Expertise-->
-<!--                                    </span>-->
-<!--                            </div>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--                <div class = "row m-0 heatmap-columns">-->
-<!--                    <div class = "heatmap-columns&#45;&#45;categories">-->
-<!--                        <span class="heatmap-column-header&#45;&#45;text">SECTION</span>-->
-<!--                    </div>-->
-<!--                    <div class = "heatmap-columns&#45;&#45;skills">-->
-<!--                        <span class="heatmap-column-header&#45;&#45;text">AREA</span>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--                <table>-->
-<!--                    <tr class = "row m-0 heatmap-columns" th:each="skill: ${score}">-->
-<!--                        <div class = "heatmap-columns&#45;&#45;categories">-->
-<!--                            <td class="heatmap-header-column&#45;&#45;block" th:text="${skill.key}">-->
-<!--                            </td>-->
-<!--                        </div>-->
-<!--                        <div class = "heatmap-columns&#45;&#45;skills" th:each="subSkill,stat:${skill.value.questions}">-->
-<!--                            <td class="" th:classappend="${'heatmap-header-column&#45;&#45;blocks '+subSkill.score}" valign="middle" th:text="${subSkill.questionTag}"></td>-->
-<!--                        </div>-->
-<!--                    </tr>-->
-<!--                </table>-->
-<!--            </div>-->
+        </th:block>
 
-<!--        </th:block>-->
+        <th:block th:if="${isQuickQuestion}">
 
-<!--        <th:block th:if="${isQuickQuestion}">-->
-<!--            <h1>TODO Quick Question</h1>-->
-<!--        </th:block>-->
+            <div class = "Questions">
+                <div class="heatmap-header-qs">
+                    <div class = "row m-0 question-categories">
+                        <div class = "col-6 m-0 screenin-qsg-questions--heading">
+                            <span class="litmus-heatmap-header">Job Screening</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div>
+                    <div class="skll-outer" >
+                        <div class="col-3">
+                            <p class="statementBlock" th:text="${statementBlock.statementBlock}"></p></div>
+                        <div class="col-8">
+                            <span class="statement" th:each="option :${statementBlock.options} " th:text="${option}"></span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="row" style="width:89%;border-top: 1px solid rgb(156, 163, 169);"></div>
+                        <div th:each="skill : ${quickScreeningScore}" class="row" style="width:89%;border-bottom: 1px solid rgb(156, 163, 169);">
+                            <div class="col-3" style="border-right: 1px solid rgb(156, 163, 169);">
+                                <p class="heatmap__skillname" th:text="${skill.key}"></p></div>
+                            <div class="col-8">
+                                <div th:class="${skill.value}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </th:block>
 
         <!--Questions-->
 
