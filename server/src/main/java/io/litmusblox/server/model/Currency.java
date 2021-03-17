@@ -35,4 +35,13 @@ public class Currency {
 
     @Column(name = "COUNTRY")
     private String country;
+
+    @Column(name = "MIN_SALARY")
+    private Long minSalary;
+
+    @Column(name = "MAX_SALARY")
+    private Long maxSalary;
+
+    @Column(name = "SALARY_UNIT")
+    private String salaryUnit;
 }

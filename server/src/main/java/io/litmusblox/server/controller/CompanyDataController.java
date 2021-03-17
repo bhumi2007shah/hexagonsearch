@@ -9,7 +9,6 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Company;
 import io.litmusblox.server.model.CompanyAddress;
 import io.litmusblox.server.model.CompanyBu;
-import io.litmusblox.server.model.MasterData;
 import io.litmusblox.server.service.ICompanyService;
 import io.litmusblox.server.service.IScreeningQuestionService;
 import io.litmusblox.server.service.UserWorkspaceBean;
@@ -22,10 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * REST controller for company specific data operations
@@ -62,6 +58,7 @@ public class CompanyDataController {
             new HashMap<String, List<String>>() {{
                 put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
                 put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
+                put("MasterData", new ArrayList<>(0));
             }}
         );
     }
@@ -75,13 +72,21 @@ public class CompanyDataController {
      */
     @PutMapping(value = "/update",consumes = {"multipart/form-data"})
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "')")
-    Company updateCompany(
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN +"')")
+    String updateCompany(
             @RequestParam(value = "logo", required = false) MultipartFile logo,
             @RequestParam("company") String companyString
     ) throws Exception {
         Company company=new ObjectMapper().readValue(companyString, Company.class);
-        return companyService.saveCompany(company, logo);
+        String response = Util.stripExtraInfoFromResponseBean(
+                companyService.saveCompany(company, logo),
+                null,
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("key"));
+                }})
+        );
+
+        return response;
     }
 
 
@@ -112,9 +117,9 @@ public class CompanyDataController {
     @GetMapping("/usersForCompany")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    List<UserWorkspaceBean> findUserList(@RequestParam String companyId) throws Exception {
-       //we already have a method in LbUserDetailsService.java which returns list of users for a compay with extra data like no. of jobs created. reusing that.
-       return lbUserDetailsService.fetchUsers(Long.parseLong(companyId));
+    List<UserWorkspaceBean> findUserList(@RequestParam Long companyId) throws Exception {
+       //we already have a method in LbUserDetailsService.java which returns list of users for a company with extra data like no. of jobs created. reusing that.
+       return lbUserDetailsService.fetchUsers(companyId,false);
     }
 
 
@@ -127,9 +132,9 @@ public class CompanyDataController {
     @GetMapping("/buForCompany")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    List<CompanyBu> findBuList(@RequestParam String companyId) throws Exception {
+    List<CompanyBu> findBuList(@RequestParam Long companyId) throws Exception {
         //call to the service layer that returns list of company BU
-        return companyService.getCompanyBuList(Long.parseLong(companyId));
+        return companyService.getCompanyBuList(companyId);
     }
 
     /**
@@ -141,8 +146,8 @@ public class CompanyDataController {
     @GetMapping("/addressByCompany")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    Map<String, List<CompanyAddress>> findAddressByCompanyByType(@RequestParam String companyId) throws Exception {
-        return companyService.getCompanyAddresses(Long.parseLong(companyId));
+    Map<String, List<CompanyAddress>> findAddressByCompanyByType(@RequestParam Long companyId, @RequestParam(required = false, value = "isInterviewLocation") Optional<Boolean> isInterviewLocation) throws Exception {
+        return companyService.getCompanyAddresses(companyId, isInterviewLocation.isPresent()?isInterviewLocation.get():false);
     }
 
     /**
@@ -153,8 +158,67 @@ public class CompanyDataController {
     @GetMapping("/getCompany/{companyId}")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    Company getCompanyDetail(@PathVariable ("companyId") Long companyId){
+    String getCompanyDetail(@PathVariable ("companyId") Long companyId){
         log.info("inside getCompanyDetail method");
-        return companyService.getCompanyDetail(companyId);
+        String response = Util.stripExtraInfoFromResponseBean(
+                companyService.getCompanyDetail(companyId),
+                null,
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
+                }})
+        );
+        return response;
+    }
+
+    /**
+     * Rest api to creating company by agency
+     * @param company
+     */
+    @PostMapping("/createCompany")
+    @ResponseBody
+    @ResponseStatus(HttpStatus.OK)
+    String createCompany(@RequestBody Company company){
+        log.info("inside createCompany method");
+        String response = Util.stripExtraInfoFromResponseBean(
+                companyService.createCompanyByAgency(company),
+                null,
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
+                }})
+        );
+        return response;
+    }
+
+    /**
+     * Rest api to get Company list depend on the recruitment agency id
+     * @param recruitmentAgencyId
+     */
+    @GetMapping("/getCompanyByAgency/{recruitmentAgencyId}")
+    @ResponseBody
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN +"') or hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN +"') or hasRole('" + IConstant.UserRole.Names.RECRUITER +"')")
+    @ResponseStatus(HttpStatus.OK)
+    String getCompanyListByAgency(@PathVariable ("recruitmentAgencyId") Long recruitmentAgencyId){
+        log.info("inside getCompanyListByAgency method");
+        String response = Util.stripExtraInfoFromResponseBean(
+                companyService.getCompanyListByAgency(recruitmentAgencyId),
+                null,
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
+                }})
+        );
+        return response;
+    }
+
+    /**
+     * Rest api to verify company short time already exist or not
+     * @param shortName company short name
+     * @return boolean value for company
+     */
+    @GetMapping("/isDuplicateShortName/{shortName}")
+    @ResponseBody
+    @ResponseStatus(HttpStatus.OK)
+    Boolean isShortNameDuplicate(@PathVariable("shortName") String shortName){
+        log.info("inside isShortNameDuplicate");
+        return companyService.isCompanyExistForShortName(shortName);
     }
 }

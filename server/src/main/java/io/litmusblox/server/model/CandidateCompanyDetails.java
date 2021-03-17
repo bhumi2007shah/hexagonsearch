@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.litmusblox.server.utils.DateDeserializer;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -22,6 +24,8 @@ import java.util.Date;
  */
 @Data
 @Entity
+@Builder
+@AllArgsConstructor
 @Table(name = "CANDIDATE_COMPANY_DETAILS")
 @JsonFilter("CandidateCompanyDetails")
 public class CandidateCompanyDetails {
@@ -78,7 +82,23 @@ public class CandidateCompanyDetails {
         this.endDate = endDate;
     }
 
+    public CandidateCompanyDetails(CandidateCompanyDetails objFromDb) {
+        this.candidateId = objFromDb.getCandidateId();
+        this.companyName = objFromDb.getCompanyName();
+        this.designation = objFromDb.getDesignation();
+        this.salary = objFromDb.getSalary();
+        this.location = objFromDb.getLocation();
+        this.noticePeriod = objFromDb.getNoticePeriod();
+        this.noticePeriodInDb = objFromDb.getNoticePeriodInDb();
+        this.startDate = objFromDb.getStartDate();
+        this.endDate = objFromDb.getEndDate();
+    }
+
     public CandidateCompanyDetails() {
         super();
+    }
+
+    public void setSalary(String salary){
+        this.salary = salary.replaceAll("[^0-9.]", "");
     }
 }

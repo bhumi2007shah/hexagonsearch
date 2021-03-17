@@ -37,7 +37,7 @@ public interface IErrorMessages {
     String UNSUPPORTED_FILE_SOURCE = "Unsupported file source : ";
     String UNSUPPORTED_FILE_TYPE = "Unsupported file type with extension";
     String INVALID_SETTINGS = "Invalid System Settings";
-    String MISSING_COLUMN_NAMES_FIRST_ROW = "First row in the file does not have correct column names";
+    String MISSING_COLUMN_NAMES_FIRST_ROW = " format file uploaded. First row in the file does not have correct column names.";
     String DUPLICATE_CANDIDATE = "Candidate already exists ";
     String INVALID_REQUEST_FROM_PLUGIN = "Invalid request object from plugin, missing Candidate info";
     String DUPLICATE_USER_EMAIL = "User with email already exists";
@@ -45,7 +45,7 @@ public interface IErrorMessages {
     String CANDIDATE_ID_MISMATCH_FROM_HISTORY = "Found different Candidate ids for mobile and email : ";
     String JOB_NOT_LIVE = "Selected job is in \'Draft\' stage";
     String CLIENT_ADMIN_EXISTS_FOR_COMPANY = "Client admin for company already exists: ";
-    String USER_COUNTRY_NULL = "Country code for new  user not selected";
+    String USER_COUNTRY_NULL = "Country for new  user not selected";
     String USER_NOT_FOUND = "User does not exist ";
     String INVALID_CREDENTIALS="Invalid credentials";
     String FORGOT_PASSWORD_USER_BLOCKED = "User is blocked";
@@ -60,7 +60,7 @@ public interface IErrorMessages {
     String JOB_NOT_ARCHIVED = "Selected job is not archived";
     String FAILED_TO_SAVE_FILE = "Fail to save the file";
     String JOB_COMPANY_MISMATCH = "Requested job does not belong to the company of the logged in user";
-    String ML_DATA_UNAVAILABLE = "No matching skills and capabilities found for the job title and job description";
+    String SEARCH_ENGINE_DATA_UNAVAILABLE = "No matching skills found for the job title and job description";
     String JCM_NOT_FOUND = "No Job Candidate Mapping found for id: ";
     String UUID_NOT_FOUND = "No mapping found for uuid ";
     String ML_DATA_DUPLICATE_SKILLS = "Received ML response with duplicate skills\n";
@@ -73,4 +73,11 @@ public interface IErrorMessages {
     String INVALID_UK_MOBILE_NUMBER = "Mobile number is not a valid Uk Mobile number ";
     String INVALID_US_MOBILE_NUMBER = "Mobile number is not a valid Us Mobile number ";
     String INVALID_SINGAPORE_MOBILE_NUMBER = "Mobile number is not a valid Singapore Mobile number ";
+
+    String USER_DESIGNATION_NOT_VALID= "User designation not valid";
+    String OTP_VERIFICATION_FAILED = "OTP verification failed";
+    String INVALID_COMPANY_SHORT_NAME = "Company short name contain only alpha numeric value start with character";
+    String INVALID_DATE_OF_BIRTH_FORMAT = "The Date of Birth format is invalid or not handled";
+    String JOB_NOT_FOUND = "Job does not exist ";
+
 }

@@ -4,6 +4,9 @@
 
 package io.litmusblox.server.service.impl;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.maps.model.LatLng;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
@@ -11,26 +14,37 @@ import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
-import io.litmusblox.server.service.CompanyWorspaceBean;
-import io.litmusblox.server.service.ICompanyService;
-import io.litmusblox.server.service.MasterDataBean;
-import io.litmusblox.server.utils.GoogleMapsCoordinates;
-import io.litmusblox.server.utils.StoreFileUtil;
-import io.litmusblox.server.utils.Util;
+import io.litmusblox.server.security.JwtTokenUtil;
+import io.litmusblox.server.service.*;
+import io.litmusblox.server.utils.*;
 import lombok.extern.log4j.Log4j2;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Service class to perform various operations on a company
@@ -43,7 +57,7 @@ import java.util.stream.Collectors;
  */
 @Log4j2
 @Service
-public class CompanyService implements ICompanyService {
+public class CompanyService extends AbstractAccessControl implements ICompanyService {
 
     @Resource
     CompanyRepository companyRepository;
@@ -55,30 +69,77 @@ public class CompanyService implements ICompanyService {
     Environment environment;
 
     @Autowired
+    ISearchEngineService searchEngineService;
+
+    @Resource
     CompanyHistoryRepository companyHistoryRepository;
 
-    @Autowired
+    @Resource
     CompanyBuRepository companyBuRepository;
 
-    @Autowired
+    @Resource
     JobRepository jobRepository;
 
-    @Autowired
+    @Resource
     CompanyAddressRepository companyAddressRepository;
+
+    @Value("${subdomainTemplateName}")
+    String subdomainTemplateName;
+
+    @Value("${createSubdomainApi}")
+    String createSubdomainApi;
+
+    @Value("${createSubdomainKey}")
+    String createSubdomainKey;
+
+    @Value("${createSubdomainSecret}")
+    String createSubdomainSecret;
+
+    @Value("${createSubdomainIp}")
+    String createSubdomainIp;
+
+    @Value("${searchEngineBaseUrl}")
+    String searchEngineBaseUrl;
+
+    @Value("${searchEngineAddCompanyUrlSuffix}")
+    String searchEngineAddCompanyUrlSuffix;
+
+    /**
+     * Service method to create a new company
+     * @param company the company object to save
+     * @param loggedInUser the user who created the company object
+     * @return
+     * @throws Exception
+     */
+    @Transactional
+    public Company addCompany(Company company, User loggedInUser) throws Exception {
+        company = generateAndSetCompanyUniqueId(company);
+        companyRepository.save(company);
+        saveCompanyHistory(company.getId(), loggedInUser.getDisplayName() + " created a new company " +company.getCompanyName(), loggedInUser);
+        addCompanyOnSearchEngine(company, JwtTokenUtil.getAuthToken());
+        return company;
+    }
 
     //Update Company
     @Override
     public Company saveCompany(Company company, MultipartFile logo) throws Exception {
         User loggedInUser  = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        log.info("Received request to update job from user: " + loggedInUser.getEmail());
+        log.info("Received request to update organisation detail from user: " + loggedInUser.getEmail());
         long startTime = System.currentTimeMillis();
 
-        Company companyFromDb=companyRepository.findByCompanyNameIgnoreCase(company.getCompanyName());
+        Company companyFromDb=companyRepository.findById(company.getId()).orElse(null);
         if(null==companyFromDb)
             throw new ValidationException("Company not found for this name "+company.getCompanyName(), HttpStatus.BAD_REQUEST);
 
         company.setId(companyFromDb.getId());
+        company.setShortName(companyFromDb.getShortName());
+        company.setCountryId(companyFromDb.getCountryId());
+        company.setCompanyUniqueId(companyFromDb.getCompanyUniqueId());
+        company.setCompanyType(companyFromDb.getCompanyType());
+        company.setSubscription(companyFromDb.getSubscription());
+        company.setCreatedOn(companyFromDb.getCreatedOn());
+        company.setSubdomainCreated(companyFromDb.isSubdomainCreated());
 
         if(company.getNewCompanyBu()!=null || company.getDeletedCompanyBu()!=null) {
             updateBusinessUnit(company, loggedInUser);
@@ -118,6 +179,40 @@ public class CompanyService implements ICompanyService {
         if(null==company.getCompanyDescription() || company.getCompanyDescription().isEmpty()){
             throw new ValidationException("CompanyDescription " + IErrorMessages.EMPTY_AND_NULL_MESSAGE+ company.getId(), HttpStatus.BAD_REQUEST);
         }
+
+        company = truncateField(company);
+
+        //Store Company logo on repo and save its filepath in to the company logo field if logo in not null
+        if(logo != null) {
+            String fileName = null;
+            try{
+                fileName = StoreFileUtil.storeFile(logo, company.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.Logo.toString(), null, null);
+            }
+            catch (Exception e){
+                log.info(Util.getStackTrace(e));
+            }
+            log.info("Company " + company.getCompanyName() + " uploaded " + fileName);
+            company.setLogo(fileName);
+        }
+
+
+        if(null != companyFromDb) {
+            company.setCreatedBy(companyFromDb.getCreatedBy());
+            company.setCreatedOn(companyFromDb.getCreatedOn());
+            company.setActive(companyFromDb.getActive());
+            company.setSubscription(companyFromDb.getSubscription());
+        }
+        if(null == company.getIndustry().getId())
+            company.setIndustry(null);
+        //Update Company
+        companyRepository.save(company);
+        saveCompanyHistory(company.getId(), loggedInUser.getDisplayName()+" update company information for "+company.getCompanyName(), loggedInUser);
+        log.info("Company Updated "+company.getId());
+    }
+
+    private Company truncateField(Company company){
+        log.info("inside truncateField");
+
         //Trim below fields if its length is greater than 245 and save trim string in db
         if (!Util.isNull(company.getWebsite()) && company.getWebsite().length() > 245){
             log.error("Company Website field exceeds limit -" +company.getWebsite());
@@ -138,31 +233,7 @@ public class CompanyService implements ICompanyService {
             log.error("Company Facebook field exceeds limit -" +company.getWebsite());
             company.setFacebook(company.getFacebook().substring(0, 245));
         }
-
-        //Store Company logo on repo and save its filepath in to the company logo field if logo in not null
-        if(logo != null) {
-            String fileName = null;
-            try{
-                fileName = StoreFileUtil.storeFile(logo, company.getId(), environment.getProperty(IConstant.REPO_LOCATION), IConstant.UPLOAD_TYPE.Logo.toString(), null, null);
-            }
-            catch (Exception e){
-                e.printStackTrace();
-            }
-            log.info("Company " + company.getCompanyName() + " uploaded " + fileName);
-            company.setLogo(fileName);
-        }
-
-
-        if(null != companyFromDb) {
-            company.setCreatedBy(companyFromDb.getCreatedBy());
-            company.setCreatedOn(companyFromDb.getCreatedOn());
-            company.setActive(companyFromDb.getActive());
-            company.setSubscription(companyFromDb.getSubscription());
-        }
-        //Update Company
-        companyRepository.save(company);
-        saveCompanyHistory(company.getId(), "Update company information", loggedInUser);
-        log.info("Company Updated "+company.getId());
+        return company;
     }
 
     /**
@@ -201,10 +272,13 @@ public class CompanyService implements ICompanyService {
                 CompanyBu companyBuFromDb = companyBuRepository.findByBusinessUnitIgnoreCaseAndCompanyId(businessUnit, company.getId());
                 if(null!=companyBuFromDb) {
                     int jobsCount = jobRepository.countByBuId(companyBuFromDb);
-                    if (jobsCount == 0) {
+                    int userCount = userRepository.countByCompanyBuId(companyBuFromDb.getId());
+                    if (jobsCount == 0 && userCount == 0) {
                         companyBuRepository.delete(companyBuFromDb);
-                    } else {
+                    } else if(jobsCount>0) {
                         errorResponse.put(businessUnit, jobsCount + "jobs available for this BU");
+                    } else if(userCount>0){
+                        errorResponse.put(businessUnit, userCount + "Users available for this BU");
                     }
                 }
                 else{
@@ -214,7 +288,7 @@ public class CompanyService implements ICompanyService {
         }
 
         companyBuRepository.flush();
-        saveCompanyHistory(company.getId(), "Updated company BUs", loggedInUser);
+        saveCompanyHistory(company.getId(), loggedInUser.getDisplayName()+" updated company BUs for "+company.getCompanyName(), loggedInUser);
 
         if(errorResponse.size()>0) {
             log.info("Updated Company BU's with errors: " + errorResponse);
@@ -258,7 +332,7 @@ public class CompanyService implements ICompanyService {
                 try {
                     coordinates = GoogleMapsCoordinates.getCoordinates(address.getAddress());
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.info(Util.getStackTrace(e));
                 }
 
                 //check if company address title already exists
@@ -271,10 +345,7 @@ public class CompanyService implements ICompanyService {
 
                 if(addressTitleExists){
                     errorResponse.put(address.getAddressTitle(), "Title Already exist");
-                }
-
-                //add error to errorResponse if no cordinates are found.
-                if(null==coordinates){
+                }else if (null==coordinates){         //add error to errorResponse if no cordinates are found.
                     errorResponse.put(address.getAddressTitle(), "coordinates not found");
                 }
                 else {
@@ -335,7 +406,7 @@ public class CompanyService implements ICompanyService {
                         try {
                             newCoordinates = GoogleMapsCoordinates.getCoordinates(companyAddress.getAddress());
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            log.info(Util.getStackTrace(e));
                         }
                         if(null!=newCoordinates){
                             companyAddressFromDb.setLongitude(newCoordinates.lat);
@@ -358,7 +429,10 @@ public class CompanyService implements ICompanyService {
 
                     companyAddressFromDb.setUpdatedBy(loggedInUser.getId());
                     companyAddressFromDb.setUpdatedOn(new Date());
-
+                    companyAddressFromDb.setArea(companyAddress.getArea());
+                    companyAddressFromDb.setCountry(companyAddress.getCountry());
+                    companyAddressFromDb.setCity(companyAddress.getCity());
+                    companyAddressFromDb.setState(companyAddress.getState());
                     companyAddressRepository.save(companyAddressFromDb);
                     log.info("updated company address with id: "+companyAddress.getId());
                 }
@@ -369,7 +443,7 @@ public class CompanyService implements ICompanyService {
         }
 
         companyAddressRepository.flush();
-        saveCompanyHistory(company.getId(), "Updated company Addresses", loggedInUser);
+        saveCompanyHistory(company.getId(), loggedInUser.getDisplayName()+" updated company Addresses", loggedInUser);
 
         if(errorResponse.size()>0) {
             log.info("Updated Company Addresses with errors: " + errorResponse);
@@ -389,7 +463,7 @@ public class CompanyService implements ICompanyService {
      */
     @Transactional(propagation = Propagation.REQUIRED)
     public void blockCompany(Company company, boolean blockCompany) throws Exception {
-        Company companyObjFromDb = companyRepository.findByCompanyNameIgnoreCase(company.getCompanyName());
+        Company companyObjFromDb = companyRepository.findById(company.getId()).orElse(null);
         if(null == companyObjFromDb)
             throw new ValidationException("Company not found: " + company.getCompanyName(), HttpStatus.BAD_REQUEST);
         companyObjFromDb.setActive(!blockCompany);
@@ -397,7 +471,7 @@ public class CompanyService implements ICompanyService {
         User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         companyObjFromDb.setUpdatedBy(loggedInUser.getId());
         companyRepository.save(companyObjFromDb);
-        saveCompanyHistory(companyObjFromDb.getId(), blockCompany ? "Unblocked":"Blocked", loggedInUser);
+        saveCompanyHistory(companyObjFromDb.getId(), loggedInUser.getDisplayName()+(blockCompany ? " unblocked company : ":" blocked company : ") + companyObjFromDb.getCompanyName(), loggedInUser);
     }
 
     /**
@@ -417,7 +491,7 @@ public class CompanyService implements ICompanyService {
 
         companies.forEach(company -> {
             CompanyWorspaceBean worspaceBean = new CompanyWorspaceBean(company.getId(), company.getCompanyName(),
-                    company.getCreatedOn(), !company.getActive());
+                    company.getCreatedOn(), !company.getActive(), company.getShortName());
             worspaceBean.setNumberOfUsers(userRepository.countByCompanyId(company.getId()));
             responseBeans.add(worspaceBean);
         });
@@ -438,23 +512,33 @@ public class CompanyService implements ICompanyService {
         log.info("Received request to get list of BUs for companyId: "+companyId);
         long startTime = System.currentTimeMillis();
 
-        Company company = companyRepository.findById(companyId).orElse(null);
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long validCompanyId = validateCompanyId(loggedInUser, companyId);
+        if(!validCompanyId.equals(companyId))
+            log.error("Given company id : {} and valid company id : {} both are mismatched", companyId, validCompanyId);
+
+        Company company = companyRepository.findById(validCompanyId).orElse(null);
 
         if(company==null)
-            throw new WebException("No company found with id: "+companyId, HttpStatus.UNPROCESSABLE_ENTITY );
+            throw new WebException("No company found with id: "+validCompanyId, HttpStatus.UNPROCESSABLE_ENTITY );
 
-        log.info("Completed processing list of BUs for companyId: "+ companyId +" in " + (System.currentTimeMillis() - startTime) + "ms.");
+        log.info("Completed processing list of BUs for companyId: "+ validCompanyId +" in " + (System.currentTimeMillis() - startTime) + "ms.");
         return company.getCompanyBuList();
     }
 
     @Override
-    public Map<String, List<CompanyAddress>>getCompanyAddresses(Long companyId)throws Exception{
+    public Map<String, List<CompanyAddress>>getCompanyAddresses(Long companyId, Boolean isInterviewLocation)throws Exception{
         //find company by companyId
-        Company company = companyRepository.findById(companyId).orElse(null);
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long validCompanyId = validateCompanyId(loggedInUser, companyId);
+        if(!validCompanyId.equals(companyId))
+            log.error("Given company id : {} and valid company id : {} both are mismatched", companyId, validCompanyId);
+
+        Company company = companyRepository.findById(validCompanyId).orElse(null);
 
         //if company is null throw exception
         if(company==null)
-            throw new WebException("No company found with id: "+companyId, HttpStatus.UNPROCESSABLE_ENTITY );
+            throw new WebException("No company found with id: "+validCompanyId, HttpStatus.UNPROCESSABLE_ENTITY );
 
         log.info("Received request to get list of Addresses for company: "+company.getCompanyName());
         long startTime = System.currentTimeMillis();
@@ -488,9 +572,11 @@ public class CompanyService implements ICompanyService {
         }
 
         companyAddressListByType.put("Interview Location", interviewAddersses);
-        companyAddressListByType.put("Job Location", jobAddresses);
 
-        log.info("Completed processing list of Addresses for companyId: "+ companyId +" in " + (System.currentTimeMillis() - startTime) + "ms.");
+        if(!isInterviewLocation)
+            companyAddressListByType.put("Job Location", jobAddresses);
+
+        log.info("Completed processing list of Addresses for companyId: "+ validCompanyId +" in " + (System.currentTimeMillis() - startTime) + "ms.");
         return companyAddressListByType;
     }
 
@@ -502,12 +588,258 @@ public class CompanyService implements ICompanyService {
     @Transactional
     public Company getCompanyDetail(Long companyId) {
         log.info("inside getCompanyDetail method");
-        Company company = companyRepository.findById(companyId).orElse(null);
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long validCompanyId = validateCompanyId(loggedInUser, companyId);
+        if(!validCompanyId.equals(companyId))
+            log.error("Given company id : {} and valid company id : {} both are mismatched", companyId, validCompanyId);
+
+        Company company = companyRepository.findById(validCompanyId).orElse(null);
         if(null == company)
-            throw new ValidationException("Company not found for id : " + companyId, HttpStatus.BAD_REQUEST);
+            throw new ValidationException("Company not found for id : " + validCompanyId, HttpStatus.BAD_REQUEST);
 
         Hibernate.initialize(company.getCompanyBuList());
         Hibernate.initialize(company.getCompanyAddressList());
         return company;
     }
+
+    @Transactional
+    public Company createCompanyByAgency(Company company) {
+        log.info("inside createCompanyByAgency method");
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Company recruitmentAgency = companyRepository.findById(company.getRecruitmentAgencyId()).orElse(null);
+        Company companyFromDb = companyRepository.findByCompanyNameIgnoreCaseAndRecruitmentAgencyId(company.getCompanyName(), company.getRecruitmentAgencyId());
+
+        if(null != companyFromDb)
+            throw new ValidationException("Company "+ company.getCompanyName()+" already present for your agency ", HttpStatus.BAD_REQUEST);
+
+        if(null == company.getRecruitmentAgencyId())
+            throw new ValidationException("Recruitment agency should not be null ", HttpStatus.BAD_REQUEST);
+
+        company.setCreatedOn(new Date());
+        company.setCreatedBy(loggedInUser.getId());
+        company.setCountryId(recruitmentAgency.getCountryId());
+        company.setSendCommunication(recruitmentAgency.isSendCommunication());
+        company = truncateField(company);
+        Company newCompany = companyRepository.save(company);
+        return newCompany;
+    }
+
+    @Override
+    public List<Company> getCompanyListByAgency(Long recruitmentAgencyId) {
+        User loggedInUser = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        recruitmentAgencyId = validateCompanyId(loggedInUser, recruitmentAgencyId);
+        log.info("Inside getCompanyListByAgency "+companyRepository.findByRecruitmentAgencyId(recruitmentAgencyId).size());
+        return companyRepository.findByRecruitmentAgencyId(recruitmentAgencyId);
+    }
+
+    /**
+     * Service method to get boolean value as per company exist or not for short name
+     * @param shortName Company short name
+     * @return
+     */
+    @Transactional
+    public Boolean isCompanyExistForShortName(String shortName) {
+        log.info("inside isCompanyExistForShortName");
+        long startTime = System.currentTimeMillis();
+        Company company = companyRepository.findByShortNameIgnoreCase(shortName);
+        log.info("Find company by shortName in {}ms.", (System.currentTimeMillis() - startTime));
+        if(null != company){
+            log.info("Company already exist, CompanyId : {}",company.getId());
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    /**
+     * Method to create a subdomain for a company when the first job is published
+     *
+     * @param company the company for which subdomain is to be created
+     * @throws Exception
+     */
+    @Override
+    public void createSubdomain(Company company) {
+        log.info("Received request to create subdomain for company: {} shortName: {}", company.getCompanyName(), company.getShortName());
+        long startTime = System.currentTimeMillis();
+
+        if(null == company.getShortName())
+            throw new WebException("Company short name not found for " + company.getCompanyName(), HttpStatus.UNPROCESSABLE_ENTITY);
+
+        //REST API Call to GoDaddy to register subdomain
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        List<GoDaddyRequestBean> requestObj = Arrays.asList(new GoDaddyRequestBean(company.getShortName(), createSubdomainIp));
+        try {
+            RestClientResponseBean responseFromGoDaddy = null;
+            try {
+                responseFromGoDaddy = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestObj), createSubdomainApi, HttpMethod.PATCH, new StringBuffer("sso-key ").append(createSubdomainKey).append(":").append(createSubdomainSecret).toString());
+            } catch (Exception ex) {
+                log.info(Util.getStackTrace(ex));
+                log.error("Error while creating subdomain for {}.\n{}", company, ex.getMessage());
+                log.info("Duplicate subdomain creation attempt. Setting flag and creating conf files.");
+            }
+            log.info("Response from GoDaddy:: {} ::", responseFromGoDaddy);
+            if (null != responseFromGoDaddy && (HttpStatus.OK.value() == responseFromGoDaddy.getStatusCode() || responseFromGoDaddy.getResponseBody().indexOf("\"code\":\"DUPLICATE_RECORD\"") != -1) ){
+
+                company.setSubdomainCreated(true);
+                company.setSubdomainCreatedOn(new Date());
+                companyRepository.save(company);
+
+                ClassPathResource resource = new ClassPathResource(subdomainTemplateName);
+
+                String templateData = FileCopyUtils.copyToString(new InputStreamReader(((ClassPathResource) resource).getInputStream(), UTF_8));
+                //replace key with company short name
+                templateData = templateData.replaceAll(IConstant.REPLACEMENT_KEY_FOR_SHORTNAME, company.getShortName());
+                log.info("Created template data to be written to file \n{}", templateData);
+                //create conf in apache folder
+                File configFile = new File("/etc/apache2/sites-available/" + company.getShortName() + ".conf");
+                FileWriter fw = new FileWriter(configFile);
+                fw.write(templateData);
+                fw.close();
+
+                //create symbolic link
+                Path link = Paths.get("/etc/apache2/sites-enabled/", company.getShortName() + ".conf");
+                if (Files.exists(link)) {
+                    Files.delete(link);
+                }
+                Files.createSymbolicLink(link, Paths.get("/etc/apache2/sites-available/" + company.getShortName() + ".conf"));
+            } else {
+                log.error("Error creating subdomain on GoDaddy for company {}", company.getCompanyName());
+            }
+        } catch (Exception e) {
+            log.error("Error while creating sub-domain: {}", e.getMessage());
+            Map breadCrumb = new HashMap<String, String>();
+            SentryUtil.logWithStaticAPI(null, "Error while creating sub-domain: "+e.getMessage(), breadCrumb);
+        }
+        log.info("Completed processing request to create subdomain for company {} in {} ms.",company.getCompanyName(), (System.currentTimeMillis() - startTime));
+    }
+
+    /**
+     * Method that fetches a list of all companies that have short name and for which a subdomain has not been created
+     *
+     * @throws Exception
+     */
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void createSubdomains() throws Exception {
+        log.info("Received request to create subdomains from Super Admin");
+        long startTime = System.currentTimeMillis();
+        List<Company> companyList = companyRepository.findBySubdomainCreatedIsFalseAndShortNameIsNotNull();
+        companyList.stream().forEach(company -> {
+            try {
+                createSubdomain(company);
+            } catch (Exception e) {
+                log.error("Error creating subdomain for company {}:\n {}", company.getCompanyName(), e.getMessage());
+            }
+        });
+        if(companyList.size()>0)
+            reloadApache(companyList);
+        log.info("Completed processing request to create subdomains in {} ms.", (System.currentTimeMillis() - startTime));
+    }
+
+    /**
+     * functioon to reload Apache if new subdomain vitua host configuration is added in sites-available directory
+     * @param companyList
+     */
+    public void reloadApache(List<Company> companyList){
+        // Reload apache configuration to enable virtual host for new sub-domains
+        try {
+            Process process = Runtime.getRuntime().exec(IConstant.apacheReloadCommand);
+            process.waitFor();
+            log.info("process completed to reload apache, exit code: {}", process.exitValue());
+            process.destroy();
+        }
+        catch (IOException e){
+            SentryUtil.logWithStaticAPI(null, "Error while reloading apache after creating virtual host configuration for subdomains: "+String.join(",", companyList.stream().map(Company::getShortName).collect(Collectors.toList())), null);
+            log.error("Error while creating process to reload apache: {}", e.getCause());
+        }
+        catch (InterruptedException e){
+            SentryUtil.logWithStaticAPI(null, "Error while reloading apache after creating virtual host configuration for subdomains: "+String.join(",", companyList.stream().map(Company::getShortName).collect(Collectors.toList())), null);
+            log.error("Reload apache process interrupted while executing: {}", e.getCause());
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<CompanyAddress> getCompanyAddress(Long companyId) {
+        log.info("Inside getCompanyAddress");
+        long startTime = System.currentTimeMillis();
+        List<CompanyAddress> companyAddressList = companyAddressRepository.findByCompanyId(companyId);
+        log.info("Get Company address list by company id in {} ms.", (System.currentTimeMillis() - startTime));
+        return companyAddressList;
+    }
+
+    @Override
+    public List<Company> setCompanyUniqueId() {
+        log.info("Inside setCompanyUniqueId");
+        List<Company> companies = companyRepository.findByShortNameIsNotNullAndRecruitmentAgencyIdIsNullAndCompanyUniqueIdIsNull();
+        companies.forEach(company -> {
+            company = generateAndSetCompanyUniqueId(company);
+        });
+        companyRepository.saveAll(companies);
+        return companies;
+    }
+
+    private static final int RANDOM_STRING_LENGTH = 5;
+    private static String getAlphaNumericString() {
+        byte[] array = new byte[256];
+        new Random().nextBytes(array);
+        String randomString = new String(array, Charset.forName("UTF-8"));
+        StringBuffer r = new StringBuffer();
+        for (int k = 0; k < randomString.length(); k++) {
+            char ch = randomString.charAt(k);
+            if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')) {
+                r.append(ch);
+                if (RANDOM_STRING_LENGTH == r.length())
+                    break;
+            }
+        }
+        return r.toString();
+    }
+
+    private Company generateAndSetCompanyUniqueId(Company company){
+        log.info("Inside generateAndSetCompanyUniqueId");
+        if(null == company.getRecruitmentAgencyId()){
+            boolean isUniqueIdPresent = true;
+            String companyUniqueId = null;
+            while(isUniqueIdPresent){
+                companyUniqueId = company.getShortName().substring(0,3)+getAlphaNumericString();
+                Company companyFromDb = companyRepository.findByCompanyUniqueId(companyUniqueId);
+                if(null == companyFromDb){
+                    isUniqueIdPresent = false;
+                    company.setCompanyUniqueId(companyUniqueId);
+                    log.info("Create new company unique id : {}, For company : {}",company.getCompanyUniqueId(), company.getShortName());
+                }
+            }
+        }else
+            log.info("For recruitment agency Company unique id not generated");
+
+        return company;
+    }
+
+    /**
+     * private method to make a call to search engine add company api.
+     * @param company
+     */
+    public void addCompanyOnSearchEngine(Company company, String authToken){
+        log.info("Calling SearchEngine API to add company id:{}, name:{}", company.getId(), company.getCompanyName());
+        long startTime = System.currentTimeMillis();
+
+        //creating a map of parameters to be sent to search engine api.
+        Map queryparams = new HashMap(2);
+        queryparams.put("companyId", company.getId());
+        queryparams.put("companyName", company.getCompanyName());
+        Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
+        try {
+            //calling sscoring engine api to add company in neo4j db.
+            RestClient.getInstance(). consumeRestApi(null, searchEngineBaseUrl + searchEngineAddCompanyUrlSuffix, HttpMethod.POST, authToken, Optional.of(queryparams), null, Optional.of(userDetails));
+        }
+        catch (Exception e){
+            log.error("Error while adding company on Search Engine: " + e.getMessage());
+        }
+        log.info("Completed adding company on search engine in {}ms", System.currentTimeMillis()-startTime);
+    }
+
 }

@@ -19,5 +19,5 @@ import java.util.List;
  */
 @Repository
 public interface CreateJobPageSequenceRepository extends JpaRepository<CreateJobPageSequence, Long> {
-    List<CreateJobPageSequence> findByDisplayFlagIsTrueOrderByPageDisplayOrderAsc();
+    List<CreateJobPageSequence> findByDisplayFlagIsTrueAndSubscriptionAvailabilityOrderByPageDisplayOrderAsc(String subscription);
 }

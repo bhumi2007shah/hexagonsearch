@@ -7,9 +7,12 @@ package io.litmusblox.server.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.litmusblox.server.utils.StringEncryptorDecryptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -36,7 +39,8 @@ public class JwtTokenUtil implements Serializable {
 
     //retrieve username from jwt token
     public String getUsernameFromToken(String token) {
-        return getClaimFromToken(token, Claims::getSubject);
+        String userName = getClaimFromToken(token, Claims::getSubject);
+        return StringEncryptorDecryptor.decrypt(userName);
     }
 
     //retrieve expiration date from jwt token
@@ -75,10 +79,10 @@ public class JwtTokenUtil implements Serializable {
     private String doGenerateToken(String role, String subject, Long userId, Long companyId) {
 
         return Jwts.builder()
-                .claim("roles",role)
-                .claim("userId", userId)
-                .claim("company", companyId)
-                .setSubject(subject)
+                .claim("roles", StringEncryptorDecryptor.encrypt(role))
+                .claim("userId", StringEncryptorDecryptor.encrypt(userId.toString()))
+                .claim("company", StringEncryptorDecryptor.encrypt(companyId.toString()))
+                .setSubject(StringEncryptorDecryptor.encrypt(subject))
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY))
                 .signWith(SignatureAlgorithm.HS512, secret).compact();
@@ -88,5 +92,9 @@ public class JwtTokenUtil implements Serializable {
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = getUsernameFromToken(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    public static String getAuthToken(){
+        return  (((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())).getRequest().getHeader("Authorization");
     }
 }

@@ -28,4 +28,7 @@ public class ConfigSettings {
     int mlCall;
     int maxCapabilities;
     int cvRatingTimeout;
+    int otpExpiryMinutes;
+    int maxQuestions;
+    int maxQuestionsPerSkill;
 }

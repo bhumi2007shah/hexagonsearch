@@ -1,7 +1,9 @@
 package io.litmusblox.server.model;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -17,6 +19,8 @@ import java.util.Date;
 @Data
 @Entity
 @Table(name = "JCM_HISTORY")
+@NoArgsConstructor
+@JsonFilter("JcmHistory")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class JcmHistory {
 
@@ -31,9 +35,14 @@ public class JcmHistory {
     @JoinColumn(name = "JCM_ID")
     private JobCandidateMapping jcmId;
 
-    @NotNull
-    @Column(name = "DETAILS")
-    private String details;
+    @Column(name = "COMMENT")
+    private String comment;
+
+    @Column(name = "CALL_LOG_OUTCOME")
+    private String callLogOutCome;
+
+    @Column(name = "SYSTEM_GENERATED")
+    private Boolean systemGenerated = true;
 
     @Column(name = "UPDATED_ON")
     private Date updatedOn;
@@ -42,13 +51,26 @@ public class JcmHistory {
     @JoinColumn(name = "UPDATED_BY")
     private User userId;
 
-    public JcmHistory() {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "STAGE")
+    private StageStepMaster stage;
+
+    public JcmHistory(JobCandidateMapping jcmId, @NotNull String comment, Date updatedOn, User userId, StageStepMaster stage, Boolean systemGenerated) {
+        this.jcmId = jcmId;
+        this.comment = comment;
+        this.updatedOn = updatedOn;
+        this.userId = userId;
+        this.stage = stage;
+        this.systemGenerated = systemGenerated;
     }
 
-    public JcmHistory(JobCandidateMapping jcmId, @NotNull String details, Date updatedOn, User userId) {
+    public JcmHistory(JobCandidateMapping jcmId, @NotNull String comment, String callLogOutCome, Boolean systemGenerated, Date updatedOn, StageStepMaster stage, User userId) {
         this.jcmId = jcmId;
-        this.details = details;
+        this.comment = comment;
+        this.callLogOutCome = callLogOutCome;
+        this.systemGenerated = systemGenerated;
         this.updatedOn = updatedOn;
+        this.stage = stage;
         this.userId = userId;
     }
 }

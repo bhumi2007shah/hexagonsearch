@@ -7,22 +7,39 @@ package io.litmusblox.server.utils;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+import com.itextpdf.html2pdf.ConverterProperties;
+import com.itextpdf.html2pdf.HtmlConverter;
+import com.itextpdf.styledxmlparser.css.media.MediaDeviceDescription;
+import com.itextpdf.styledxmlparser.css.media.MediaType;
+import com.itextpdf.text.PageSize;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
+import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.Candidate;
+import io.litmusblox.server.model.ScreeningQuestions;
 import io.litmusblox.server.model.User;
 import io.litmusblox.server.repository.CandidateRepository;
 import io.litmusblox.server.service.MasterDataBean;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.fileupload.disk.DiskFileItem;
+import org.apache.commons.lang.WordUtils;
+import org.apache.poi.util.IOUtils;
+import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.apache.commons.lang.WordUtils;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
+
 import java.io.*;
+import com.sun.management.OperatingSystemMXBean;
+import java.lang.management.ManagementFactory;
 import java.nio.file.FileSystem;
 import java.nio.file.*;
 import java.text.ParseException;
@@ -32,8 +49,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Class for holding Utility methods to be used across the application
@@ -71,6 +86,7 @@ public class Util {
         try {
 
             SimpleFilterProvider filter = new SimpleFilterProvider();
+            filter.setFailOnUnknownId(false);
             if (null != serializeMap)
                 serializeMap.forEach((key, value) ->
                         filter.addFilter(key, SimpleBeanPropertyFilter.filterOutAllExcept(new HashSet<String>(value)))
@@ -81,6 +97,7 @@ public class Util {
                         filter.addFilter(key, SimpleBeanPropertyFilter.serializeAllExcept(new HashSet<String>(value)))
                 );
 
+            mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
             json = mapper.writer(filter).writeValueAsString(responseBean);
 
         } catch (JsonGenerationException e) {
@@ -117,62 +134,113 @@ public class Util {
         return true;
     }
 
-    public static boolean validateEmail(String email) throws ValidationException {
-        if(Util.isNull(email) || email.trim().length() == 0)
-            throw new ValidationException(IErrorMessages.EMAIL_NULL_OR_BLANK + " - " + email, HttpStatus.BAD_REQUEST);
-        if(email.length() > IConstant.CANDIDATE_EMAIL_MAX_LENGTH)
-            throw new  ValidationException(IErrorMessages.EMAIL_TOO_LONG + " - " + email, HttpStatus.BAD_REQUEST);
-
+    public static boolean isValidateEmail(String email, Optional<Candidate> candidate) throws ValidationException {
+        if(Util.isNull(email) || email.trim().length() == 0) {
+            setErrorMessage(IErrorMessages.EMAIL_NULL_OR_BLANK+" - "+email, candidate.isPresent()?candidate.get():null);
+            return false;
+        }
+        if(email.length() > IConstant.CANDIDATE_EMAIL_MAX_LENGTH) {
+            setErrorMessage(IErrorMessages.EMAIL_TOO_LONG+" - "+email, candidate.isPresent()?candidate.get():null);
+            return false;
+        }
         //check domain name has at least one dot
         String domainName = email.substring(email.indexOf('@')+1);
-        if(domainName.indexOf('.') == -1)
-            throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + email, HttpStatus.BAD_REQUEST);
+        if(domainName.indexOf('.') == -1){
+            setErrorMessage(IErrorMessages.INVALID_EMAIL+" - "+email, candidate.isPresent()?candidate.get():null);
+            return false;
+        }
+
+        String domainString = domainName.substring(domainName.indexOf('.')+1);
+
+        if(domainString.length()<2){
+            setErrorMessage(IErrorMessages.INVALID_EMAIL+" - "+email, candidate.isPresent()?candidate.get():null);
+            return false;
+        }
 
         if(!email.matches(IConstant.REGEX_FOR_EMAIL_VALIDATION)) {
+            setErrorMessage(IErrorMessages.INVALID_EMAIL+" - "+email, candidate.isPresent()?candidate.get():null);
             return false;
         }
         //email address is valid
         return true;
     }
 
-    public static boolean validateMobile(String mobile, String countryCode) throws ValidationException  {
+    public static String validateEmail(String receiverEmailToUse, Optional<Candidate> candidate){
+        if (!isValidateEmail(receiverEmailToUse, candidate)) {
+            String cleanEmail = receiverEmailToUse.replaceAll(IConstant.REGEX_TO_CLEAR_SPECIAL_CHARACTERS_FOR_EMAIL,"");
+            log.error("Special characters found, cleaning Email \"" + receiverEmailToUse + "\" to " + cleanEmail);
+            if (!isValidateEmail(cleanEmail, candidate)) {
+                throw new ValidationException(IErrorMessages.INVALID_EMAIL + " - " + receiverEmailToUse, HttpStatus.BAD_REQUEST);
+            }
+            receiverEmailToUse=cleanEmail;
+        }
+        if(receiverEmailToUse.length()>50)
+            throw new ValidationException(IErrorMessages.EMAIL_TOO_LONG, HttpStatus.BAD_REQUEST);
+
+        return receiverEmailToUse;
+    }
+
+    public static boolean validateMobile(String mobile, String countryCode, Optional<Candidate> candidate) throws ValidationException  {
         Map<String, Long> countryMap = getCountryMap();
 
-        if(Util.isNull(mobile) || mobile.trim().length() == 0)
-            throw new ValidationException(IErrorMessages.MOBILE_NULL_OR_BLANK + " - " + mobile, HttpStatus.BAD_REQUEST);
-
+        if(Util.isNull(mobile) || mobile.trim().length() == 0) {
+            setErrorMessage(IErrorMessages.MOBILE_NULL_OR_BLANK+" - "+mobile, candidate.isPresent()?candidate.get():null);
+            return false;
+        }
         if(!mobile.matches(IConstant.REGEX_FOR_MOBILE_VALIDATION))
             return false; //the caller should check for status, if it is false, due to regex failure, call again after cleaning up the mobile number
 
         if(countryCode.equals(IConstant.CountryCode.INDIA_CODE.getValue())) {
             Matcher m = INDIAN_MOBILE_PATTERN.matcher(mobile);
-            if(!(m.find() && m.group().equals(mobile))) //did not pass the Indian mobile number pattern
-                throw new ValidationException(IErrorMessages.INVALID_INDIAN_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+            if(!(m.find() && m.group().equals(mobile))) {//did not pass the Indian mobile number pattern
+                setErrorMessage(IErrorMessages.INVALID_INDIAN_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
+                return false;
+            }
         }
 
         if(!countryCode.equals(IConstant.CountryCode.INDIA_CODE.getValue())){
-            if(countryCode.equals(IConstant.CountryCode.AUS_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.AUS_CODE.getValue()))
-                throw new ValidationException(IErrorMessages.INVALID_AUSTRALIA_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+            if(countryCode.equals(IConstant.CountryCode.AUS_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.AUS_CODE.getValue())){
+                setErrorMessage(IErrorMessages.INVALID_AUSTRALIA_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
+                return false;
+            }
 
-            if(countryCode.equals(IConstant.CountryCode.CAN_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.CAN_CODE.getValue()))
-                throw new ValidationException(IErrorMessages.INVALID_CANADA_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+            if(countryCode.equals(IConstant.CountryCode.CAN_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.CAN_CODE.getValue())) {
+                setErrorMessage(IErrorMessages.INVALID_CANADA_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
+                return false;
+            }
 
-            if(countryCode.equals(IConstant.CountryCode.UK_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.UK_CODE.getValue()))
-                throw new ValidationException(IErrorMessages.INVALID_UK_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+            if(countryCode.equals(IConstant.CountryCode.UK_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.UK_CODE.getValue())) {
+                setErrorMessage(IErrorMessages.INVALID_UK_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
 
-            if(countryCode.equals(IConstant.CountryCode.US_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.US_CODE.getValue()))
-                throw new ValidationException(IErrorMessages.INVALID_US_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+                return false;
+            }
 
-            if(countryCode.equals(IConstant.CountryCode.SING_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.SING_CODE.getValue()))
-                throw new ValidationException(IErrorMessages.INVALID_SINGAPORE_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+            if(countryCode.equals(IConstant.CountryCode.US_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.US_CODE.getValue())) {
+                setErrorMessage(IErrorMessages.INVALID_US_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
+                return false;
+            }
+
+            if(countryCode.equals(IConstant.CountryCode.SING_CODE.getValue()) && mobile.length() != countryMap.get(IConstant.CountryCode.SING_CODE.getValue())) {
+                setErrorMessage(IErrorMessages.INVALID_SINGAPORE_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
+                return false;
+            }
 
         }
 
         //check if the number is junk, like all the same digits
-        if(JUNK_MOBILE_PATTERN.matcher(mobile).matches())
-            throw new ValidationException(IErrorMessages.JUNK_MOBILE_NUMBER + " - " + mobile, HttpStatus.BAD_REQUEST);
+        if(JUNK_MOBILE_PATTERN.matcher(mobile).matches()) {
+            setErrorMessage(IErrorMessages.JUNK_MOBILE_NUMBER+" - "+mobile, candidate.isPresent()?candidate.get():null);
+            return false;
+        }
         //mobile is valid
         return true;
+    }
+
+    private static void setErrorMessage(String errorMessage, Candidate candidate){
+        if(errorMessage.length()>0)
+            log.error(errorMessage);
+        if(null != candidate)
+            candidate.setUploadErrorMessage(errorMessage);
     }
 
     public static String getFileExtension(String fileName) {
@@ -226,15 +294,29 @@ public class Util {
     }
 
     public static void handleCandidateName(Candidate candidate, String candidateName) {
+
         if (candidateName.indexOf('.') != -1) { //a dot (.) is found in the name, process accordingly
             String[] name = candidateName.split(IConstant.REGEX_FOR_DOT_IN_NAME);
-            if (name.length > 1) {
+            if (name.length == 2) {
                 candidate.setLastName(toSentenceCase(name[0]));
                 candidate.setFirstName(toSentenceCase(name[1]));
+                return;
+            }else if(name.length > 2){
+                candidate.setFirstName(toSentenceCase(name[name.length-1]));
+                int nameCount = 0;
+                while(nameCount<name.length-1){
+                    if(nameCount==0)
+                        candidate.setLastName(toSentenceCase(name[nameCount]));
+                    else
+                        candidate.setLastName(toSentenceCase(candidate.getLastName()+name[nameCount]));
+
+                    nameCount++;
+                }
                 return;
             }
             else if (name.length > 0) {
                 candidate.setFirstName(toSentenceCase(name[0]));
+                candidate.setLastName("-");
                 return;
             }
         }
@@ -252,37 +334,42 @@ public class Util {
         }
         if (null != lastName)
             candidate.setLastName(toSentenceCase(lastName.toString()));
-
+        else
+            candidate.setLastName("-");
     }
 
-    public static String indianMobileConvertor(String mobileNo) {
-        //remove all occurences of '
-        mobileNo = mobileNo.replaceAll("\'","");
+    public static String indianMobileConvertor(String mobileNo,  String countryCode) {
+        if(countryCode.equals(IConstant.CountryCode.INDIA_CODE.getValue())){
+            //remove all occurences of '
+            mobileNo = mobileNo.replaceAll("\'","");
 
-        //check if number contains any prefix like 0 or +
-        //strip all occurences of 0 and +
-        while(mobileNo.charAt(0) == '0' || mobileNo.charAt(0) == '+') {
-            mobileNo = mobileNo.substring(1);
-        }
+            if(!Util.isNull(mobileNo)) {
+                //check if number contains any prefix like 0 or +
+                //strip all occurences of 0 and +
+                while (mobileNo.length()<=0 && (mobileNo.charAt(0) == '0' || mobileNo.charAt(0) == '+')) {
+                    mobileNo = mobileNo.substring(1);
+                }
+            }
+            //strip all white spaces
+            mobileNo = mobileNo.replaceAll("\\s+", "");
 
-        //strip all white spaces
-        mobileNo = mobileNo.replaceAll("\\s+", "");
+            //if mobile number is greater than 10 digits, and prefix is 91, remove 91
+            if(mobileNo.length() > 10 && mobileNo.startsWith("91"))
+                mobileNo = mobileNo.substring(2);
 
-        //if mobile number is greater than 10 digits, and prefix is 91, remove 91
-        if(mobileNo.length() > 10 && mobileNo.startsWith("91"))
-            mobileNo = mobileNo.substring(2);
-
-        //if mobile number is greater than 10 digits and start with anything else than 91 and replace any non digit character
-        if(mobileNo.length() > 10 ){
-            mobileNo = mobileNo.replaceAll("\\D", "");
-            mobileNo = mobileNo.substring(mobileNo.length()-10);
-        }
+            //if mobile number is greater than 10 digits and start with anything else than 91 and replace any non digit character
+            if(mobileNo.length() > 10 ){
+                mobileNo = mobileNo.replaceAll("\\D", "");
+                mobileNo = mobileNo.substring(mobileNo.length()-10);
+            }
+        }else
+            log.info("Not a Indian MobileNo : "+mobileNo+" CountryCode : "+countryCode);
 
         return mobileNo;
     }
 
     public static void sendSentryErrorMail(String fileName, Map<String, String> headers, String processFileType){
-        StringBuffer info = new StringBuffer(fileName).append(" - ").append(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW);
+        StringBuffer info = new StringBuffer(fileName).append(" - ").append(processFileType + IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW);
         log.info(info.toString());
         Map<String, String> breadCrumb = new HashMap<>();
         breadCrumb.put(IConstant.UPLOAD_FILE_TYPE,processFileType);
@@ -381,6 +468,15 @@ public class Util {
         return cleanFirstName;
     }
 
+    public static String cleanFileName(String fileName){
+        log.info("Inside cleanFileName");
+        String cleanFileName = fileName.substring(0, fileName.lastIndexOf("."));
+        cleanFileName = cleanFileName.replace(".", "_");
+        cleanFileName = cleanFileName.replaceAll("\\W","");
+        cleanFileName = cleanFileName + "."+Util.getFileExtension(fileName).toLowerCase();
+        return cleanFileName;
+    }
+
     public static Date getCurrentOrBefore1YearDate(Boolean dateBefore1Year) throws ParseException {
         LocalDateTime ldt = null;
        if(dateBefore1Year)
@@ -388,10 +484,117 @@ public class Util {
        else
          ldt = LocalDateTime.now();
 
-        DateTimeFormatter formmat = DateTimeFormatter.ofPattern(IConstant.DATE_FORMAT, Locale.ENGLISH);
+        DateTimeFormatter formmat = DateTimeFormatter.ofPattern(IConstant.EXPORT_DATE_FORMAT, Locale.ENGLISH);
         String formatter = formmat.format(ldt);
-        return new SimpleDateFormat(IConstant.DATE_FORMAT).parse(formatter);
+        return new SimpleDateFormat(IConstant.EXPORT_DATE_FORMAT).parse(formatter);
     }
 
+    public static MultipartFile createMultipartFile(File file) throws IOException {
+        log.info("inside createMultipartFile method");
+        InputStream input = null;
+        try {
+            DiskFileItem fileItem = new DiskFileItem("file", "text/plain", false, file.getName(), (int) file.length(), file.getParentFile());
+            input = new FileInputStream(file);
+            OutputStream os = fileItem.getOutputStream();
+            int ret = input.read();
+            while (ret != -1) {
+                os.write(ret);
+                ret = input.read();
+            }
+            os.flush();
+            return new CommonsMultipartFile(fileItem);
+        }catch (Exception e){
+            throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,e);
+        }finally {
+            try {
+                input.close();
+            }catch (IOException ex){
+                ex.printStackTrace();
+            }
+        }
+    }
 
+    //Method to convert input stream to multipart file
+    public static MultipartFile convertInputStreamToMultipartFile(InputStream inputStream, String filePath) throws IOException {
+        File file = new File(filePath);
+        try(OutputStream outputStream = new FileOutputStream(file)){
+            IOUtils.copy(inputStream, outputStream);
+        } catch (Exception e) {
+            throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,e);
+        }
+        return createMultipartFile(file);
+    }
+    public static MultipartFile convertByteStreamToMultipartFile(byte[] inputStream, String filePath) throws IOException {
+        File file = new File(filePath);
+        try(OutputStream outputStream = new FileOutputStream(file)){
+           outputStream.write(inputStream);
+        } catch (Exception e) {
+            throw new WebException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,e);
+        }
+        MultipartFile result = createMultipartFile(file);
+        file.delete();
+        return result;
+    }
+
+    //This method is used for comparing interview date with current date time
+    public static String getDateWithTimezone(TimeZone timeZone, Date date){
+        log.info("Inside getCurrentDateWithTimezone, TimeZone : ",timeZone.getDisplayName());
+        //DateFormat
+        SimpleDateFormat dateTimeInIST = new SimpleDateFormat("dd/MM/yyyy hh:mm a");
+        //Setting the time zone
+        dateTimeInIST.setTimeZone(timeZone);
+        try {
+            log.info("Date before convert to IST: {}, After convert to IST date : {}", date,dateTimeInIST.format(date));
+            return dateTimeInIST.format(date);
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("Issue in getCurrentDateWithIstTimezone : {}",e.getMessage());
+        }
+        return null;
+    }
+
+    //Method to get exception stackTrace if we want to print in logs
+    public static String getStackTrace(Exception e){
+        log.info("Inside getStackTrace");
+        StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
+    }
+
+    public static String parseCustomizeQuestion(Map<String, String> customizeQuestionData, ScreeningQuestions screeningQuestions){
+        log.info("Inside parseCustomizeQuestion");
+        customizeQuestionData.entrySet().forEach(data ->{
+            if(screeningQuestions.getCustomizeQuestion().contains(data.getKey())){
+                screeningQuestions.setCustomizeQuestion(screeningQuestions.getCustomizeQuestion().replace("$"+data.getKey(), data.getValue()));
+            }
+        });
+        return screeningQuestions.getCustomizeQuestion();
+    }
+
+    public static String removeHtmlTags(String htmlString){
+        log.info("Remove Html tag's from string");
+        return Jsoup.parse(htmlString).text();
+    }
+
+    public static void convertToPdf(String html, String outputFolder,String baseURI) {
+        OutputStream outputStream = null;
+        try {
+            outputStream = new FileOutputStream(outputFolder);
+            ConverterProperties converterProperties = new ConverterProperties();
+
+            MediaDeviceDescription mediaDeviceDescription = new MediaDeviceDescription(MediaType.ALL,PageSize.A1.getWidth(),PageSize.A1.getHeight());
+            converterProperties.setMediaDeviceDescription(mediaDeviceDescription);
+            converterProperties.setBaseUri(baseURI);
+
+            HtmlConverter.convertToPdf(html,outputStream,converterProperties);
+            outputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Double getSystemLoadAverage() {
+        OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+        return osBean.getSystemLoadAverage();
+    }
 }

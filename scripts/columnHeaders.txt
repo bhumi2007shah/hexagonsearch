@@ -1,0 +1,1 @@
+jcmId|Candidate Name|Chatbot Status|Chatbot Filled Timestamp|Stage|Key Skills Strength|Current Company|Current Designation|Email|Country Code|Mobile|Total Experience|Created By|Created On|Capability Score|Chatbot Link

@@ -9,6 +9,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.litmusblox.server.constant.IConstant;
+import io.litmusblox.server.service.CandidateInteractionHistory;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -27,7 +30,9 @@ import java.util.List;
  * Project Name : server
  */
 @Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "CANDIDATE")
 @JsonFilter("Candidate")
@@ -41,7 +46,6 @@ public class Candidate implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
     @Column(name = "FIRST_NAME")
     private String firstName;
 
@@ -103,6 +107,10 @@ public class Candidate implements Serializable {
     @JsonProperty
     private String techResponseData;
 
+    @Transient
+    @JsonProperty
+    private List<CandidateInteractionHistory> candidateInteractionHistoryList = new ArrayList<>(0);
+
     @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "candidateId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private CandidateDetails candidateDetails;
@@ -147,4 +155,21 @@ public class Candidate implements Serializable {
     @Transient
     private String alternateMobile;
 
+    @JsonProperty
+    @Transient
+    private EmployeeReferrer employeeReferrer;
+
+    @JsonProperty
+    @Transient
+    private CvParsingDetails cvParsingDetails;
+
+    @JsonProperty
+    @Transient
+    private String candidateNumber;
+
+    public Candidate(String displayName, String email, String mobile) {
+        this.displayName = displayName;
+        this.email = email;
+        this.mobile = mobile;
+    }
 }

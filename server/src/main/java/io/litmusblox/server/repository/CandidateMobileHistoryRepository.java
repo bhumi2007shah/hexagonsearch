@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author : Sumit
@@ -29,4 +30,10 @@ public interface CandidateMobileHistoryRepository extends JpaRepository<Candidat
     @Transactional(readOnly = true)
     @Query(nativeQuery = true, value = "select candidate_id from candidate_mobile_history where mobile=:mobile and country_code=:countryCode")
     Long findCandidateIdByMobileAndCountryCode(String mobile, String countryCode);
+
+    @Transactional
+    void deleteByCandidateId(Long candidateId);
+
+    @Transactional
+    List<CandidateMobileHistory> findByCountryCodeAndMobileIn(String countryCode, Set<String> mobileList);
 }

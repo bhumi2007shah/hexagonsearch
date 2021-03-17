@@ -20,8 +20,8 @@ public interface IProcessUploadedCV {
     void processCv();
 
     /**
-     * Method that will be called by scheduler
-     * All eligible records of CV will be run against CV rating api and rated
+     * Method to update cv rating for cv
+     * In cv_parsing_detail if cv rating flag is false then get cv rating and save
      */
-    void rateCv();
+    void updateCvRating();
 }

@@ -5,15 +5,16 @@
 package io.litmusblox.server.controller;
 
 import io.litmusblox.server.constant.IConstant;
-import io.litmusblox.server.service.CompanyWorspaceBean;
-import io.litmusblox.server.service.ICompanyService;
-import io.litmusblox.server.service.UserWorkspaceBean;
+import io.litmusblox.server.service.*;
 import io.litmusblox.server.service.impl.LbUserDetailsService;
+import io.litmusblox.server.utils.Util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -34,7 +35,13 @@ public class AdminController {
     ICompanyService companyService;
 
     @Autowired
+    IAnalyticsService analyticsService;
+
+    @Autowired
     LbUserDetailsService userDetailsService;
+
+    @Autowired
+    IAdminService adminService;
 
     /**
      * REST Api to fetch a list of all companies
@@ -60,7 +67,66 @@ public class AdminController {
     @PreAuthorize(("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "') or hasRole('" + IConstant.UserRole.Names.CLIENT_ADMIN + "')"))
     @ResponseBody
     @ResponseStatus(value = HttpStatus.OK)
-    List<UserWorkspaceBean> fetchUsers(@RequestParam String companyId) throws Exception {
-        return userDetailsService.fetchUsers(Long.parseLong(companyId));
+    List<UserWorkspaceBean> fetchUsers(@RequestParam Long companyId) throws Exception {
+        return userDetailsService.fetchUsers(companyId,true);
+    }
+
+    @PutMapping(value = "/createSubdomains")
+    @PreAuthorize(("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "')"))
+    @ResponseStatus(HttpStatus.OK)
+    void createSubdomains() throws Exception {
+        companyService.createSubdomains();
+    }
+
+    @GetMapping(value = "/analytics")
+    @PreAuthorize(("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "')"))
+    @ResponseStatus(HttpStatus.OK)
+    List<AnalyticsResponseBean> companyWiseAnalytics(@RequestParam(value = "startDate", required=false) String startDate, @RequestParam(value = "endDate", required=false) String endDate) throws Exception {
+        return analyticsService.analyticsByCompany(startDate, endDate);
+    }
+
+    /**
+
+     REST Api to set Company Unique Id for all companies
+     @return List of companies
+     @throws Exception
+     */
+    @PutMapping(value = "/setCompanyUniqueId")
+    @PreAuthorize("hasRole('" + IConstant.UserRole.Names.SUPER_ADMIN + "')")
+    @ResponseStatus(value = HttpStatus.OK)
+    String setCompanyUniqueId() throws Exception {
+        String response = Util.stripExtraInfoFromResponseBean(
+                companyService.setCompanyUniqueId(),
+                null,
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
+                }})
+        );
+
+        return response;
+    }
+
+    /**
+     * Controller method to call service that adds existing
+     * candidate and companies on search engine.
+     * @throws Exception
+     */
+    @PutMapping(value = "/addCompanyCandidate")
+    @PreAuthorize("hasRole('"+IConstant.UserRole.Names.SUPER_ADMIN +"')")
+    @ResponseStatus(value = HttpStatus.OK)
+    void addCompanyCandidate(@RequestParam(name = "companyId", required = false) Long companyId) throws Exception{
+        if(null != companyId){
+            adminService.addCompanyCandidateOnSearchEngine(companyId);
+        }
+        else {
+            adminService.addCompanyCandidateOnSearchEngine();
+        }
+    }
+
+    @PostMapping(value = "/addftpdetail")
+    @PreAuthorize("hasRole('"+IConstant.UserRole.Names.SUPER_ADMIN+"')")
+    @ResponseStatus(value = HttpStatus.OK)
+    void addCompanyFtpDetails (@RequestBody FtpRequestBean ftpRequestBean) throws Exception {
+        adminService.addCompanyFtpDetails(ftpRequestBean);
     }
 }

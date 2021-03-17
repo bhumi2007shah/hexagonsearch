@@ -4,9 +4,12 @@
 
 package io.litmusblox.server.service;
 
+import io.litmusblox.server.model.Company;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.UUID;
 
 /**
  * @author : Shital Raval
@@ -19,9 +22,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginResponseBean {
+    private Long userId;
     private String jwtToken;
     private String userName;
-    private String company;
+    private Company company;
     private int candidatesProcessed;
-    private long companyId;
+    private String userRole;
+    private UUID workspaceUuid;
 }

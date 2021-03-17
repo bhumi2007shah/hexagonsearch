@@ -8,6 +8,7 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.Candidate;
+import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.UploadResponseBean;
 import lombok.extern.log4j.Log4j2;
 import org.jsoup.Jsoup;
@@ -31,7 +32,7 @@ import java.util.*;
 public class HTMLFileProcessorService extends AbstractNaukriProcessor implements IUploadFileProcessorService {
 
     @Override
-    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation) {
+    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile, String repoLocation, User loggedInUser, String fileType) {
         List<Candidate> candidateList = new ArrayList<>(0);
         try {
             Document doc = Jsoup.parse(new File(repoLocation + File.separator + fileName), "utf-8");
@@ -54,7 +55,7 @@ public class HTMLFileProcessorService extends AbstractNaukriProcessor implements
                             breadCrumb.put("File Name", fileName);
                             breadCrumb.put("File Type", IConstant.PROCESS_FILE_TYPE.HTMLFile.toString());
                             breadCrumb.put("trElement", trElement.toString());
-                            throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.INTERNAL_SERVER_ERROR.UNPROCESSABLE_ENTITY, breadCrumb);
+                            throw new WebException(IConstant.UPLOAD_FORMATS_SUPPORTED.Naukri.toString() + IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.INTERNAL_SERVER_ERROR.UNPROCESSABLE_ENTITY, breadCrumb);
                         }
                         break;
                     default:

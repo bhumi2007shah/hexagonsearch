@@ -4,12 +4,16 @@
 
 package io.litmusblox.server.model;
 
-import com.fasterxml.jackson.annotation.JsonFilter;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
+import com.vladmihalcea.hibernate.type.array.StringArrayType;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
+import org.hibernate.annotations.TypeDefs;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -31,7 +35,10 @@ import java.util.*;
 @Table(name="JOB_CANDIDATE_MAPPING")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonFilter("JobCandidateMapping")
-public class JobCandidateMapping implements Serializable, Comparable {
+@Builder
+@AllArgsConstructor
+@TypeDefs({@TypeDef(name = "string-array",typeClass = StringArrayType.class), @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)})
+public class JobCandidateMapping implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285047L;
 
@@ -39,6 +46,10 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Column(name = "ID")
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name="OFFER_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date offerOn;
 
     @NotNull
     @OneToOne(fetch = FetchType.EAGER)
@@ -53,7 +64,7 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @NotNull
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "STAGE")
-    private MasterData stage;
+    private StageStepMaster stage;
 
     @NotNull
     @Column(name = "CANDIDATE_SOURCE")
@@ -63,7 +74,6 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Column(name="EMAIL")
     private String email;
 
-    @NotNull
     @Column(name="MOBILE")
     private String mobile;
 
@@ -116,9 +126,130 @@ public class JobCandidateMapping implements Serializable, Comparable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date chatbotUpdatedOn;
 
-    @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
+    @Column(name="ALTERNATE_EMAIL")
+    private String alternateEmail;
+
+    @Column(name="ALTERNATE_MOBILE")
+    private String alternateMobile;
+
+    @Column(name="SERVING_NOTICE_PERIOD")
+    private boolean servingNoticePeriod;
+
+    @Column(name="NEGOTIABLE_NOTICE_PERIOD")
+    private boolean negotiableNoticePeriod;
+
+    @Column(name="OTHER_OFFERS")
+    private boolean otherOffers;
+
+    @Column(name="UPDATE_RESUME")
+    private boolean updateResume;
+
+    @Column(name="COMMUNICATION_RATING")
+    private Integer communicationRating = 0;
+
+    @Column(name = "REJECTED")
+    private boolean rejected;
+
+    @Column(name="REASON_FOR_CHANGE")
+    private String reasonForChange;
+
+    @Column(name = "CV_FILE_TYPE")
+    private String cvFileType;
+
+    @Column(name = "CANDIDATE_REJECTION_VALUE")
+    private String candidateRejectionValue;
+
+    @Column(name = "EXPECTED_CTC")
+    private Double expectedCtc;
+
+    @Column(name = "PERCENTAGE_HIKE")
+    private Long percentageHike;
+
+    @Column(name = "COMMENTS")
+    private String comments;
+
+    @Column(name = "IS_CREATED_ON_SEARCHENGINE")
+    private boolean isCreatedOnSearchEngine;
+
+    @Type(type = "jsonb")
+    @Column(columnDefinition = "jsonb", name = "cv_skill_rating_json")
+    private Map<String,Map<String,String>> cvSkillRatingJson;
+
+    @Column(name="overall_rating")
+    private Integer overallRating;
+
+    @Column(name="interest_access_by_device")
+    private  String interestAccessByDevice;
+
+    @Column(name="chatbot_completed_by_device")
+    private  String chatbotCompletedByDevice;
+
+    @Column(name = "CANDIDATE_QUICK_QUESTION_RESPONSE")
+    private String candidateQuickQuestionResponse;
+
+    @Column(name="candidate_not_interested_reason")
+    private String candidateNotInterestedReason;
+
+    @Column(name="SCREENING_BY")
+    private String screeningBy;
+
+    @Column(name="SCREENING_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date screeningOn;
+
+    @Column(name="SUBMITTED_BY")
+    private String submittedBy;
+
+    @Column(name="SUBMITTED_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date submittedOn;
+
+    @Column(name="MAKE_OFFER_BY")
+    private String makeOfferBy;
+
+    @Column(name="MAKE_OFFER_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date makeOfferOn;
+
+    @Column(name="OFFER_BY")
+    private String offerBy;
+
+
+    @OneToOne(mappedBy = "jcmId")
+    private JcmOfferDetails offerDetails;
+
+    @Column(name="HIRED_BY")
+    private String hiredBy;
+
+    @Column(name="HIRED_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date hiredOn;
+
+    @Column(name="REJECTED_BY")
+    private String rejectedBy;
+
+    @Column(name="REJECTED_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date rejectedOn;
+
+    @Column(name = "CANDIDATE_NUMBER")
+    private String candidateNumber;
+
+    @Type(type = "hstore")
+    @Column(name = "CANDIDATE_CHATBOT_RESPONSE", columnDefinition = "hstore")
+    private Map<String, String> candidateChatbotResponse = new HashMap<>();
+
+    @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.EAGER, mappedBy = "jobCandidateMappingId")
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private CandidateTechResponseData techResponseData;
+
+    @OneToOne(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobCandidateMappingId")
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
+    private CandidateReferralDetail candidateReferralDetail;
+
+    @OneToMany(cascade = {CascadeType.MERGE}, mappedBy = "jobCandidateMappingId")
+    @OrderBy("id DESC")
+    private List<InterviewDetails> interviewDetails = new ArrayList<>(0);
 
     @Transient
     @JsonProperty
@@ -126,52 +257,68 @@ public class JobCandidateMapping implements Serializable, Comparable {
 
     @Transient
     @JsonProperty
+    Map<Integer, Map<String, Integer>> candidateSkillsByRating;
+
+    @Transient
+    @JsonProperty
+    List<String> candidateKeySkills = new ArrayList<>();
+
+    @Transient
+    @JsonProperty
     List<JcmProfileSharingDetails> interestedHiringManagers = new ArrayList<>();
 
     @Transient
     @JsonProperty
-    List<JcmProfileSharingDetails> notInterestedHiringManagers = new ArrayList<>();
+    Long shareProfileId;
 
     @Transient
     @JsonProperty
-    List<JcmProfileSharingDetails> notRespondedHiringManagers = new ArrayList<>();
+    private String cvLocation;
 
     @Transient
-    @JsonProperty
-    CvRating cvRating;
+    private String inviteErrorMessage;
 
     @Transient
-    @JsonProperty
-    Map<Integer, List<String>> candidateSkillsByRating;
+    private List userScreeningQuestions;
 
     @Transient
-    @JsonProperty
-    private Date hiringManagerInterestDate;
+    private Map<String,List<TechScreeningQuestion>> techScreeningQuestions;
+
+    @JsonInclude
+    @Transient
+    private List<JcmHistory> candidateHistoryForHiringManager;
+
+    @OneToMany(cascade = {CascadeType.MERGE}, mappedBy = "jobCandidateMappingId")
+    private List<JcmCandidateSourceHistory> candidateSourceHistories = new ArrayList<>(0);
 
     public String getDisplayName() {
         return candidateFirstName + " " + candidateLastName;
     }
 
-    public JobCandidateMapping(@NotNull Job job, @NotNull Candidate candidate, @NotNull MasterData stage, @NotNull String candidateSource, @NotNull Date createdOn, @NotNull User createdBy, UUID chatbotUuid, String candidateFirstName, String candidateLastName) {
+    public JobCandidateMapping(@NotNull Job job, @NotNull Candidate candidate, @NotNull StageStepMaster stage, @NotNull String candidateSource, @NotNull boolean autosourced, @NotNull Date createdOn, @NotNull User createdBy, UUID chatbotUuid, String candidateFirstName, String candidateLastName, String cvFileType, String candidateNumber) {
         this.job = job;
         this.candidate = candidate;
         this.stage = stage;
         this.candidateSource = candidateSource;
         this.email = candidate.getEmail();
-        this.mobile = candidate.getMobile();
+        if(null != candidate.getMobile())
+            this.mobile = candidate.getMobile();
+
         this.countryCode = candidate.getCountryCode();
         this.createdOn = createdOn;
         this.createdBy = createdBy;
         this.chatbotUuid = chatbotUuid;
         this.candidateFirstName = candidateFirstName;
         this.candidateLastName = candidateLastName;
+        this.cvFileType = cvFileType;
+        this.candidateNumber = candidateNumber;
     }
 
     public JobCandidateMapping(Long id) {
         this.id = id;
     }
 
-    @Override
+ /*   @Override
     public int compareTo(Object o) {
         int returnVal = 0;
 
@@ -198,5 +345,14 @@ public class JobCandidateMapping implements Serializable, Comparable {
             returnVal = this.getCandidateLastName().compareTo(objToCompare.getCandidateLastName());
 
         return returnVal;
+    }*/
+
+ //TODO: remove the following at the end of successful regression
+ //this should not be used as the logic has been moved to JCMAllDetails as per #323
+    public InterviewDetails getCurrentInterviewDetail(){
+        if(this.getInterviewDetails().size()>0)
+            return this.getInterviewDetails().get(0);
+
+        return null;
     }
 }

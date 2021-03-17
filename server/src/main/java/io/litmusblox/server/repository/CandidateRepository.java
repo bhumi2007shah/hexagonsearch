@@ -6,6 +6,8 @@ package io.litmusblox.server.repository;
 
 import io.litmusblox.server.model.Candidate;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @author : Sumit
@@ -15,4 +17,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * Project Name : server
  */
 public interface CandidateRepository extends JpaRepository<Candidate, Long> {
+
+    @Transactional
+    @Query(nativeQuery = true, value = "select * from candidate where id=(select candidate_id from candidate_online_profile where profile_type=:profileType and url like CONCAT('%', :uniqueId, '%'))")
+    Candidate findCandidateByProfileTypeAndUniqueId(String profileType, String uniqueId);
 }

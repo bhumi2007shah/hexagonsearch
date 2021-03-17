@@ -68,10 +68,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 //all no auth controller request do not require authentication
                 .antMatchers("/api/noAuth/**").permitAll()
+                //all ShortUrlController request do not require authentication
+                .antMatchers("/{hash:[0-9a-z]+}").permitAll()
                 // dont authenticate this particular request in Auth controller
                 .antMatchers("/api/auth/login").permitAll()
+                .antMatchers("/api/auth/loginWithOtp").permitAll()
                 .antMatchers("/api/auth/forgotPassword").permitAll()
                 .antMatchers("/api/auth/activateUser").permitAll()
+                .antMatchers("/api/masterdata/addIndustryMasterData").hasIpAddress("127.0.0.1")
                 // all other requests need to be authenticated
                 .anyRequest().authenticated().and()
                 .exceptionHandling().authenticationEntryPoint(lbAuthenticationEntryPoint)

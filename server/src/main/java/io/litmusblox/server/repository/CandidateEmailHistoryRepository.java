@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author : Sumit
@@ -29,4 +30,10 @@ public interface CandidateEmailHistoryRepository extends JpaRepository<Candidate
     @Transactional(readOnly = true)
     @Query(nativeQuery = true, value = "select candidate_id from candidate_email_history where email=:email")
     Long findCandidateIdByEmail(String email);
+
+    @Transactional
+    void deleteByCandidateId(Long candidateId);
+
+    @Transactional
+    List<CandidateEmailHistory> findByEmailIn(Set<String> emailList);
 }

@@ -30,15 +30,24 @@ public interface JcmCommunicationDetailsRepository extends JpaRepository<JcmComm
     void inviteCandidates(List<Long> jcmIdList);
 
     @Transactional
+    //@Cacheable(cacheNames = "jcmCommDetails", key = "#jcmId")
     JcmCommunicationDetails findByJcmId(Long jcmId);
 
     @Transactional
     @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query(nativeQuery = true, value = "Update Jcm_Communication_Details set chat_complete_flag = true where jcm_id =:jcmId")
+    @Query(nativeQuery = true, value = "Update Jcm_Communication_Details set tech_chat_complete_flag = true where jcm_id =:jcmId")
     void updateByJcmId(Long jcmId);
 
     @Transactional
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query(nativeQuery = true, value = "update jcm_Communication_Details set hr_chat_complete_flag = true where jcm_id =:jcmId")
     void updateHrChatbotFlagByJcmId(Long jcmId);
+
+    @Transactional
+    void deleteByJcmId(Long jobCandidateMappingId);
+
+    @Transactional
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(nativeQuery = true, value = "update jcm_communication_details set rejected_timestamp_email = null where jcm_id in :jcmIdList")
+    void setScreeningRejectionTimestampNull(List<Long> jcmIdList);
 }

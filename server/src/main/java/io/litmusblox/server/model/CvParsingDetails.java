@@ -6,6 +6,7 @@ package io.litmusblox.server.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -71,7 +72,24 @@ public class CvParsingDetails {
     @Column(name="CV_RATING_API_RESPONSE_TIME")
     private Long cvRatingApiResponseTime;
 
-    public CvParsingDetails(Date processedOn, String parsingResponseText, Long candidateId, JobCandidateMapping jobCandidateMappingId) {
+    @Column(name = "CV_CONVERT_API_FLAG")
+    private boolean cvConvertApiFlag = false;
+
+    @Column(name = "PARSING_RESPONSE_ML")
+    private String parsingResponseMl;
+
+    @Column(name = "PARSING_RESPONSE_PYTHON")
+    private String parsingResponsePython;
+
+    @Column(name = "CANDIDATE_SKILLS", columnDefinition = "varchar[]")
+    @Type(type = "com.vladmihalcea.hibernate.type.array.StringArrayType")
+    private String[] candidateSkills;
+
+    @Column(name = "CV_RATING_API_CALL_RETRY_COUNT")
+    private Long cvRatingApiCallTRetryCount = 1L;
+
+    public CvParsingDetails(String cvFileName, Date processedOn, String parsingResponseText, Long candidateId, JobCandidateMapping jobCandidateMappingId) {
+        this.cvFileName = cvFileName;
         this.processedOn = processedOn;
         this.parsingResponseText = parsingResponseText;
         this.candidateId = candidateId;

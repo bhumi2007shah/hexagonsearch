@@ -4,10 +4,14 @@
 
 package io.litmusblox.server.utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import io.litmusblox.server.service.MasterDataBean;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -55,11 +59,11 @@ public class RestClient {
      * @param apiUrl the url to connect to
      * @param requestType GET / POST / PUT
      * @param authToken authorization information
-     * @return JSON representation of the response
+     * @return response
      * @throws Exception
      */
-    public String consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken) throws Exception {
-        return consumeRestApi(requestObj, apiUrl, requestType, authToken, null, null);
+    public RestClientResponseBean consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken) throws Exception {
+        return consumeRestApi(requestObj, apiUrl, requestType, authToken, null, null, null);
     }
 
     /**
@@ -70,27 +74,32 @@ public class RestClient {
      * @param requestType GET / POST / PUT
      * @param authToken authorization information
      * @param queryParameters Map of query parameters if any
-     * @param customTimeout use this parameter when the rest client's connection should wait for a longer duration than the default value
-     * @return
+     * @param customReadTimeout use this parameter when the time-out applied from the moment you have established a connection
+     * @param headerInformation Map of information to be set in header
+     * @return response
      * @throws Exception
      */
-    public String consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken, Optional<Map> queryParameters, Optional<Integer> customTimeout) throws Exception {
+    public RestClientResponseBean consumeRestApi(String requestObj, String apiUrl, HttpMethod requestType, String authToken, Optional<Map> queryParameters, Optional<Integer> customReadTimeout, Optional<Map> headerInformation) throws Exception {
         RestTemplate restTemplate = new RestTemplate();
-        SimpleClientHttpRequestFactory requestFactory = (SimpleClientHttpRequestFactory)restTemplate.getRequestFactory();
-        if(null != customTimeout && customTimeout.isPresent())
-            requestFactory.setConnectTimeout(customTimeout.get().intValue());
+        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
+        if(null != customReadTimeout && customReadTimeout.isPresent())
+            requestFactory.setReadTimeout(customReadTimeout.get().intValue());
         else
-            requestFactory.setConnectTimeout(connectionTimeout);
+            requestFactory.setReadTimeout(MasterDataBean.getInstance().getRestReadTimeout());
 
-        requestFactory.setReadTimeout(readTimeout);
+        requestFactory.setConnectTimeout(MasterDataBean.getInstance().getRestConnectionTimeout());
 
+        restTemplate.setRequestFactory(requestFactory);
+
+        log.info("Rest client Connection timeout value : {}ms, and read time out value : {}ms.",MasterDataBean.getInstance().getRestConnectionTimeout(),
+                ((null != customReadTimeout && customReadTimeout.isPresent())?customReadTimeout.get():MasterDataBean.getInstance().getRestReadTimeout()));
         //log.info("Request object sent: " + requestObj);
 
         HttpEntity<String> entity;
         if (null != requestObj)
-            entity = new HttpEntity<String>(requestObj, getHttpHeader(authToken, true));
+            entity = new HttpEntity<String>(requestObj, getHttpHeader(authToken, true, headerInformation, false));
         else
-            entity = new HttpEntity<String>(getHttpHeader(authToken, false));
+            entity = new HttpEntity<String>(getHttpHeader(authToken, false, headerInformation, false));
         try {
             long startTime = System.currentTimeMillis();
             UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(apiUrl);
@@ -105,7 +114,8 @@ public class RestClient {
 
             ResponseEntity<String> response = restTemplate.exchange(uriBuilder.toUriString(), requestType, entity, String.class);
             log.info("Time taken to retrieve response from REST api: " + (System.currentTimeMillis() - startTime) + "ms.");
-            return response.getBody();
+            log.info("Rest client response code: {}", response.getStatusCodeValue());
+            return new RestClientResponseBean(response.getStatusCodeValue(),response.getBody());
         } catch(HttpStatusCodeException e ) {
             List<String> customHeader = e.getResponseHeaders().get("x-app-err-id");
             String svcErrorMessageID = "";
@@ -113,12 +123,45 @@ public class RestClient {
                 svcErrorMessageID = customHeader.get(0);
             }
             log.error("Error response from REST call: " + svcErrorMessageID + " :: " + e.getResponseBodyAsString());
-            throw e;
+            return new RestClientResponseBean(e.getRawStatusCode(), e.getResponseBodyAsString());
+            //throw e;
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("Exception while making a REST call: " + e.getMessage());
             throw e;
         }
 
+    }
+
+
+    public RestClientResponseBean consumeRestApi(String apiUrl, String authToken, HttpMethod requestType, MultiValueMap formData, Optional<Map> headerInformation){
+
+        long startTime = System.currentTimeMillis();
+        HttpEntity<MultiValueMap<String, Object>> requestEntity
+                = new HttpEntity<>(formData, getHttpHeader(authToken, false, headerInformation, true));
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(apiUrl);
+        RestTemplate restTemplate = new RestTemplate();
+        try {
+            ResponseEntity<String> response = restTemplate.exchange( uriBuilder.toUriString(), requestType, requestEntity,String.class);
+            log.info("Time taken to retrieve response from REST api: " + (System.currentTimeMillis() - startTime) + "ms.");
+            log.info("Rest client response code: {}", response.getStatusCodeValue());
+            return new RestClientResponseBean(response.getStatusCodeValue(),response.getBody());
+        } catch(HttpStatusCodeException e ) {
+            List<String> customHeader = e.getResponseHeaders().get("x-app-err-id");
+            String svcErrorMessageID = "";
+            if (customHeader != null) {
+                svcErrorMessageID = customHeader.get(0);
+            }
+            log.error("Error response from REST call: " + svcErrorMessageID + " :: " + e.getResponseBodyAsString());
+            return new RestClientResponseBean(e.getRawStatusCode(), e.getResponseBodyAsString());
+            //throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("Exception while making a REST call: " + e.getMessage());
+            throw e;
+        }
     }
 
     /**
@@ -126,9 +169,21 @@ public class RestClient {
      * @param authToken authorization information
      * @return
      */
-    private HttpHeaders getHttpHeader(String authToken, boolean setContentType) {
+    private HttpHeaders getHttpHeader(String authToken, boolean setContentType, Optional<Map> headerInformation, boolean setFormData) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization",authToken);
+
+        if(null != headerInformation && headerInformation.isPresent()){
+            Map headerInformationToSet = headerInformation.get();
+            headerInformationToSet.forEach((k, v) -> {
+                headers.set(k.toString(), v.toString());
+            });
+        }
+
+        if(setFormData){
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        }
+
         if(setContentType) {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.add("Accept", MediaType.APPLICATION_JSON_VALUE);

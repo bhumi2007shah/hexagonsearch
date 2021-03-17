@@ -8,6 +8,8 @@ import io.litmusblox.server.model.CandidateSkillDetails;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
  * @author : Sumit
  * Date : 25/07/19
@@ -19,4 +21,6 @@ public interface CandidateSkillDetailsRepository extends JpaRepository<Candidate
 
     @Transactional
     void deleteByCandidateId(Long candidateId);
+    @Transactional
+    List<CandidateSkillDetails>  findByCandidateId(Long candidateId);
 }

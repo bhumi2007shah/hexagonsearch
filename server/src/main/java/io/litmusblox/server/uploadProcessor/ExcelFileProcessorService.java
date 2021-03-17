@@ -8,18 +8,20 @@ import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.WebException;
 import io.litmusblox.server.model.Candidate;
+import io.litmusblox.server.model.User;
+import io.litmusblox.server.repository.CandidateEmailHistoryRepository;
+import io.litmusblox.server.repository.CandidateMobileHistoryRepository;
 import io.litmusblox.server.service.UploadResponseBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.http.HttpStatus;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.util.*;
 
 /**
  * @author : Sumit
@@ -28,11 +30,19 @@ import java.util.Map;
  * Class Name : ExcelFileProcessorService
  * Project Name : server
  */
+
+
 @Log4j2
 public class ExcelFileProcessorService implements IUploadFileProcessorService {
 
+    @Resource
+    CandidateEmailHistoryRepository candidateEmailHistoryRepository;
+
+    @Resource
+    CandidateMobileHistoryRepository candidateMobileHistoryRepository;
+
     @Override
-    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile,String repoLocation) {
+    public List<Candidate> process(String fileName, UploadResponseBean responseBean, boolean ignoreMobile,String repoLocation, User loggedInUser, String fileType) {
         log.info("Processing " + fileName);
         List<Candidate> candidateList = new ArrayList<>();
         try {
@@ -60,16 +70,15 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
                             breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.Email.getValue(), row.getCell(2).getStringCellValue());
                             breadCrumb.put(IConstant.LITMUSBLOX_FILE_COLUMNS.Mobile.getValue(), row.getCell(3).getStringCellValue());
                             breadCrumb.put("File Type", IConstant.PROCESS_FILE_TYPE.ExcelFile.toString());
-                            throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY, breadCrumb);
+                            throw new WebException(IConstant.UPLOAD_FORMATS_SUPPORTED.LitmusBlox.toString() + IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY, breadCrumb);
                         }
                     } catch (Exception e) {
-                        throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY);
+                        throw new WebException(IConstant.UPLOAD_FORMATS_SUPPORTED.LitmusBlox.toString() + IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY);
                     }
                     firstRow = false;
                     continue;
                 }
                 if (row.getPhysicalNumberOfCells() > 0) {
-                    int index = 0;
                     Candidate candidate = new Candidate();
                     candidate.setCandidateSource(IConstant.CandidateSource.File.getValue());
                     boolean discardRow = true;
@@ -77,20 +86,26 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
                         String cellValue = dataFormatter.formatCellValue(cell);
                         if (Util.isNotNull(cellValue) && discardRow)
                             discardRow = false;
-                        switch (index) {
+                        switch (cell.getAddress().getColumn()) {
                             case 0:
+                                if(Util.isNotNull(Util.toSentenceCase(cellValue.trim())))
                                 candidate.setFirstName(Util.toSentenceCase(cellValue.trim()));
                                 break;
                             case 1:
-                                candidate.setLastName(Util.toSentenceCase(cellValue.trim()));
+                                if(Util.isNotNull(Util.toSentenceCase(cellValue.trim())))
+                                    candidate.setLastName(Util.toSentenceCase(cellValue.trim()));
                                 break;
                             case 2:
                                 candidate.setEmail(cellValue.trim());
                                 break;
                             case 3:
-                                candidate.setMobile(cellValue.trim());
+                                String mobile = row.getCell(3).toString().trim();
+                                if(mobile.matches(IConstant.REGEX_TO_FIND_SCIENTIFIC_NOTATION_MOBILE)){
+                                    BigDecimal bd = new BigDecimal(mobile);
+                                    mobile = Long.toString(bd.longValue()).trim();
+                                }
+                                candidate.setMobile(mobile);
                         }
-                        index++;
                     }
                     if (!discardRow)
                         candidateList.add(candidate);
@@ -102,7 +117,7 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
             throw we;
         }catch(IOException ioe) {
             log.error("Error while parsing file " + fileName + " :: " + ioe.getMessage());
-            throw new WebException(IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new WebException(IConstant.UPLOAD_FORMATS_SUPPORTED.LitmusBlox.toString() + IErrorMessages.MISSING_COLUMN_NAMES_FIRST_ROW, HttpStatus.UNPROCESSABLE_ENTITY);
             //responseBean.setStatus(IConstant.UPLOAD_STATUS.Failure.name());
         } /*catch (InvalidFormatException e) {
             logger.error("Error while parsing file " + fileName + " :: " + e.getMessage());
@@ -114,3 +129,6 @@ public class ExcelFileProcessorService implements IUploadFileProcessorService {
         return candidateList;
     }
 }
+
+
+

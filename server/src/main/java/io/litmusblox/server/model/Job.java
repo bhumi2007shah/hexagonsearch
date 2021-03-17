@@ -5,12 +5,23 @@
 package io.litmusblox.server.model;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.vladmihalcea.hibernate.type.array.IntArrayType;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
+import io.litmusblox.server.service.MasterDataBean;
+import io.litmusblox.server.service.SearchEngineQuestionsResponseBean;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
+import org.hibernate.annotations.TypeDefs;
 import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
@@ -29,10 +40,14 @@ import java.util.*;
  * Project Name : server
  */
 @Data
+@Builder
 @Entity
 @Table(name = "JOB")
 @JsonFilter("Job")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
+@NoArgsConstructor
+@AllArgsConstructor
+@TypeDefs({@TypeDef(name = "int-array",typeClass = IntArrayType.class), @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)})
 public class Job implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
@@ -61,13 +76,8 @@ public class Job implements Serializable {
     private String jobDescription;
 
     @NotNull
-    @Column(name = "ML_DATA_AVAILABLE")
-    private Boolean mlDataAvailable;
-
-    @NotNull
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "COMPANY_ID")
-    @JsonIgnore
     private Company companyId;
 
     @Column(name = "DATE_PUBLISHED")
@@ -85,16 +95,21 @@ public class Job implements Serializable {
     @Column(name = "SCORING_ENGINE_JOB_AVAILABLE")
     private Boolean scoringEngineJobAvailable  = false;
 
+    @Column(name = "HR_QUESTION_AVAILABLE")
+    private Boolean hrQuestionAvailable = false;
+
+    @Column(name = "RESUBMIT_HR_CHATBOT")
+    private Boolean resubmitHrChatbot = false;
+
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "BU_ID")
     private CompanyBu buId;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "FUNCTION")
-    private MasterData function;
-
     @Column(name = "CURRENCY")
     private String currency = "INR";
+
+    @Column(name = "CURRENCY_UNIT")
+    private String currencyUnit;
 
     @Column(name = "MIN_SALARY")
     private Long minSalary;
@@ -102,9 +117,9 @@ public class Job implements Serializable {
     @Column(name = "MAX_SALARY")
     private Long maxSalary;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "EDUCATION")
-    private MasterData education;
+    @Type(type = "int-array")
+    @Column(name = "EDUCATION", columnDefinition = "integer[]")
+    private int[] education;
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "JOB_LOCATION")
@@ -118,13 +133,15 @@ public class Job implements Serializable {
     @JoinColumn(name = "EXPERTISE")
     private MasterData expertise;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="HIRING_MANAGER")
-    private User hiringManager;
+    //@NotNull(message = "Hiring Manager " + IErrorMessages.NULL_MESSAGE)
+    @Type(type="int-array")
+    @Column(name = "HIRING_MANAGER", columnDefinition = "Integer[]")
+    @JsonInclude
+    private Integer[] hiringManager;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="RECRUITER")
-    private User recruiter;
+    @Type(type = "int-array")
+    @Column(name = "RECRUITER", columnDefinition = "integer[]")
+    private Integer[] recruiter;
 
     @NotNull
     @Column(name = "CREATED_ON")
@@ -148,9 +165,24 @@ public class Job implements Serializable {
     @JoinColumn(name = "NOTICE_PERIOD")
     private MasterData noticePeriod;
 
+    @NotNull(message = "Min experience " + IErrorMessages.NULL_MESSAGE)
+    @Column(name = "MIN_EXPERIENCE")
+    private Long minExperience;
+
+    @NotNull(message = "Max experience " + IErrorMessages.NULL_MESSAGE)
+    @Column(name = "MAX_EXPERIENCE")
+    private Long maxExperience;
+
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "EXPERIENCE_RANGE")
-    private MasterData experienceRange;
+    @JoinColumn(name = "JOB_TYPE")
+    private MasterData jobType = MasterDataBean.getInstance().getDefaultJobType();
+
+    @Column(name = "JOB_REFERENCE_ID")
+    @org.hibernate.annotations.Type(type = "pg-uuid")
+    private UUID jobReferenceId;
+
+    @Column(name = "CUSTOMIZED_CHATBOT")
+    private boolean customizedChatbot;
 
     @OneToMany(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY,mappedBy = "jobId")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -158,19 +190,71 @@ public class Job implements Serializable {
 
     @OneToMany(cascade = {CascadeType.MERGE},fetch= FetchType.LAZY, mappedBy = "jobId")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @OrderBy("id ASC")
     private List<JobScreeningQuestions> jobScreeningQuestionsList=new ArrayList<>();
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "jobId")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private List<JobKeySkills> jobKeySkillsList=new ArrayList<>();
+    private List<JobSkillsAttributes> jobSkillsAttributesList =new ArrayList<>();
 
     @OneToMany(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobId")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private List<JobCapabilities> jobCapabilityList=new ArrayList<>();
 
+    @OneToMany(cascade = {CascadeType.MERGE},fetch = FetchType.LAZY, mappedBy = "jobId")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private List<JobRole> jobRoleList=new ArrayList<>();
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "JOB_INDUSTRY")
+    private IndustryMasterData jobIndustry;
+
+    @Type(type = "int-array")
+    @Column(name = "FUNCTION", columnDefinition = "integer[]")
+    private Integer[] function;
+
+    @Column(name = "AUTO_INVITE")
+    private boolean autoInvite;
+
+    @Column(name = "VISIBLE_TO_CAREER_PAGE")
+    private boolean visibleToCareerPage;
+
+    @Column(name = "ARCHIVE_STATUS")
+    private String archiveStatus;
+
+    @Column(name = "ARCHIVE_REASON")
+    private String archiveReason;
+
+    @Type(type="jsonb")
+    @Column(name = "EXPECTED_ANSWER", columnDefinition = "jsonb")
+    private JsonNode expectedAnswer;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "STATEMENT_BLOCK")
+    private StatementsBlockMasterData statementBlock;
+
+    @Column(name = "QUICK_QUESTION")
+    private boolean quickQuestion;
+
+    @Column(name = "DEEP_QUESTION_SELECTED_BY")
+    private Long deepQuestionSelectedBy;
+
+    @Column(name = "DEEP_QUESTION_SELECTED_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date deepQuestionSelectedOn;
+
+    @Column(name = "SKIP_TECH_QUESTIONS")
+    private boolean skipTechQuestions;
+
+    @Column(name = "TEMPLATE")
+    private boolean template;
+
+    @Column(name = "TEMPLATE_NAME")
+    private String templateName;
+
     @Transient
     @JsonInclude
-    private List<String> userEnteredKeySkill=new ArrayList<>();
+    private Set<String> jobSkills =new HashSet<>();
 
     @Transient
     private List<User> usersForCompany=new ArrayList<>();
@@ -179,20 +263,64 @@ public class Job implements Serializable {
     private String companyName;
 
     @Transient
-    private String mlErrorMessage;
+    private String searchEngineErrorMessage;
 
     @Transient
-    private Map<Long,Integer> candidateCountByStage = new HashMap<>();
+    private Map<String,Integer> candidateCountByStage = new HashMap<>();
 
     @Transient
-    private List<String> roles;
+    private Map<Long,String> roles = new HashMap<>();
 
     @Transient
-    private String selectedRole;
+    @JsonProperty
+    private List<Integer> selectedRole = new ArrayList<>();
 
     @Transient
     private String companyDescription;
 
+    @Transient
+    private List<List<Long>> hiringTeamStepMapping = new ArrayList<>();
+
+    @Transient
+    private String jobShortCode;
+
+    @Transient
+    @JsonProperty
+    private List<String> selectedKeySkills;
+
+    @Transient
+    @JsonProperty
+    private List<Integer> selectedAttribute;
+
+    @Transient
+    private String experienceRange;
+
+    @Transient
+    private Boolean hasCompletedCandidate;
+
+    @Transient
+    private List<User> recruiterList;
+
+    @Transient
+    @JsonInclude
+    private List<User> hiringManagerList = new ArrayList<>();
+
+    @Transient
+    @JsonProperty
+    private Map<String, List<SearchEngineQuestionsResponseBean>> searchEngineSkillQuestionMap;
+
+    @Transient
+    @JsonProperty
+    private Map<String, List<String>> neighbourSkillsMap;
+
     //Remove minExperience, maxExperience, experienceRange because add masterdata for experience
     //Also add jobdetail model in job
+
+    public String getJobShortCode() {
+        return IConstant.LB_SHORT_CODE+String.format("%0"+(IConstant.LB_SHORT_CODE_LENGTH-String.valueOf(this.getId()).length())+"d%s", 0, this.getId());
+    }
+
+    public String getExperienceRange() {
+        return (this.getMinExperience()+" - "+this.getMaxExperience()+" Years");
+    }
 }

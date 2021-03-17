@@ -3,9 +3,12 @@
  */
 package io.litmusblox.server.model;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -30,6 +33,9 @@ import java.util.Set;
 @Table(name = "COMPANY")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@JsonFilter("Company")
 public class Company implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
@@ -78,6 +84,16 @@ public class Company implements Serializable {
     private String subscription = IConstant.CompanySubscription.Lite.name();
 
     @NotNull
+    @Column(name="COMPANY_TYPE")
+    private String companyType = "Individual";
+
+    @Column(name = "SHORT_NAME")
+    private String shortName;
+
+    @Column(name="RECRUITMENT_AGENCY_ID")
+    private Long recruitmentAgencyId;
+
+    @NotNull
     @Column(name = "CREATED_ON")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdOn = new Date();
@@ -99,6 +115,27 @@ public class Company implements Serializable {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "companyId")
     private List<CompanyBu> companyBuList;
 
+    @Column(name = "SUBDOMAIN_CREATED")
+    private boolean subdomainCreated = false;
+
+    @Column(name = "SUBDOMAIN_CREATED_ON")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date subdomainCreatedOn;
+
+    @NotNull
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name="COUNTRY_ID")
+    private Country countryId;
+
+    @Column(name = "COMPANY_UNIQUE_ID")
+    private String companyUniqueId;
+
+    @Column(name = "send_communication")
+    private boolean sendCommunication = true;
+
+    @Column(name = "EKEY")
+    private byte[] eKey;
+
     @Transient
     private Set<String> newCompanyBu;
 
@@ -114,9 +151,23 @@ public class Company implements Serializable {
     @Transient
     private List<CompanyAddress> updatedCompanyAddress;
 
+    @Transient
+    private boolean ftpAvailable;
+
     public Company(@NotNull String companyName, @NotNull Boolean active, @NotNull Date createdOn, @NotNull Long createdBy) {
         this.companyName = companyName;
         this.active = active;
+        this.createdOn = createdOn;
+        this.createdBy = createdBy;
+    }
+
+    public Company(@NotNull(message = "COMPANY_NAME " + IErrorMessages.NULL_MESSAGE) @NotBlank(message = "COMPANY_NAME " + IErrorMessages.BLANK_MESSAGE) @Pattern(message = "COMPANY_NAME " + IErrorMessages.COMPANY_NAME_NOT_VALID, regexp = IConstant.REGEX_FOR_COMPANY_NAME) String companyName, @NotNull Boolean active, @NotNull String companyType, Long recruitmentAgencyId, String shortName, @NotNull Country countryId, @NotNull Date createdOn, @NotNull Long createdBy) {
+        this.companyName = companyName;
+        this.active = active;
+        this.companyType = companyType;
+        this.recruitmentAgencyId = recruitmentAgencyId;
+        this.shortName = shortName;
+        this.countryId = countryId;
         this.createdOn = createdOn;
         this.createdBy = createdBy;
     }

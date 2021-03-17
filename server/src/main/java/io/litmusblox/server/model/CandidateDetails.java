@@ -7,7 +7,10 @@ package io.litmusblox.server.model;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -21,6 +24,9 @@ import java.util.Date;
  * Project Name : server
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "CANDIDATE_DETAILS")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -92,28 +98,28 @@ public class CandidateDetails implements Serializable {
     @Column(name = "OTHER_CERTIFICATES")
     private String otherCertificates;
 
-    @Column(name = "CV_FILE_TYPE")
-    private String cvFileType;
-
     @Column(name = "LAST_ACTIVE")
     private Date lastActive;
 
     @Column(name = "CANDIDATE_TYPE")
     private String candidateType;
 
-    @Transient
-    @JsonProperty
-    private String cvLocation;
+    @Column(name = "RELEVANT_EXPERIENCE")
+    private Double relevantExperience;
 
     @JsonProperty
     @Transient
     private String textCv;
 
-    public CandidateDetails(Candidate candidateId, Double totalExperience) {
-        this.candidateId = candidateId;
-        this.totalExperience = totalExperience;
-    }
+    @JsonProperty
+    @Transient
+    private String cvFileType;
 
-    public CandidateDetails() {
+    public CandidateDetails(Date dateOfBirth, String location, Double totalExperience, Double relevantExperience, Candidate candidateId) {
+        this.dateOfBirth = dateOfBirth;
+        this.location = location;
+        this.totalExperience = totalExperience;
+        this.relevantExperience = relevantExperience;
+        this.candidateId = candidateId;
     }
 }

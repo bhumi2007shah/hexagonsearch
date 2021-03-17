@@ -4,23 +4,35 @@
 
 package io.litmusblox.server.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.constant.IErrorMessages;
 import io.litmusblox.server.error.ValidationException;
 import io.litmusblox.server.model.*;
 import io.litmusblox.server.repository.*;
+import io.litmusblox.server.service.CandidateRequestBean;
 import io.litmusblox.server.service.ICandidateService;
+import io.litmusblox.server.service.ISearchEngineService;
+import io.litmusblox.server.service.MasterDataBean;
+import io.litmusblox.server.utils.LoggedInUserInfoUtil;
+import io.litmusblox.server.utils.RestClient;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Service class for Candidate related operations
@@ -57,6 +69,9 @@ public class CandidateService implements ICandidateService {
     CandidateOnlineProfilesRepository candidateOnlineProfilesRepository;
 
     @Resource
+    JobCandidateMappingRepository jobCandidateMappingRepository;
+
+    @Resource
     CandidateLanguageProficiencyRepository candidateLanguageProficiencyRepository;
 
     @Resource
@@ -68,6 +83,25 @@ public class CandidateService implements ICandidateService {
     @Resource
     CandidateCompanyDetailsRepository candidateCompanyDetailsRepository;
 
+    @Resource
+    SkillMasterRepository skillMasterRepository;
+
+    @Resource
+    UnverifiedSkillsRepository unverifiedSkillsRepository;
+
+    @Autowired
+    ISearchEngineService searchEngineService;
+
+    @Value("${searchEngineBaseUrl}")
+    String searchEngineBaseUrl;
+
+    @Value("${searchEngineAddCandidateSuffix}")
+    String searchEngineAddCandidateSuffix;
+
+
+    @Value("${searchEngineAddCandidateBulkSuffix}")
+    String searchEngineAddCandidateBulkSuffix;
+
     /**
      * Method to find a candidate using email or mobile number + country code
      *
@@ -78,66 +112,94 @@ public class CandidateService implements ICandidateService {
      * @throws Exception
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public Candidate findByMobileOrEmail(String email, String mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
+    public Candidate findByMobileOrEmail(Set<String> email, Set<String> mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
         log.info("Inside findByMobileOrEmail method");
         //check if candidate exists for email
-        Candidate dupCandidateByEmail = null;
-        CandidateEmailHistory candidateEmailHistory = candidateEmailHistoryRepository.findByEmail(email);
-        if (null != candidateEmailHistory)
-            dupCandidateByEmail = candidateEmailHistory.getCandidate();
+
+        List<CandidateEmailHistory> candidateEmailHistory = candidateEmailHistoryRepository.findByEmailIn(email);
+
+        if(alternateMobile.isPresent() && !mobile.contains(alternateMobile.get()))
+            mobile.add(alternateMobile.get());
 
         //check if candidate exists for mobile
-        Candidate dupCandidateByMobile = null;
-        Candidate dupCandidateByAlternateMobile = null;
-        boolean isAlternateMobilePresentInDb = false;
-        if (Util.isNotNull(mobile)) {
-            CandidateMobileHistory candidateMobileHistory = candidateMobileHistoryRepository.findByMobileAndCountryCode(mobile, countryCode);
-            if (null != candidateMobileHistory)
-                dupCandidateByMobile = candidateMobileHistory.getCandidate();
-        }
-        if (alternateMobile.isPresent()) {
-            CandidateMobileHistory candidateMobileHistory = candidateMobileHistoryRepository.findByMobileAndCountryCode(alternateMobile.get(), countryCode);
-            if (null != candidateMobileHistory) {
-                if (dupCandidateByMobile == null)
-                    dupCandidateByAlternateMobile = candidateMobileHistory.getCandidate();
-                isAlternateMobilePresentInDb = true;
+        List<CandidateMobileHistory> candidateMobileHistory = new ArrayList<>();
+        if  (null != mobile && !mobile.isEmpty())
+            candidateMobileHistory = candidateMobileHistoryRepository.findByCountryCodeAndMobileIn(countryCode, mobile);
+
+        log.info("Candidate Email History Size: {}", candidateEmailHistory.size());
+        log.info("Candidate Mobile History Size: {}", candidateMobileHistory.size());
+
+        if(candidateEmailHistory.size()==0 && candidateMobileHistory.size()==0)
+            return null;
+
+        Long dupCandidateId;
+        if(candidateEmailHistory.size() > 0)
+            dupCandidateId = candidateEmailHistory.get(0).getCandidate().getId();
+        else
+            dupCandidateId = candidateMobileHistory.get(0).getCandidate().getId();
+        log.info("First Id based to check for duplicate: {}", dupCandidateId);
+        candidateEmailHistory.forEach( (candidate) -> {
+            log.info("Candidate ID Check for Duplicate Email: {}", candidate.getCandidate().getId());
+            if (!dupCandidateId.equals(candidate.getCandidate().getId()))
+                throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY, HttpStatus.BAD_REQUEST);
+        });
+        candidateMobileHistory.forEach( (candidate) -> {
+            log.info("Candidate ID Check for Duplicate Mobile: {}", candidate.getCandidate().getId());
+            if (!dupCandidateId.equals(candidate.getCandidate().getId()))
+                throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY, HttpStatus.BAD_REQUEST);
+        });
+
+        Candidate candidate;
+        if(candidateEmailHistory.size() > 0)
+            candidate = candidateEmailHistory.get(0).getCandidate();
+        else
+            candidate = candidateMobileHistory.get(0).getCandidate();
+        email.forEach( (emailToAdd) -> {
+            if(!isEmailExist(emailToAdd, candidate) && candidateEmailHistoryRepository.findByEmail(emailToAdd) == null) {
+                log.info("Inside findMobileAndEmail - saving email {} to existing candidate id {}", emailToAdd, candidate.getId());
+                candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, emailToAdd, new Date(), loggedInUser));
+            }
+        });
+        mobile.forEach( (mobileToAdd) -> {
+            if(candidateMobileHistoryRepository.findByMobileAndCountryCode(mobileToAdd, countryCode) == null) {
+                log.info("Inside findMobileAndEmail - saving email {} to existing candidate id {}", mobileToAdd, candidate.getId());
+                candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobileToAdd, countryCode, new Date(), loggedInUser));
+            }
+        });
+
+        return candidate;
+
+    }
+
+    private boolean isEmailExist(String email, Candidate candidate){
+        log.info("Inside isEmailExist");
+        List<CandidateEmailHistory> candidateEmailHistoryFormDb;
+        if(email.contains("@notavailable.io")){
+            candidateEmailHistoryFormDb = candidateEmailHistoryRepository.findByCandidateIdOrderByIdDesc(candidate.getId());
+            if(candidateEmailHistoryFormDb.size()>0){
+                candidate.setEmail(candidateEmailHistoryFormDb.get(0).getEmail());
+                return true;
             }
         }
+        return false;
+    }
 
-        if (null != dupCandidateByEmail) {
-            //found different candidate ids for the email and mobile number combination
-            if (null != dupCandidateByMobile && !dupCandidateByEmail.getId().equals(dupCandidateByMobile.getId()))
-                throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY + mobile + " " + email, HttpStatus.BAD_REQUEST);
-            else if(null != dupCandidateByAlternateMobile && !dupCandidateByEmail.getId().equals(dupCandidateByAlternateMobile.getId()))
-                throw new ValidationException(IErrorMessages.CANDIDATE_ID_MISMATCH_FROM_HISTORY + (alternateMobile.isPresent()?alternateMobile.get():null) + " " + email, HttpStatus.BAD_REQUEST);
-
-        }
-
-        if (null == dupCandidateByEmail) {
-            if (null != dupCandidateByMobile) {
-                //Candidate by mobile exists, add email history
-                candidateEmailHistoryRepository.save(new CandidateEmailHistory(dupCandidateByMobile, email, new Date(), loggedInUser));
-                return dupCandidateByMobile;
-            } else if (null != dupCandidateByAlternateMobile) {
-                //Candidate by Alternate mobile exists, add email history
-                candidateEmailHistoryRepository.save(new CandidateEmailHistory(dupCandidateByAlternateMobile, email, new Date(), loggedInUser));
-                return dupCandidateByAlternateMobile;
+    public Candidate findByProfileTypeAndUniqueId(List<CandidateOnlineProfile> candidateOnlineProfiles) throws Exception{
+        //extract uniqueId for linkedIn and searching for candidate with this profile in DB.
+        Candidate candidateFromDB = null;
+        Optional<CandidateOnlineProfile> profileToSearch = candidateOnlineProfiles.stream()
+                .filter(candidateOnlineProfile -> candidateOnlineProfile.getProfileType().equalsIgnoreCase(IConstant.CandidateSource.LinkedIn.toString().toLowerCase()))
+                .findAny();
+        if(profileToSearch.isPresent()){
+            Pattern pattern = Pattern.compile(IConstant.REGEX_TO_FIND_ONLINE_PROFILE_UNIQUE_ID);
+            Matcher matcher = pattern.matcher(profileToSearch.get().getUrl());
+            if(matcher.find()) {
+                candidateFromDB = candidateRepository.findCandidateByProfileTypeAndUniqueId(
+                        IConstant.CandidateSource.LinkedIn.toString().toLowerCase(), matcher.group().contains("/")?matcher.group().substring(0, matcher.group().length()):matcher.group()
+                );
             }
-
         }
-        if (null != dupCandidateByEmail) {
-
-            if (null == dupCandidateByMobile && Util.isNotNull(mobile)) {
-                //Candidate by email exists, add mobile history
-                candidateMobileHistoryRepository.save(new CandidateMobileHistory(dupCandidateByEmail, mobile, countryCode, new Date(), loggedInUser));
-            }
-            if (!isAlternateMobilePresentInDb && alternateMobile.isPresent()) {
-                //Candidate by email exists, add alternate mobile history
-                candidateMobileHistoryRepository.save(new CandidateMobileHistory(dupCandidateByEmail, alternateMobile.get(), countryCode, new Date(), loggedInUser));
-            }
-            return dupCandidateByEmail;
-        }
-        return dupCandidateByEmail;
+        return candidateFromDB;
     }
 
     /**
@@ -152,14 +214,26 @@ public class CandidateService implements ICandidateService {
      * @return
      */
     @Override
-    public Candidate createCandidate(String firstName, String lastName, String email, String mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
+    public Candidate createCandidate(String firstName, String lastName, Set<String> email, Set<String> mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception {
 
         log.info("Inside createCandidate method - create candidate, emailHistory, mobileHistory");
-        Candidate candidate = candidateRepository.save(new Candidate(firstName, lastName, email, mobile, countryCode, new Date(), loggedInUser));
-        candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, email, new Date(), loggedInUser));
-        candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobile, countryCode, new Date(), loggedInUser));
-        if(alternateMobile.isPresent())
-            candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, alternateMobile.get(), countryCode, new Date(), loggedInUser));
+
+        if(mobile.size()>0 && alternateMobile.isPresent() && !mobile.contains(alternateMobile.get()))
+            mobile.add(alternateMobile.get());
+
+        Candidate candidate;
+        if(mobile.size()>0)
+            candidate = candidateRepository.save(new Candidate(firstName, lastName, email.stream().findFirst().get(), mobile.stream().findFirst().get(), countryCode, new Date(), loggedInUser));
+        else
+            candidate = candidateRepository.save(new Candidate(firstName, lastName, email.stream().findFirst().get(), null, countryCode, new Date(), loggedInUser));
+
+        email.forEach((emailToAdd) -> {
+            candidateEmailHistoryRepository.save(new CandidateEmailHistory(candidate, emailToAdd, new Date(), loggedInUser));
+        });
+
+        mobile.forEach((mobileToAdd) -> {
+            candidateMobileHistoryRepository.save(new CandidateMobileHistory(candidate, mobileToAdd, countryCode, new Date(), loggedInUser));
+        });
         return candidate;
     }
 
@@ -182,8 +256,8 @@ public class CandidateService implements ICandidateService {
         if(!Util.isNull(candidateDetails.getGender()) && candidateDetails.getGender().length() > IConstant.MAX_FIELD_LENGTHS.GENDER.getValue()) {
             candidateDetails.setGender(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.GENDER.name(), IConstant.MAX_FIELD_LENGTHS.GENDER.getValue(), candidateDetails.getGender()).toUpperCase());
         }
-        if(!Util.isNull(candidateDetails.getGender()) && candidateDetails.getGender().length() > IConstant.MAX_FIELD_LENGTHS.ROLE.getValue()) {
-            candidateDetails.setRole(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.ROLE.name(), IConstant.MAX_FIELD_LENGTHS.ROLE.getValue(), candidateDetails.getGender()).toUpperCase());
+        if(!Util.isNull(candidateDetails.getRole()) && candidateDetails.getRole().length() > IConstant.MAX_FIELD_LENGTHS.ROLE.getValue()) {
+            candidateDetails.setRole(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.ROLE.name(), IConstant.MAX_FIELD_LENGTHS.ROLE.getValue(), candidateDetails.getRole()).toUpperCase());
         }
 
         candidateDetails.setCandidateId(candidate);
@@ -200,12 +274,17 @@ public class CandidateService implements ICandidateService {
         candidateEducationDetailsRepository.deleteByCandidateId(candidate.getId());
         //insert new ones
         candidateEducationDetails.forEach(obj -> {
+
             //check if institute name is more than 75 characters
             if (!Util.isNull(obj.getInstituteName()) && obj.getInstituteName().length() > IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue()){
                 obj.setInstituteName(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.name(), IConstant.MAX_FIELD_LENGTHS.INSTITUTE_NAME.getValue(), obj.getInstituteName()));
             }
             if (!Util.isNull(obj.getDegree()) && obj.getDegree().length() > IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue()){
                 obj.setDegree(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.DEGREE.name(), IConstant.MAX_FIELD_LENGTHS.DEGREE.getValue(), obj.getDegree()));
+            }
+
+            if (!Util.isNull(obj.getSpecialization()) && obj.getSpecialization().length() > IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.getValue()){
+                obj.setSpecialization(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.name(), IConstant.MAX_FIELD_LENGTHS.SPECIALIZATION.getValue(), obj.getSpecialization()));
             }
 
             try{
@@ -219,8 +298,8 @@ public class CandidateService implements ICandidateService {
                 obj.setYearOfPassing(Util.truncateField(candidate, IConstant.YEAR_OF_PASSING,IConstant.MAX_FIELD_LENGTHS.YEAR_OF_PASSING.getValue(), obj.getYearOfPassing()));
             }
 
-            obj.setCandidateId(candidate.getId());
-            candidateEducationDetailsRepository.save(obj);});
+            CandidateEducationDetails newCandidateEducationDetails = new CandidateEducationDetails(candidate.getId(), obj.getDegree(), obj.getYearOfPassing(), obj.getInstituteName(), obj.getSpecialization());
+            candidateEducationDetailsRepository.save(newCandidateEducationDetails);});
     }
 
     @Transactional
@@ -237,7 +316,9 @@ public class CandidateService implements ICandidateService {
             if(!Util.isNull(obj.getCompanyName()) && obj.getCompanyName().length() > IConstant.MAX_FIELD_LENGTHS.ROLE.getValue()) {
                 obj.setRole(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.ROLE.name(), IConstant.MAX_FIELD_LENGTHS.ROLE.getValue(), obj.getCompanyName()));
             }
-            obj.setCandidateId(candidate.getId());candidateProjectDetailsRepository.save(obj);});
+            obj.setCandidateId(candidate.getId());
+            CandidateProjectDetails newCandidateProjectDetails = new CandidateProjectDetails(obj);
+            candidateProjectDetailsRepository.save(newCandidateProjectDetails);});
     }
 
     @Transactional
@@ -255,7 +336,9 @@ public class CandidateService implements ICandidateService {
             if(!Util.isNull(obj.getUrl()) && obj.getUrl().length() > IConstant.MAX_FIELD_LENGTHS.ONLINE_PROFILE_URL.getValue()) {
                 obj.setUrl(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.ONLINE_PROFILE_URL.name(), IConstant.MAX_FIELD_LENGTHS.ONLINE_PROFILE_URL.getValue(), obj.getUrl()));
             }
-            obj.setCandidateId(candidate.getId());candidateOnlineProfilesRepository.save(obj);});
+            obj.setCandidateId(candidate.getId());
+            CandidateOnlineProfile newCandidateOnlineProfile = new CandidateOnlineProfile(obj.getCandidateId(), obj.getProfileType(), obj.getUrl());
+            candidateOnlineProfilesRepository.save(newCandidateOnlineProfile);});
     }
 
     @Transactional
@@ -265,7 +348,10 @@ public class CandidateService implements ICandidateService {
         //delete existing records
         candidateLanguageProficiencyRepository.deleteByCandidateId(candidateId);
         //insert new ones
-        candidateLanguageProficiencies.forEach(obj -> {obj.setCandidateId(candidateId);candidateLanguageProficiencyRepository.save(obj);});
+        candidateLanguageProficiencies.forEach(obj -> {
+            obj.setCandidateId(candidateId);
+            CandidateLanguageProficiency newCandidateLanguageProficiency = new CandidateLanguageProficiency(obj.getCandidateId(), obj.getLanguage(), obj.getProficiency());
+            candidateLanguageProficiencyRepository.save(newCandidateLanguageProficiency);});
     }
 
     @Transactional
@@ -277,18 +363,52 @@ public class CandidateService implements ICandidateService {
         candidateWorkAuthorizations.forEach(obj -> {obj.setCandidateId(candidateId);candidateWorkAuthorizationRepository.save(obj);});
     }
 
+    @Override
     @Transactional
     public void saveUpdateCandidateSkillDetails(List<CandidateSkillDetails> candidateSkillDetails, Candidate candidate) throws Exception {
         log.info("Inside saveUpdateCandidateSkillDetails method");
         //delete existing records
         candidateSkillDetailsRepository.deleteByCandidateId(candidate.getId());
+        List<CandidateSkillDetails> skillList = new ArrayList<CandidateSkillDetails>(candidateSkillDetails.stream().collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(CandidateSkillDetails::getSkill)))));
         //insert new ones
-        candidateSkillDetails.forEach(obj -> {
-            if(!Util.isNull(obj.getSkill()) && obj.getSkill().length() > IConstant.MAX_FIELD_LENGTHS.SKILL.getValue()) {
-                obj.setSkill(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL.name(), IConstant.MAX_FIELD_LENGTHS.SKILL.getValue(), obj.getSkill()));
-            }
-            obj.setCandidateId(candidate.getId());candidateSkillDetailsRepository.save(obj);});
+        skillList.forEach(obj -> {
 
+            SkillsMaster skillsMaster = skillMasterRepository.findBySkillNameIgnoreCase(obj.getSkill());
+            if (null != skillsMaster)
+                addCandidateSkill(obj, candidate);
+            else {
+                Set<String> skillMasterSet = MasterDataBean.getInstance().getVerifiedSkills();
+                if (skillMasterSet.contains(obj.getSkill())) {
+                    addCandidateSkill(obj, candidate);
+                    skillsMaster = new SkillsMaster(obj.getSkill());
+                    skillMasterRepository.save(skillsMaster);
+                } else {
+                    UnverifiedSkills unverifiedSkills = unverifiedSkillsRepository.findBySkillIgnoreCase(obj.getSkill());
+                    if (null != unverifiedSkills) {
+                        Long[] candidateIds = unverifiedSkills.getCandiateIds();
+                        ArrayList<Long> candidateIDList = new ArrayList<>();
+                        candidateIDList.addAll(Arrays.asList(candidateIds));
+                        candidateIDList.add(obj.getCandidateId());
+                        unverifiedSkills.setCandiateIds(candidateIDList.toArray(candidateIds));
+                    } else
+                        unverifiedSkills = new UnverifiedSkills(obj.getSkill(), new Long[]{obj.getCandidateId()});
+                    unverifiedSkillsRepository.save(unverifiedSkills);
+                }
+            }
+        });
+    }
+
+    private void addCandidateSkill(CandidateSkillDetails obj, Candidate candidate)
+    {
+        if(!Util.isNull(obj.getSkill()) && obj.getSkill().length() > IConstant.MAX_FIELD_LENGTHS.SKILL.getValue()) {
+            obj.setSkill(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL.name(), IConstant.MAX_FIELD_LENGTHS.SKILL.getValue(), obj.getSkill()));
+        }
+        if(!Util.isNull(obj.getVersion()) && obj.getVersion().length() > IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.getValue()) {
+            obj.setVersion(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.name(), IConstant.MAX_FIELD_LENGTHS.SKILL_VERSION.getValue(), obj.getVersion()));
+        }
+        obj.setCandidateId(candidate.getId());
+        CandidateSkillDetails newCandidateSkillDetails = new CandidateSkillDetails(obj.getCandidateId(), obj.getSkill(), obj.getLastUsed(), obj.getExpInMonths(), obj.getVersion());
+        candidateSkillDetailsRepository.save(newCandidateSkillDetails);
     }
 
     @Transactional
@@ -309,9 +429,130 @@ public class CandidateService implements ICandidateService {
             if (!Util.isNull(obj.getDesignation()) && obj.getDesignation().length() > IConstant.MAX_FIELD_LENGTHS.DESIGNATION.getValue()) {
                 obj.setDesignation(Util.truncateField(candidate, IConstant.MAX_FIELD_LENGTHS.DESIGNATION.name(), IConstant.MAX_FIELD_LENGTHS.DESIGNATION.getValue(), obj.getDesignation()));
             }
-            candidateCompanyDetailsRepository.save(obj);});
+            CandidateCompanyDetails newCandidateCompanyDetails = new CandidateCompanyDetails(obj);
+            candidateCompanyDetailsRepository.save(newCandidateCompanyDetails);});
     }
 
+    /**
+     * Method to call search engine to add a candidate.
+     * @param candidate
+     */
+    public int createCandidateOnSearchEngine(Candidate candidate , JobCandidateMapping jcm, String authToken) {
+        log.info("inside create candidate on search engine for candidate {}, in job {}, for company {}.", candidate.getId(), jcm.getJob().getId(), jcm.getJob().getCompanyId().getCompanyName());
+        long startTime = System.currentTimeMillis();
+
+        CandidateRequestBean candidateRequestBean = getCandidateRequestBean(candidate, jcm.getJob());
+
+        int statusCode = 500;
+
+        // ObjectMapper object to convert candidateRequestBean to String
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> userDetails = LoggedInUserInfoUtil.getLoggedInUserInformation();
+
+        log.info("Calling SearchEngine API to create candidate {} of job: {}", candidate.getId(), jcm.getJob().getId());
+        try {
+            statusCode = RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(candidateRequestBean), searchEngineBaseUrl + searchEngineAddCandidateSuffix, HttpMethod.POST, authToken, null, null, Optional.of(userDetails)).getStatusCode();
+        }
+        catch ( JsonProcessingException e ){
+            log.error("Failed while converting candidateRequestBean to String. " + e.getMessage());
+        }
+        catch ( Exception e ){
+            log.error("Failed to create candidate on search engine. " + e.getMessage());
+        }
+        String logText="Failed to add";
+        if(statusCode==200){
+            jcm.setCreatedOnSearchEngine(true);
+            jobCandidateMappingRepository.save(jcm);
+            logText="Successfully added";
+        }
+        log.info(logText+" candidate on search engine in {}ms, For candidate {}, job {}, for company {}", System.currentTimeMillis() - startTime,  candidate.getId(), jcm.getJob().getId(), jcm.getJob().getCompanyId().getCompanyName());
+        return statusCode;
+    }
     //Method to truncate the value in the field and send out a sentry message for the same
     //move this truncateField method to Util class because it is use in other place also like CandidateCompanyDetails model
+
+    /**
+     * Method to call search engine to add a candidate.
+     * @param candidates
+     */
+    public void createCandidatesOnSearchEngine(List<Candidate> candidates , Job job, String authToken) {
+        log.info("inside create candidate on search engine.");
+        long startTime = System.currentTimeMillis();
+
+        List<CandidateRequestBean> candidateRequestBeans = new ArrayList<>(0);
+
+        candidates.forEach(candidate -> candidateRequestBeans.add(getCandidateRequestBean(candidate, job)));
+
+
+        // ObjectMapper object to convert candidateRequestBean to String
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> userDetail = LoggedInUserInfoUtil.getLoggedInUserInformation();
+
+        log.info("Calling SearchEngine API to create candidates of job: {}", job.getId());
+        try {
+            List<List<CandidateRequestBean>> requestList= Lists.partition(candidateRequestBeans, 100);
+            for (List<CandidateRequestBean> requestBeans : requestList) {
+                RestClient.getInstance().consumeRestApi(objectMapper.writeValueAsString(requestBeans), searchEngineBaseUrl + searchEngineAddCandidateBulkSuffix, HttpMethod.POST, authToken, null, null, Optional.of(userDetail));
+            }
+        }
+        catch ( JsonProcessingException e ){
+            log.error("Failed while converting candidateRequestBean to String. " + e.getMessage());
+        }
+        catch ( Exception e ){
+            log.error("Failed to create candidate on search engine. " + e.getMessage());
+        }
+
+        log.info("Added candidate on search engine in {}ms", System.currentTimeMillis()-startTime);
+    }
+
+    private CandidateRequestBean getCandidateRequestBean(Candidate candidate, Job job){
+        // creating candidateRequestBean to be sent to Search Engine
+        CandidateRequestBean candidateRequestBean = new CandidateRequestBean();
+        candidateRequestBean.setCandidateId(candidate.getId());
+        candidateRequestBean.setCandidateName(candidate.getFirstName()+" "+candidate.getLastName());
+        candidateRequestBean.setCompanyId(job.getCompanyId().getId());
+        candidateRequestBean.setCompanyName(job.getCompanyId().getCompanyName());
+
+        // Creating and settign list of skill names from CandidateSkillDetails.
+        if(null != candidate.getCandidateSkillDetails() && candidate.getCandidateSkillDetails().size()>0){
+            candidateRequestBean.setSkill(
+                    candidate.getCandidateSkillDetails()
+                            .stream().parallel()
+                            .map(CandidateSkillDetails::getSkill).collect(Collectors.toList())
+            );
+        }
+
+        // Creating and setting singleton list from CandidateDetails as it is a string.
+        if(null != candidate.getCandidateDetails() && null != candidate.getCandidateDetails().getLocation()){
+            candidateRequestBean.setLocation(
+                    Collections.singletonList(candidate.getCandidateDetails().getLocation())
+            );
+        }
+
+        // Creating and setting noticePeriod from CandidateDetails after parsing it to int as data type
+        // is String and search engine need an int value
+        if(null != candidate.getCandidateCompanyDetails() && candidate.getCandidateCompanyDetails().size()>0 &&  (null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriod() || null!= candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb())){
+            if(Util.isNotNull(candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()))
+                candidateRequestBean.setNoticePeriod(Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriod()));
+            else if(!"Others".equals(candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb().getValue()) && null != candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb())
+                candidateRequestBean.setNoticePeriod(Integer.parseInt(candidate.getCandidateCompanyDetails().get(0).getNoticePeriodInDb().getValue().replaceAll("\\D+","")));
+        }
+
+        // extracting value of experience range from job in which candidate is sourced
+        if(null != candidate.getCandidateDetails() && null != candidate.getCandidateDetails().getTotalExperience()){
+            candidateRequestBean.setExperience(candidate.getCandidateDetails().getTotalExperience());
+        }
+
+        // Creating and setting list of qualification i.e: degree from CandidateEducationDetail present
+        // in master data as searchEngine need list of degrees of a candidate
+        if(null != candidate.getCandidateEducationDetails() && candidate.getCandidateEducationDetails().size()>0){
+            candidateRequestBean.setQualification(candidate.getCandidateEducationDetails()
+                    .stream().map(
+                            CandidateEducationDetails::getDegree).collect(Collectors.toList()
+                    )
+            );
+        }
+
+        return candidateRequestBean;
+    }
 }

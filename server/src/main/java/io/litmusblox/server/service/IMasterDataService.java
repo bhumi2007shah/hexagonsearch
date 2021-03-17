@@ -4,6 +4,8 @@
 
 package io.litmusblox.server.service;
 
+import io.litmusblox.server.service.impl.IndustryMasterDataRequestBean;
+
 import java.util.List;
 
 /**
@@ -47,4 +49,19 @@ public interface IMasterDataService {
      * @param masterDataType the type of master data to be persisted
      */
     void addMasterData(String jsonData, String masterDataType) throws Exception;
+
+    /**
+     * Service to get masterData for only specific fields, which is used in noAuth call
+     *
+     * @param fetchItemList (jobType, referrerRelation)
+     * @return MasterDataResponse
+     * @throws Exception
+     */
+    MasterDataResponse fetchForItemsForNoAuth(List<String> fetchItemList) throws Exception;
+
+    /**
+     * Method to add missing Industry Master data to backend database.
+     * API is called by SearchEngine.
+     */
+    void addIndustryMasterData(List<IndustryMasterDataRequestBean> industryMasterDataRequestBeanList);
 }

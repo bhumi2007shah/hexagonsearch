@@ -4,16 +4,10 @@
 
 package io.litmusblox.server.service;
 
-import io.litmusblox.server.model.Country;
-import io.litmusblox.server.model.CreateJobPageSequence;
-import io.litmusblox.server.model.MasterData;
-import io.litmusblox.server.model.ScreeningQuestions;
+import io.litmusblox.server.model.*;
 import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author : Shital Raval
@@ -28,19 +22,43 @@ public class MasterDataResponse {
     private Map<Long,String> questionType  = new HashMap<>();
     private Map<Long,String> experienceRange  = new HashMap<>();
     private Map<Long,String> addressType  = new HashMap<>();
-    private Map<Long,String> stage = new HashMap<>();
+    private List<String> stage = new ArrayList<>();
     private Map<Long,String> process = new HashMap<>();
-    private Map<Long,String> function  = new HashMap<>();
-    private Map<Long, MasterData> expertise  = new HashMap<>();
+    private Map<Long,String> oldFunction  = new HashMap<>();
+    private Map<Long, MasterData> expertise  = new LinkedHashMap<>();
     private Map<Long,String> education  = new HashMap<>();
     private Map<Long,String> industry = new HashMap<>();
     private Map<Long, String> keySkills = new HashMap<>();
     private Map<Long, String> noticePeriod = new HashMap<>();
-    private List<ScreeningQuestions> screeningQuestions = new ArrayList<>();
+    private Map<String, List<ScreeningQuestions>> screeningQuestions = new LinkedHashMap<>();
     private ConfigSettings configSettings;
     private List<String> supportedFileFormats = new ArrayList<>();
     private List<String> supportedCvFileFormats = new ArrayList<>();
-    private long sourceStageId;
     private List<CreateJobPageSequence> addJobPages = new ArrayList<>();
     private List<String> currencyList = new ArrayList<>();
+    private List<String> userRole = new ArrayList<>();
+    private List<String> reasonForChange = new ArrayList<>();
+    private Map<Long, String> defaultExportFormats = new HashMap<>();
+    private Map<String,Integer> callOutCome = new HashMap<>();
+    private Map<Long, String> referrerRelation = new HashMap<>();
+    private Map<Long, String> jobType = new HashMap<>();
+    private Map<String, Long> stageStepMasterMap = new LinkedHashMap<>();
+    private List<String> interviewType = new ArrayList<>();
+    private List<String> interviewMode = new ArrayList<>();
+    private Map<Long, String> cancellationReasons = new HashMap<>();
+    private Map<Long, String> noShowReasons = new HashMap<>();
+    private List<String> interviewConfirmation = new ArrayList<>();
+    private Map<String, Long> jobIndustry = new HashMap<>();
+    private Map<Long, Map<String, Long>> function = new HashMap<>();
+    private Map<Long, Map<String, Long>> role = new HashMap<>();
+    private Map<String , Map<String, String>> salaryRange = new HashMap<>();
+    private Map<String, List> hiringManagerRejectReasonMap = new LinkedHashMap<>();
+    private Map<String,String> archiveStatus = new LinkedHashMap<>();
+    private Map<String,String> archiveReason = new LinkedHashMap<>();
+    private Map<Long, Map<String, Long>> attributeMap = new HashMap<>();
+    private List<StatementsBlockMasterData> statementBlocks = new ArrayList<>();
+    private Map<String, List<RejectionReasonMasterData>> candidateRejectionReasonMap = new LinkedHashMap<>();
+    private Map<Long, String> candidateNotInterestedReason = new HashMap<>();
+    private List location = new ArrayList();
+    private int otpExpiryMinutes;
 }

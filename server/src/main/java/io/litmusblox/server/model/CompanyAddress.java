@@ -23,6 +23,7 @@ import java.util.Date;
 @Entity
 @Table(name = "COMPANY_ADDRESS")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
+//@JsonFilter("CompanyAddress")
 public class CompanyAddress implements Serializable {
 
     private static final long serialVersionUID = 6868521896546285046L;
@@ -46,9 +47,19 @@ public class CompanyAddress implements Serializable {
     @Column(name = "LONGITUDE")
     private Double longitude;
 
+    @Column(name = "CITY")
+    private String city;
+
+    @Column(name = "STATE")
+    private String state;
+
+    @Column(name = "COUNTRY")
+    private String country;
+
+    @Column(name = "AREA")
+    private String area;
+
     @NotNull
-/*    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="COMPANY_ID")*/
     private Long companyId;
 
     @NotNull

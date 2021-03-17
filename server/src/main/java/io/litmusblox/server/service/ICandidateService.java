@@ -8,6 +8,7 @@ import io.litmusblox.server.model.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Service class for operations on candidate
@@ -28,7 +29,15 @@ public interface ICandidateService {
      * @return
      * @throws Exception
      */
-    Candidate findByMobileOrEmail(String email, String mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception;
+    Candidate findByMobileOrEmail(Set<String> email, Set<String> mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception;
+
+    /**
+     * Method to find a candidate using profile type and uniqueId from that profile
+     * @param candidateOnlineProfiles - list of online profiles of candidate
+     * @return Candidate from Db
+     * @throws Exception
+     */
+    Candidate findByProfileTypeAndUniqueId(List<CandidateOnlineProfile> candidateOnlineProfiles) throws Exception;
 
     /**
      * Method to create a new candidate, candidateEmailHistory and candidateMobileHistory
@@ -41,7 +50,7 @@ public interface ICandidateService {
      * @param loggedInUser
      * @return
      */
-    Candidate createCandidate(String firstName, String lastName, String email, String mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception;
+    Candidate createCandidate(String firstName, String lastName, Set<String> email, Set<String> mobile, String countryCode, User loggedInUser, Optional<String> alternateMobile) throws Exception;
 
     /**
      * Method to update candidate details
@@ -66,4 +75,12 @@ public interface ICandidateService {
     void saveUpdateCandidateSkillDetails(List<CandidateSkillDetails> candidateSkillDetails, Candidate candidate) throws Exception;
 
     void saveUpdateCandidateCompanyDetails(List<CandidateCompanyDetails> candidateCompanyDetailsList, Candidate candidate) throws Exception;
+
+    /**
+     * Method  to call search engine to add candidate
+     * @param candidate
+     */
+    int createCandidateOnSearchEngine(Candidate candidate, JobCandidateMapping jcm, String authToken);
+
+    void createCandidatesOnSearchEngine(List<Candidate> candidates, Job job, String authToken);
 }

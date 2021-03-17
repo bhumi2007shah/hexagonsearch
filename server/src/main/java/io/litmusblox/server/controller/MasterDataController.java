@@ -5,6 +5,7 @@
 package io.litmusblox.server.controller;
 
 import io.litmusblox.server.service.IMasterDataService;
+import io.litmusblox.server.service.impl.IndustryMasterDataRequestBean;
 import io.litmusblox.server.utils.Util;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -59,9 +61,11 @@ public class MasterDataController {
     String fetchForItems(@RequestBody List<String> requestItems) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
                 masterDataService.fetchForItems(requestItems),null,
-            (new HashMap<String, List<String>>(){{
+            new HashMap<String, List<String>>(){{
                 put("ScreeningQuestions", new ArrayList<>(0));
-            }}));
+                put("MasterData", new ArrayList<>(0));
+                put("RejectionReasonMasterData", Arrays.asList("stageId"));
+            }});
     }
 
     /**
@@ -78,5 +82,13 @@ public class MasterDataController {
         long startTime = System.currentTimeMillis();
         masterDataService.addMasterData(jsonData, masterDataType);
         log.info("Completed request to add master data type in " + (System.currentTimeMillis() - startTime) + "ms");
+    }
+    @PostMapping(value = "/addIndustryMasterData")
+    @ResponseStatus(value = HttpStatus.OK)
+    void addIndustryMasterData(@RequestBody List<IndustryMasterDataRequestBean> industryMasterDataRequestBeanList){
+        long startTime = System.currentTimeMillis();
+        log.info("inside addIndustryMasterData");
+        masterDataService.addIndustryMasterData(industryMasterDataRequestBeanList);
+        log.info("Industry added in {}ms", System.currentTimeMillis()-startTime);
     }
 }

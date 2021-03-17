@@ -7,13 +7,19 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.litmusblox.server.constant.IConstant;
 import io.litmusblox.server.model.Job;
-import io.litmusblox.server.model.JobCandidateMapping;
+import io.litmusblox.server.model.TechScreeningQuestion;
+import io.litmusblox.server.model.User;
 import io.litmusblox.server.service.IJobService;
 import io.litmusblox.server.service.SingleJobViewResponseBean;
 import io.litmusblox.server.utils.Util;
+import lombok.NonNull;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -30,6 +36,7 @@ import java.util.*;
 @CrossOrigin(allowedHeaders = "*")
 @RestController
 @RequestMapping("/api/job")
+@Log4j2
 public class JobController {
 
     @Autowired
@@ -44,40 +51,79 @@ public class JobController {
         Job job = mapper.readValue(jobStr, Job.class);
 
         return Util.stripExtraInfoFromResponseBean(
-            jobService.addJob(job, pageName),
-            (new HashMap<String, List<String>>(){{
-                put("User",Arrays.asList("displayName","id"));
-                put("ScreeningQuestions", Arrays.asList("question","id"));
-            }}),
-            (new HashMap<String, List<String>>(){{
-                put("Job",Arrays.asList("createdOn","createdBy", "updatedOn", "updatedBy"));
-                put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
-                put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
-                put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
-                put("JobCapabilities", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
-            }})
+                jobService.addJobFlow(job, pageName),
+                (new HashMap<String, List<String>>(){{
+                    put("User",Arrays.asList("displayName","id"));
+                    put("ScreeningQuestions", Arrays.asList("question","id","isMandatory"));
+                    put("JobStageStep", Arrays.asList("id", "stageStepId"));
+                }}),
+                (new HashMap<String, List<String>>(){{
+                    put("Job",Arrays.asList("createdOn","createdBy", "updatedOn", "updatedBy", "hiringManagerList"));
+                    put("CompanyScreeningQuestion", Arrays.asList("createdOn", "createdBy", "updatedOn", "updatedBy","company"));
+                    put("UserScreeningQuestion", Arrays.asList("createdOn", "updatedOn","userId"));
+                    put("JobScreeningQuestions", Arrays.asList("id","jobId","createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("JobCapabilities", Arrays.asList("createdBy", "createdOn", "updatedOn","updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
+                    put("CompanyAddress", new ArrayList<>(0));
+                    put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
+                    put("StageMaster",new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
+                }})
         );
     }
 
     /**
      * Api for retrieving a list of jobs created by user
      * @param archived optional flag indicating if a list of archived jobs is requested. By default only open jobs will be returned
-     * @param companyName optional name of the company for which jobs have to be found. Will be populated only when superadmin accesses an account
+     * @param companyId optional id of the company for which jobs have to be found. Will be populated only when superadmin accesses an account
      * @return response bean with a list of jobs, count of open jobs and count of archived jobs
      * @throws Exception
      */
     @GetMapping(value = "/listOfJobs")
-    String listAllJobsForUser(@RequestParam("archived") Optional<Boolean> archived, @RequestParam("companyName") Optional<String> companyName) throws Exception {
+    String listAllJobsForUser(@RequestParam("archived") Optional<Boolean> archived, @RequestParam("companyId") Optional<Long> companyId, @RequestParam("jobStatus") Optional<String> jobStatus) throws Exception {
 
         return Util.stripExtraInfoFromResponseBean(
-                jobService.findAllJobsForUser((archived.isPresent() ? archived.get() : false),(companyName.isPresent()?companyName.get():null)),
+                jobService.findAllJobsForUser((archived.isPresent() ? archived.get() : false),(companyId.isPresent()?companyId.get():null), (jobStatus.isPresent()?jobStatus.get():null)),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("id", "displayName"));
+                    put("CompanyAddress", Arrays.asList("address","city"));
+                    put("JobRole", Arrays.asList("role"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList","jobHiringTeamList","jobDetail", "expertise", "education", "noticePeriod", "function", "experienceRange", "userEnteredKeySkill", "updatedOn", "updatedBy"));
+                    put("MasterData", new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }})
         );
+    }
+    /**
+     * Api for retrieving a list of job templates
+     * @param companyId
+     * @return response bean with list of jobs with job title, company job id & job id
+     */
+        @GetMapping(value = "/getJobTemplateList")
+    String getJobTemplateList( @NonNull @RequestParam("companyId")Long companyId) throws Exception{
+
+        return Util.stripExtraInfoFromResponseBean(jobService.getJobTemplateList(companyId),
+                (new HashMap<String, List<String>>(){{
+                    put("Job",Arrays.asList("id","jobTitle","companyJobId"));
+                }}),
+                (new HashMap<String, List<String>>(){{
+                    put("Company", Arrays.asList("ekey"));
+                }})
+        );
+    }
+
+    /**
+     *
+     */
+
+    @PutMapping(value = "/jobTemplate/createJob/{jobId}")
+    @ResponseStatus(HttpStatus.OK)
+    void createJobByJobTemplate(@PathVariable Long jobId) throws Exception{
+        log.info("received request to create job from job template : {}",jobId);
+        jobService.createJobByJobTemplate(jobId);
+        log.info("successfully created new job from job template :{}",jobId);
     }
 
     /**
@@ -85,44 +131,94 @@ public class JobController {
      * 1. list candidates for job for specified stage
      * 2. count of candidates by each stage
      *
-     * @param jobCandidateMapping The payload consisting of job id and stage
+     * @param jobId The job id
+     * @param stage the stage
      *
      * @return response bean with all details as a json string
      * @throws Exception
      */
-    @PostMapping(value = "/jobViewByStage")
+    @GetMapping(value = "/jobViewByStage/{jobId}/{stage}")
     @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    String getJobViewByIdAndStage(@RequestBody JobCandidateMapping jobCandidateMapping) throws Exception {
-        SingleJobViewResponseBean responseBean = jobService.getJobViewById(jobCandidateMapping);
+    String getJobViewByIdAndStage(@PathVariable ("jobId") Long jobId, @PathVariable ("stage") String stage) throws Exception {
+        SingleJobViewResponseBean responseBean = jobService.getJobViewById(jobId, stage);
 
         return Util.stripExtraInfoFromResponseBean(responseBean,
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("displayName"));
                     put("CvRating", Arrays.asList("overallRating"));
                     put("CandidateEducationDetails", Arrays.asList("degree"));
+                    put("JobStageStep", Arrays.asList("stageName"));
+                    put("CompanyAddress", Arrays.asList("address"));
+                    put("JobRole", Arrays.asList("role"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy"));
                     put("Candidate", Arrays.asList("candidateProjectDetails","candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies",
                             "candidateSkillDetails","createdOn","createdBy", "firstName", "lastName", "displayName"));
-                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData"));
+                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData", "interviewDetails", "candidateReferralDetail", "candidateSourceHistories"));
                     put("CandidateDetails", Arrays.asList("id","candidateId"));
                     put("CandidateCompanyDetails", Arrays.asList("candidateId"));
+                    put("JcmProfileSharingDetails", new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }})
         );
     }
 
     /**
-     * Api to set the status of a job as published.
+     * API to retrieve
+     * List of candidates for job for specified status
      *
-     * @param jobId id of the job which is to be published
+     * @param jobId The job Id
+     * @param status The status
+     *
+     * @return response bean with all details as a json string
      * @throws Exception
      */
-    @PutMapping(value = "/publishJob/{jobId}")
+    @GetMapping(value = "/jobViewByStatus/{jobId}/{status}")
+    @ResponseBody
     @ResponseStatus(HttpStatus.OK)
-    void publishJob(@PathVariable("jobId") Long jobId) throws Exception {
-        jobService.publishJob(jobId);
+    String getJobViewByIdAndStatus(@PathVariable("jobId") Long jobId, @PathVariable("status") String status) throws Exception{
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        log.info("Received request for chatbot completed candidate list for jobId={} and status={}, by user:{}", jobId, status, loggedInUser.getId());
+        long startTime = System.currentTimeMillis();
+
+        String responseBean = Util.stripExtraInfoFromResponseBean(jobService.getJobViewByIdAndStatus(jobId, status),
+                (new HashMap<String, List<String>>(){{
+                    put("User",Arrays.asList("displayName"));
+                    put("CvRating", Arrays.asList("overallRating"));
+                    put("CandidateEducationDetails", Arrays.asList("degree"));
+                    put("JobStageStep", Arrays.asList("stageName"));
+                    put("CompanyAddress", Arrays.asList("address"));
+                    put("JobRole", Arrays.asList("role"));
+                }}),
+                (new HashMap<String, List<String>>(){{
+                    put("Job",Arrays.asList("jobDescription","jobScreeningQuestionsList","jobKeySkillsList","jobCapabilityList", "updatedOn", "updatedBy"));
+                    put("Candidate", Arrays.asList("candidateProjectDetails","candidateOnlineProfiles","candidateWorkAuthorizations","candidateLanguageProficiencies",
+                            "candidateSkillDetails","createdOn","createdBy", "firstName", "lastName", "displayName"));
+                    put("JobCandidateMapping", Arrays.asList("updatedOn","updatedBy","techResponseData", "interviewDetails", "candidateReferralDetail", "candidateSourceHistories"));
+                    put("CandidateDetails", Arrays.asList("id","candidateId"));
+                    put("CandidateCompanyDetails", Arrays.asList("candidateId"));
+                    put("Company", Arrays.asList("ekey"));
+                }})
+        );
+
+        log.info("Time taken to complete the request in {}ms", System.currentTimeMillis()-startTime);
+
+        return responseBean;
+
+    }
+
+    /**
+     * Api to set the status of a job as published.
+     *
+     * @param job to be published
+     * @throws Exception
+     */
+    @PostMapping(value = "/publishJob")
+    @ResponseStatus(HttpStatus.OK)
+    void publishJob(@RequestBody Job job) throws Exception {
+        jobService.publishJob(job);
     }
 
     /**
@@ -133,8 +229,8 @@ public class JobController {
      */
     @PutMapping(value = "/archiveJob/{jobId}")
     @ResponseStatus(HttpStatus.OK)
-    void archiveJob(@PathVariable("jobId") Long jobId) throws Exception {
-        jobService.archiveJob(jobId);
+    void archiveJob(@PathVariable("jobId") Long jobId, @RequestParam("archiveStatus") String archiveStatus, @RequestParam("archiveReason") Optional<String> archiveReason) throws Exception {
+        jobService.archiveJob(jobId,archiveStatus,(archiveReason.isPresent())?archiveReason.get():null);
     }
 
     /**
@@ -158,9 +254,11 @@ public class JobController {
     @ResponseBody
     String getJobDetails(@PathVariable("jobId") Long jobId) throws Exception {
         return Util.stripExtraInfoFromResponseBean(
-                jobService.getJobDetails(jobId),
+                jobService.getJobDetails(jobId, false),
                 (new HashMap<String, List<String>>(){{
-                    put("User",Arrays.asList("displayName"));
+                    put("User",Arrays.asList("id","displayName"));
+                    put("CompanyAddress", Arrays.asList("id", "address"));
+                    put("JobRole", Arrays.asList("role"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",new ArrayList<>(0));
@@ -169,6 +267,11 @@ public class JobController {
                     put("CompanyScreeningQuestion",new ArrayList<>(0));
                     put("UserScreeningQuestion",new ArrayList<>(0));
                     put("JobCapabilities",new ArrayList<>(0));
+                    put("JobStageStep", Arrays.asList("updatedBy", "updatedOn", "createdBy", "createdOn", "jobId"));
+                    put("CompanyStageStep", Arrays.asList("companyId", "updatedBy", "updatedOn", "createdBy", "createdOn"));
+                    put("StageMaster",new ArrayList<>(0));
+                    put("MasterData", new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }}));
         //return jobService.getJobDetails(jobId);
     }
@@ -180,6 +283,8 @@ public class JobController {
                 jobService.getJobHistory(jobId),
                 (new HashMap<String, List<String>>(){{
                     put("User",Arrays.asList("displayName"));
+                    put("CompanyAddress", Arrays.asList("address"));
+                    put("JobRole", Arrays.asList("role"));
                 }}),
                 (new HashMap<String, List<String>>(){{
                     put("Job",new ArrayList<>(0));
@@ -187,6 +292,116 @@ public class JobController {
                     put("ScreeningQuestions",new ArrayList<>(0));
                     put("CompanyScreeningQuestion",new ArrayList<>(0));
                     put("UserScreeningQuestion",new ArrayList<>(0));
+                    put("MasterData", new ArrayList<>(0));
+                    put("Company", Arrays.asList("ekey"));
                 }}));
+    }
+
+    @GetMapping(value = "/supportedexportformat/{jobId}")
+    @Cacheable(value = "Job", key = "#jobId")
+    Map<Long, String> supportedExportFormat(@PathVariable("jobId") Long jobId) throws Exception{
+        return jobService.getSupportedExportFormat(jobId);
+    }
+
+    @GetMapping(value = {"/exportdata/{jobId}", "/exportdata/{jobId}/{formatId}"})
+    String exportData(@PathVariable("jobId") Long jobId, @PathVariable(required = false, value = "formatId") Optional<Long>formatId, @RequestParam("stage")String stage) throws Exception{
+        String data=null;
+        if(!formatId.isPresent()){
+            data = jobService.exportData(jobId, null, stage);
+        }
+        else{
+            data = jobService.exportData(jobId, formatId.get(), stage);
+        }
+        return data;
+    }
+
+    @GetMapping(value = "/exportTechRoleCompetency/{jobId}")
+    String exportTechRoleCompetency(@PathVariable("jobId") Long jobId) throws Exception{
+        log.info("Received request to fetch Tech role competency list for job {}", jobId);
+        long startTime = System.currentTimeMillis();
+        String response = Util.stripExtraInfoFromResponseBean(jobService.getTechRoleCompetencyByJob(jobId),
+                new HashMap<String, List<String>>() {{
+                    put("Candidate",Arrays.asList("displayName","email", "mobile"));
+                    put("Integer", Arrays.asList("score"));
+                    put("TechResponseJson", Arrays.asList("name", "complexities", "score", "capabilityStarRating"));
+                    put("String", Arrays.asList("candidateProfileLink"));
+                }},
+                new HashMap<String, List<String>>() {{
+                    put("Company", Arrays.asList("ekey"));
+                }});
+        log.info("Completed processing fetch Tech role competency list for job {} in {}", jobId, (System.currentTimeMillis()-startTime) + "ms.");
+        return response;
+    }
+
+    @GetMapping(value = "/inviteError/{jobId}")
+    String getAsyncInviteError(@PathVariable("jobId") Long jobId){
+        log.info("Received request to fetch error report for async invite operation for jobId: {}", jobId);
+        long startTime = System.currentTimeMillis();
+        String response = Util.stripExtraInfoFromResponseBean(jobService.findAsyncErrors(jobId, IConstant.ASYNC_OPERATIONS.InviteCandidates.name()),
+                null,
+                new HashMap<String, List<String>>(){{
+                    put("AsyncOperationsErrorRecords", Arrays.asList("id", "jobId", "jobCandidateMappingId", "asyncOperation", "createdBy"));
+                }}
+        );
+        log.info("Completed processing request to fetch async invite errors for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
+        return response;
+    }
+
+    @GetMapping(value = "/uploadError/{jobId}")
+    String getAsyncUploadError(@PathVariable("jobId") Long jobId){
+        log.info("Received request to fetch error report for async invite operation for jobId: {}", jobId);
+        long startTime = System.currentTimeMillis();
+        String response = Util.stripExtraInfoFromResponseBean(jobService.findAsyncErrors(jobId, IConstant.ASYNC_OPERATIONS.FileUpload.name()),
+                null,
+                new HashMap<String, List<String>>(){{
+                    put("AsyncOperationsErrorRecords", Arrays.asList("id", "jobId", "jobCandidateMappingId", "asyncOperation", "createdBy"));
+                }}
+        );
+        log.info("Completed processing request to fetch async invite errors for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
+        return response;
+    }
+
+    /**
+     * API to update visibility flag for career pages
+     * @param jobId jobId For which we update flag
+     */
+    @PutMapping(value = "/updateJobVisibilityFlag/{jobId}")
+    @ResponseStatus(HttpStatus.OK)
+    void updateJobVisibilityFlagForCareerPage(@PathVariable("jobId") Long jobId, @RequestParam("visibilityFlag") boolean visibilityFlag) throws Exception {
+        log.info("Received request to update job visibility flag for careerPage for JobId : "+jobId);
+        long startTime = System.currentTimeMillis();
+        jobService.updateJobVisibilityFlagOnCareerPage(jobId, visibilityFlag);
+        log.info("Completed processing request to update job visibility flag for careerPage for jobId: {} in {}ms", jobId, System.currentTimeMillis()-startTime);
+    }
+
+    /**
+     * API to get and add tech questions from search engine
+     *
+     * @param job object for which we generate tech question from search engine
+     */
+    @PostMapping(value = "/generateTechQuestions")
+    @ResponseStatus(HttpStatus.OK)
+    List<TechScreeningQuestion> generateTechScreeningQuestions(@RequestBody Job job) throws Exception {
+        log.info("Received request to generate tech questions for JobId : {}",job.getId());
+        long startTime = System.currentTimeMillis();
+        List<TechScreeningQuestion> techScreeningQuestions = jobService.generateAndAddTechScreeningQuestions(job);
+        log.info("Completed processing request to generate tech questions for jobId: {} in {}ms", job.getId(), System.currentTimeMillis()-startTime);
+        return techScreeningQuestions;
+    }
+
+    /**
+     * API endpoint to save expected answer for a job
+     *
+     * @param requestJob requested job which has expected answer and jobId
+     * @throws Exception
+     */
+    @PostMapping(value = "/saveExpectedAnswer")
+    @ResponseStatus(HttpStatus.OK)
+    void saveExpectedAnswer(@RequestBody Job requestJob) throws Exception{
+        User loggedInUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        log.info("Received request to save expected answer for job={} by user={}", requestJob.getId(), loggedInUser.getId());
+        long startTime = System.currentTimeMillis();
+        jobService.saveExpectedAnswer(requestJob);
+        log.info("Saved expected answer in {}ms", System.currentTimeMillis()-startTime);
     }
 }

@@ -7,6 +7,8 @@ package io.litmusblox.server.service;
 import io.litmusblox.server.model.Job;
 import lombok.Data;
 
+import javax.persistence.Transient;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,7 +22,8 @@ import java.util.List;
  */
 @Data
 public class JobWorspaceResponseBean {
-    private int openJobs;
+    private int liveJobs;
+    private int draftJobs;
     private int archivedJobs;
-    private List<Job> listOfJobs;
+    private List<Job> listOfJobs = new ArrayList<>();
 }
