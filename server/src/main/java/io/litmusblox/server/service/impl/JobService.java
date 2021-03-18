@@ -492,9 +492,10 @@ public class JobService extends AbstractAccessControl implements IJobService {
                 oldJob.setAutoInvite(job.isAutoInvite());
                 oldJob.setVisibleToCareerPage(job.isVisibleToCareerPage());
                 oldJob.setTemplate(job.isTemplate());
-                if(job.isTemplate() && null == job.getTemplateName())
+                if(job.isTemplate() && Util.isNull(job.getTemplateName())) {
                     log.error("Template name should not be null if the job saves as a template. for job id : {}", oldJob.getId());
-                    //throw new ValidationException("Template name should not be null if the job saves as a template. for job id : "+oldJob.getId(),HttpStatus.BAD_REQUEST);
+                    throw new ValidationException("Template name should not be null if the job saves as a template. for job id : "+oldJob.getId(),HttpStatus.BAD_REQUEST);
+                }
                 else if(!job.isTemplate())
                     oldJob.setTemplateName(null);
                 else
