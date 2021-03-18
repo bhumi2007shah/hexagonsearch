@@ -308,6 +308,12 @@
 				<activatedProperties>prod</activatedProperties>
 			</properties>
 		</profile>
+		<profile>
+			<id>staging</id>
+			<properties>
+				<activatedProperties>staging</activatedProperties>
+			</properties>
+		</profile>
 	</profiles>
 
 	<build>
